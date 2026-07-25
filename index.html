@@ -34,9 +34,7 @@
             </div>
             <p class="hero-status" id="heroStatus">Start deliberately.</p>
           </div>
-          <div class="progress-ring" id="progressRing" aria-label="0 percent complete">
-            <span id="progressPercent">0%</span>
-          </div>
+          <div class="progress-ring" id="progressRing" aria-label="0 percent complete"><span id="progressPercent">0%</span></div>
         </section>
 
         <div class="date-nav" aria-label="Choose date">
@@ -49,10 +47,7 @@
 
         <section class="card summary-card">
           <div class="section-heading">
-            <div>
-              <p class="eyebrow">Daily snapshot</p>
-              <h2>At a glance</h2>
-            </div>
+            <div><p class="eyebrow">Daily snapshot</p><h2>At a glance</h2></div>
             <button id="copySummaryButton" class="small-button" type="button">Copy</button>
           </div>
           <div class="stats-grid">
@@ -67,10 +62,7 @@
       <section id="historyView" class="view" aria-labelledby="pageTitle">
         <section class="card progress-overview-card">
           <div class="section-heading progress-heading">
-            <div>
-              <p class="eyebrow">Progress</p>
-              <h2>Your patterns</h2>
-            </div>
+            <div><p class="eyebrow">Progress</p><h2>Your patterns</h2></div>
             <div id="rangeSelector" class="range-selector" aria-label="Analytics range">
               <button class="range-button active" type="button" data-range="7">7D</button>
               <button class="range-button" type="button" data-range="30">30D</button>
@@ -86,103 +78,54 @@
         </section>
 
         <section class="card">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">This week</p>
-              <h2>Daily completion</h2>
-            </div>
-            <strong id="weekOverall" class="section-progress">—</strong>
-          </div>
+          <div class="section-heading"><div><p class="eyebrow">This week</p><h2>Daily completion</h2></div><strong id="weekOverall" class="section-progress">—</strong></div>
           <div id="weekSummary" class="week-summary"></div>
         </section>
 
         <section class="card">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Routine</p>
-              <h2>By part of day</h2>
-            </div>
-          </div>
+          <div class="section-heading"><div><p class="eyebrow">Routine</p><h2>By part of day</h2></div></div>
           <div id="sectionBreakdown" class="breakdown-list"></div>
         </section>
 
         <section class="card">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Consistency</p>
-              <h2>Habit performance</h2>
-            </div>
-          </div>
+          <div class="section-heading"><div><p class="eyebrow">Consistency</p><h2>Habit performance</h2></div></div>
           <div class="habit-columns">
-            <div>
-              <h3>Strongest</h3>
-              <div id="strongHabits" class="habit-list"></div>
-            </div>
-            <div>
-              <h3>Needs attention</h3>
-              <div id="weakHabits" class="habit-list"></div>
-            </div>
+            <div><h3>Strongest</h3><div id="strongHabits" class="habit-list"></div></div>
+            <div><h3>Needs attention</h3><div id="weakHabits" class="habit-list"></div></div>
           </div>
         </section>
 
         <section class="card">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Check-ins</p>
-              <h2>Rating trends</h2>
-            </div>
-          </div>
+          <div class="section-heading"><div><p class="eyebrow">Check-ins</p><h2>Rating trends</h2></div></div>
           <div id="trendList" class="trend-list"></div>
         </section>
 
         <section class="card">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">History</p>
-              <h2>Recent days</h2>
-            </div>
-          </div>
+          <div class="section-heading"><div><p class="eyebrow">Patterns</p><h2>What seems connected?</h2></div></div>
+          <p class="muted setup-help">These are associations in your own logs, not proof that one habit caused the other result.</p>
+          <div id="patternInsights" class="insight-list"></div>
+        </section>
+
+        <section class="card">
+          <div class="section-heading"><div><p class="eyebrow">History</p><h2>Recent days</h2></div></div>
           <div id="historyList" class="history-list"></div>
         </section>
       </section>
 
       <section id="setupView" class="view" aria-labelledby="pageTitle">
         <section class="card">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Schedule</p>
-              <h2>Daily times</h2>
-            </div>
-          </div>
+          <div class="section-heading"><div><p class="eyebrow">Schedule</p><h2>Daily times</h2></div></div>
           <div class="two-column-fields">
-            <label class="text-field compact">
-              <span>Wake-up time</span>
-              <input id="wakeTimeInput" type="time" />
-            </label>
-            <label class="text-field compact">
-              <span>Bedtime target</span>
-              <input id="bedTimeInput" type="time" />
-            </label>
+            <label class="text-field compact"><span>Wake-up time</span><input id="wakeTimeInput" type="time" /></label>
+            <label class="text-field compact"><span>Bedtime target</span><input id="bedTimeInput" type="time" /></label>
           </div>
         </section>
 
         <section class="card">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Personalize</p>
-              <h2>Make it yours</h2>
-            </div>
-          </div>
-          <label class="text-field compact">
-            <span>Theme</span>
-            <select id="themeInput">
-              <option value="calm">Calm</option>
-              <option value="sunrise">Sunrise</option>
-              <option value="dusk">Dusk</option>
-              <option value="minimal">Minimal</option>
-              <option value="midnight">Midnight</option>
-            </select>
-          </label>
+          <div class="section-heading"><div><p class="eyebrow">Personalize</p><h2>Make it yours</h2></div></div>
+          <label class="text-field compact"><span>Theme</span><select id="themeInput">
+            <option value="calm">Calm</option><option value="sunrise">Sunrise</option><option value="dusk">Dusk</option><option value="minimal">Minimal</option><option value="midnight">Midnight</option>
+          </select></label>
           <div class="background-controls">
             <label class="secondary-button file-button">Use a background photo<input id="backgroundImageInput" type="file" accept="image/*" /></label>
             <button id="clearBackgroundButton" class="secondary-button" type="button">Remove photo</button>
@@ -191,24 +134,19 @@
         </section>
 
         <section class="card">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Customize</p>
-              <h2>Routine items</h2>
-            </div>
-            <button id="addItemButton" class="primary-button" type="button">+ Add</button>
-          </div>
-          <p class="muted setup-help">Set specific days, measurable targets, and whether an item should count toward your daily completion score. Use the arrows to change the order.</p>
+          <div class="section-heading"><div><p class="eyebrow">Daily routine</p><h2>Routine items</h2></div><button id="addItemButton" class="primary-button" type="button">+ Add</button></div>
+          <p class="muted setup-help">Habits and measurable goals. Required items affect the daily completion score.</p>
           <div id="routineEditor" class="routine-editor"></div>
         </section>
 
         <section class="card">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Data</p>
-              <h2>Backup & export</h2>
-            </div>
-          </div>
+          <div class="section-heading"><div><p class="eyebrow">Reflection</p><h2>Check-ins & prompts</h2></div><button id="addCheckinButton" class="primary-button" type="button">+ Add</button></div>
+          <p class="muted setup-help">Build your own mood, sleep, stress, focus, gratitude, or reflection questions and place them in Morning, Day, or Evening.</p>
+          <div id="checkinEditor" class="routine-editor"></div>
+        </section>
+
+        <section class="card">
+          <div class="section-heading"><div><p class="eyebrow">Data</p><h2>Backup & export</h2></div></div>
           <p class="muted setup-help">Your information is still stored only in this browser on this device. Nothing is automatically uploaded anywhere.</p>
           <div class="button-stack">
             <button id="exportCsvButton" class="secondary-button" type="button">Export progress as CSV</button>
@@ -219,12 +157,7 @@
         </section>
 
         <section class="card private-sharing-card">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Next phase</p>
-              <h2>Private accountability</h2>
-            </div>
-          </div>
+          <div class="section-heading"><div><p class="eyebrow">Next phase</p><h2>Private accountability</h2></div></div>
           <p>Once the daily experience is where we want it, the next step is secure accounts and permission-based sharing with one approved accountability person.</p>
         </section>
       </section>
@@ -239,79 +172,44 @@
 
   <dialog id="itemDialog" class="item-dialog">
     <form id="itemForm" method="dialog">
-      <div class="dialog-header">
-        <div>
-          <p class="eyebrow">Routine builder</p>
-          <h2 id="dialogTitle">Add item</h2>
-        </div>
-        <button id="closeDialogButton" class="icon-button" type="button" aria-label="Close">×</button>
-      </div>
+      <div class="dialog-header"><div><p class="eyebrow" id="builderEyebrow">Routine builder</p><h2 id="dialogTitle">Add item</h2></div><button id="closeDialogButton" class="icon-button" type="button" aria-label="Close">×</button></div>
       <input id="editingItemId" type="hidden" />
-
-      <label class="text-field compact">
-        <span>Name</span>
-        <input id="itemNameInput" type="text" maxlength="60" required placeholder="Example: Prayer" />
-      </label>
-      <label class="text-field compact">
-        <span>Part of day</span>
-        <select id="itemSectionInput">
-          <option value="morning">Morning</option>
-          <option value="day">Throughout the day</option>
-          <option value="evening">Evening</option>
-        </select>
-      </label>
-      <label class="text-field compact">
-        <span>How to log it</span>
-        <select id="itemTypeInput">
-          <option value="checkbox">Checkbox</option>
-          <option value="scale">0–10 rating</option>
-          <option value="number">Number</option>
-          <option value="time">Time</option>
-          <option value="text">Short comment</option>
-          <option value="longtext">Journal entry</option>
-        </select>
-      </label>
-      <label class="text-field compact">
-        <span>Schedule</span>
-        <select id="itemFrequencyInput">
-          <option value="daily">Every day</option>
-          <option value="weekdays">Weekdays</option>
-          <option value="weekends">Weekends</option>
-          <option value="custom">Specific days</option>
-        </select>
-      </label>
+      <input id="editingItemKind" type="hidden" value="routine" />
+      <label class="text-field compact"><span>Name / question</span><input id="itemNameInput" type="text" maxlength="80" required placeholder="Example: Prayer" /></label>
+      <label class="text-field compact"><span>Part of day</span><select id="itemSectionInput"><option value="morning">Morning</option><option value="day">Throughout the day</option><option value="evening">Evening</option></select></label>
+      <label class="text-field compact"><span>How to log it</span><select id="itemTypeInput">
+        <option value="checkbox">Checkbox</option><option value="scale">Rating scale</option><option value="number">Number</option><option value="time">Time</option><option value="text">Short comment</option><option value="longtext">Journal entry</option>
+      </select></label>
+      <label class="text-field compact"><span>Schedule</span><select id="itemFrequencyInput"><option value="daily">Every day</option><option value="weekdays">Weekdays</option><option value="weekends">Weekends</option><option value="custom">Specific days</option></select></label>
 
       <fieldset id="customDaysField" class="day-picker" hidden>
         <legend>Which days?</legend>
-        <label><input type="checkbox" value="1" /><span>M</span></label>
-        <label><input type="checkbox" value="2" /><span>T</span></label>
-        <label><input type="checkbox" value="3" /><span>W</span></label>
-        <label><input type="checkbox" value="4" /><span>T</span></label>
-        <label><input type="checkbox" value="5" /><span>F</span></label>
-        <label><input type="checkbox" value="6" /><span>S</span></label>
-        <label><input type="checkbox" value="0" /><span>S</span></label>
+        <label><input type="checkbox" value="1" /><span>M</span></label><label><input type="checkbox" value="2" /><span>T</span></label><label><input type="checkbox" value="3" /><span>W</span></label><label><input type="checkbox" value="4" /><span>T</span></label><label><input type="checkbox" value="5" /><span>F</span></label><label><input type="checkbox" value="6" /><span>S</span></label><label><input type="checkbox" value="0" /><span>S</span></label>
       </fieldset>
 
       <div id="numberGoalFields" class="two-column-fields" hidden>
-        <label class="text-field compact">
-          <span>Target (optional)</span>
-          <input id="itemTargetInput" type="number" min="0" step="any" inputmode="decimal" placeholder="8" />
-        </label>
-        <label class="text-field compact">
-          <span>Unit (optional)</span>
-          <input id="itemUnitInput" type="text" maxlength="20" placeholder="cups, minutes, pages…" />
-        </label>
+        <label class="text-field compact"><span>Target (optional)</span><input id="itemTargetInput" type="number" min="0" step="any" inputmode="decimal" placeholder="8" /></label>
+        <label class="text-field compact"><span>Unit (optional)</span><input id="itemUnitInput" type="text" maxlength="20" placeholder="cups, minutes, pages…" /></label>
       </div>
 
-      <label class="toggle-field">
-        <input id="itemOptionalInput" type="checkbox" />
-        <span><b>Optional item</b><small>Track it, but do not let it lower the daily completion score.</small></span>
-      </label>
-
-      <div class="dialog-actions">
-        <button id="deleteItemButton" class="danger-button" type="button" hidden>Delete</button>
-        <button class="primary-button" type="submit">Save item</button>
+      <div id="scaleFields" class="builder-subcard" hidden>
+        <div class="three-column-fields">
+          <label class="text-field compact"><span>Minimum</span><input id="scaleMinInput" type="number" step="any" value="0" /></label>
+          <label class="text-field compact"><span>Maximum</span><input id="scaleMaxInput" type="number" step="any" value="10" /></label>
+          <label class="text-field compact"><span>Step</span><input id="scaleStepInput" type="number" min="0.1" step="any" value="1" /></label>
+        </div>
+        <div class="two-column-fields scale-label-fields">
+          <label class="text-field compact"><span>Low-end label</span><input id="scaleLowLabelInput" type="text" maxlength="24" placeholder="Low" /></label>
+          <label class="text-field compact"><span>High-end label</span><input id="scaleHighLabelInput" type="text" maxlength="24" placeholder="Great" /></label>
+        </div>
+        <p class="muted setup-help">The rating value can be changed by dragging the bar, tapping −/+, or typing the number.</p>
       </div>
+
+      <label id="promptField" class="text-field compact" hidden><span>Answer hint (optional)</span><input id="itemPlaceholderInput" type="text" maxlength="80" placeholder="Example: Anything worth remembering?" /></label>
+
+      <label id="optionalField" class="toggle-field"><input id="itemOptionalInput" type="checkbox" /><span><b>Optional item</b><small>Track it, but do not let it lower the daily completion score.</small></span></label>
+
+      <div class="dialog-actions"><button id="deleteItemButton" class="danger-button" type="button" hidden>Delete</button><button class="primary-button" type="submit">Save</button></div>
     </form>
   </dialog>
 
