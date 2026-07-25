@@ -33,15 +33,23 @@
               <span><b id="bedTimeDisplay">10:30 PM</b> bed</span>
             </div>
             <p class="hero-status" id="heroStatus">Start deliberately.</p>
+            <p class="week-focus-banner" id="weekFocusBanner" hidden></p>
           </div>
           <div class="progress-ring" id="progressRing" aria-label="0 percent complete"><span id="progressPercent">0%</span></div>
         </section>
 
-        <div class="date-nav" aria-label="Choose date">
+        <div class="date-nav date-nav-v15" aria-label="Choose date">
           <button id="prevDay" class="ghost-button" type="button" aria-label="Previous day">‹</button>
-          <button id="selectedDateButton" class="date-button" type="button"></button>
+          <button id="selectedDateButton" class="date-button" type="button" aria-label="Return to today"></button>
+          <label class="calendar-button" aria-label="Jump to a date">📅<input id="datePickerInput" type="date" /></label>
           <button id="nextDay" class="ghost-button" type="button" aria-label="Next day">›</button>
         </div>
+
+        <section class="card day-mode-card">
+          <div class="day-mode-copy"><span class="eyebrow">Flexibility</span><strong>How should this day count?</strong></div>
+          <select id="dayModeInput" aria-label="Day mode"><option value="normal">Normal day</option><option value="sick">Sick day</option><option value="travel">Travel day</option><option value="vacation">Vacation</option><option value="rest">Planned rest</option></select>
+          <button id="undoButton" class="small-button" type="button" disabled>Undo</button>
+        </section>
 
         <section class="card actual-time-card">
           <div class="section-heading"><div><p class="eyebrow">Timing</p><h2>Actual sleep times</h2></div><span class="section-progress">for this day</span></div>
@@ -54,6 +62,7 @@
 
         <section class="card capture-card">
           <div class="section-heading"><div><p class="eyebrow">Remember</p><h2>Capture a small thing</h2></div><button id="quickMemoryButton" class="primary-button" type="button">+ Remember</button></div>
+          <div id="onThisDayMemory" class="on-this-day" hidden></div>
           <div id="memoryTodayPreview" class="memory-preview"></div>
         </section>
 
@@ -67,7 +76,7 @@
           <div class="stats-grid">
             <div><strong id="statCompleted">0/0</strong><span>Required</span></div>
             <div><strong id="statOptional">0</strong><span>Optional logged</span></div>
-            <div><strong id="statStreak">0</strong><span>80%+ streak</span></div>
+            <div><strong id="statStreak">0</strong><span>Current streak</span></div>
             <div><strong id="statMood">—</strong><span>Latest mood</span></div>
           </div>
         </section>
@@ -126,6 +135,13 @@
           <div id="patternInsights" class="insight-list"></div>
         </section>
 
+        <section class="card weekly-review-card">
+          <div class="section-heading"><div><p class="eyebrow">Weekly review</p><h2>Close the loop</h2></div><span id="weeklyReviewLabel" class="section-progress"></span></div>
+          <div id="weeklyReviewSummary" class="weekly-review-summary"></div>
+          <label class="text-field"><span>What do you want to focus on next week?</span><textarea id="weeklyFocusInput" rows="2" maxlength="300" placeholder="One clear focus for the week ahead…"></textarea></label>
+          <button id="saveWeeklyFocusButton" class="primary-button weekly-focus-save" type="button">Save weekly focus</button>
+        </section>
+
         <section class="card">
           <div class="section-heading"><div><p class="eyebrow">History</p><h2>Recent days</h2></div></div>
           <div id="historyList" class="history-list"></div>
@@ -140,6 +156,15 @@
             <label class="text-field compact"><span>Bedtime target</span><input id="bedTimeInput" type="time" /></label>
           </div>
           <label class="toggle-field schedule-toggle"><input id="badgeEnabledInput" type="checkbox" /><span><b>Home Screen progress badge</b><small>When supported by your installed web app, show the number of required items still remaining today.</small></span></label>
+        </section>
+
+        <section class="card">
+          <div class="section-heading"><div><p class="eyebrow">Streaks</p><h2>Make streaks fit real life</h2></div></div>
+          <div class="two-column-fields">
+            <label class="text-field compact"><span>Completion needed</span><div class="percent-input"><input id="streakThresholdInput" type="number" min="1" max="100" step="1" /><b>%</b></div></label>
+            <label class="text-field compact"><span>Excused days</span><select id="streakModeInput"><option value="forgiving">Do not break streak</option><option value="strict">Break streak</option></select></label>
+          </div>
+          <label class="toggle-field schedule-toggle"><input id="streakWeekdaysOnlyInput" type="checkbox" /><span><b>Weekdays-only streak</b><small>Saturday and Sunday are ignored when calculating the streak.</small></span></label>
         </section>
 
         <section class="card">
@@ -170,6 +195,11 @@
           <div class="section-heading"><div><p class="eyebrow">Remember</p><h2>Memory bank</h2></div><button id="addMemoryButton" class="primary-button" type="button">+ Add</button></div>
           <p class="muted setup-help">Save blessings, gratitude, prayers, thoughts, quotes, and memories. A Memory reflection routine can randomly bring them back during your day.</p>
           <div class="memory-bank-stats"><strong id="memoryCount">0</strong><span>saved</span><button id="exportMemoriesButton" class="small-button" type="button">Export CSV</button></div>
+          <div class="memory-filter-bar">
+            <input id="memorySearchInput" type="search" placeholder="Search memories…" aria-label="Search memories" />
+            <select id="memoryFilterInput" aria-label="Filter memories"><option value="all">All categories</option><option value="blessing">Blessings</option><option value="gratitude">Gratitude</option><option value="prayer">Prayers</option><option value="thought">Thoughts</option><option value="quote">Quotes</option><option value="memory">Memories</option><option value="archived">Archived</option></select>
+            <label class="favorite-filter"><input id="memoryFavoritesOnlyInput" type="checkbox" /> ★ only</label>
+          </div>
           <div id="memoryArchive" class="memory-archive"></div>
         </section>
 
@@ -180,8 +210,12 @@
             <button id="exportCsvButton" class="secondary-button" type="button">Export progress as CSV</button>
             <button id="exportJsonButton" class="secondary-button" type="button">Download backup</button>
             <label class="secondary-button file-button">Restore backup<input id="importJsonInput" type="file" accept="application/json,.json" /></label>
+            <button id="createSnapshotButton" class="secondary-button" type="button">Create local snapshot</button>
+            <button id="restoreSnapshotButton" class="secondary-button" type="button">Restore latest local snapshot</button>
             <button id="resetDataButton" class="danger-button" type="button">Reset app data</button>
           </div>
+          <p id="snapshotStatus" class="muted micro-copy"></p>
+          <p class="app-version">Daily Routine <b id="appVersion">v1.5</b></p>
         </section>
 
         <section class="card private-sharing-card">
@@ -236,6 +270,7 @@
       <div id="medicationFields" class="builder-subcard" hidden>
         <strong class="builder-note-title">Medication timing</strong>
         <p class="muted setup-help">On Today, tap <b>Taken now</b> to save the time automatically. You can edit the recorded time afterward.</p>
+        <label class="text-field compact"><span>Usual dose (optional)</span><input id="medicationDoseInput" type="text" maxlength="40" placeholder="Example: 50 mg" /></label>
       </div>
 
       <label id="memoryFields" class="text-field compact" hidden><span>Which memories should this surface?</span><select id="memoryCategoryInput">
@@ -245,6 +280,7 @@
       <label id="promptField" class="text-field compact" hidden><span>Answer hint (optional)</span><input id="itemPlaceholderInput" type="text" maxlength="80" placeholder="Example: Anything worth remembering?" /></label>
 
       <label id="optionalField" class="toggle-field"><input id="itemOptionalInput" type="checkbox" /><span><b>Optional item</b><small>Track it, but do not let it lower the daily completion score.</small></span></label>
+      <label class="text-field compact"><span>Pause through (optional)</span><input id="pauseUntilInput" type="date" /><small class="field-help">Pausing starts today and does not rewrite earlier history.</small></label>
 
       <div class="dialog-actions"><button id="deleteItemButton" class="danger-button" type="button" hidden>Delete</button><button class="primary-button" type="submit">Save</button></div>
     </form>

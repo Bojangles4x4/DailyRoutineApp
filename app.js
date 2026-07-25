@@ -2,9 +2,11 @@
   'use strict';
 
   const STORAGE_KEY = 'dailyRoutineApp.v1';
+  const SNAPSHOT_KEY = 'dailyRoutineApp.snapshots.v1';
+  const APP_VERSION = '1.5';
   const DEFAULT_SCALE = { min: 0, max: 10, step: 1, lowLabel: 'Low', highLabel: 'Great' };
   const DEFAULT_STATE = {
-    settings: { wakeTime: '06:00', bedTime: '22:30', theme: 'calm', backgroundImage: '', badgeEnabled: true },
+    settings: { wakeTime: '06:00', bedTime: '22:30', theme: 'calm', backgroundImage: '', badgeEnabled: true, streakThreshold: 80, streakMode: 'forgiving', streakWeekdaysOnly: false },
     items: [
       { id: 'morning-prayer', name: 'Prayer', kind: 'routine', section: 'morning', type: 'checkbox', frequency: 'daily', days: [], optional: false, unit: '', target: null },
       { id: 'morning-teeth', name: 'Brush teeth', kind: 'routine', section: 'morning', type: 'checkbox', frequency: 'daily', days: [], optional: false, unit: '', target: null },
@@ -25,7 +27,8 @@
       { id: 'evening-tomorrow', name: 'What needs attention tomorrow?', kind: 'checkin', section: 'evening', type: 'text', frequency: 'daily', days: [], optional: true, placeholder: 'One thing to carry forward…' }
     ],
     days: {},
-    memories: []
+    memories: [],
+    weeklyReviews: {}
   };
 
   const sectionLabels = {
@@ -40,27 +43,29 @@
   let deferredInstallPrompt = null;
   let toastTimer = null;
   let analyticsRange = 7;
+  let undoAction = null;
+  const collapsedSections = new Set();
 
   const $ = id => document.getElementById(id);
   const els = {
     pageTitle: $('pageTitle'), todayEyebrow: $('todayEyebrow'), heroGreeting: $('heroGreeting'), heroDate: $('heroDate'), heroStatus: $('heroStatus'),
     wakeTimeDisplay: $('wakeTimeDisplay'), bedTimeDisplay: $('bedTimeDisplay'), progressRing: $('progressRing'), progressPercent: $('progressPercent'),
-    selectedDateButton: $('selectedDateButton'), prevDay: $('prevDay'), nextDay: $('nextDay'), routineSections: $('routineSections'),
+    selectedDateButton: $('selectedDateButton'), datePickerInput: $('datePickerInput'), prevDay: $('prevDay'), nextDay: $('nextDay'), routineSections: $('routineSections'), dayModeInput: $('dayModeInput'), undoButton: $('undoButton'), weekFocusBanner: $('weekFocusBanner'), onThisDayMemory: $('onThisDayMemory'),
     statCompleted: $('statCompleted'), statOptional: $('statOptional'), statStreak: $('statStreak'), statMood: $('statMood'), copySummaryButton: $('copySummaryButton'),
     historyList: $('historyList'), rangeSelector: $('rangeSelector'), progressOverall: $('progressOverall'), progress80Days: $('progress80Days'), progressTrackedDays: $('progressTrackedDays'),
     progressRangeNote: $('progressRangeNote'), weekSummary: $('weekSummary'), weekOverall: $('weekOverall'), sectionBreakdown: $('sectionBreakdown'), strongHabits: $('strongHabits'), weakHabits: $('weakHabits'), trendList: $('trendList'), patternInsights: $('patternInsights'),
-    wakeTimeInput: $('wakeTimeInput'), bedTimeInput: $('bedTimeInput'), themeInput: $('themeInput'), backgroundImageInput: $('backgroundImageInput'), clearBackgroundButton: $('clearBackgroundButton'),
+    wakeTimeInput: $('wakeTimeInput'), bedTimeInput: $('bedTimeInput'), streakThresholdInput: $('streakThresholdInput'), streakModeInput: $('streakModeInput'), streakWeekdaysOnlyInput: $('streakWeekdaysOnlyInput'), themeInput: $('themeInput'), backgroundImageInput: $('backgroundImageInput'), clearBackgroundButton: $('clearBackgroundButton'),
     routineEditor: $('routineEditor'), checkinEditor: $('checkinEditor'), addItemButton: $('addItemButton'), addCheckinButton: $('addCheckinButton'),
     exportCsvButton: $('exportCsvButton'), exportJsonButton: $('exportJsonButton'), importJsonInput: $('importJsonInput'), resetDataButton: $('resetDataButton'),
     itemDialog: $('itemDialog'), itemForm: $('itemForm'), builderEyebrow: $('builderEyebrow'), dialogTitle: $('dialogTitle'), editingItemId: $('editingItemId'), editingItemKind: $('editingItemKind'),
     itemNameInput: $('itemNameInput'), itemSectionInput: $('itemSectionInput'), itemTypeInput: $('itemTypeInput'), itemFrequencyInput: $('itemFrequencyInput'), customDaysField: $('customDaysField'),
     numberGoalFields: $('numberGoalFields'), itemTargetInput: $('itemTargetInput'), itemUnitInput: $('itemUnitInput'), scaleFields: $('scaleFields'), scaleMinInput: $('scaleMinInput'), scaleMaxInput: $('scaleMaxInput'), scaleStepInput: $('scaleStepInput'), scaleLowLabelInput: $('scaleLowLabelInput'), scaleHighLabelInput: $('scaleHighLabelInput'),
     promptField: $('promptField'), itemPlaceholderInput: $('itemPlaceholderInput'), optionalField: $('optionalField'), itemOptionalInput: $('itemOptionalInput'),
-    medicationFields: $('medicationFields'), memoryFields: $('memoryFields'), memoryCategoryInput: $('memoryCategoryInput'),
+    medicationFields: $('medicationFields'), medicationDoseInput: $('medicationDoseInput'), memoryFields: $('memoryFields'), memoryCategoryInput: $('memoryCategoryInput'), pauseUntilInput: $('pauseUntilInput'),
     actualWakeInput: $('actualWakeInput'), actualBedInput: $('actualBedInput'), wakeNowButton: $('wakeNowButton'), bedNowButton: $('bedNowButton'), badgeEnabledInput: $('badgeEnabledInput'),
-    quickMemoryButton: $('quickMemoryButton'), memoryTodayPreview: $('memoryTodayPreview'), addMemoryButton: $('addMemoryButton'), memoryCount: $('memoryCount'), memoryArchive: $('memoryArchive'), exportMemoriesButton: $('exportMemoriesButton'),
-    medicationInsights: $('medicationInsights'), memoryDialog: $('memoryDialog'), memoryForm: $('memoryForm'), closeMemoryDialogButton: $('closeMemoryDialogButton'), memoryTextInput: $('memoryTextInput'), memoryCategoryCaptureInput: $('memoryCategoryCaptureInput'), memoryDateTimeInput: $('memoryDateTimeInput'),
-    deleteItemButton: $('deleteItemButton'), closeDialogButton: $('closeDialogButton'), installButton: $('installButton'), toast: $('toast')
+    quickMemoryButton: $('quickMemoryButton'), memoryTodayPreview: $('memoryTodayPreview'), addMemoryButton: $('addMemoryButton'), memoryCount: $('memoryCount'), memoryArchive: $('memoryArchive'), exportMemoriesButton: $('exportMemoriesButton'), memorySearchInput: $('memorySearchInput'), memoryFilterInput: $('memoryFilterInput'), memoryFavoritesOnlyInput: $('memoryFavoritesOnlyInput'),
+    medicationInsights: $('medicationInsights'), weeklyReviewLabel: $('weeklyReviewLabel'), weeklyReviewSummary: $('weeklyReviewSummary'), weeklyFocusInput: $('weeklyFocusInput'), saveWeeklyFocusButton: $('saveWeeklyFocusButton'), memoryDialog: $('memoryDialog'), memoryForm: $('memoryForm'), closeMemoryDialogButton: $('closeMemoryDialogButton'), memoryTextInput: $('memoryTextInput'), memoryCategoryCaptureInput: $('memoryCategoryCaptureInput'), memoryDateTimeInput: $('memoryDateTimeInput'),
+    createSnapshotButton: $('createSnapshotButton'), restoreSnapshotButton: $('restoreSnapshotButton'), snapshotStatus: $('snapshotStatus'), appVersion: $('appVersion'), deleteItemButton: $('deleteItemButton'), closeDialogButton: $('closeDialogButton'), installButton: $('installButton'), toast: $('toast')
   };
 
   init();
@@ -74,6 +79,7 @@
     bindInstall();
     applyPersonalization();
     renderAll();
+    maybeAutoSnapshot();
     if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(() => {}));
   }
 
@@ -105,6 +111,9 @@
       order: Number.isFinite(Number(item.order)) ? Number(item.order) : index,
       placeholder: item.placeholder || '',
       memoryCategory: item.memoryCategory || 'any',
+      medicationDose: item.medicationDose || '',
+      pausedFrom: item.pausedFrom || '',
+      pausedUntil: item.pausedUntil || '',
       scale: type === 'scale' ? normalizeScale(item.scale) : undefined
     };
   }
@@ -118,20 +127,73 @@
         settings: { ...DEFAULT_STATE.settings, ...(parsed.settings || {}) },
         items: Array.isArray(parsed.items) ? parsed.items.map(normalizeItem) : structuredClone(DEFAULT_STATE.items),
         days: parsed.days && typeof parsed.days === 'object' ? parsed.days : {},
-        memories: Array.isArray(parsed.memories) ? parsed.memories : []
+        memories: Array.isArray(parsed.memories) ? parsed.memories.map(memory => ({ ...memory, favorite: Boolean(memory.favorite), archived: Boolean(memory.archived) })) : [],
+        weeklyReviews: parsed.weeklyReviews && typeof parsed.weeklyReviews === 'object' ? parsed.weeklyReviews : {}
       };
     } catch {
       return structuredClone(DEFAULT_STATE);
     }
   }
 
-  function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    maybeAutoSnapshot();
+  }
+
+  function snapshotPayload() {
+    const safe = structuredClone(state);
+    if (safe.settings) safe.settings.backgroundImage = '';
+    return safe;
+  }
+
+  function readSnapshots() {
+    try { const parsed = JSON.parse(localStorage.getItem(SNAPSHOT_KEY) || '[]'); return Array.isArray(parsed) ? parsed : []; }
+    catch { return []; }
+  }
+
+  function writeSnapshots(snapshots) {
+    try { localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshots.slice(0, 5))); } catch { /* local storage may be full */ }
+  }
+
+  function createLocalSnapshot(label = 'Manual snapshot', quiet = false) {
+    const snapshots = readSnapshots();
+    snapshots.unshift({ createdAt: new Date().toISOString(), label, state: snapshotPayload() });
+    writeSnapshots(snapshots);
+    renderSnapshotStatus();
+    if (!quiet) showToast('Local snapshot created');
+  }
+
+  function maybeAutoSnapshot() {
+    const today = dateKey(startOfToday());
+    const snapshots = readSnapshots();
+    if (!snapshots.some(snapshot => String(snapshot.createdAt || '').slice(0, 10) === today)) createLocalSnapshot('Automatic daily snapshot', true);
+  }
+
+  function renderSnapshotStatus() {
+    if (!els.snapshotStatus) return;
+    const latest = readSnapshots()[0];
+    els.snapshotStatus.textContent = latest ? `Latest local snapshot: ${new Date(latest.createdAt).toLocaleString()} · ${latest.label}` : 'No local snapshots yet.';
+  }
+
+  function restoreLatestSnapshot() {
+    const latest = readSnapshots()[0];
+    if (!latest?.state) { showToast('No local snapshot available'); return; }
+    if (!confirm(`Restore the snapshot from ${new Date(latest.createdAt).toLocaleString()}? Current local data will be replaced.`)) return;
+    state = {
+      settings: { ...DEFAULT_STATE.settings, ...(latest.state.settings || {}), backgroundImage: state.settings.backgroundImage || '' },
+      items: Array.isArray(latest.state.items) ? latest.state.items.map(normalizeItem) : [],
+      days: latest.state.days || {},
+      memories: Array.isArray(latest.state.memories) ? latest.state.memories : [],
+      weeklyReviews: latest.state.weeklyReviews || {}
+    };
+    ensureFirstUseDate(); localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); applyPersonalization(); renderAll(); showToast('Snapshot restored');
+  }
   function startOfToday() { const d = new Date(); d.setHours(12, 0, 0, 0); return d; }
   function dateKey(date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`; }
   function fromDateKey(key) { const [y, m, d] = key.split('-').map(Number); return new Date(y, m - 1, d, 12, 0, 0, 0); }
   function shiftDate(date, days) { const d = new Date(date); d.setDate(d.getDate() + days); return d; }
   function isSameDay(a, b) { return dateKey(a) === dateKey(b); }
-  function ensureDay(key) { if (!state.days[key]) state.days[key] = { entries: {} }; if (!state.days[key].entries) state.days[key].entries = {}; return state.days[key]; }
+  function ensureDay(key) { if (!state.days[key]) state.days[key] = { entries: {}, skippedItems: {}, mode: 'normal' }; if (!state.days[key].entries) state.days[key].entries = {}; if (!state.days[key].skippedItems) state.days[key].skippedItems = {}; if (!state.days[key].mode) state.days[key].mode = 'normal'; return state.days[key]; }
 
   function ensureFirstUseDate() {
     let changed = false;
@@ -141,6 +203,8 @@
       changed = true;
     }
     if (!Array.isArray(state.memories)) { state.memories = []; changed = true; }
+    state.memories = state.memories.map(memory => ({ ...memory, favorite: Boolean(memory.favorite), archived: Boolean(memory.archived) }));
+    if (!state.weeklyReviews || typeof state.weeklyReviews !== 'object') { state.weeklyReviews = {}; changed = true; }
     state.items.forEach((item, index) => {
       const normalized = normalizeItem(item, index);
       Object.assign(item, normalized);
@@ -161,11 +225,24 @@
     const dow = date.getDay();
     return state.items.filter(item => {
       if (item.createdDate && dateKey(date) < item.createdDate) return false;
+      const key = dateKey(date);
+      if (item.pausedFrom && item.pausedUntil && key >= item.pausedFrom && key <= item.pausedUntil) return false;
       if (item.frequency === 'weekdays') return dow >= 1 && dow <= 5;
       if (item.frequency === 'weekends') return dow === 0 || dow === 6;
       if (item.frequency === 'custom') return (item.days || []).includes(dow);
       return true;
     });
+  }
+
+  function scoredItemsForDate(date) {
+    const day = state.days[dateKey(date)] || {};
+    const skipped = day.skippedItems || {};
+    return scheduledItemsForDate(date).filter(item => !skipped[item.id]);
+  }
+
+  function dayIsExcused(date) {
+    const mode = state.days[dateKey(date)]?.mode || 'normal';
+    return mode !== 'normal';
   }
 
   function entryIsLogged(item, value) {
@@ -183,21 +260,29 @@
   }
 
   function completionForDate(date) {
-    const items = scheduledItemsForDate(date);
+    const items = scoredItemsForDate(date);
     const required = items.filter(item => !item.optional);
     const optional = items.filter(item => item.optional);
     const day = state.days[dateKey(date)] || { entries: {} };
     const completed = required.filter(item => entryMeetsTarget(item, day.entries?.[item.id])).length;
     const optionalLogged = optional.filter(item => entryIsLogged(item, day.entries?.[item.id])).length;
-    return { completed, total: required.length, optionalLogged, optionalTotal: optional.length, percent: required.length ? Math.round(completed / required.length * 100) : 100 };
+    return { completed, total: required.length, optionalLogged, optionalTotal: optional.length, percent: required.length ? Math.round(completed / required.length * 100) : 100, excused: dayIsExcused(date) };
   }
 
   function calculateStreak() {
     let streak = 0;
     let cursor = startOfToday();
+    const threshold = Math.min(100, Math.max(1, Number(state.settings.streakThreshold) || 80));
+    const forgiving = state.settings.streakMode !== 'strict';
+    const weekdaysOnly = Boolean(state.settings.streakWeekdaysOnly);
     for (let i = 0; i < 3650; i += 1) {
+      if (weekdaysOnly && [0, 6].includes(cursor.getDay())) { cursor = shiftDate(cursor, -1); continue; }
       const c = completionForDate(cursor);
-      if (c.total > 0 && c.percent >= 80) { streak += 1; cursor = shiftDate(cursor, -1); }
+      if (c.excused) {
+        if (forgiving) { cursor = shiftDate(cursor, -1); continue; }
+        break;
+      }
+      if (c.total > 0 && c.percent >= threshold) { streak += 1; cursor = shiftDate(cursor, -1); }
       else break;
     }
     return streak;
@@ -222,6 +307,9 @@
     els.prevDay.addEventListener('click', () => { selectedDate = shiftDate(selectedDate, -1); renderToday(); });
     els.nextDay.addEventListener('click', () => { selectedDate = shiftDate(selectedDate, 1); renderToday(); });
     els.selectedDateButton.addEventListener('click', () => { selectedDate = startOfToday(); renderToday(); });
+    els.datePickerInput.addEventListener('change', () => { if (!els.datePickerInput.value) return; const picked = fromDateKey(els.datePickerInput.value); if (dateKey(picked) <= dateKey(startOfToday())) { selectedDate = picked; renderToday(); } });
+    els.dayModeInput.addEventListener('change', () => setDayMode(els.dayModeInput.value));
+    els.undoButton.addEventListener('click', performUndo);
     els.copySummaryButton.addEventListener('click', copyDailySummary);
     els.actualWakeInput.addEventListener('change', () => saveActualTime('actualWakeTime', els.actualWakeInput.value));
     els.actualBedInput.addEventListener('change', () => saveActualTime('actualBedTime', els.actualBedInput.value));
@@ -231,6 +319,7 @@
   }
 
   function bindProgressControls() {
+    els.saveWeeklyFocusButton.addEventListener('click', saveWeeklyFocus);
     els.rangeSelector.querySelectorAll('.range-button').forEach(button => button.addEventListener('click', () => {
       analyticsRange = Number(button.dataset.range) || 7;
       els.rangeSelector.querySelectorAll('.range-button').forEach(candidate => candidate.classList.toggle('active', candidate === button));
@@ -242,6 +331,9 @@
     els.wakeTimeInput.addEventListener('change', () => { state.settings.wakeTime = els.wakeTimeInput.value || '06:00'; saveState(); renderToday(); });
     els.bedTimeInput.addEventListener('change', () => { state.settings.bedTime = els.bedTimeInput.value || '22:30'; saveState(); renderToday(); });
     els.badgeEnabledInput.addEventListener('change', () => { state.settings.badgeEnabled = els.badgeEnabledInput.checked; saveState(); updateAppBadge(); });
+    els.streakThresholdInput.addEventListener('change', () => { state.settings.streakThreshold = Math.min(100, Math.max(1, Number(els.streakThresholdInput.value) || 80)); saveState(); renderAll(); });
+    els.streakModeInput.addEventListener('change', () => { state.settings.streakMode = els.streakModeInput.value; saveState(); renderAll(); });
+    els.streakWeekdaysOnlyInput.addEventListener('change', () => { state.settings.streakWeekdaysOnly = els.streakWeekdaysOnlyInput.checked; saveState(); renderAll(); });
     els.themeInput.addEventListener('change', () => { state.settings.theme = els.themeInput.value; saveState(); applyPersonalization(); });
     els.backgroundImageInput.addEventListener('change', handleBackgroundImage);
     els.clearBackgroundButton.addEventListener('click', () => { state.settings.backgroundImage = ''; saveState(); applyPersonalization(); showToast('Background photo removed'); });
@@ -256,9 +348,14 @@
     els.closeMemoryDialogButton.addEventListener('click', () => els.memoryDialog.close());
     els.memoryForm.addEventListener('submit', saveMemory);
     els.exportMemoriesButton.addEventListener('click', exportMemoriesCsv);
+    els.memorySearchInput.addEventListener('input', renderMemoryArchive);
+    els.memoryFilterInput.addEventListener('change', renderMemoryArchive);
+    els.memoryFavoritesOnlyInput.addEventListener('change', renderMemoryArchive);
     els.exportCsvButton.addEventListener('click', exportCsv);
     els.exportJsonButton.addEventListener('click', exportJson);
     els.importJsonInput.addEventListener('change', importJson);
+    els.createSnapshotButton.addEventListener('click', () => createLocalSnapshot('Manual snapshot'));
+    els.restoreSnapshotButton.addEventListener('click', restoreLatestSnapshot);
     els.resetDataButton.addEventListener('click', resetData);
   }
 
@@ -284,6 +381,10 @@
     els.bedTimeDisplay.textContent = formatTime(state.settings.bedTime);
     els.actualWakeInput.value = day.actualWakeTime || '';
     els.actualBedInput.value = day.actualBedTime || '';
+    els.dayModeInput.value = day.mode || 'normal';
+    els.datePickerInput.value = dateKey(selectedDate);
+    renderWeekFocusBanner();
+    renderOnThisDay();
     els.selectedDateButton.textContent = isSameDay(selectedDate, today) ? 'Today' : new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' }).format(selectedDate);
     els.nextDay.disabled = dateKey(selectedDate) >= dateKey(today);
     els.nextDay.style.opacity = els.nextDay.disabled ? '.35' : '1';
@@ -297,28 +398,75 @@
     const scheduled = scheduledItemsForDate(selectedDate);
     ['morning', 'day', 'evening'].forEach(section => {
       const items = scheduled.filter(item => item.section === section).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-      const required = items.filter(item => !item.optional);
+      const scored = items.filter(item => !day.skippedItems?.[item.id]);
+      const required = scored.filter(item => !item.optional);
       const logged = required.filter(item => entryMeetsTarget(item, day.entries?.[item.id])).length;
       const routineItems = items.filter(item => item.kind !== 'checkin');
       const checkinItems = items.filter(item => item.kind === 'checkin');
       const [title, subtitle] = sectionLabels[section];
       const wrapper = document.createElement('section');
-      wrapper.className = 'routine-section';
-      wrapper.innerHTML = `<div class="card"><div class="section-heading"><div><p class="eyebrow">${escapeHtml(subtitle)}</p><h2>${escapeHtml(title)}</h2></div><span class="section-progress">${logged}/${required.length}</span></div><div class="task-list routine-task-list"></div><div class="checkin-slot"></div></div>`;
+      const isCollapsed = collapsedSections.has(section);
+      const checkboxItems = routineItems.filter(item => item.type === 'checkbox' && !day.skippedItems?.[item.id] && !entryIsLogged(item, day.entries?.[item.id]));
+      wrapper.className = `routine-section${isCollapsed ? ' collapsed' : ''}`;
+      wrapper.innerHTML = `<div class="card"><div class="section-heading"><div><p class="eyebrow">${escapeHtml(subtitle)}</p><h2>${escapeHtml(title)}</h2></div><div class="section-tools"><span class="section-progress">${logged}/${required.length}</span>${checkboxItems.length ? '<button class="tiny-action check-all" type="button">Check all</button>' : ''}<button class="tiny-action collapse-section" type="button">${isCollapsed ? 'Show' : 'Hide'}</button></div></div><div class="section-body"><div class="task-list routine-task-list"></div><div class="checkin-slot"></div></div></div>`;
       const routineList = wrapper.querySelector('.routine-task-list');
       const checkinSlot = wrapper.querySelector('.checkin-slot');
       if (!routineItems.length) routineList.innerHTML = '<div class="empty-state compact-empty">No routine items scheduled.</div>';
-      else routineItems.forEach(item => routineList.appendChild(buildTaskRow(item, day.entries?.[item.id])));
+      else routineItems.forEach(item => {
+        const row = day.skippedItems?.[item.id] ? buildSkippedRow(item) : buildTaskRow(item, day.entries?.[item.id]);
+        if (!day.skippedItems?.[item.id]) decorateRoutineRow(row, item);
+        routineList.appendChild(row);
+      });
       if (checkinItems.length) {
         const panel = document.createElement('div');
         panel.className = 'checkin-panel';
         panel.innerHTML = `<div class="checkin-heading"><span>${escapeHtml(title)} check-in</span><small>${checkinItems.filter(item => entryIsLogged(item, day.entries?.[item.id])).length}/${checkinItems.length} logged</small></div><div class="checkin-list"></div>`;
         const list = panel.querySelector('.checkin-list');
-        checkinItems.forEach(item => list.appendChild(buildCheckinRow(item, day.entries?.[item.id])));
+        checkinItems.forEach(item => list.appendChild(day.skippedItems?.[item.id] ? buildSkippedRow(item) : buildCheckinRow(item, day.entries?.[item.id])));
         checkinSlot.appendChild(panel);
       }
+      wrapper.querySelector('.collapse-section').addEventListener('click', () => { collapsedSections.has(section) ? collapsedSections.delete(section) : collapsedSections.add(section); renderToday(); });
+      wrapper.querySelector('.check-all')?.addEventListener('click', () => completeSectionCheckboxes(section));
       els.routineSections.appendChild(wrapper);
     });
+  }
+
+  function decorateRoutineRow(row, item) {
+    const utility = document.createElement('div');
+    utility.className = 'task-utility';
+    utility.innerHTML = `<button class="skip-item" type="button">Skip this day</button>`;
+    utility.querySelector('button').addEventListener('click', () => skipItemToday(item));
+    row.appendChild(utility);
+  }
+
+  function buildSkippedRow(item) {
+    const row = document.createElement('div');
+    row.className = 'task-row skipped';
+    row.innerHTML = `<div class="task-main"><span class="skip-mark">↷</span><span class="task-name">${escapeHtml(item.name)}<span class="task-meta">Skipped for this day · does not lower completion</span></span><button class="small-button unskip-item" type="button">Undo skip</button></div>`;
+    row.querySelector('.unskip-item').addEventListener('click', () => unskipItemToday(item));
+    return row;
+  }
+
+  function skipItemToday(item) {
+    const key = dateKey(selectedDate), day = ensureDay(key), previous = Boolean(day.skippedItems[item.id]);
+    day.skippedItems[item.id] = true;
+    pushUndo(`Skip ${item.name}`, () => { const target = ensureDay(key); if (previous) target.skippedItems[item.id] = true; else delete target.skippedItems[item.id]; localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); renderToday(); renderHistory(); });
+    saveState(); renderToday(); renderHistory(); showToast(`${item.name} skipped today`);
+  }
+
+  function unskipItemToday(item) {
+    const key = dateKey(selectedDate), day = ensureDay(key);
+    delete day.skippedItems[item.id]; saveState(); renderToday(); renderHistory(); showToast('Skip removed');
+  }
+
+  function completeSectionCheckboxes(section) {
+    const key = dateKey(selectedDate), day = ensureDay(key), changed = [];
+    scheduledItemsForDate(selectedDate).filter(item => item.section === section && item.type === 'checkbox' && !day.skippedItems?.[item.id]).forEach(item => {
+      if (day.entries[item.id] !== true) { changed.push([item.id, day.entries[item.id]]); day.entries[item.id] = true; }
+    });
+    if (!changed.length) return;
+    pushUndo('Check all', () => { const target = ensureDay(key); changed.forEach(([id, value]) => value === undefined ? delete target.entries[id] : target.entries[id] = value); localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); renderToday(); renderHistory(); });
+    saveState(); renderToday(); renderHistory(); showToast('Checkboxes completed');
   }
 
   function metaForItem(item) {
@@ -411,8 +559,11 @@
   }
 
   function saveEntry(item, value, rerender = true) {
-    const day = ensureDay(dateKey(selectedDate));
+    const key = dateKey(selectedDate), day = ensureDay(key);
+    const hadPrevious = Object.prototype.hasOwnProperty.call(day.entries, item.id);
+    const previous = structuredClone(day.entries[item.id]);
     day.entries[item.id] = value;
+    if (rerender) pushUndo(`Update ${item.name}`, () => { const target = ensureDay(key); if (hadPrevious) target.entries[item.id] = previous; else delete target.entries[item.id]; localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); renderToday(); renderHistory(); });
     saveState();
     if (rerender) renderToday();
     else renderStats();
@@ -428,7 +579,7 @@
     els.statOptional.textContent = `${c.optionalLogged}/${c.optionalTotal}`;
     els.statStreak.textContent = calculateStreak();
     const latestMood = getLatestMood(day); els.statMood.textContent = latestMood === null ? '—' : formatNumber(latestMood);
-    els.heroStatus.textContent = c.percent === 100 ? 'Day complete. Nicely done.' : c.percent >= 80 ? 'Strong day. Keep closing it out.' : c.percent >= 40 ? 'Good progress. Keep moving.' : 'Start deliberately.';
+    els.heroStatus.textContent = c.excused ? `${dayModeLabel(day.mode)} · this day is excused from routine analytics.` : c.percent === 100 ? 'Day complete. Nicely done.' : c.percent >= Number(state.settings.streakThreshold || 80) ? 'Strong day. Keep closing it out.' : c.percent >= 40 ? 'Good progress. Keep moving.' : 'Start deliberately.';
     updateAppBadge();
   }
 
@@ -450,6 +601,7 @@
     renderTrendList();
     renderMedicationTiming();
     renderPatternInsights();
+    renderWeeklyReview();
     renderRecentHistory();
   }
 
@@ -468,7 +620,7 @@
     let completed = 0, total = 0, days80 = 0, scoredDays = 0;
     dates.forEach(date => {
       const c = completionForDate(date);
-      if (!c.total) return;
+      if (!c.total || c.excused) return;
       completed += c.completed; total += c.total; scoredDays += 1;
       if (c.percent >= 80) days80 += 1;
     });
@@ -498,8 +650,8 @@
     els.weekOverall.textContent = aggregate.percent === null ? '—' : `${aggregate.percent}% week`;
     els.weekSummary.innerHTML = days.map(date => {
       const future = dateKey(date) > dateKey(today), beforeUse = dateKey(date) < dateKey(firstUse), unavailable = future || beforeUse;
-      const c = unavailable ? null : completionForDate(date), percent = c?.percent ?? 0;
-      return `<button type="button" class="week-day${isSameDay(date, today) ? ' today' : ''}${unavailable ? ' unavailable' : ''}" data-date="${dateKey(date)}" ${unavailable ? 'disabled' : ''}><span class="week-label">${escapeHtml(new Intl.DateTimeFormat(undefined, { weekday: 'narrow' }).format(date))}</span><div class="week-track"><span style="height:${unavailable ? 0 : percent}%"></span></div><strong>${unavailable ? '—' : `${percent}%`}</strong><small>${date.getDate()}</small></button>`;
+      const c = unavailable ? null : completionForDate(date), percent = c?.percent ?? 0, excused = Boolean(c?.excused);
+      return `<button type="button" class="week-day${isSameDay(date, today) ? ' today' : ''}${unavailable ? ' unavailable' : ''}${excused ? ' excused' : ''}" data-date="${dateKey(date)}" ${unavailable ? 'disabled' : ''}><span class="week-label">${escapeHtml(new Intl.DateTimeFormat(undefined, { weekday: 'narrow' }).format(date))}</span><div class="week-track"><span style="height:${unavailable || excused ? 0 : percent}%"></span></div><strong>${unavailable ? '—' : excused ? 'Skip' : `${percent}%`}</strong><small>${date.getDate()}</small></button>`;
     }).join('');
     els.weekSummary.querySelectorAll('.week-day:not(:disabled)').forEach(button => button.addEventListener('click', () => { selectedDate = fromDateKey(button.dataset.date); switchView('today'); renderToday(); }));
   }
@@ -509,8 +661,9 @@
     els.sectionBreakdown.innerHTML = ['morning', 'day', 'evening'].map(section => {
       let completed = 0, total = 0;
       dates.forEach(date => {
+        if (dayIsExcused(date)) return;
         const day = state.days[dateKey(date)] || { entries: {} };
-        scheduledItemsForDate(date).filter(item => item.section === section && !item.optional).forEach(item => { total += 1; if (entryMeetsTarget(item, day.entries?.[item.id])) completed += 1; });
+        scoredItemsForDate(date).filter(item => item.section === section && !item.optional).forEach(item => { total += 1; if (entryMeetsTarget(item, day.entries?.[item.id])) completed += 1; });
       });
       const percent = total ? Math.round(completed / total * 100) : null;
       return progressRowMarkup(sectionLabels[section][0], percent, total ? `${completed}/${total} completed` : 'No required items');
@@ -525,7 +678,7 @@
     return state.items.filter(item => item.kind !== 'checkin' && ['checkbox', 'number', 'time'].includes(item.type)).map(item => {
       let opportunities = 0, successes = 0;
       dates.forEach(date => {
-        if (!scheduledItemsForDate(date).some(candidate => candidate.id === item.id)) return;
+        if (dayIsExcused(date) || !scoredItemsForDate(date).some(candidate => candidate.id === item.id)) return;
         opportunities += 1;
         const day = state.days[dateKey(date)] || { entries: {} };
         if (entryMeetsTarget(item, day.entries?.[item.id])) successes += 1;
@@ -627,7 +780,7 @@
       const date = shiftDate(today, -i); if (dateKey(date) < dateKey(firstUse)) break;
       const day = state.days[dateKey(date)] || {}, c = completionForDate(date), row = document.createElement('button');
       row.type = 'button'; row.className = 'history-row';
-      row.innerHTML = `<span class="history-date"><strong>${date.getDate()}</strong><span>${new Intl.DateTimeFormat(undefined, { month: 'short' }).format(date)}</span></span><span class="history-copy"><strong>${new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(date)}${i === 0 ? ' · Today' : ''}</strong><span>${c.completed} of ${c.total} required</span><span class="history-bar"><span style="width:${c.percent}%"></span></span></span><span class="history-mood">Mood<br><b>${getLatestMood(day) ?? '—'}</b></span>`;
+      row.innerHTML = `<span class="history-date"><strong>${date.getDate()}</strong><span>${new Intl.DateTimeFormat(undefined, { month: 'short' }).format(date)}</span></span><span class="history-copy"><strong>${new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(date)}${i === 0 ? ' · Today' : ''}</strong><span>${c.excused ? `${dayModeLabel(day.mode)} · excused` : `${c.completed} of ${c.total} required`}</span><span class="history-bar"><span style="width:${c.excused ? 0 : c.percent}%"></span></span></span><span class="history-mood">Mood<br><b>${getLatestMood(day) ?? '—'}</b></span>`;
       row.addEventListener('click', () => { selectedDate = date; switchView('today'); renderToday(); });
       els.historyList.appendChild(row);
     }
@@ -639,7 +792,12 @@
     els.wakeTimeInput.value = state.settings.wakeTime;
     els.bedTimeInput.value = state.settings.bedTime;
     els.badgeEnabledInput.checked = state.settings.badgeEnabled !== false;
+    els.streakThresholdInput.value = Number(state.settings.streakThreshold) || 80;
+    els.streakModeInput.value = state.settings.streakMode || 'forgiving';
+    els.streakWeekdaysOnlyInput.checked = Boolean(state.settings.streakWeekdaysOnly);
     els.themeInput.value = state.settings.theme || 'calm';
+    els.appVersion.textContent = `v${APP_VERSION}`;
+    renderSnapshotStatus();
     els.routineEditor.innerHTML = '';
     els.checkinEditor.innerHTML = '';
     renderEditorGroup('routine', els.routineEditor);
@@ -655,11 +813,13 @@
         count += 1;
         const row = document.createElement('div'); row.className = 'editor-row';
         const detail = item.type === 'scale' ? `${scaleLabel(item)} · ${frequencyLabel(item)}` : `${typeLabels[item.type] || item.type} · ${frequencyLabel(item)}`;
-        row.innerHTML = `<div class="editor-copy"><strong>${escapeHtml(item.name)}</strong><span>${sectionLabels[section][0]} · ${escapeHtml(detail)}${item.optional ? ' · Optional' : ''}</span></div><div class="editor-actions"><button class="move-button" type="button" aria-label="Move up" ${index === 0 ? 'disabled' : ''}>↑</button><button class="move-button" type="button" aria-label="Move down" ${index === sectionItems.length - 1 ? 'disabled' : ''}>↓</button><button class="edit-button" type="button">Edit</button></div>`;
+        const pauseText = item.pausedFrom && item.pausedUntil && dateKey(startOfToday()) <= item.pausedUntil ? ` · Paused through ${formatShortDate(fromDateKey(item.pausedUntil))}` : '';
+        row.innerHTML = `<div class="editor-copy"><strong>${escapeHtml(item.name)}</strong><span>${sectionLabels[section][0]} · ${escapeHtml(detail)}${item.optional ? ' · Optional' : ''}${escapeHtml(pauseText)}</span></div><div class="editor-actions"><button class="move-button" type="button" aria-label="Move up" ${index === 0 ? 'disabled' : ''}>↑</button><button class="move-button" type="button" aria-label="Move down" ${index === sectionItems.length - 1 ? 'disabled' : ''}>↓</button><button class="edit-button duplicate-button" type="button">Copy</button><button class="edit-button" type="button">Edit</button></div>`;
         const buttons = row.querySelectorAll('button');
         buttons[0].addEventListener('click', () => moveItem(item, -1));
         buttons[1].addEventListener('click', () => moveItem(item, 1));
-        buttons[2].addEventListener('click', () => openItemDialog(item, kind));
+        buttons[2].addEventListener('click', () => duplicateItem(item));
+        buttons[3].addEventListener('click', () => openItemDialog(item, kind));
         target.appendChild(row);
       });
     });
@@ -673,6 +833,17 @@
     const a = state.items.find(candidate => candidate.id === item.id), b = state.items.find(candidate => candidate.id === swap.id);
     const ao = a.order ?? index, bo = b.order ?? index + direction; a.order = bo; b.order = ao;
     saveState(); renderAll();
+  }
+
+  function duplicateItem(item) {
+    const copy = structuredClone(item);
+    copy.id = `item-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    copy.name = `${item.name} copy`;
+    copy.createdDate = dateKey(startOfToday());
+    copy.pausedFrom = ''; copy.pausedUntil = '';
+    const same = state.items.filter(candidate => candidate.kind === item.kind && candidate.section === item.section);
+    copy.order = same.reduce((max, candidate) => Math.max(max, Number(candidate.order) || 0), -1) + 1;
+    state.items.push(copy); saveState(); renderAll(); showToast('Routine item duplicated');
   }
 
   function openItemDialog(item = null, kind = 'routine') {
@@ -696,6 +867,8 @@
     els.itemUnitInput.value = item?.unit || '';
     els.itemPlaceholderInput.value = item?.placeholder || '';
     els.memoryCategoryInput.value = item?.memoryCategory || 'any';
+    els.medicationDoseInput.value = item?.medicationDose || '';
+    els.pauseUntilInput.value = item?.pausedUntil || '';
     els.itemOptionalInput.checked = item ? Boolean(item.optional) : resolvedKind === 'checkin';
     const scale = normalizeScale(item?.scale);
     els.scaleMinInput.value = scale.min; els.scaleMaxInput.value = scale.max; els.scaleStepInput.value = scale.step; els.scaleLowLabelInput.value = scale.lowLabel; els.scaleHighLabelInput.value = scale.highLabel;
@@ -735,6 +908,9 @@
       target: type === 'number' && els.itemTargetInput.value !== '' ? Number(els.itemTargetInput.value) : null,
       placeholder: ['text', 'longtext'].includes(type) ? els.itemPlaceholderInput.value.trim() : '',
       memoryCategory: type === 'memory' ? els.memoryCategoryInput.value : 'any',
+      medicationDose: type === 'medication' ? els.medicationDoseInput.value.trim() : '',
+      pausedUntil: els.pauseUntilInput.value || '',
+      pausedFrom: els.pauseUntilInput.value ? (state.items.find(candidate => candidate.id === els.editingItemId.value)?.pausedFrom || dateKey(startOfToday())) : '',
       scale: type === 'scale' ? scale : undefined
     };
     const id = els.editingItemId.value;
@@ -754,6 +930,7 @@
     if (!id) return;
     const item = state.items.find(candidate => candidate.id === id);
     if (!item || !confirm(`Delete “${item.name}”?`)) return;
+    createLocalSnapshot('Before deleting routine item', true);
     state.items = state.items.filter(candidate => candidate.id !== id);
     saveState(); els.itemDialog.close(); renderAll(); showToast(item.kind === 'checkin' ? 'Check-in deleted' : 'Routine item deleted');
   }
@@ -795,7 +972,7 @@
     if (item.type === 'checkbox') return value ? 'Completed' : 'Not completed';
     if (item.type === 'medication') {
       if (value === true) return 'Taken (time not logged)';
-      return value?.taken ? `Taken${value.time ? ` at ${formatTime(value.time)}` : ''}` : 'Not taken';
+      return value?.taken ? `Taken${value.time ? ` at ${formatTime(value.time)}` : ''}${value.dose ? ` · ${value.dose}` : ''}${value.note ? ` · ${value.note}` : ''}` : 'Not taken';
     }
     if (item.type === 'memory') {
       const memory = state.memories.find(candidate => candidate.id === value?.memoryId);
@@ -806,20 +983,20 @@
   }
 
   function exportCsv() {
-    const rows = [['Date', 'Actual Wake', 'Actual Bed', 'Completion %', 'Required Completed', 'Required Total', 'Optional Logged', 'Section', 'Kind', 'Item', 'Input Type', 'Optional', 'Target', 'Unit', 'Scale Min', 'Scale Max', 'Value']];
+    const rows = [['Date', 'Day Mode', 'Actual Wake', 'Actual Bed', 'Completion %', 'Required Completed', 'Required Total', 'Optional Logged', 'Section', 'Kind', 'Item', 'Input Type', 'Optional', 'Target', 'Unit', 'Scale Min', 'Scale Max', 'Value']];
     Object.keys(state.days).sort().forEach(key => {
       const date = fromDateKey(key), day = state.days[key], c = completionForDate(date), scheduled = scheduledItemsForDate(date);
-      if (!scheduled.length) rows.push([key, day.actualWakeTime || '', day.actualBedTime || '', c.percent, c.completed, c.total, c.optionalLogged, '', '', '', '', '', '', '', '', '', '']);
+      if (!scheduled.length) rows.push([key, day.mode || 'normal', day.actualWakeTime || '', day.actualBedTime || '', c.percent, c.completed, c.total, c.optionalLogged, '', '', '', '', '', '', '', '', '', '']);
       else scheduled.forEach(item => {
         const scale = item.type === 'scale' ? normalizeScale(item.scale) : {};
-        rows.push([key, day.actualWakeTime || '', day.actualBedTime || '', c.percent, c.completed, c.total, c.optionalLogged, sectionLabels[item.section][0], item.kind, item.name, typeLabels[item.type], item.optional ? 'Yes' : 'No', item.target ?? '', item.unit || '', scale.min ?? '', scale.max ?? '', formatEntry(item, day.entries?.[item.id] ?? '')]);
+        rows.push([key, day.mode || 'normal', day.actualWakeTime || '', day.actualBedTime || '', c.percent, c.completed, c.total, c.optionalLogged, sectionLabels[item.section][0], item.kind, item.name, typeLabels[item.type], item.optional ? 'Yes' : 'No', item.target ?? '', item.unit || '', scale.min ?? '', scale.max ?? '', formatEntry(item, day.entries?.[item.id] ?? '')]);
       });
     });
     downloadBlob(rows.map(row => row.map(csvCell).join(',')).join('\r\n'), `daily-routine-progress-${dateKey(startOfToday())}.csv`, 'text/csv;charset=utf-8');
     showToast('CSV exported');
   }
 
-  function exportJson() { downloadBlob(JSON.stringify({ version: 1.4, exportedAt: new Date().toISOString(), state }, null, 2), `daily-routine-backup-${dateKey(startOfToday())}.json`, 'application/json'); showToast('Backup downloaded'); }
+  function exportJson() { downloadBlob(JSON.stringify({ version: 1.5, exportedAt: new Date().toISOString(), state }, null, 2), `daily-routine-backup-${dateKey(startOfToday())}.json`, 'application/json'); showToast('Backup downloaded'); }
 
   async function importJson(event) {
     const file = event.target.files?.[0]; event.target.value = ''; if (!file) return;
@@ -827,22 +1004,23 @@
       const payload = JSON.parse(await file.text()), incoming = payload.state || payload;
       if (!incoming || !Array.isArray(incoming.items) || typeof incoming.days !== 'object') throw new Error('Invalid backup');
       if (!confirm('Restore this backup? It will replace current app data on this device.')) return;
-      state = { settings: { ...DEFAULT_STATE.settings, ...(incoming.settings || {}) }, items: incoming.items.map(normalizeItem), days: incoming.days, memories: Array.isArray(incoming.memories) ? incoming.memories : [] };
+      createLocalSnapshot('Before backup restore', true);
+      state = { settings: { ...DEFAULT_STATE.settings, ...(incoming.settings || {}) }, items: incoming.items.map(normalizeItem), days: incoming.days, memories: Array.isArray(incoming.memories) ? incoming.memories : [], weeklyReviews: incoming.weeklyReviews && typeof incoming.weeklyReviews === 'object' ? incoming.weeklyReviews : {} };
       ensureFirstUseDate(); saveState(); applyPersonalization(); renderAll(); showToast('Backup restored');
     } catch { alert('That file does not look like a valid Daily Routine backup.'); }
   }
 
   function resetData() {
     if (!confirm('Reset all routines, history, and settings on this device?')) return;
-    state = structuredClone(DEFAULT_STATE); state.settings.firstUseDate = dateKey(startOfToday()); ensureFirstUseDate(); saveState(); selectedDate = startOfToday(); applyPersonalization(); renderAll(); showToast('App reset');
+    createLocalSnapshot('Before app reset', true);
+    state = structuredClone(DEFAULT_STATE); state.settings.firstUseDate = dateKey(startOfToday()); ensureFirstUseDate(); saveState(); selectedDate = startOfToday(); undoAction = null; applyPersonalization(); renderAll(); showToast('App reset');
   }
 
   function saveActualTime(field, value) {
-    const day = ensureDay(dateKey(selectedDate));
+    const key = dateKey(selectedDate), day = ensureDay(key), previous = day[field];
     if (value) day[field] = value; else delete day[field];
-    saveState();
-    renderHistory();
-    showToast(value ? 'Actual time saved' : 'Actual time cleared');
+    pushUndo('Update actual time', () => { const target = ensureDay(key); if (previous) target[field] = previous; else delete target[field]; localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); renderToday(); renderHistory(); });
+    saveState(); renderHistory(); showToast(value ? 'Actual time saved' : 'Actual time cleared');
   }
 
   function currentTimeValue() {
@@ -855,18 +1033,19 @@
   }
 
   function buildMedicationRow(row, item, value) {
-    const taken = entryIsLogged(item, value);
-    const time = medicationTime(value);
+    const taken = entryIsLogged(item, value), time = medicationTime(value), dose = value?.dose ?? item.medicationDose ?? '', note = value?.note ?? '';
     row.classList.toggle('done', taken);
-    row.innerHTML = `<div class="task-main medication-main"><span class="medication-icon" aria-hidden="true">Rx</span><span class="task-name">${escapeHtml(item.name)}<span class="task-meta">${escapeHtml(metaForItem(item))}${taken ? ` · ${time ? `Taken ${formatTime(time)}` : 'Taken · time not logged'}` : ''}</span></span></div><div class="medication-actions"></div>`;
+    row.innerHTML = `<div class="task-main medication-main"><span class="medication-icon" aria-hidden="true">Rx</span><span class="task-name">${escapeHtml(item.name)}<span class="task-meta">${escapeHtml(metaForItem(item))}${taken ? ` · ${time ? `Taken ${formatTime(time)}` : 'Taken · time not logged'}${dose ? ` · ${escapeHtml(dose)}` : ''}` : ''}</span></span></div><div class="medication-actions"></div>`;
     const actions = row.querySelector('.medication-actions');
     if (!taken) {
       actions.innerHTML = `<button class="primary-button medication-now" type="button">Taken now</button><button class="small-button medication-manual" type="button">Add time</button>`;
       actions.querySelector('.medication-now').addEventListener('click', () => logMedicationNow(item));
       actions.querySelector('.medication-manual').addEventListener('click', () => saveMedicationTime(item, currentTimeValue(), true));
     } else {
-      actions.innerHTML = `<label class="med-time-edit"><span>Taken at</span><input class="task-input" type="time" value="${escapeHtml(time)}" /></label><button class="small-button medication-clear" type="button">Clear</button>`;
-      actions.querySelector('input').addEventListener('change', event => saveMedicationTime(item, event.target.value, true));
+      actions.innerHTML = `<div class="medication-detail-grid"><label class="med-time-edit"><span>Taken at</span><input class="task-input med-time-input" type="time" value="${escapeHtml(time)}" /></label><label class="med-time-edit"><span>Dose</span><input class="task-input med-dose-input" type="text" maxlength="40" value="${escapeHtml(dose)}" placeholder="optional" /></label></div><label class="med-note-edit"><span>Note</span><input class="task-input med-note-input" type="text" maxlength="160" value="${escapeHtml(note)}" placeholder="Optional note…" /></label><div class="medication-finished"><span class="already-logged">✓ Already logged</span><button class="small-button medication-clear" type="button">Clear</button></div>`;
+      actions.querySelector('.med-time-input').addEventListener('change', event => saveMedicationTime(item, event.target.value, true));
+      actions.querySelector('.med-dose-input').addEventListener('change', event => saveMedicationDetail(item, 'dose', event.target.value));
+      actions.querySelector('.med-note-input').addEventListener('change', event => saveMedicationDetail(item, 'note', event.target.value));
       actions.querySelector('.medication-clear').addEventListener('click', () => clearMedication(item));
     }
     return row;
@@ -875,29 +1054,31 @@
   function logMedicationNow(item) { saveMedicationTime(item, currentTimeValue(), true); }
 
   function saveMedicationTime(item, time, rerender = true) {
-    const day = ensureDay(dateKey(selectedDate));
-    const selected = fromDateKey(dateKey(selectedDate));
+    const key = dateKey(selectedDate), day = ensureDay(key), previous = structuredClone(day.entries[item.id]);
+    const selected = fromDateKey(key), existing = day.entries[item.id] && typeof day.entries[item.id] === 'object' ? day.entries[item.id] : {};
     if (time) {
-      const [hours, minutes] = time.split(':').map(Number);
-      selected.setHours(hours, minutes, 0, 0);
-      day.entries[item.id] = { taken: true, time, timestamp: selected.toISOString() };
-    } else {
-      day.entries[item.id] = { taken: true, time: '', timestamp: null };
-    }
-    saveState();
-    if (rerender) renderToday(); else renderStats();
-    showToast(time ? `Medication logged at ${formatTime(time)}` : 'Medication logged');
+      const [hours, minutes] = time.split(':').map(Number); selected.setHours(hours, minutes, 0, 0);
+      day.entries[item.id] = { ...existing, taken: true, time, timestamp: selected.toISOString(), dose: existing.dose ?? item.medicationDose ?? '', note: existing.note ?? '' };
+    } else day.entries[item.id] = { ...existing, taken: true, time: '', timestamp: null, dose: existing.dose ?? item.medicationDose ?? '', note: existing.note ?? '' };
+    pushUndo(`Log ${item.name}`, () => { const target = ensureDay(key); if (previous === undefined) delete target.entries[item.id]; else target.entries[item.id] = previous; localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); renderToday(); renderHistory(); });
+    saveState(); if (rerender) renderToday(); else renderStats(); showToast(time ? `Medication logged at ${formatTime(time)}` : 'Medication logged');
+  }
+
+  function saveMedicationDetail(item, field, value) {
+    const day = ensureDay(dateKey(selectedDate)), entry = day.entries[item.id]; if (!entry || typeof entry !== 'object') return;
+    entry[field] = value.trim(); saveState(); renderHistory(); showToast('Medication detail saved');
   }
 
   function clearMedication(item) {
-    const day = ensureDay(dateKey(selectedDate));
+    const key = dateKey(selectedDate), day = ensureDay(key), previous = structuredClone(day.entries[item.id]);
     delete day.entries[item.id];
+    pushUndo(`Clear ${item.name}`, () => { ensureDay(key).entries[item.id] = previous; localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); renderToday(); renderHistory(); });
     saveState(); renderToday(); showToast('Medication log cleared');
   }
 
   function eligibleMemories(item) {
     const category = item.memoryCategory || 'any';
-    return state.memories.filter(memory => category === 'any' || memory.category === category);
+    return state.memories.filter(memory => !memory.archived && (category === 'any' || memory.category === category));
   }
 
   function recentMemoryIds(item, limit = 5) {
@@ -979,12 +1160,12 @@
     if (!text) return;
     const when = new Date(els.memoryDateTimeInput.value);
     const createdAt = Number.isNaN(when.getTime()) ? new Date().toISOString() : when.toISOString();
-    state.memories.push({ id: `memory-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, text, category: els.memoryCategoryCaptureInput.value, createdAt });
+    state.memories.push({ id: `memory-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, text, category: els.memoryCategoryCaptureInput.value, createdAt, favorite: false, archived: false });
     saveState(); els.memoryDialog.close(); renderAll(); showToast('Memory saved');
   }
 
   function renderMemoryPreview() {
-    const memories = [...state.memories].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const memories = state.memories.filter(memory => !memory.archived).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     if (!memories.length) {
       els.memoryTodayPreview.innerHTML = '<span class="muted">Capture small blessings, moments, prayers, or thoughts so the app can bring them back later.</span>';
       return;
@@ -994,17 +1175,33 @@
   }
 
   function renderMemoryArchive() {
-    els.memoryCount.textContent = state.memories.length;
-    const memories = [...state.memories].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 25);
-    if (!memories.length) { els.memoryArchive.innerHTML = '<div class="analytics-empty">Nothing saved yet. Capture the first small thing you do not want to forget.</div>'; return; }
+    const activeCount = state.memories.filter(memory => !memory.archived).length;
+    els.memoryCount.textContent = activeCount;
+    const query = (els.memorySearchInput?.value || '').trim().toLowerCase();
+    const filter = els.memoryFilterInput?.value || 'all';
+    const favoritesOnly = Boolean(els.memoryFavoritesOnlyInput?.checked);
+    let memories = [...state.memories];
+    memories = memories.filter(memory => {
+      if (filter === 'archived') { if (!memory.archived) return false; }
+      else { if (memory.archived) return false; if (filter !== 'all' && memory.category !== filter) return false; }
+      if (favoritesOnly && !memory.favorite) return false;
+      if (query && !`${memory.text} ${memoryCategoryLabel(memory.category)}`.toLowerCase().includes(query)) return false;
+      return true;
+    }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 100);
+    if (!memories.length) { els.memoryArchive.innerHTML = '<div class="analytics-empty">No memories match these filters.</div>'; return; }
     els.memoryArchive.innerHTML = '';
     memories.forEach(memory => {
-      const row = document.createElement('div'); row.className = 'memory-archive-row';
-      row.innerHTML = `<div><span class="memory-category">${escapeHtml(memoryCategoryLabel(memory.category))}</span><p>${escapeHtml(memory.text)}</p><small>${escapeHtml(formatMemoryDate(memory.createdAt))}</small></div><button class="edit-button" type="button" aria-label="Delete memory">Delete</button>`;
-      row.querySelector('button').addEventListener('click', () => deleteMemory(memory.id));
+      const row = document.createElement('div'); row.className = `memory-archive-row${memory.archived ? ' archived' : ''}`;
+      row.innerHTML = `<div><span class="memory-category">${escapeHtml(memoryCategoryLabel(memory.category))}</span><p>${escapeHtml(memory.text)}</p><small>${escapeHtml(formatMemoryDate(memory.createdAt))}</small></div><div class="memory-row-actions"><button class="memory-star" type="button" aria-label="${memory.favorite ? 'Remove favorite' : 'Favorite'}">${memory.favorite ? '★' : '☆'}</button><button class="edit-button memory-archive-toggle" type="button">${memory.archived ? 'Restore' : 'Archive'}</button><button class="edit-button memory-delete" type="button">Delete</button></div>`;
+      row.querySelector('.memory-star').addEventListener('click', () => toggleMemoryFavorite(memory.id));
+      row.querySelector('.memory-archive-toggle').addEventListener('click', () => toggleMemoryArchive(memory.id));
+      row.querySelector('.memory-delete').addEventListener('click', () => deleteMemory(memory.id));
       els.memoryArchive.appendChild(row);
     });
   }
+
+  function toggleMemoryFavorite(id) { const memory = state.memories.find(item => item.id === id); if (!memory) return; memory.favorite = !memory.favorite; saveState(); renderMemoryArchive(); }
+  function toggleMemoryArchive(id) { const memory = state.memories.find(item => item.id === id); if (!memory) return; memory.archived = !memory.archived; saveState(); renderAll(); showToast(memory.archived ? 'Memory archived' : 'Memory restored'); }
 
   function deleteMemory(id) {
     const memory = state.memories.find(candidate => candidate.id === id);
@@ -1015,8 +1212,8 @@
   }
 
   function exportMemoriesCsv() {
-    const rows = [['Date & Time', 'Category', 'Memory']];
-    [...state.memories].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)).forEach(memory => rows.push([new Date(memory.createdAt).toLocaleString(), memoryCategoryLabel(memory.category), memory.text]));
+    const rows = [['Date & Time', 'Category', 'Favorite', 'Archived', 'Memory']];
+    [...state.memories].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)).forEach(memory => rows.push([new Date(memory.createdAt).toLocaleString(), memoryCategoryLabel(memory.category), memory.favorite ? 'Yes' : 'No', memory.archived ? 'Yes' : 'No', memory.text]));
     downloadBlob(rows.map(row => row.map(csvCell).join(',')).join('\r\n'), `daily-routine-memories-${dateKey(startOfToday())}.csv`, 'text/csv;charset=utf-8');
     showToast('Memories exported');
   }
@@ -1079,8 +1276,19 @@
         const lateWake = averageClock(late.map(pair => pair.wake));
         comparison = `<div class="med-compare"><span>Earlier half → <b>${formatMinutesClock(earlyWake)}</b> avg next wake</span><span>Later half → <b>${formatMinutesClock(lateWake)}</b> avg next wake</span></div>`;
       }
-      return `<div class="med-insight"><div class="med-insight-head"><strong>${escapeHtml(metric.item.name)}</strong><span>${metric.loggedTimes.length} timed dose${metric.loggedTimes.length === 1 ? '' : 's'} · ${metric.pairs.length} paired with next wake</span></div><div class="med-stat-grid"><div><b>${formatMinutesClock(avgTaken)}</b><span>Avg taken</span></div><div><b>${formatMinutesClock(avgWake)}</b><span>Avg next wake</span></div><div><b>${avgInterval === null ? '—' : formatDurationMinutes(avgInterval)}</b><span>Avg taken → wake</span></div></div>${comparison}</div>`;
+      const recent = medicationRecentHistory(metric.item, dates);
+      return `<div class="med-insight"><div class="med-insight-head"><strong>${escapeHtml(metric.item.name)}</strong><span>${metric.loggedTimes.length} timed dose${metric.loggedTimes.length === 1 ? '' : 's'} · ${metric.pairs.length} paired with next wake</span></div><div class="med-stat-grid"><div><b>${formatMinutesClock(avgTaken)}</b><span>Avg taken</span></div><div><b>${formatMinutesClock(avgWake)}</b><span>Avg next wake</span></div><div><b>${avgInterval === null ? '—' : formatDurationMinutes(avgInterval)}</b><span>Avg taken → wake</span></div></div>${comparison}<div class="med-history">${recent}</div></div>`;
     }).join('');
+  }
+
+  function medicationRecentHistory(item, dates) {
+    const rows = [...dates].reverse().map(date => {
+      const entry = state.days[dateKey(date)]?.entries?.[item.id];
+      if (!entryIsLogged(item, entry)) return '';
+      const time = medicationTime(entry);
+      return `<div class="med-history-row"><span>${escapeHtml(formatShortDate(date))}</span><b>${time ? escapeHtml(formatTime(time)) : 'time —'}</b><em>${escapeHtml(entry?.dose || item.medicationDose || '')}</em>${entry?.note ? `<small>${escapeHtml(entry.note)}</small>` : ''}</div>`;
+    }).filter(Boolean).slice(0, 7);
+    return rows.length ? `<div class="med-history-title">Recent logs</div>${rows.join('')}` : '';
   }
 
   function medicationTimingMetric(item, dates) {
@@ -1100,6 +1308,72 @@
       pairs.push({ med, medAdjusted, wake, interval: wakeAdjusted - medAdjusted });
     });
     return { item, loggedTimes, pairs };
+  }
+
+  function dayModeLabel(mode) { return ({ normal: 'Normal day', sick: 'Sick day', travel: 'Travel day', vacation: 'Vacation', rest: 'Planned rest' })[mode] || 'Normal day'; }
+
+  function setDayMode(mode) {
+    const key = dateKey(selectedDate), day = ensureDay(key), previous = day.mode || 'normal';
+    day.mode = mode;
+    pushUndo('Change day mode', () => { ensureDay(key).mode = previous; localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); renderToday(); renderHistory(); });
+    saveState(); renderToday(); renderHistory(); showToast(mode === 'normal' ? 'Normal scoring restored' : `${dayModeLabel(mode)} set as excused`);
+  }
+
+  function pushUndo(label, action) { undoAction = { label, action }; if (els.undoButton) { els.undoButton.disabled = false; els.undoButton.textContent = `Undo`; els.undoButton.title = label; } }
+  function performUndo() { if (!undoAction) return; const action = undoAction.action; undoAction = null; action(); if (els.undoButton) { els.undoButton.disabled = true; els.undoButton.textContent = 'Undo'; } showToast('Last action undone'); }
+
+  function currentWeekKey() { return dateKey(startOfCurrentWeek()); }
+  function nextWeekKey() { return dateKey(shiftDate(startOfCurrentWeek(), 7)); }
+  function renderWeekFocusBanner() {
+    const focus = state.weeklyReviews?.[currentWeekKey()]?.focus || '';
+    els.weekFocusBanner.hidden = !focus;
+    els.weekFocusBanner.textContent = focus ? `This week: ${focus}` : '';
+  }
+
+  function saveWeeklyFocus() {
+    const key = nextWeekKey();
+    state.weeklyReviews[key] = { ...(state.weeklyReviews[key] || {}), focus: els.weeklyFocusInput.value.trim(), updatedAt: new Date().toISOString() };
+    saveState(); renderWeekFocusBanner(); showToast('Weekly focus saved');
+  }
+
+  function renderWeeklyReview() {
+    const weekStart = startOfCurrentWeek(), today = startOfToday();
+    const dates = Array.from({ length: 7 }, (_, i) => shiftDate(weekStart, i)).filter(date => dateKey(date) <= dateKey(today));
+    const scoredDates = dates.filter(date => !dayIsExcused(date));
+    const completion = aggregateCompletion(scoredDates);
+    const sectionStats = ['morning', 'day', 'evening'].map(section => {
+      let done = 0, total = 0;
+      scoredDates.forEach(date => { const day = state.days[dateKey(date)] || { entries:{} }; scoredItemsForDate(date).filter(item => item.section === section && !item.optional).forEach(item => { total += 1; if (entryMeetsTarget(item, day.entries?.[item.id])) done += 1; }); });
+      return { section, percent: total ? Math.round(done / total * 100) : null };
+    }).filter(row => row.percent !== null);
+    const bestSection = sectionStats.sort((a,b) => b.percent - a.percent)[0];
+    const habits = habitMetrics(scoredDates).sort((a,b) => b.percent - a.percent);
+    const bestHabit = habits[0], missedHabit = [...habits].sort((a,b) => a.percent - b.percent)[0];
+    const sleepItem = state.items.find(item => item.type === 'scale' && /sleep/i.test(item.name));
+    const sleepValues = sleepItem ? scaleSeries(sleepItem, dates) : [];
+    const memories = state.memories.filter(memory => { const d = new Date(memory.createdAt); return !Number.isNaN(d.getTime()) && dateKey(d) >= dateKey(weekStart) && dateKey(d) <= dateKey(today); });
+    els.weeklyReviewLabel.textContent = `${formatShortDate(weekStart)} – ${formatShortDate(shiftDate(weekStart, 6))}`;
+    const cards = [
+      ['Routine', completion.percent === null ? '—' : `${completion.percent}%`],
+      ['Best section', bestSection ? `${sectionLabels[bestSection.section][0]} ${bestSection.percent}%` : '—'],
+      ['Most consistent', bestHabit ? `${bestHabit.item.name} ${bestHabit.percent}%` : '—'],
+      ['Most missed', missedHabit ? `${missedHabit.item.name} ${missedHabit.percent}%` : '—'],
+      ['Avg sleep', sleepValues.length ? average(sleepValues).toFixed(1) : '—'],
+      ['Memories', String(memories.length)]
+    ];
+    els.weeklyReviewSummary.innerHTML = cards.map(([label,value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('');
+    els.weeklyFocusInput.value = state.weeklyReviews?.[nextWeekKey()]?.focus || '';
+  }
+
+  function renderOnThisDay() {
+    const target = selectedDate;
+    const matches = state.memories.filter(memory => {
+      if (memory.archived) return false;
+      const d = new Date(memory.createdAt);
+      return !Number.isNaN(d.getTime()) && d.getFullYear() < target.getFullYear() && d.getMonth() === target.getMonth() && d.getDate() === target.getDate();
+    }).sort((a,b) => Number(Boolean(b.favorite)) - Number(Boolean(a.favorite)) || new Date(b.createdAt) - new Date(a.createdAt));
+    els.onThisDayMemory.hidden = !matches.length;
+    els.onThisDayMemory.innerHTML = matches.length ? `<span>On this day</span><p>${escapeHtml(matches[0].text)}</p><small>${escapeHtml(formatMemoryDate(matches[0].createdAt))}</small>` : '';
   }
 
   function scaleLabel(item) { const scale = normalizeScale(item.scale); return `${formatNumber(scale.min)}–${formatNumber(scale.max)} scale`; }
