@@ -123,7 +123,7 @@
           <div id="trendList" class="trend-list"></div>
         </section>
 
-        <section class="card">
+        <section class="card" id="medicationProgressCard">
           <div class="section-heading"><div><p class="eyebrow">Medication</p><h2>Timing & next wake</h2></div></div>
           <p class="muted setup-help">A descriptive look at your logged timing. It does not establish that medication timing caused a particular wake time.</p>
           <div id="medicationInsights" class="medication-insights"></div>
@@ -135,7 +135,7 @@
           <div id="patternInsights" class="insight-list"></div>
         </section>
 
-        <section class="card weekly-review-card">
+        <section class="card weekly-review-card" id="weeklyReviewCard">
           <div class="section-heading"><div><p class="eyebrow">Weekly review</p><h2>Close the loop</h2></div><span id="weeklyReviewLabel" class="section-progress"></span></div>
           <div id="weeklyReviewSummary" class="weekly-review-summary"></div>
           <label class="text-field"><span>What do you want to focus on next week?</span><textarea id="weeklyFocusInput" rows="2" maxlength="300" placeholder="One clear focus for the week ahead…"></textarea></label>
@@ -179,6 +179,32 @@
           <p class="muted setup-help">A background photo stays only on this device. It is compressed before being saved.</p>
         </section>
 
+        <section class="card connections-card" id="connectionsCard">
+          <div class="section-heading"><div><p class="eyebrow">Connections</p><h2>Apps & smart actions</h2></div><button id="syncConnectionsButton" class="small-button" type="button">Sync now</button></div>
+          <p class="muted setup-help">Link routine items to the Bible plan, websites, iPhone Shortcuts, calls, texts, email, Maps, or another part of this app.</p>
+          <div class="connection-status-card">
+            <div class="connection-icon">📖</div>
+            <div class="connection-copy"><strong>Ten-Category Bible Reading</strong><span id="bibleConnectionStatus">Checking connection…</span></div>
+            <button id="openBibleConnectionButton" class="small-button" type="button">Open</button>
+          </div>
+          <label class="text-field"><span>Bible app address</span><input id="bibleAppUrlInput" type="url" inputmode="url" placeholder="https://bojangles4x4.github.io/Bible-Reading-Plan/" /></label>
+          <div class="connection-actions">
+            <button id="saveBibleConnectionButton" class="primary-button" type="button">Save connection</button>
+            <button id="testBibleConnectionButton" class="secondary-button" type="button">Test connection</button>
+          </div>
+          <div class="integration-template-heading"><strong>Add an action</strong><span>Start with a template, then customize it.</span></div>
+          <div id="connectionTemplates" class="integration-template-grid">
+            <button type="button" data-template="bible"><span>📖</span><b>Bible reading</b></button>
+            <button type="button" data-template="website"><span>↗</span><b>Website</b></button>
+            <button type="button" data-template="shortcut"><span>⚡</span><b>Shortcut</b></button>
+            <button type="button" data-template="phone"><span>☎</span><b>Call</b></button>
+            <button type="button" data-template="text"><span>💬</span><b>Text</b></button>
+            <button type="button" data-template="email"><span>✉</span><b>Email</b></button>
+            <button type="button" data-template="maps"><span>⌖</span><b>Maps</b></button>
+            <button type="button" data-template="internal"><span>◎</span><b>Inside app</b></button>
+          </div>
+        </section>
+
         <section class="card">
           <div class="section-heading"><div><p class="eyebrow">Daily routine</p><h2>Routine items</h2></div><button id="addItemButton" class="primary-button" type="button">+ Add</button></div>
           <p class="muted setup-help">Habits and measurable goals. Required items affect the daily completion score.</p>
@@ -191,7 +217,7 @@
           <div id="checkinEditor" class="routine-editor"></div>
         </section>
 
-        <section class="card">
+        <section class="card" id="memoryBankCard">
           <div class="section-heading"><div><p class="eyebrow">Remember</p><h2>Memory bank</h2></div><button id="addMemoryButton" class="primary-button" type="button">+ Add</button></div>
           <p class="muted setup-help">Save blessings, gratitude, prayers, thoughts, quotes, and memories. A Memory reflection routine can randomly bring them back during your day.</p>
           <div class="memory-bank-stats"><strong id="memoryCount">0</strong><span>saved</span><button id="exportMemoriesButton" class="small-button" type="button">Export CSV</button></div>
@@ -203,7 +229,7 @@
           <div id="memoryArchive" class="memory-archive"></div>
         </section>
 
-        <section class="card">
+        <section class="card" id="dataBackupCard">
           <div class="section-heading"><div><p class="eyebrow">Data</p><h2>Backup & export</h2></div></div>
           <p class="muted setup-help">Your information is still stored only in this browser on this device. Nothing is automatically uploaded anywhere.</p>
           <div class="button-stack">
@@ -215,7 +241,7 @@
             <button id="resetDataButton" class="danger-button" type="button">Reset app data</button>
           </div>
           <p id="snapshotStatus" class="muted micro-copy"></p>
-          <p class="app-version">Daily Routine <b id="appVersion">v1.5</b></p>
+          <p class="app-version">Daily Routine <b id="appVersion">v1.6</b></p>
         </section>
 
         <section class="card private-sharing-card">
@@ -240,7 +266,7 @@
       <label class="text-field compact"><span>Name / question</span><input id="itemNameInput" type="text" maxlength="80" required placeholder="Example: Prayer" /></label>
       <label class="text-field compact"><span>Part of day</span><select id="itemSectionInput"><option value="morning">Morning</option><option value="day">Throughout the day</option><option value="evening">Evening</option></select></label>
       <label class="text-field compact"><span>How to log it</span><select id="itemTypeInput">
-        <option value="checkbox">Checkbox</option><option value="medication">Medication + time</option><option value="memory">Memory reflection</option><option value="scale">Rating scale</option><option value="number">Number</option><option value="time">Time</option><option value="text">Short comment</option><option value="longtext">Journal entry</option>
+        <option value="checkbox">Checkbox</option><option value="linked">Linked app / action</option><option value="medication">Medication + time</option><option value="memory">Memory reflection</option><option value="scale">Rating scale</option><option value="number">Number</option><option value="time">Time</option><option value="text">Short comment</option><option value="longtext">Journal entry</option>
       </select></label>
       <label class="text-field compact"><span>Schedule</span><select id="itemFrequencyInput"><option value="daily">Every day</option><option value="weekdays">Weekdays</option><option value="weekends">Weekends</option><option value="custom">Specific days</option></select></label>
 
@@ -271,6 +297,27 @@
         <strong class="builder-note-title">Medication timing</strong>
         <p class="muted setup-help">On Today, tap <b>Taken now</b> to save the time automatically. You can edit the recorded time afterward.</p>
         <label class="text-field compact"><span>Usual dose (optional)</span><input id="medicationDoseInput" type="text" maxlength="40" placeholder="Example: 50 mg" /></label>
+      </div>
+
+      <div id="linkedActionFields" class="builder-subcard" hidden>
+        <strong class="builder-note-title">Linked app or smart action</strong>
+        <div class="two-column-fields">
+          <label class="text-field compact"><span>Action type</span><select id="linkedTemplateInput"><option value="bible">Bible reading app</option><option value="website">Website</option><option value="shortcut">iPhone Shortcut</option><option value="phone">Phone call</option><option value="text">Text message</option><option value="email">Email</option><option value="maps">Maps</option><option value="internal">Inside Daily Routine</option></select></label>
+          <label class="text-field compact"><span>Completion</span><select id="linkedCompletionInput"><option value="manual">Open, then mark complete</option><option value="confirm">Ask when I return</option><option value="sync">Sync automatically</option></select></label>
+        </div>
+        <label id="linkedUrlField" class="text-field compact"><span>Link or app URL</span><input id="linkedUrlInput" type="text" inputmode="url" maxlength="500" placeholder="https://… or shortcuts://…" /></label>
+        <label id="linkedInternalField" class="text-field compact" hidden><span>Open this part of Daily Routine</span><select id="linkedInternalTargetInput"><option value="memory">Capture or review a blessing</option><option value="weekly">Weekly review</option><option value="medication">Medication history</option><option value="backup">Backup & export</option></select></label>
+        <label class="text-field compact"><span>Button label</span><input id="linkedButtonLabelInput" type="text" maxlength="30" placeholder="Open, Continue, Call…" /></label>
+        <p class="muted setup-help">Bible reading can sync progress automatically. Other actions can stay manual or ask whether you finished when you return.</p>
+      </div>
+
+      <div id="timeWindowFields" class="builder-subcard">
+        <strong class="builder-note-title">Time window (optional)</strong>
+        <div class="two-column-fields">
+          <label class="text-field compact"><span>Start</span><input id="timeWindowStartInput" type="time" /></label>
+          <label class="text-field compact"><span>End</span><input id="timeWindowEndInput" type="time" /></label>
+        </div>
+        <p class="muted setup-help">Today can show Upcoming, Due now, or Late based on the window you set.</p>
       </div>
 
       <label id="memoryFields" class="text-field compact" hidden><span>Which memories should this surface?</span><select id="memoryCategoryInput">

@@ -3,15 +3,18 @@
 
   const STORAGE_KEY = 'dailyRoutineApp.v1';
   const SNAPSHOT_KEY = 'dailyRoutineApp.snapshots.v1';
-  const APP_VERSION = '1.5';
+  const APP_VERSION = '1.6';
+  const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
+  const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
+  const DEFAULT_BIBLE_APP_URL = 'https://bojangles4x4.github.io/Bible-Reading-Plan/';
   const DEFAULT_SCALE = { min: 0, max: 10, step: 1, lowLabel: 'Low', highLabel: 'Great' };
   const DEFAULT_STATE = {
-    settings: { wakeTime: '06:00', bedTime: '22:30', theme: 'calm', backgroundImage: '', badgeEnabled: true, streakThreshold: 80, streakMode: 'forgiving', streakWeekdaysOnly: false },
+    settings: { wakeTime: '06:00', bedTime: '22:30', theme: 'calm', backgroundImage: '', badgeEnabled: true, streakThreshold: 80, streakMode: 'forgiving', streakWeekdaysOnly: false, bibleAppUrl: DEFAULT_BIBLE_APP_URL },
     items: [
       { id: 'morning-prayer', name: 'Prayer', kind: 'routine', section: 'morning', type: 'checkbox', frequency: 'daily', days: [], optional: false, unit: '', target: null },
       { id: 'morning-teeth', name: 'Brush teeth', kind: 'routine', section: 'morning', type: 'checkbox', frequency: 'daily', days: [], optional: false, unit: '', target: null },
       { id: 'morning-meds', name: 'Take morning medicine', kind: 'routine', section: 'morning', type: 'medication', frequency: 'daily', days: [], optional: false, unit: '', target: null },
-      { id: 'morning-reading', name: 'Bible reading', kind: 'routine', section: 'morning', type: 'checkbox', frequency: 'daily', days: [], optional: false, unit: '', target: null },
+      { id: 'morning-reading', name: '10-Chapter Bible Reading', kind: 'routine', section: 'morning', type: 'linked', frequency: 'daily', days: [], optional: false, linkedTemplate: 'bible', linkedCompletion: 'sync', linkedUrl: DEFAULT_BIBLE_APP_URL, linkedButtonLabel: 'Continue reading', linkedInternalTarget: '', timeWindowStart: '', timeWindowEnd: '', unit: '', target: null },
       { id: 'morning-sleep', name: 'Sleep quality', kind: 'checkin', section: 'morning', type: 'scale', frequency: 'daily', days: [], optional: true, scale: { min: 0, max: 10, step: 1, lowLabel: 'Poor', highLabel: 'Excellent' } },
       { id: 'morning-mood', name: 'Morning mood', kind: 'checkin', section: 'morning', type: 'scale', frequency: 'daily', days: [], optional: true, scale: { min: 0, max: 10, step: 1, lowLabel: 'Low', highLabel: 'Great' } },
       { id: 'day-water', name: 'Water', kind: 'routine', section: 'day', type: 'number', frequency: 'daily', days: [], optional: false, unit: 'cups', target: 8 },
@@ -36,7 +39,7 @@
     day: ['Throughout the day', 'Stay on track'],
     evening: ['Evening', 'Close the day well']
   };
-  const typeLabels = { checkbox: 'Checkbox', medication: 'Medication + time', memory: 'Memory reflection', scale: 'Rating scale', number: 'Number', time: 'Time', text: 'Short comment', longtext: 'Journal entry' };
+  const typeLabels = { checkbox: 'Checkbox', linked: 'Linked app / action', medication: 'Medication + time', memory: 'Memory reflection', scale: 'Rating scale', number: 'Number', time: 'Time', text: 'Short comment', longtext: 'Journal entry' };
 
   let state = loadState();
   let selectedDate = startOfToday();
@@ -44,6 +47,8 @@
   let toastTimer = null;
   let analyticsRange = 7;
   let undoAction = null;
+  let pendingLinkedAction = null;
+  let integrationChannel = null;
   const collapsedSections = new Set();
 
   const $ = id => document.getElementById(id);
@@ -65,18 +70,25 @@
     actualWakeInput: $('actualWakeInput'), actualBedInput: $('actualBedInput'), wakeNowButton: $('wakeNowButton'), bedNowButton: $('bedNowButton'), badgeEnabledInput: $('badgeEnabledInput'),
     quickMemoryButton: $('quickMemoryButton'), memoryTodayPreview: $('memoryTodayPreview'), addMemoryButton: $('addMemoryButton'), memoryCount: $('memoryCount'), memoryArchive: $('memoryArchive'), exportMemoriesButton: $('exportMemoriesButton'), memorySearchInput: $('memorySearchInput'), memoryFilterInput: $('memoryFilterInput'), memoryFavoritesOnlyInput: $('memoryFavoritesOnlyInput'),
     medicationInsights: $('medicationInsights'), weeklyReviewLabel: $('weeklyReviewLabel'), weeklyReviewSummary: $('weeklyReviewSummary'), weeklyFocusInput: $('weeklyFocusInput'), saveWeeklyFocusButton: $('saveWeeklyFocusButton'), memoryDialog: $('memoryDialog'), memoryForm: $('memoryForm'), closeMemoryDialogButton: $('closeMemoryDialogButton'), memoryTextInput: $('memoryTextInput'), memoryCategoryCaptureInput: $('memoryCategoryCaptureInput'), memoryDateTimeInput: $('memoryDateTimeInput'),
-    createSnapshotButton: $('createSnapshotButton'), restoreSnapshotButton: $('restoreSnapshotButton'), snapshotStatus: $('snapshotStatus'), appVersion: $('appVersion'), deleteItemButton: $('deleteItemButton'), closeDialogButton: $('closeDialogButton'), installButton: $('installButton'), toast: $('toast')
+    createSnapshotButton: $('createSnapshotButton'), restoreSnapshotButton: $('restoreSnapshotButton'), snapshotStatus: $('snapshotStatus'), appVersion: $('appVersion'),
+    connectionsCard: $('connectionsCard'), syncConnectionsButton: $('syncConnectionsButton'), bibleConnectionStatus: $('bibleConnectionStatus'), openBibleConnectionButton: $('openBibleConnectionButton'), bibleAppUrlInput: $('bibleAppUrlInput'), saveBibleConnectionButton: $('saveBibleConnectionButton'), testBibleConnectionButton: $('testBibleConnectionButton'), connectionTemplates: $('connectionTemplates'),
+    linkedActionFields: $('linkedActionFields'), linkedTemplateInput: $('linkedTemplateInput'), linkedCompletionInput: $('linkedCompletionInput'), linkedUrlField: $('linkedUrlField'), linkedUrlInput: $('linkedUrlInput'), linkedInternalField: $('linkedInternalField'), linkedInternalTargetInput: $('linkedInternalTargetInput'), linkedButtonLabelInput: $('linkedButtonLabelInput'), timeWindowFields: $('timeWindowFields'), timeWindowStartInput: $('timeWindowStartInput'), timeWindowEndInput: $('timeWindowEndInput'),
+    medicationProgressCard: $('medicationProgressCard'), weeklyReviewCard: $('weeklyReviewCard'), memoryBankCard: $('memoryBankCard'), dataBackupCard: $('dataBackupCard'),
+    deleteItemButton: $('deleteItemButton'), closeDialogButton: $('closeDialogButton'), installButton: $('installButton'), toast: $('toast')
   };
 
   init();
 
   function init() {
     ensureFirstUseDate();
+    consumeIntegrationReturn();
+    syncLinkedIntegrations(false);
     bindNavigation();
     bindTodayControls();
     bindProgressControls();
     bindSetupControls();
     bindInstall();
+    bindIntegrationEvents();
     applyPersonalization();
     renderAll();
     maybeAutoSnapshot();
@@ -114,6 +126,13 @@
       medicationDose: item.medicationDose || '',
       pausedFrom: item.pausedFrom || '',
       pausedUntil: item.pausedUntil || '',
+      linkedTemplate: item.linkedTemplate || 'website',
+      linkedCompletion: item.linkedCompletion || 'manual',
+      linkedUrl: item.linkedUrl || '',
+      linkedButtonLabel: item.linkedButtonLabel || '',
+      linkedInternalTarget: item.linkedInternalTarget || 'memory',
+      timeWindowStart: item.timeWindowStart || '',
+      timeWindowEnd: item.timeWindowEnd || '',
       scale: type === 'scale' ? normalizeScale(item.scale) : undefined
     };
   }
@@ -218,6 +237,19 @@
       state.settings.v14Seeded = true;
       changed = true;
     }
+    if (!state.settings.bibleAppUrl) { state.settings.bibleAppUrl = DEFAULT_BIBLE_APP_URL; changed = true; }
+    if (!state.settings.v16Seeded) {
+      const reading = state.items.find(item => item.id === 'morning-reading') || state.items.find(item => /bible reading/i.test(item.name));
+      if (reading && reading.type === 'checkbox') {
+        Object.assign(reading, {
+          name: '10-Chapter Bible Reading', type: 'linked', kind: 'routine', linkedTemplate: 'bible', linkedCompletion: 'sync',
+          linkedUrl: state.settings.bibleAppUrl || DEFAULT_BIBLE_APP_URL, linkedButtonLabel: 'Continue reading', linkedInternalTarget: '',
+          timeWindowStart: reading.timeWindowStart || '', timeWindowEnd: reading.timeWindowEnd || ''
+        });
+      }
+      state.settings.v16Seeded = true;
+      changed = true;
+    }
     if (changed) saveState();
   }
 
@@ -247,15 +279,18 @@
 
   function entryIsLogged(item, value) {
     if (item.type === 'checkbox') return value === true;
+    if (item.type === 'linked') return value === true || Boolean(value && typeof value === 'object' && value.completed);
     if (item.type === 'medication') return value === true || Boolean(value && typeof value === 'object' && value.taken);
     if (item.type === 'memory') return Boolean(value && typeof value === 'object' && value.reflected);
     if (item.type === 'scale') return Number.isFinite(Number(value));
     return value !== undefined && value !== null && String(value).trim() !== '';
   }
 
+  function hasTarget(item) { return item.type === 'number' && item.target !== null && item.target !== '' && item.target !== undefined && Number.isFinite(Number(item.target)); }
+
   function entryMeetsTarget(item, value) {
     if (!entryIsLogged(item, value)) return false;
-    if (item.type === 'number' && Number.isFinite(Number(item.target))) return Number(value) >= Number(item.target);
+    if (hasTarget(item)) return Number(value) >= Number(item.target);
     return true;
   }
 
@@ -342,6 +377,7 @@
     els.closeDialogButton.addEventListener('click', () => els.itemDialog.close());
     els.itemTypeInput.addEventListener('change', toggleBuilderFields);
     els.itemFrequencyInput.addEventListener('change', toggleBuilderFields);
+    els.linkedTemplateInput.addEventListener('change', () => { applyLinkedTemplate(els.linkedTemplateInput.value, false); toggleBuilderFields(); });
     els.itemForm.addEventListener('submit', saveRoutineItem);
     els.deleteItemButton.addEventListener('click', deleteRoutineItem);
     els.addMemoryButton.addEventListener('click', () => openMemoryDialog('blessing'));
@@ -356,6 +392,11 @@
     els.importJsonInput.addEventListener('change', importJson);
     els.createSnapshotButton.addEventListener('click', () => createLocalSnapshot('Manual snapshot'));
     els.restoreSnapshotButton.addEventListener('click', restoreLatestSnapshot);
+    els.syncConnectionsButton.addEventListener('click', () => { syncLinkedIntegrations(true); renderAll(); });
+    els.saveBibleConnectionButton.addEventListener('click', saveBibleConnection);
+    els.testBibleConnectionButton.addEventListener('click', () => openBibleApp(startOfToday()));
+    els.openBibleConnectionButton.addEventListener('click', () => openBibleApp(startOfToday()));
+    els.connectionTemplates.querySelectorAll('[data-template]').forEach(button => button.addEventListener('click', () => openItemDialog(null, 'routine', button.dataset.template)));
     els.resetDataButton.addEventListener('click', resetData);
   }
 
@@ -471,13 +512,16 @@
 
   function metaForItem(item) {
     const bits = [item.optional ? 'Optional' : 'Required', frequencyLabel(item)];
-    if (item.type === 'number' && Number.isFinite(Number(item.target))) bits.push(`Target ${item.target}${item.unit ? ` ${item.unit}` : ''}`);
+    if (hasTarget(item)) bits.push(`Target ${item.target}${item.unit ? ` ${item.unit}` : ''}`);
+    const timing = timeWindowStatus(item, selectedDate);
+    if (timing.label) bits.push(timing.label);
     return bits.join(' · ');
   }
 
   function buildTaskRow(item, value) {
     const row = document.createElement('div');
     row.className = `task-row${entryMeetsTarget(item, value) ? ' done' : ''}`;
+    if (item.type === 'linked') return buildLinkedRow(row, item, value);
     if (item.type === 'medication') return buildMedicationRow(row, item, value);
     if (item.type === 'memory') return buildMemoryRow(row, item, value);
     if (item.type === 'checkbox') {
@@ -507,7 +551,7 @@
       container.innerHTML = `<textarea class="task-input" rows="${rows}" placeholder="${escapeHtml(placeholder)}">${escapeHtml(value || '')}</textarea>`;
       container.querySelector('textarea').addEventListener('input', debounce(event => saveEntry(item, event.target.value, false), 250));
     } else if (item.type === 'number') {
-      container.innerHTML = `<div class="number-entry"><input class="task-input inline-number" type="number" step="any" inputmode="decimal" value="${escapeHtml(value ?? '')}" placeholder="0"/><span>${escapeHtml(item.unit || '')}</span>${Number.isFinite(Number(item.target)) ? `<small>/ ${escapeHtml(item.target)} ${escapeHtml(item.unit || '')}</small>` : ''}</div>`;
+      container.innerHTML = `<div class="number-entry"><input class="task-input inline-number" type="number" step="any" inputmode="decimal" value="${escapeHtml(value ?? '')}" placeholder="0"/><span>${escapeHtml(item.unit || '')}</span>${hasTarget(item) ? `<small>/ ${escapeHtml(item.target)} ${escapeHtml(item.unit || '')}</small>` : ''}</div>`;
       container.querySelector('input').addEventListener('change', event => saveEntry(item, event.target.value));
     } else if (item.type === 'time') {
       container.innerHTML = `<input class="task-input" type="time" value="${escapeHtml(value || '')}"/>`;
@@ -797,6 +841,8 @@
     els.streakWeekdaysOnlyInput.checked = Boolean(state.settings.streakWeekdaysOnly);
     els.themeInput.value = state.settings.theme || 'calm';
     els.appVersion.textContent = `v${APP_VERSION}`;
+    els.bibleAppUrlInput.value = state.settings.bibleAppUrl || DEFAULT_BIBLE_APP_URL;
+    renderConnections();
     renderSnapshotStatus();
     els.routineEditor.innerHTML = '';
     els.checkinEditor.innerHTML = '';
@@ -846,21 +892,22 @@
     state.items.push(copy); saveState(); renderAll(); showToast('Routine item duplicated');
   }
 
-  function openItemDialog(item = null, kind = 'routine') {
+  function openItemDialog(item = null, kind = 'routine', template = '') {
     const resolvedKind = item?.kind || kind;
+    const preset = template ? linkedTemplateDefaults(template) : null;
     els.editingItemId.value = item?.id || '';
     els.editingItemKind.value = resolvedKind;
     els.builderEyebrow.textContent = resolvedKind === 'checkin' ? 'Check-in builder' : 'Routine builder';
     els.dialogTitle.textContent = item ? `Edit ${resolvedKind === 'checkin' ? 'check-in' : 'item'}` : `Add ${resolvedKind === 'checkin' ? 'check-in' : 'item'}`;
-    els.itemNameInput.value = item?.name || '';
+    els.itemNameInput.value = item?.name || preset?.name || '';
     els.itemNameInput.placeholder = resolvedKind === 'checkin' ? 'Example: How was your sleep?' : 'Example: Prayer';
-    els.itemSectionInput.value = item?.section || 'morning';
-    const medicationOption = els.itemTypeInput.querySelector('option[value="medication"]');
-    const memoryOption = els.itemTypeInput.querySelector('option[value="memory"]');
-    medicationOption.hidden = medicationOption.disabled = resolvedKind === 'checkin';
-    memoryOption.hidden = memoryOption.disabled = resolvedKind === 'checkin';
+    els.itemSectionInput.value = item?.section || preset?.section || 'morning';
+    ['medication', 'memory', 'linked'].forEach(value => {
+      const option = els.itemTypeInput.querySelector(`option[value="${value}"]`);
+      option.hidden = option.disabled = resolvedKind === 'checkin';
+    });
     const defaultType = resolvedKind === 'checkin' ? 'scale' : 'checkbox';
-    els.itemTypeInput.value = item?.type || defaultType;
+    els.itemTypeInput.value = item?.type || (preset ? 'linked' : defaultType);
     if (!els.itemTypeInput.value) els.itemTypeInput.value = defaultType;
     els.itemFrequencyInput.value = item?.frequency || 'daily';
     els.itemTargetInput.value = item?.target ?? '';
@@ -870,6 +917,14 @@
     els.medicationDoseInput.value = item?.medicationDose || '';
     els.pauseUntilInput.value = item?.pausedUntil || '';
     els.itemOptionalInput.checked = item ? Boolean(item.optional) : resolvedKind === 'checkin';
+    const linked = item || preset || {};
+    els.linkedTemplateInput.value = linked.linkedTemplate || 'website';
+    els.linkedCompletionInput.value = linked.linkedCompletion || 'manual';
+    els.linkedUrlInput.value = linked.linkedUrl || '';
+    els.linkedInternalTargetInput.value = linked.linkedInternalTarget || 'memory';
+    els.linkedButtonLabelInput.value = linked.linkedButtonLabel || '';
+    els.timeWindowStartInput.value = linked.timeWindowStart || '';
+    els.timeWindowEndInput.value = linked.timeWindowEnd || '';
     const scale = normalizeScale(item?.scale);
     els.scaleMinInput.value = scale.min; els.scaleMaxInput.value = scale.max; els.scaleStepInput.value = scale.step; els.scaleLowLabelInput.value = scale.lowLabel; els.scaleHighLabelInput.value = scale.highLabel;
     els.deleteItemButton.hidden = !item;
@@ -881,12 +936,19 @@
 
   function toggleBuilderFields() {
     const type = els.itemTypeInput.value;
+    const isCheckin = els.editingItemKind.value === 'checkin';
     els.numberGoalFields.hidden = type !== 'number';
     els.scaleFields.hidden = type !== 'scale';
     els.medicationFields.hidden = type !== 'medication';
+    els.linkedActionFields.hidden = type !== 'linked';
     els.memoryFields.hidden = type !== 'memory';
     els.promptField.hidden = !['text', 'longtext'].includes(type);
     els.customDaysField.hidden = els.itemFrequencyInput.value !== 'custom';
+    els.timeWindowFields.hidden = isCheckin;
+    const internal = type === 'linked' && els.linkedTemplateInput.value === 'internal';
+    els.linkedInternalField.hidden = !internal;
+    els.linkedUrlField.hidden = type !== 'linked' || internal;
+    if (type === 'linked' && els.linkedTemplateInput.value === 'bible') els.linkedCompletionInput.value = 'sync';
   }
 
   function saveRoutineItem(event) {
@@ -905,10 +967,17 @@
     const payload = {
       name, kind, section: els.itemSectionInput.value, type, frequency: els.itemFrequencyInput.value, days, optional: els.itemOptionalInput.checked,
       unit: type === 'number' ? els.itemUnitInput.value.trim() : '',
-      target: type === 'number' && els.itemTargetInput.value !== '' ? Number(els.itemTargetInput.value) : null,
+      target: type === 'number' && els.itemTargetInput.value !== '' && Number(els.itemTargetInput.value) > 0 ? Number(els.itemTargetInput.value) : null,
       placeholder: ['text', 'longtext'].includes(type) ? els.itemPlaceholderInput.value.trim() : '',
       memoryCategory: type === 'memory' ? els.memoryCategoryInput.value : 'any',
       medicationDose: type === 'medication' ? els.medicationDoseInput.value.trim() : '',
+      linkedTemplate: type === 'linked' ? els.linkedTemplateInput.value : 'website',
+      linkedCompletion: type === 'linked' ? els.linkedCompletionInput.value : 'manual',
+      linkedUrl: type === 'linked' ? els.linkedUrlInput.value.trim() : '',
+      linkedButtonLabel: type === 'linked' ? els.linkedButtonLabelInput.value.trim() : '',
+      linkedInternalTarget: type === 'linked' ? els.linkedInternalTargetInput.value : 'memory',
+      timeWindowStart: kind === 'routine' ? els.timeWindowStartInput.value : '',
+      timeWindowEnd: kind === 'routine' ? els.timeWindowEndInput.value : '',
       pausedUntil: els.pauseUntilInput.value || '',
       pausedFrom: els.pauseUntilInput.value ? (state.items.find(candidate => candidate.id === els.editingItemId.value)?.pausedFrom || dateKey(startOfToday())) : '',
       scale: type === 'scale' ? scale : undefined
@@ -970,6 +1039,12 @@
 
   function formatEntry(item, value) {
     if (item.type === 'checkbox') return value ? 'Completed' : 'Not completed';
+    if (item.type === 'linked') {
+      if (value === true) return 'Completed manually';
+      if (value?.completed) return `${value.completed}/${value.total || value.completed} complete${value.completedAt ? ` · ${new Date(value.completedAt).toLocaleString()}` : ''}`;
+      if (value && typeof value === 'object' && Number.isFinite(Number(value.completed))) return `${value.completed}/${value.total || 10}`;
+      return 'Not completed';
+    }
     if (item.type === 'medication') {
       if (value === true) return 'Taken (time not logged)';
       return value?.taken ? `Taken${value.time ? ` at ${formatTime(value.time)}` : ''}${value.dose ? ` · ${value.dose}` : ''}${value.note ? ` · ${value.note}` : ''}` : 'Not taken';
@@ -996,7 +1071,7 @@
     showToast('CSV exported');
   }
 
-  function exportJson() { downloadBlob(JSON.stringify({ version: 1.5, exportedAt: new Date().toISOString(), state }, null, 2), `daily-routine-backup-${dateKey(startOfToday())}.json`, 'application/json'); showToast('Backup downloaded'); }
+  function exportJson() { downloadBlob(JSON.stringify({ version: 1.6, exportedAt: new Date().toISOString(), state }, null, 2), `daily-routine-backup-${dateKey(startOfToday())}.json`, 'application/json'); showToast('Backup downloaded'); }
 
   async function importJson(event) {
     const file = event.target.files?.[0]; event.target.value = ''; if (!file) return;
@@ -1221,6 +1296,213 @@
   function memoryCategoryLabel(category) { return ({ blessing:'Blessing', gratitude:'Gratitude', prayer:'Prayer', thought:'Thought', quote:'Quote', memory:'Memory' })[category] || 'Memory'; }
   function formatMemoryDate(value) { const date = new Date(value); return Number.isNaN(date.getTime()) ? '' : new Intl.DateTimeFormat(undefined, { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' }).format(date); }
   function toDateTimeLocal(date) { const offset = date.getTimezoneOffset(); const local = new Date(date.getTime() - offset * 60000); return local.toISOString().slice(0, 16); }
+
+  function readBibleIntegration() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(BIBLE_INTEGRATION_KEY) || 'null');
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch { return null; }
+  }
+
+  function consumeIntegrationReturn() {
+    const params = new URLSearchParams(location.search);
+    if (params.get('integration') !== 'bible') return;
+    const date = params.get('date');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return;
+    const completed = Math.max(0, Math.min(10, Number(params.get('completed')) || 0));
+    const total = Math.max(1, Number(params.get('total')) || 10);
+    const completedAt = params.get('completedAt') || '';
+    const nextReference = params.get('next') || '';
+    const day = ensureDay(date);
+    state.items.filter(item => item.type === 'linked' && item.linkedTemplate === 'bible').forEach(item => {
+      day.entries[item.id] = { completed: completed >= total, progress: completed, completedCount: completed, total, completedAt, nextReference, source: 'return-link', updatedAt: new Date().toISOString() };
+    });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const clean = new URL(location.href); ['integration','date','completed','total','completedAt','next'].forEach(key => clean.searchParams.delete(key));
+    history.replaceState({}, '', clean.pathname + clean.search + clean.hash);
+  }
+
+  function syncLinkedIntegrations(showMessage = false) {
+    const integration = readBibleIntegration();
+    let updates = 0;
+    state.items.filter(item => item.type === 'linked' && item.linkedTemplate === 'bible' && item.linkedCompletion === 'sync').forEach(item => {
+      const records = integration?.days || {};
+      Object.entries(records).forEach(([key, record]) => {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(key) || !record) return;
+        if (key > dateKey(startOfToday()) || (item.createdDate && key < item.createdDate)) return;
+        const day = ensureDay(key);
+        const nextValue = {
+          completed: Number(record.completed) >= Number(record.total || 10),
+          progress: Number(record.completed) || 0,
+          completedCount: Number(record.completed) || 0,
+          total: Number(record.total) || 10,
+          completedAt: record.completedAt || '',
+          nextReference: record.nextReference || '',
+          nextCategory: record.nextCategory || null,
+          dayNumber: record.dayNumber || null,
+          source: 'bible-integration',
+          updatedAt: record.updatedAt || integration.updatedAt || ''
+        };
+        if (JSON.stringify(day.entries[item.id]) !== JSON.stringify(nextValue)) { day.entries[item.id] = nextValue; updates += 1; }
+      });
+    });
+    if (updates) localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    if (showMessage) showToast(integration ? (updates ? 'Connected app progress updated' : 'Connections are up to date') : 'Open the Bible app once to start syncing');
+    renderConnections();
+    return updates;
+  }
+
+  function bindIntegrationEvents() {
+    window.addEventListener('focus', () => { syncLinkedIntegrations(false); maybeConfirmPendingAction(); renderAll(); });
+    window.addEventListener('pageshow', () => { syncLinkedIntegrations(false); renderAll(); });
+    window.addEventListener('storage', event => { if (event.key === BIBLE_INTEGRATION_KEY) { syncLinkedIntegrations(false); renderAll(); } });
+    try {
+      integrationChannel = new BroadcastChannel(INTEGRATION_CHANNEL);
+      integrationChannel.addEventListener('message', event => { if (event.data?.type === 'bible-progress') { syncLinkedIntegrations(false); renderAll(); } });
+    } catch { integrationChannel = null; }
+  }
+
+  function renderConnections() {
+    if (!els.bibleConnectionStatus) return;
+    const integration = readBibleIntegration();
+    const updated = integration?.updatedAt ? new Date(integration.updatedAt) : null;
+    els.bibleConnectionStatus.textContent = updated && !Number.isNaN(updated.getTime())
+      ? `Connected · synced ${formatRelativeTime(updated)}`
+      : 'Not synced yet · open the Bible app once';
+  }
+
+  function saveBibleConnection() {
+    const raw = els.bibleAppUrlInput.value.trim() || DEFAULT_BIBLE_APP_URL;
+    try {
+      const url = new URL(raw, location.href);
+      if (!['http:', 'https:'].includes(url.protocol)) throw new Error('Invalid protocol');
+      state.settings.bibleAppUrl = url.href;
+      state.items.filter(item => item.type === 'linked' && item.linkedTemplate === 'bible').forEach(item => { item.linkedUrl = url.href; });
+      saveState(); renderAll(); showToast('Bible connection saved');
+    } catch { showToast('Enter a valid Bible app address'); }
+  }
+
+  function linkedTemplateDefaults(template) {
+    const bibleUrl = state.settings.bibleAppUrl || DEFAULT_BIBLE_APP_URL;
+    const presets = {
+      bible: { name: '10-Chapter Bible Reading', section: 'morning', linkedTemplate: 'bible', linkedCompletion: 'sync', linkedUrl: bibleUrl, linkedButtonLabel: 'Continue reading' },
+      website: { name: 'Open website', section: 'day', linkedTemplate: 'website', linkedCompletion: 'manual', linkedUrl: 'https://', linkedButtonLabel: 'Open' },
+      shortcut: { name: 'Run Shortcut', section: 'day', linkedTemplate: 'shortcut', linkedCompletion: 'confirm', linkedUrl: 'shortcuts://run-shortcut?name=', linkedButtonLabel: 'Run shortcut' },
+      phone: { name: 'Make a call', section: 'day', linkedTemplate: 'phone', linkedCompletion: 'confirm', linkedUrl: 'tel:', linkedButtonLabel: 'Call' },
+      text: { name: 'Send a message', section: 'day', linkedTemplate: 'text', linkedCompletion: 'confirm', linkedUrl: 'sms:', linkedButtonLabel: 'Text' },
+      email: { name: 'Send an email', section: 'day', linkedTemplate: 'email', linkedCompletion: 'confirm', linkedUrl: 'mailto:', linkedButtonLabel: 'Email' },
+      maps: { name: 'Open in Maps', section: 'day', linkedTemplate: 'maps', linkedCompletion: 'manual', linkedUrl: 'https://maps.apple.com/?q=', linkedButtonLabel: 'Open Maps' },
+      internal: { name: 'Review a blessing', section: 'day', linkedTemplate: 'internal', linkedCompletion: 'manual', linkedUrl: '', linkedInternalTarget: 'memory', linkedButtonLabel: 'Open' }
+    };
+    return presets[template] || presets.website;
+  }
+
+  function applyLinkedTemplate(template, overwrite = true) {
+    const preset = linkedTemplateDefaults(template);
+    if (overwrite || !els.itemNameInput.value.trim()) els.itemNameInput.value = preset.name;
+    if (overwrite || !els.linkedUrlInput.value.trim()) els.linkedUrlInput.value = preset.linkedUrl || '';
+    els.linkedCompletionInput.value = preset.linkedCompletion;
+    els.linkedButtonLabelInput.value = preset.linkedButtonLabel;
+    els.linkedInternalTargetInput.value = preset.linkedInternalTarget || 'memory';
+  }
+
+  function linkedProgress(value) {
+    if (value === true) return { completed: true, current: 1, total: 1, label: 'Completed' };
+    const current = Number(value?.completedCount ?? value?.progress ?? 0) || 0;
+    const total = Number(value?.total) || 10;
+    return { completed: Boolean(value?.completed || current >= total), current, total, label: `${current}/${total}` };
+  }
+
+  function buildLinkedRow(row, item, value) {
+    const progress = linkedProgress(value);
+    const timing = timeWindowStatus(item, selectedDate);
+    const templateIcon = ({ bible: '📖', website: '↗', shortcut: '⚡', phone: '☎', text: '💬', email: '✉', maps: '⌖', internal: '◎' })[item.linkedTemplate] || '↗';
+    const next = value?.nextReference ? `Next: ${value.nextReference}` : '';
+    row.classList.toggle('done', progress.completed);
+    row.innerHTML = `<div class="linked-main"><span class="linked-icon" aria-hidden="true">${templateIcon}</span><span class="task-name">${escapeHtml(item.name)}<span class="task-meta">${escapeHtml(metaForItem(item))}${next ? ` · ${escapeHtml(next)}` : ''}</span></span>${timing.status ? `<span class="due-pill ${timing.status}">${escapeHtml(timing.shortLabel)}</span>` : ''}</div><div class="linked-progress"><div class="linked-progress-copy"><strong>${escapeHtml(progress.label)}</strong><span>${progress.completed ? 'Complete' : item.linkedTemplate === 'bible' ? 'Reading progress' : 'Action status'}</span></div><div class="linked-progress-track"><span style="width:${Math.min(100, Math.round(progress.current / Math.max(1, progress.total) * 100))}%"></span></div></div><div class="linked-actions"><button class="primary-button open-linked-button" type="button">${escapeHtml(item.linkedButtonLabel || (item.linkedTemplate === 'bible' ? 'Continue reading' : 'Open'))}</button><button class="secondary-button manual-linked-button" type="button">${progress.completed ? 'Mark incomplete' : 'Mark complete'}</button>${item.linkedTemplate === 'bible' ? '<button class="small-button sync-linked-button" type="button">Sync</button>' : ''}</div>`;
+    row.querySelector('.open-linked-button').addEventListener('click', () => openLinkedAction(item));
+    row.querySelector('.manual-linked-button').addEventListener('click', () => saveEntry(item, progress.completed ? { completed: false, progress: 0, total: progress.total, source: 'manual' } : { completed: true, progress: progress.total, completedCount: progress.total, total: progress.total, completedAt: new Date().toISOString(), source: 'manual' }));
+    row.querySelector('.sync-linked-button')?.addEventListener('click', () => { syncLinkedIntegrations(true); renderAll(); });
+    return row;
+  }
+
+  function openBibleApp(date = selectedDate) {
+    const base = state.settings.bibleAppUrl || DEFAULT_BIBLE_APP_URL;
+    try {
+      const url = new URL(base, location.href);
+      url.searchParams.set('source', 'daily-routine');
+      url.searchParams.set('date', dateKey(date));
+      url.searchParams.set('continue', '1');
+      url.searchParams.set('return', new URL('./', location.href).href);
+      location.assign(url.href);
+    } catch { showToast('The Bible app address is not valid'); }
+  }
+
+  function openLinkedAction(item) {
+    if (item.linkedTemplate === 'bible') { openBibleApp(selectedDate); return; }
+    if (item.linkedTemplate === 'internal') { openInternalAction(item.linkedInternalTarget); return; }
+    const url = normalizeActionUrl(item);
+    if (!url) { showToast('Add a valid action link in Setup'); return; }
+    if (item.linkedCompletion === 'confirm') pendingLinkedAction = { itemId: item.id, date: dateKey(selectedDate), openedAt: Date.now() };
+    location.assign(url);
+  }
+
+  function normalizeActionUrl(item) {
+    const raw = String(item.linkedUrl || '').trim();
+    if (!raw) return '';
+    if (/^javascript:/i.test(raw)) return '';
+    if (/^[a-z][a-z0-9+.-]*:/i.test(raw)) return raw;
+    if (item.linkedTemplate === 'phone') return `tel:${raw}`;
+    if (item.linkedTemplate === 'text') return `sms:${raw}`;
+    if (item.linkedTemplate === 'email') return `mailto:${raw}`;
+    if (item.linkedTemplate === 'shortcut') return `shortcuts://run-shortcut?name=${encodeURIComponent(raw)}`;
+    if (item.linkedTemplate === 'maps') return `https://maps.apple.com/?q=${encodeURIComponent(raw)}`;
+    try { return new URL(raw, location.href).href; } catch { return ''; }
+  }
+
+  function maybeConfirmPendingAction() {
+    if (!pendingLinkedAction || Date.now() - pendingLinkedAction.openedAt < 750) return;
+    const pending = pendingLinkedAction; pendingLinkedAction = null;
+    const item = state.items.find(candidate => candidate.id === pending.itemId);
+    if (!item || !confirm(`Did you finish “${item.name}”?`)) return;
+    const day = ensureDay(pending.date);
+    day.entries[item.id] = { completed: true, progress: 1, completedCount: 1, total: 1, completedAt: new Date().toISOString(), source: 'confirmed-return' };
+    saveState(); renderAll(); showToast('Linked action completed');
+  }
+
+  function openInternalAction(target) {
+    if (target === 'memory') { switchView('today'); openMemoryDialog('blessing'); return; }
+    if (target === 'weekly') { switchView('history'); els.weeklyReviewCard?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    if (target === 'medication') { switchView('history'); els.medicationProgressCard?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    if (target === 'backup') { switchView('setup'); els.dataBackupCard?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    switchView('today');
+  }
+
+  function timeWindowStatus(item, date) {
+    const start = item.timeWindowStart || '', end = item.timeWindowEnd || '';
+    if (!start && !end) return { status: '', label: '', shortLabel: '' };
+    const windowText = `${start ? formatTime(start) : 'Any time'}${end ? `–${formatTime(end)}` : ''}`;
+    if (!isSameDay(date, startOfToday())) return { status: '', label: `Window ${windowText}`, shortLabel: '' };
+    const now = new Date().getHours() * 60 + new Date().getMinutes();
+    const startMin = start ? timeToMinutes(start) : null, endMin = end ? timeToMinutes(end) : null;
+    let status = 'due', label = 'Due now', shortLabel = 'Due';
+    if (startMin !== null && endMin !== null && endMin < startMin) {
+      const inWindow = now >= startMin || now <= endMin;
+      if (inWindow) { status = 'due'; label = 'Due now'; shortLabel = 'Due'; }
+      else if (now < startMin) { status = 'upcoming'; label = `Upcoming ${formatTime(start)}`; shortLabel = 'Upcoming'; }
+      else { status = 'late'; label = `Late · ended ${formatTime(end)}`; shortLabel = 'Late'; }
+    } else if (startMin !== null && now < startMin) { status = 'upcoming'; label = `Upcoming ${formatTime(start)}`; shortLabel = 'Upcoming'; }
+    else if (endMin !== null && now > endMin) { status = 'late'; label = `Late · ended ${formatTime(end)}`; shortLabel = 'Late'; }
+    return { status, label, shortLabel, windowText };
+  }
+
+  function formatRelativeTime(date) {
+    const seconds = Math.max(0, Math.round((Date.now() - date.getTime()) / 1000));
+    if (seconds < 60) return 'just now';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    return date.toLocaleDateString();
+  }
 
   async function updateAppBadge() {
     try {
