@@ -35,6 +35,7 @@
   let selectedDate = startOfToday();
   let deferredInstallPrompt = null;
   let toastTimer = null;
+  let analyticsRange = 7;
 
   const $ = (id) => document.getElementById(id);
   const els = {
@@ -42,7 +43,9 @@
     wakeTimeDisplay: $('wakeTimeDisplay'), bedTimeDisplay: $('bedTimeDisplay'), progressRing: $('progressRing'), progressPercent: $('progressPercent'),
     selectedDateButton: $('selectedDateButton'), prevDay: $('prevDay'), nextDay: $('nextDay'), routineSections: $('routineSections'),
     statCompleted: $('statCompleted'), statOptional: $('statOptional'), statStreak: $('statStreak'), statMood: $('statMood'), copySummaryButton: $('copySummaryButton'),
-    historyList: $('historyList'), wakeTimeInput: $('wakeTimeInput'), bedTimeInput: $('bedTimeInput'), themeInput: $('themeInput'),
+    historyList: $('historyList'), rangeSelector: $('rangeSelector'), progressOverall: $('progressOverall'), progress80Days: $('progress80Days'), progressTrackedDays: $('progressTrackedDays'),
+    progressRangeNote: $('progressRangeNote'), weekSummary: $('weekSummary'), weekOverall: $('weekOverall'), sectionBreakdown: $('sectionBreakdown'),
+    strongHabits: $('strongHabits'), weakHabits: $('weakHabits'), trendList: $('trendList'), wakeTimeInput: $('wakeTimeInput'), bedTimeInput: $('bedTimeInput'), themeInput: $('themeInput'),
     backgroundImageInput: $('backgroundImageInput'), clearBackgroundButton: $('clearBackgroundButton'), routineEditor: $('routineEditor'), addItemButton: $('addItemButton'),
     exportCsvButton: $('exportCsvButton'), exportJsonButton: $('exportJsonButton'), importJsonInput: $('importJsonInput'), resetDataButton: $('resetDataButton'),
     itemDialog: $('itemDialog'), itemForm: $('itemForm'), dialogTitle: $('dialogTitle'), editingItemId: $('editingItemId'), itemNameInput: $('itemNameInput'),
@@ -54,7 +57,8 @@
   init();
 
   function init() {
-    bindNavigation(); bindTodayControls(); bindSetupControls(); bindInstall(); applyPersonalization(); renderAll();
+    ensureFirstUseDate();
+    bindNavigation(); bindTodayControls(); bindProgressControls(); bindSetupControls(); bindInstall(); applyPersonalization(); renderAll();
     if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(() => {}));
   }
 
@@ -87,10 +91,21 @@
   function shiftDate(date, days) { const d = new Date(date); d.setDate(d.getDate()+days); return d; }
   function isSameDay(a,b) { return dateKey(a) === dateKey(b); }
   function ensureDay(key) { if (!state.days[key]) state.days[key] = { entries: {} }; if (!state.days[key].entries) state.days[key].entries = {}; return state.days[key]; }
+  function ensureFirstUseDate() {
+    let changed = false;
+    if (!state.settings.firstUseDate) {
+      const historical = Object.keys(state.days || {}).filter(key => /^\d{4}-\d{2}-\d{2}$/.test(key)).sort();
+      state.settings.firstUseDate = historical[0] || dateKey(startOfToday());
+      changed = true;
+    }
+    state.items.forEach(item => { if (!item.createdDate) { item.createdDate = state.settings.firstUseDate; changed = true; } });
+    if (changed) saveState();
+  }
 
   function scheduledItemsForDate(date) {
     const dow = date.getDay();
     return state.items.filter((item) => {
+      if (item.createdDate && dateKey(date) < item.createdDate) return false;
       if (item.frequency === 'weekdays') return dow >= 1 && dow <= 5;
       if (item.frequency === 'weekends') return dow === 0 || dow === 6;
       if (item.frequency === 'custom') return (item.days || []).includes(dow);
@@ -129,7 +144,7 @@
     document.querySelectorAll('.nav-button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     $(`${view}View`).classList.add('active');
-    els.pageTitle.textContent = ({today:'Today',history:'History',setup:'Setup'})[view] || 'Daily Routine';
+    els.pageTitle.textContent = ({today:'Today',history:'Progress',setup:'Setup'})[view] || 'Daily Routine';
     if (view === 'history') renderHistory(); if (view === 'setup') renderSetup();
     $('appMain').focus({preventScroll:true}); window.scrollTo({top:0,behavior:'smooth'});
   }
@@ -138,6 +153,13 @@
     els.nextDay.addEventListener('click', () => { selectedDate = shiftDate(selectedDate,1); renderToday(); });
     els.selectedDateButton.addEventListener('click', () => { selectedDate = startOfToday(); renderToday(); });
     els.copySummaryButton.addEventListener('click', copyDailySummary);
+  }
+  function bindProgressControls() {
+    els.rangeSelector?.querySelectorAll('.range-button').forEach(button => button.addEventListener('click', () => {
+      analyticsRange = Number(button.dataset.range) || 7;
+      els.rangeSelector.querySelectorAll('.range-button').forEach(candidate => candidate.classList.toggle('active', candidate === button));
+      renderHistory();
+    }));
   }
   function bindSetupControls() {
     els.wakeTimeInput.addEventListener('change', () => { state.settings.wakeTime = els.wakeTimeInput.value || '06:00'; saveState(); renderToday(); });
@@ -215,11 +237,206 @@
     if(Number.isFinite(Number(day.mood))) return Number(day.mood); return null;
   }
   function renderHistory() {
-    els.historyList.innerHTML=''; const today=startOfToday();
-    for(let i=0;i<30;i++){ const date=shiftDate(today,-i), day=state.days[dateKey(date)]||{}, c=completionForDate(date), row=document.createElement('button'); row.type='button'; row.className='history-row';
-      row.innerHTML=`<span class="history-date"><strong>${date.getDate()}</strong><span>${new Intl.DateTimeFormat(undefined,{month:'short'}).format(date)}</span></span><span class="history-copy"><strong>${new Intl.DateTimeFormat(undefined,{weekday:'short'}).format(date)}${i===0?' · Today':''}</strong><span>${c.completed} of ${c.total} required</span><span class="history-bar"><span style="width:${c.percent}%"></span></span></span><span class="history-mood">Mood<br><b>${getLatestMood(day)??'—'}</b></span>`;
-      row.addEventListener('click',()=>{selectedDate=date;switchView('today');renderToday();}); els.historyList.appendChild(row); }
+    renderProgressOverview();
+    renderWeekSummary();
+    renderSectionBreakdown();
+    renderHabitPerformance();
+    renderTrendList();
+    renderRecentHistory();
   }
+
+  function activeRangeDates(days = analyticsRange, endDate = startOfToday()) {
+    const firstUse = fromDateKey(state.settings.firstUseDate || dateKey(endDate));
+    const start = shiftDate(endDate, -(days - 1));
+    const effectiveStart = dateKey(start) < dateKey(firstUse) ? firstUse : start;
+    const dates = [];
+    for (let cursor = new Date(effectiveStart); dateKey(cursor) <= dateKey(endDate); cursor = shiftDate(cursor, 1)) dates.push(cursor);
+    return dates;
+  }
+
+  function previousRangeDates(days = analyticsRange) {
+    const end = shiftDate(startOfToday(), -days);
+    return activeRangeDates(days, end);
+  }
+
+  function aggregateCompletion(dates) {
+    let completed = 0, total = 0, days80 = 0, scoredDays = 0;
+    dates.forEach(date => {
+      const c = completionForDate(date);
+      if (!c.total) return;
+      completed += c.completed; total += c.total; scoredDays += 1;
+      if (c.percent >= 80) days80 += 1;
+    });
+    return { completed, total, days80, scoredDays, percent: total ? Math.round(completed / total * 100) : null };
+  }
+
+  function renderProgressOverview() {
+    const dates = activeRangeDates();
+    const aggregate = aggregateCompletion(dates);
+    els.progressOverall.textContent = aggregate.percent === null ? '—' : `${aggregate.percent}%`;
+    els.progress80Days.textContent = `${aggregate.days80}/${aggregate.scoredDays || 0}`;
+    els.progressTrackedDays.textContent = dates.length;
+    const first = dates[0], last = dates[dates.length - 1];
+    els.progressRangeNote.textContent = first && last
+      ? `${formatShortDate(first)} – ${formatShortDate(last)} · Required routine items drive completion scores.`
+      : 'Log a day to start building your progress history.';
+  }
+
+  function startOfCurrentWeek() {
+    const today = startOfToday();
+    const dow = today.getDay();
+    return shiftDate(today, dow === 0 ? -6 : 1 - dow);
+  }
+
+  function renderWeekSummary() {
+    const today = startOfToday(), weekStart = startOfCurrentWeek(), firstUse = fromDateKey(state.settings.firstUseDate || dateKey(today));
+    const days = Array.from({length: 7}, (_, index) => shiftDate(weekStart, index));
+    const eligible = days.filter(date => dateKey(date) <= dateKey(today) && dateKey(date) >= dateKey(firstUse));
+    const aggregate = aggregateCompletion(eligible);
+    els.weekOverall.textContent = aggregate.percent === null ? '—' : `${aggregate.percent}% week`;
+    els.weekSummary.innerHTML = days.map(date => {
+      const future = dateKey(date) > dateKey(today), beforeUse = dateKey(date) < dateKey(firstUse), unavailable = future || beforeUse;
+      const c = unavailable ? null : completionForDate(date);
+      const percent = c?.percent ?? 0;
+      const label = new Intl.DateTimeFormat(undefined, { weekday: 'narrow' }).format(date);
+      const value = unavailable ? '—' : `${percent}%`;
+      return `<div class="week-day${isSameDay(date,today)?' today':''}${unavailable?' unavailable':''}">
+        <span class="week-label">${escapeHtml(label)}</span>
+        <div class="week-track"><span style="height:${unavailable ? 0 : percent}%"></span></div>
+        <strong>${value}</strong>
+        <small>${date.getDate()}</small>
+      </div>`;
+    }).join('');
+  }
+
+  function renderSectionBreakdown() {
+    const dates = activeRangeDates();
+    els.sectionBreakdown.innerHTML = ['morning','day','evening'].map(section => {
+      let completed = 0, total = 0;
+      dates.forEach(date => {
+        const day = state.days[dateKey(date)] || { entries: {} };
+        scheduledItemsForDate(date).filter(item => item.section === section && !item.optional).forEach(item => {
+          total += 1;
+          if (entryMeetsTarget(item, day.entries?.[item.id])) completed += 1;
+        });
+      });
+      const percent = total ? Math.round(completed / total * 100) : null;
+      return progressRowMarkup(sectionLabels[section][0], percent, total ? `${completed}/${total} completed` : 'No required items');
+    }).join('');
+  }
+
+  function progressRowMarkup(label, percent, detail = '') {
+    const width = percent ?? 0;
+    return `<div class="breakdown-row">
+      <div class="breakdown-copy"><strong>${escapeHtml(label)}</strong><span>${escapeHtml(detail)}</span></div>
+      <div class="breakdown-score">${percent === null ? '—' : `${percent}%`}</div>
+      <div class="breakdown-bar"><span style="width:${width}%"></span></div>
+    </div>`;
+  }
+
+  function habitMetrics(dates) {
+    return state.items
+      .filter(item => ['checkbox','number','time'].includes(item.type))
+      .map(item => {
+        let opportunities = 0, successes = 0;
+        dates.forEach(date => {
+          if (!scheduledItemsForDate(date).some(scheduled => scheduled.id === item.id)) return;
+          opportunities += 1;
+          const day = state.days[dateKey(date)] || { entries: {} };
+          if (entryMeetsTarget(item, day.entries?.[item.id])) successes += 1;
+        });
+        return { item, opportunities, successes, percent: opportunities ? Math.round(successes / opportunities * 100) : null };
+      })
+      .filter(metric => metric.opportunities > 0);
+  }
+
+  function renderHabitPerformance() {
+    const metrics = habitMetrics(activeRangeDates());
+    if (!metrics.length) {
+      const empty = '<div class="analytics-empty">Add checkbox, number, or time habits to see consistency here.</div>';
+      els.strongHabits.innerHTML = empty; els.weakHabits.innerHTML = empty; return;
+    }
+    const strongest = [...metrics].sort((a,b) => b.percent - a.percent || b.successes - a.successes || (a.item.order ?? 0) - (b.item.order ?? 0)).slice(0,3);
+    const weakest = [...metrics].sort((a,b) => a.percent - b.percent || a.successes - b.successes || (b.item.order ?? 0) - (a.item.order ?? 0)).slice(0,3);
+    els.strongHabits.innerHTML = strongest.map(habitMetricMarkup).join('');
+    els.weakHabits.innerHTML = weakest.map(habitMetricMarkup).join('');
+  }
+
+  function habitMetricMarkup(metric) {
+    return `<div class="habit-row"><div><strong>${escapeHtml(metric.item.name)}</strong><span>${metric.successes}/${metric.opportunities} days</span></div><b>${metric.percent}%</b></div>`;
+  }
+
+  function scaleValueForDay(item, day) {
+    const entry = day.entries?.[item.id];
+    if (Number.isFinite(Number(entry))) return Number(entry);
+    const name = item.name.toLowerCase();
+    if (name.includes('mood') && Number.isFinite(Number(day.mood))) return Number(day.mood);
+    if (name.includes('energy') && Number.isFinite(Number(day.energy))) return Number(day.energy);
+    if (name.includes('stress') && Number.isFinite(Number(day.stress))) return Number(day.stress);
+    return null;
+  }
+
+  function scaleSeries(item, dates) {
+    return dates.map(date => {
+      const scheduled = scheduledItemsForDate(date).some(candidate => candidate.id === item.id);
+      if (!scheduled) return null;
+      return scaleValueForDay(item, state.days[dateKey(date)] || { entries: {} });
+    }).filter(value => value !== null);
+  }
+
+  function average(values) { return values.length ? values.reduce((sum,value) => sum + value, 0) / values.length : null; }
+
+  function renderTrendList() {
+    const currentDates = activeRangeDates(), priorDates = previousRangeDates();
+    const scaleItems = state.items.filter(item => item.type === 'scale');
+    const metrics = scaleItems.map(item => {
+      const current = scaleSeries(item, currentDates), prior = scaleSeries(item, priorDates);
+      return { item, current, prior, currentAvg: average(current), priorAvg: average(prior) };
+    }).filter(metric => metric.current.length > 0);
+    if (!metrics.length) {
+      els.trendList.innerHTML = '<div class="analytics-empty">Your 0–10 check-ins will appear here after you log them.</div>';
+      return;
+    }
+    els.trendList.innerHTML = metrics.map(metric => {
+      const delta = metric.priorAvg === null ? null : metric.currentAvg - metric.priorAvg;
+      const direction = delta === null ? '' : delta > .15 ? '↑' : delta < -.15 ? '↓' : '→';
+      const deltaText = delta === null ? `No prior ${analyticsRange}-day comparison` : `${direction} ${Math.abs(delta).toFixed(1)} vs prior ${analyticsRange}D`;
+      return `<div class="trend-row">
+        <div class="trend-copy"><strong>${escapeHtml(metric.item.name)}</strong><span>${metric.current.length} logged · ${escapeHtml(deltaText)}</span></div>
+        <div class="trend-chart">${sparkline(metric.current)}</div>
+        <div class="trend-average"><strong>${metric.currentAvg.toFixed(1)}</strong><span>/10 avg</span></div>
+      </div>`;
+    }).join('');
+  }
+
+  function sparkline(values) {
+    if (!values.length) return '';
+    const width = 104, height = 34, pad = 3;
+    if (values.length === 1) {
+      const y = height - pad - (values[0] / 10) * (height - pad * 2);
+      return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="One value: ${values[0]}"><circle cx="${width/2}" cy="${y.toFixed(1)}" r="3"></circle></svg>`;
+    }
+    const points = values.map((value,index) => {
+      const x = pad + index / (values.length - 1) * (width - pad * 2);
+      const y = height - pad - value / 10 * (height - pad * 2);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+    return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Rating trend"><polyline points="${points}" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>`;
+  }
+
+  function renderRecentHistory() {
+    els.historyList.innerHTML=''; const today=startOfToday(), firstUse=fromDateKey(state.settings.firstUseDate || dateKey(today));
+    const maxDays = Math.min(30, Math.max(1, Math.floor((today - firstUse) / 86400000) + 1));
+    for(let i=0;i<maxDays;i++){
+      const date=shiftDate(today,-i); if (dateKey(date) < dateKey(firstUse)) break;
+      const day=state.days[dateKey(date)]||{}, c=completionForDate(date), row=document.createElement('button'); row.type='button'; row.className='history-row';
+      row.innerHTML=`<span class="history-date"><strong>${date.getDate()}</strong><span>${new Intl.DateTimeFormat(undefined,{month:'short'}).format(date)}</span></span><span class="history-copy"><strong>${new Intl.DateTimeFormat(undefined,{weekday:'short'}).format(date)}${i===0?' · Today':''}</strong><span>${c.completed} of ${c.total} required</span><span class="history-bar"><span style="width:${c.percent}%"></span></span></span><span class="history-mood">Mood<br><b>${getLatestMood(day)??'—'}</b></span>`;
+      row.addEventListener('click',()=>{selectedDate=date;switchView('today');renderToday();}); els.historyList.appendChild(row);
+    }
+  }
+
+  function formatShortDate(date) { return new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric'}).format(date); }
+
   function renderSetup() {
     els.wakeTimeInput.value=state.settings.wakeTime; els.bedTimeInput.value=state.settings.bedTime; els.themeInput.value=state.settings.theme||'calm'; els.routineEditor.innerHTML='';
     ['morning','day','evening'].forEach(section=>{
@@ -244,7 +461,7 @@
     event.preventDefault(); const name=els.itemNameInput.value.trim(); if(!name)return; const days=[...els.customDaysField.querySelectorAll('input:checked')].map(cb=>Number(cb.value));
     if(els.itemFrequencyInput.value==='custom'&&!days.length){showToast('Choose at least one day');return;}
     const payload={name,section:els.itemSectionInput.value,type:els.itemTypeInput.value,frequency:els.itemFrequencyInput.value,days,optional:els.itemOptionalInput.checked,unit:els.itemTypeInput.value==='number'?els.itemUnitInput.value.trim():'',target:els.itemTypeInput.value==='number'&&els.itemTargetInput.value!==''?Number(els.itemTargetInput.value):null};
-    const id=els.editingItemId.value; if(id){const idx=state.items.findIndex(i=>i.id===id);if(idx>=0)state.items[idx]={...state.items[idx],...payload};} else { const same=state.items.filter(i=>i.section===payload.section); const max=same.reduce((m,i)=>Math.max(m,Number(i.order)||0),-1); state.items.push({id:`item-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,order:max+1,...payload}); }
+    const id=els.editingItemId.value; if(id){const idx=state.items.findIndex(i=>i.id===id);if(idx>=0)state.items[idx]={...state.items[idx],...payload};} else { const same=state.items.filter(i=>i.section===payload.section); const max=same.reduce((m,i)=>Math.max(m,Number(i.order)||0),-1); state.items.push({id:`item-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,order:max+1,createdDate:dateKey(startOfToday()),...payload}); }
     saveState(); els.itemDialog.close(); renderAll(); showToast(id?'Routine item updated':'Routine item added');
   }
   function deleteRoutineItem() { const id=els.editingItemId.value;if(!id)return;const item=state.items.find(i=>i.id===id);if(!item||!confirm(`Delete “${item.name}”?`))return;state.items=state.items.filter(i=>i.id!==id);saveState();els.itemDialog.close();renderAll();showToast('Routine item deleted'); }
@@ -268,9 +485,9 @@
     Object.keys(state.days).sort().forEach(key=>{const date=fromDateKey(key),day=state.days[key],c=completionForDate(date),scheduled=scheduledItemsForDate(date); if(!scheduled.length)rows.push([key,c.percent,c.completed,c.total,c.optionalLogged,'','','','','','','']); else scheduled.forEach(item=>rows.push([key,c.percent,c.completed,c.total,c.optionalLogged,sectionLabels[item.section][0],item.name,typeLabels[item.type],item.optional?'Yes':'No',item.target??'',item.unit||'',formatEntry(item,day.entries?.[item.id]??'')]));});
     downloadBlob(rows.map(r=>r.map(csvCell).join(',')).join('\r\n'),`daily-routine-progress-${dateKey(startOfToday())}.csv`,'text/csv;charset=utf-8');showToast('CSV exported');
   }
-  function exportJson(){downloadBlob(JSON.stringify({version:1.1,exportedAt:new Date().toISOString(),state},null,2),`daily-routine-backup-${dateKey(startOfToday())}.json`,'application/json');showToast('Backup downloaded');}
-  async function importJson(event){const file=event.target.files?.[0];event.target.value='';if(!file)return;try{const payload=JSON.parse(await file.text()),incoming=payload.state||payload;if(!incoming||!Array.isArray(incoming.items)||typeof incoming.days!=='object')throw new Error();if(!confirm('Restore this backup? It will replace current app data on this device.'))return;state={settings:{...DEFAULT_STATE.settings,...(incoming.settings||{})},items:incoming.items.map(normalizeItem),days:incoming.days};saveState();applyPersonalization();renderAll();showToast('Backup restored');}catch{alert('That file does not look like a valid Daily Routine backup.');}}
-  function resetData(){if(!confirm('Reset all routines, history, and settings on this device?'))return;state=structuredClone(DEFAULT_STATE);saveState();selectedDate=startOfToday();applyPersonalization();renderAll();showToast('App reset');}
+  function exportJson(){downloadBlob(JSON.stringify({version:1.2,exportedAt:new Date().toISOString(),state},null,2),`daily-routine-backup-${dateKey(startOfToday())}.json`,'application/json');showToast('Backup downloaded');}
+  async function importJson(event){const file=event.target.files?.[0];event.target.value='';if(!file)return;try{const payload=JSON.parse(await file.text()),incoming=payload.state||payload;if(!incoming||!Array.isArray(incoming.items)||typeof incoming.days!=='object')throw new Error();if(!confirm('Restore this backup? It will replace current app data on this device.'))return;state={settings:{...DEFAULT_STATE.settings,...(incoming.settings||{})},items:incoming.items.map(normalizeItem),days:incoming.days};ensureFirstUseDate();saveState();applyPersonalization();renderAll();showToast('Backup restored');}catch{alert('That file does not look like a valid Daily Routine backup.');}}
+  function resetData(){if(!confirm('Reset all routines, history, and settings on this device?'))return;state=structuredClone(DEFAULT_STATE);state.settings.firstUseDate=dateKey(startOfToday());ensureFirstUseDate();saveState();selectedDate=startOfToday();applyPersonalization();renderAll();showToast('App reset');}
 
   function greetingForHour(hour){return hour<12?'Good morning':hour<17?'Good afternoon':'Good evening';}
   function formatTime(value){if(!value)return'—';const[h,m]=value.split(':').map(Number),d=new Date();d.setHours(h,m,0,0);return new Intl.DateTimeFormat(undefined,{hour:'numeric',minute:'2-digit'}).format(d);}

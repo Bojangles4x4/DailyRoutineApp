@@ -65,10 +65,80 @@
       </section>
 
       <section id="historyView" class="view" aria-labelledby="pageTitle">
+        <section class="card progress-overview-card">
+          <div class="section-heading progress-heading">
+            <div>
+              <p class="eyebrow">Progress</p>
+              <h2>Your patterns</h2>
+            </div>
+            <div id="rangeSelector" class="range-selector" aria-label="Analytics range">
+              <button class="range-button active" type="button" data-range="7">7D</button>
+              <button class="range-button" type="button" data-range="30">30D</button>
+              <button class="range-button" type="button" data-range="90">90D</button>
+            </div>
+          </div>
+          <div class="progress-stats-grid">
+            <div><strong id="progressOverall">—</strong><span>Overall</span></div>
+            <div><strong id="progress80Days">—</strong><span>80%+ days</span></div>
+            <div><strong id="progressTrackedDays">—</strong><span>Days tracked</span></div>
+          </div>
+          <p id="progressRangeNote" class="muted progress-range-note"></p>
+        </section>
+
         <section class="card">
           <div class="section-heading">
             <div>
-              <p class="eyebrow">Progress</p>
+              <p class="eyebrow">This week</p>
+              <h2>Daily completion</h2>
+            </div>
+            <strong id="weekOverall" class="section-progress">—</strong>
+          </div>
+          <div id="weekSummary" class="week-summary"></div>
+        </section>
+
+        <section class="card">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Routine</p>
+              <h2>By part of day</h2>
+            </div>
+          </div>
+          <div id="sectionBreakdown" class="breakdown-list"></div>
+        </section>
+
+        <section class="card">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Consistency</p>
+              <h2>Habit performance</h2>
+            </div>
+          </div>
+          <div class="habit-columns">
+            <div>
+              <h3>Strongest</h3>
+              <div id="strongHabits" class="habit-list"></div>
+            </div>
+            <div>
+              <h3>Needs attention</h3>
+              <div id="weakHabits" class="habit-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Check-ins</p>
+              <h2>Rating trends</h2>
+            </div>
+          </div>
+          <div id="trendList" class="trend-list"></div>
+        </section>
+
+        <section class="card">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">History</p>
               <h2>Recent days</h2>
             </div>
           </div>
@@ -162,7 +232,7 @@
 
     <nav class="bottom-nav" aria-label="Main navigation">
       <button class="nav-button active" data-view="today" type="button"><span>✓</span><b>Today</b></button>
-      <button class="nav-button" data-view="history" type="button"><span>▤</span><b>History</b></button>
+      <button class="nav-button" data-view="history" type="button"><span>▤</span><b>Progress</b></button>
       <button class="nav-button" data-view="setup" type="button"><span>⚙</span><b>Setup</b></button>
     </nav>
   </div>
