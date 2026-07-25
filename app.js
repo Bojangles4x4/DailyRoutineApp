@@ -4,26 +4,28 @@
   const STORAGE_KEY = 'dailyRoutineApp.v1';
   const DEFAULT_SCALE = { min: 0, max: 10, step: 1, lowLabel: 'Low', highLabel: 'Great' };
   const DEFAULT_STATE = {
-    settings: { wakeTime: '06:00', bedTime: '22:30', theme: 'calm', backgroundImage: '' },
+    settings: { wakeTime: '06:00', bedTime: '22:30', theme: 'calm', backgroundImage: '', badgeEnabled: true },
     items: [
       { id: 'morning-prayer', name: 'Prayer', kind: 'routine', section: 'morning', type: 'checkbox', frequency: 'daily', days: [], optional: false, unit: '', target: null },
       { id: 'morning-teeth', name: 'Brush teeth', kind: 'routine', section: 'morning', type: 'checkbox', frequency: 'daily', days: [], optional: false, unit: '', target: null },
-      { id: 'morning-meds', name: 'Take morning medicine', kind: 'routine', section: 'morning', type: 'checkbox', frequency: 'daily', days: [], optional: false, unit: '', target: null },
+      { id: 'morning-meds', name: 'Take morning medicine', kind: 'routine', section: 'morning', type: 'medication', frequency: 'daily', days: [], optional: false, unit: '', target: null },
       { id: 'morning-reading', name: 'Bible reading', kind: 'routine', section: 'morning', type: 'checkbox', frequency: 'daily', days: [], optional: false, unit: '', target: null },
       { id: 'morning-sleep', name: 'Sleep quality', kind: 'checkin', section: 'morning', type: 'scale', frequency: 'daily', days: [], optional: true, scale: { min: 0, max: 10, step: 1, lowLabel: 'Poor', highLabel: 'Excellent' } },
       { id: 'morning-mood', name: 'Morning mood', kind: 'checkin', section: 'morning', type: 'scale', frequency: 'daily', days: [], optional: true, scale: { min: 0, max: 10, step: 1, lowLabel: 'Low', highLabel: 'Great' } },
       { id: 'day-water', name: 'Water', kind: 'routine', section: 'day', type: 'number', frequency: 'daily', days: [], optional: false, unit: 'cups', target: 8 },
       { id: 'day-movement', name: 'Movement / exercise', kind: 'routine', section: 'day', type: 'checkbox', frequency: 'daily', days: [], optional: false, unit: '', target: null },
+      { id: 'day-remember', name: 'Remember a blessing', kind: 'routine', section: 'day', type: 'memory', frequency: 'daily', days: [], optional: true, memoryCategory: 'blessing', unit: '', target: null },
       { id: 'day-focus', name: 'Focus / productivity', kind: 'checkin', section: 'day', type: 'scale', frequency: 'weekdays', days: [], optional: true, scale: { min: 0, max: 10, step: 1, lowLabel: 'Scattered', highLabel: 'Locked in' } },
       { id: 'day-stress', name: 'Stress', kind: 'checkin', section: 'day', type: 'scale', frequency: 'daily', days: [], optional: true, scale: { min: 0, max: 10, step: 1, lowLabel: 'Calm', highLabel: 'High' } },
       { id: 'evening-teeth', name: 'Brush teeth', kind: 'routine', section: 'evening', type: 'checkbox', frequency: 'daily', days: [], optional: false, unit: '', target: null },
-      { id: 'evening-meds', name: 'Take evening medicine', kind: 'routine', section: 'evening', type: 'checkbox', frequency: 'daily', days: [], optional: false, unit: '', target: null },
+      { id: 'evening-meds', name: 'Take evening medicine', kind: 'routine', section: 'evening', type: 'medication', frequency: 'daily', days: [], optional: false, unit: '', target: null },
       { id: 'evening-prepare', name: 'Prepare for tomorrow', kind: 'routine', section: 'evening', type: 'checkbox', frequency: 'daily', days: [], optional: false, unit: '', target: null },
       { id: 'evening-overall', name: 'Overall day', kind: 'checkin', section: 'evening', type: 'scale', frequency: 'daily', days: [], optional: true, scale: { min: 0, max: 10, step: 1, lowLabel: 'Rough', highLabel: 'Excellent' } },
       { id: 'evening-reflection', name: 'What went well today?', kind: 'checkin', section: 'evening', type: 'longtext', frequency: 'daily', days: [], optional: true, placeholder: 'What are you thankful for or glad happened?' },
       { id: 'evening-tomorrow', name: 'What needs attention tomorrow?', kind: 'checkin', section: 'evening', type: 'text', frequency: 'daily', days: [], optional: true, placeholder: 'One thing to carry forward…' }
     ],
-    days: {}
+    days: {},
+    memories: []
   };
 
   const sectionLabels = {
@@ -31,7 +33,7 @@
     day: ['Throughout the day', 'Stay on track'],
     evening: ['Evening', 'Close the day well']
   };
-  const typeLabels = { checkbox: 'Checkbox', scale: 'Rating scale', number: 'Number', time: 'Time', text: 'Short comment', longtext: 'Journal entry' };
+  const typeLabels = { checkbox: 'Checkbox', medication: 'Medication + time', memory: 'Memory reflection', scale: 'Rating scale', number: 'Number', time: 'Time', text: 'Short comment', longtext: 'Journal entry' };
 
   let state = loadState();
   let selectedDate = startOfToday();
@@ -54,6 +56,10 @@
     itemNameInput: $('itemNameInput'), itemSectionInput: $('itemSectionInput'), itemTypeInput: $('itemTypeInput'), itemFrequencyInput: $('itemFrequencyInput'), customDaysField: $('customDaysField'),
     numberGoalFields: $('numberGoalFields'), itemTargetInput: $('itemTargetInput'), itemUnitInput: $('itemUnitInput'), scaleFields: $('scaleFields'), scaleMinInput: $('scaleMinInput'), scaleMaxInput: $('scaleMaxInput'), scaleStepInput: $('scaleStepInput'), scaleLowLabelInput: $('scaleLowLabelInput'), scaleHighLabelInput: $('scaleHighLabelInput'),
     promptField: $('promptField'), itemPlaceholderInput: $('itemPlaceholderInput'), optionalField: $('optionalField'), itemOptionalInput: $('itemOptionalInput'),
+    medicationFields: $('medicationFields'), memoryFields: $('memoryFields'), memoryCategoryInput: $('memoryCategoryInput'),
+    actualWakeInput: $('actualWakeInput'), actualBedInput: $('actualBedInput'), wakeNowButton: $('wakeNowButton'), bedNowButton: $('bedNowButton'), badgeEnabledInput: $('badgeEnabledInput'),
+    quickMemoryButton: $('quickMemoryButton'), memoryTodayPreview: $('memoryTodayPreview'), addMemoryButton: $('addMemoryButton'), memoryCount: $('memoryCount'), memoryArchive: $('memoryArchive'), exportMemoriesButton: $('exportMemoriesButton'),
+    medicationInsights: $('medicationInsights'), memoryDialog: $('memoryDialog'), memoryForm: $('memoryForm'), closeMemoryDialogButton: $('closeMemoryDialogButton'), memoryTextInput: $('memoryTextInput'), memoryCategoryCaptureInput: $('memoryCategoryCaptureInput'), memoryDateTimeInput: $('memoryDateTimeInput'),
     deleteItemButton: $('deleteItemButton'), closeDialogButton: $('closeDialogButton'), installButton: $('installButton'), toast: $('toast')
   };
 
@@ -86,16 +92,20 @@
   }
 
   function normalizeItem(item, index) {
-    const kind = item.kind || (['scale', 'text', 'longtext'].includes(item.type) ? 'checkin' : 'routine');
+    let type = item.type;
+    if (['morning-meds', 'evening-meds'].includes(item.id) && type === 'checkbox') type = 'medication';
+    const kind = item.kind || (['scale', 'text', 'longtext'].includes(type) ? 'checkin' : 'routine');
     return {
       ...item,
+      type,
       kind,
       days: Array.isArray(item.days) ? item.days.map(Number) : [],
       optional: kind === 'checkin' && item.optional === undefined ? true : Boolean(item.optional),
       target: item.target === '' || item.target === undefined ? null : item.target,
       order: Number.isFinite(Number(item.order)) ? Number(item.order) : index,
       placeholder: item.placeholder || '',
-      scale: item.type === 'scale' ? normalizeScale(item.scale) : undefined
+      memoryCategory: item.memoryCategory || 'any',
+      scale: type === 'scale' ? normalizeScale(item.scale) : undefined
     };
   }
 
@@ -107,7 +117,8 @@
       return {
         settings: { ...DEFAULT_STATE.settings, ...(parsed.settings || {}) },
         items: Array.isArray(parsed.items) ? parsed.items.map(normalizeItem) : structuredClone(DEFAULT_STATE.items),
-        days: parsed.days && typeof parsed.days === 'object' ? parsed.days : {}
+        days: parsed.days && typeof parsed.days === 'object' ? parsed.days : {},
+        memories: Array.isArray(parsed.memories) ? parsed.memories : []
       };
     } catch {
       return structuredClone(DEFAULT_STATE);
@@ -129,11 +140,20 @@
       state.settings.firstUseDate = historical[0] || dateKey(startOfToday());
       changed = true;
     }
+    if (!Array.isArray(state.memories)) { state.memories = []; changed = true; }
     state.items.forEach((item, index) => {
       const normalized = normalizeItem(item, index);
       Object.assign(item, normalized);
       if (!item.createdDate) { item.createdDate = state.settings.firstUseDate; changed = true; }
     });
+    if (!state.settings.v14Seeded) {
+      if (!state.items.some(item => item.type === 'memory')) {
+        const maxOrder = state.items.filter(item => item.section === 'day' && item.kind === 'routine').reduce((max, item) => Math.max(max, Number(item.order) || 0), -1);
+        state.items.push({ id: 'day-remember', name: 'Remember a blessing', kind: 'routine', section: 'day', type: 'memory', frequency: 'daily', days: [], optional: true, memoryCategory: 'blessing', order: maxOrder + 1, createdDate: dateKey(startOfToday()) });
+      }
+      state.settings.v14Seeded = true;
+      changed = true;
+    }
     if (changed) saveState();
   }
 
@@ -150,6 +170,8 @@
 
   function entryIsLogged(item, value) {
     if (item.type === 'checkbox') return value === true;
+    if (item.type === 'medication') return value === true || Boolean(value && typeof value === 'object' && value.taken);
+    if (item.type === 'memory') return Boolean(value && typeof value === 'object' && value.reflected);
     if (item.type === 'scale') return Number.isFinite(Number(value));
     return value !== undefined && value !== null && String(value).trim() !== '';
   }
@@ -201,6 +223,11 @@
     els.nextDay.addEventListener('click', () => { selectedDate = shiftDate(selectedDate, 1); renderToday(); });
     els.selectedDateButton.addEventListener('click', () => { selectedDate = startOfToday(); renderToday(); });
     els.copySummaryButton.addEventListener('click', copyDailySummary);
+    els.actualWakeInput.addEventListener('change', () => saveActualTime('actualWakeTime', els.actualWakeInput.value));
+    els.actualBedInput.addEventListener('change', () => saveActualTime('actualBedTime', els.actualBedInput.value));
+    els.wakeNowButton.addEventListener('click', () => { const value = currentTimeValue(); els.actualWakeInput.value = value; saveActualTime('actualWakeTime', value); });
+    els.bedNowButton.addEventListener('click', () => { const value = currentTimeValue(); els.actualBedInput.value = value; saveActualTime('actualBedTime', value); });
+    els.quickMemoryButton.addEventListener('click', () => openMemoryDialog('blessing'));
   }
 
   function bindProgressControls() {
@@ -214,6 +241,7 @@
   function bindSetupControls() {
     els.wakeTimeInput.addEventListener('change', () => { state.settings.wakeTime = els.wakeTimeInput.value || '06:00'; saveState(); renderToday(); });
     els.bedTimeInput.addEventListener('change', () => { state.settings.bedTime = els.bedTimeInput.value || '22:30'; saveState(); renderToday(); });
+    els.badgeEnabledInput.addEventListener('change', () => { state.settings.badgeEnabled = els.badgeEnabledInput.checked; saveState(); updateAppBadge(); });
     els.themeInput.addEventListener('change', () => { state.settings.theme = els.themeInput.value; saveState(); applyPersonalization(); });
     els.backgroundImageInput.addEventListener('change', handleBackgroundImage);
     els.clearBackgroundButton.addEventListener('click', () => { state.settings.backgroundImage = ''; saveState(); applyPersonalization(); showToast('Background photo removed'); });
@@ -224,6 +252,10 @@
     els.itemFrequencyInput.addEventListener('change', toggleBuilderFields);
     els.itemForm.addEventListener('submit', saveRoutineItem);
     els.deleteItemButton.addEventListener('click', deleteRoutineItem);
+    els.addMemoryButton.addEventListener('click', () => openMemoryDialog('blessing'));
+    els.closeMemoryDialogButton.addEventListener('click', () => els.memoryDialog.close());
+    els.memoryForm.addEventListener('submit', saveMemory);
+    els.exportMemoriesButton.addEventListener('click', exportMemoriesCsv);
     els.exportCsvButton.addEventListener('click', exportCsv);
     els.exportJsonButton.addEventListener('click', exportJson);
     els.importJsonInput.addEventListener('change', importJson);
@@ -250,9 +282,12 @@
     els.heroDate.textContent = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric' }).format(selectedDate);
     els.wakeTimeDisplay.textContent = formatTime(state.settings.wakeTime);
     els.bedTimeDisplay.textContent = formatTime(state.settings.bedTime);
+    els.actualWakeInput.value = day.actualWakeTime || '';
+    els.actualBedInput.value = day.actualBedTime || '';
     els.selectedDateButton.textContent = isSameDay(selectedDate, today) ? 'Today' : new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' }).format(selectedDate);
     els.nextDay.disabled = dateKey(selectedDate) >= dateKey(today);
     els.nextDay.style.opacity = els.nextDay.disabled ? '.35' : '1';
+    renderMemoryPreview();
     renderRoutineSections(day);
     renderStats();
   }
@@ -295,6 +330,8 @@
   function buildTaskRow(item, value) {
     const row = document.createElement('div');
     row.className = `task-row${entryMeetsTarget(item, value) ? ' done' : ''}`;
+    if (item.type === 'medication') return buildMedicationRow(row, item, value);
+    if (item.type === 'memory') return buildMemoryRow(row, item, value);
     if (item.type === 'checkbox') {
       row.innerHTML = `<label class="task-main"><input class="check-control" type="checkbox" ${value === true ? 'checked' : ''}/><span class="task-name">${escapeHtml(item.name)}<span class="task-meta">${escapeHtml(metaForItem(item))}</span></span></label>`;
       row.querySelector('input').addEventListener('change', event => saveEntry(item, event.target.checked));
@@ -390,9 +427,9 @@
     els.statCompleted.textContent = `${c.completed}/${c.total}`;
     els.statOptional.textContent = `${c.optionalLogged}/${c.optionalTotal}`;
     els.statStreak.textContent = calculateStreak();
-    const latestMood = getLatestMood(day);
-    els.statMood.textContent = latestMood === null ? '—' : formatNumber(latestMood);
+    const latestMood = getLatestMood(day); els.statMood.textContent = latestMood === null ? '—' : formatNumber(latestMood);
     els.heroStatus.textContent = c.percent === 100 ? 'Day complete. Nicely done.' : c.percent >= 80 ? 'Strong day. Keep closing it out.' : c.percent >= 40 ? 'Good progress. Keep moving.' : 'Start deliberately.';
+    updateAppBadge();
   }
 
   function getLatestMood(day) {
@@ -411,6 +448,7 @@
     renderSectionBreakdown();
     renderHabitPerformance();
     renderTrendList();
+    renderMedicationTiming();
     renderPatternInsights();
     renderRecentHistory();
   }
@@ -600,11 +638,13 @@
   function renderSetup() {
     els.wakeTimeInput.value = state.settings.wakeTime;
     els.bedTimeInput.value = state.settings.bedTime;
+    els.badgeEnabledInput.checked = state.settings.badgeEnabled !== false;
     els.themeInput.value = state.settings.theme || 'calm';
     els.routineEditor.innerHTML = '';
     els.checkinEditor.innerHTML = '';
     renderEditorGroup('routine', els.routineEditor);
     renderEditorGroup('checkin', els.checkinEditor);
+    renderMemoryArchive();
   }
 
   function renderEditorGroup(kind, target) {
@@ -644,11 +684,18 @@
     els.itemNameInput.value = item?.name || '';
     els.itemNameInput.placeholder = resolvedKind === 'checkin' ? 'Example: How was your sleep?' : 'Example: Prayer';
     els.itemSectionInput.value = item?.section || 'morning';
-    els.itemTypeInput.value = item?.type || (resolvedKind === 'checkin' ? 'scale' : 'checkbox');
+    const medicationOption = els.itemTypeInput.querySelector('option[value="medication"]');
+    const memoryOption = els.itemTypeInput.querySelector('option[value="memory"]');
+    medicationOption.hidden = medicationOption.disabled = resolvedKind === 'checkin';
+    memoryOption.hidden = memoryOption.disabled = resolvedKind === 'checkin';
+    const defaultType = resolvedKind === 'checkin' ? 'scale' : 'checkbox';
+    els.itemTypeInput.value = item?.type || defaultType;
+    if (!els.itemTypeInput.value) els.itemTypeInput.value = defaultType;
     els.itemFrequencyInput.value = item?.frequency || 'daily';
     els.itemTargetInput.value = item?.target ?? '';
     els.itemUnitInput.value = item?.unit || '';
     els.itemPlaceholderInput.value = item?.placeholder || '';
+    els.memoryCategoryInput.value = item?.memoryCategory || 'any';
     els.itemOptionalInput.checked = item ? Boolean(item.optional) : resolvedKind === 'checkin';
     const scale = normalizeScale(item?.scale);
     els.scaleMinInput.value = scale.min; els.scaleMaxInput.value = scale.max; els.scaleStepInput.value = scale.step; els.scaleLowLabelInput.value = scale.lowLabel; els.scaleHighLabelInput.value = scale.highLabel;
@@ -663,6 +710,8 @@
     const type = els.itemTypeInput.value;
     els.numberGoalFields.hidden = type !== 'number';
     els.scaleFields.hidden = type !== 'scale';
+    els.medicationFields.hidden = type !== 'medication';
+    els.memoryFields.hidden = type !== 'memory';
     els.promptField.hidden = !['text', 'longtext'].includes(type);
     els.customDaysField.hidden = els.itemFrequencyInput.value !== 'custom';
   }
@@ -685,6 +734,7 @@
       unit: type === 'number' ? els.itemUnitInput.value.trim() : '',
       target: type === 'number' && els.itemTargetInput.value !== '' ? Number(els.itemTargetInput.value) : null,
       placeholder: ['text', 'longtext'].includes(type) ? els.itemPlaceholderInput.value.trim() : '',
+      memoryCategory: type === 'memory' ? els.memoryCategoryInput.value : 'any',
       scale: type === 'scale' ? scale : undefined
     };
     const id = els.editingItemId.value;
@@ -743,25 +793,33 @@
 
   function formatEntry(item, value) {
     if (item.type === 'checkbox') return value ? 'Completed' : 'Not completed';
+    if (item.type === 'medication') {
+      if (value === true) return 'Taken (time not logged)';
+      return value?.taken ? `Taken${value.time ? ` at ${formatTime(value.time)}` : ''}` : 'Not taken';
+    }
+    if (item.type === 'memory') {
+      const memory = state.memories.find(candidate => candidate.id === value?.memoryId);
+      return value?.reflected ? `Reflected${memory ? ` — ${memory.text}` : ''}` : 'Not reflected';
+    }
     if (item.type === 'scale') { const scale = normalizeScale(item.scale); return `${value} (${formatNumber(scale.min)}–${formatNumber(scale.max)})`; }
     return `${value}${item.unit ? ` ${item.unit}` : ''}`;
   }
 
   function exportCsv() {
-    const rows = [['Date', 'Completion %', 'Required Completed', 'Required Total', 'Optional Logged', 'Section', 'Kind', 'Item', 'Input Type', 'Optional', 'Target', 'Unit', 'Scale Min', 'Scale Max', 'Value']];
+    const rows = [['Date', 'Actual Wake', 'Actual Bed', 'Completion %', 'Required Completed', 'Required Total', 'Optional Logged', 'Section', 'Kind', 'Item', 'Input Type', 'Optional', 'Target', 'Unit', 'Scale Min', 'Scale Max', 'Value']];
     Object.keys(state.days).sort().forEach(key => {
       const date = fromDateKey(key), day = state.days[key], c = completionForDate(date), scheduled = scheduledItemsForDate(date);
-      if (!scheduled.length) rows.push([key, c.percent, c.completed, c.total, c.optionalLogged, '', '', '', '', '', '', '', '', '', '']);
+      if (!scheduled.length) rows.push([key, day.actualWakeTime || '', day.actualBedTime || '', c.percent, c.completed, c.total, c.optionalLogged, '', '', '', '', '', '', '', '', '', '']);
       else scheduled.forEach(item => {
         const scale = item.type === 'scale' ? normalizeScale(item.scale) : {};
-        rows.push([key, c.percent, c.completed, c.total, c.optionalLogged, sectionLabels[item.section][0], item.kind, item.name, typeLabels[item.type], item.optional ? 'Yes' : 'No', item.target ?? '', item.unit || '', scale.min ?? '', scale.max ?? '', formatEntry(item, day.entries?.[item.id] ?? '')]);
+        rows.push([key, day.actualWakeTime || '', day.actualBedTime || '', c.percent, c.completed, c.total, c.optionalLogged, sectionLabels[item.section][0], item.kind, item.name, typeLabels[item.type], item.optional ? 'Yes' : 'No', item.target ?? '', item.unit || '', scale.min ?? '', scale.max ?? '', formatEntry(item, day.entries?.[item.id] ?? '')]);
       });
     });
     downloadBlob(rows.map(row => row.map(csvCell).join(',')).join('\r\n'), `daily-routine-progress-${dateKey(startOfToday())}.csv`, 'text/csv;charset=utf-8');
     showToast('CSV exported');
   }
 
-  function exportJson() { downloadBlob(JSON.stringify({ version: 1.3, exportedAt: new Date().toISOString(), state }, null, 2), `daily-routine-backup-${dateKey(startOfToday())}.json`, 'application/json'); showToast('Backup downloaded'); }
+  function exportJson() { downloadBlob(JSON.stringify({ version: 1.4, exportedAt: new Date().toISOString(), state }, null, 2), `daily-routine-backup-${dateKey(startOfToday())}.json`, 'application/json'); showToast('Backup downloaded'); }
 
   async function importJson(event) {
     const file = event.target.files?.[0]; event.target.value = ''; if (!file) return;
@@ -769,7 +827,7 @@
       const payload = JSON.parse(await file.text()), incoming = payload.state || payload;
       if (!incoming || !Array.isArray(incoming.items) || typeof incoming.days !== 'object') throw new Error('Invalid backup');
       if (!confirm('Restore this backup? It will replace current app data on this device.')) return;
-      state = { settings: { ...DEFAULT_STATE.settings, ...(incoming.settings || {}) }, items: incoming.items.map(normalizeItem), days: incoming.days };
+      state = { settings: { ...DEFAULT_STATE.settings, ...(incoming.settings || {}) }, items: incoming.items.map(normalizeItem), days: incoming.days, memories: Array.isArray(incoming.memories) ? incoming.memories : [] };
       ensureFirstUseDate(); saveState(); applyPersonalization(); renderAll(); showToast('Backup restored');
     } catch { alert('That file does not look like a valid Daily Routine backup.'); }
   }
@@ -777,6 +835,271 @@
   function resetData() {
     if (!confirm('Reset all routines, history, and settings on this device?')) return;
     state = structuredClone(DEFAULT_STATE); state.settings.firstUseDate = dateKey(startOfToday()); ensureFirstUseDate(); saveState(); selectedDate = startOfToday(); applyPersonalization(); renderAll(); showToast('App reset');
+  }
+
+  function saveActualTime(field, value) {
+    const day = ensureDay(dateKey(selectedDate));
+    if (value) day[field] = value; else delete day[field];
+    saveState();
+    renderHistory();
+    showToast(value ? 'Actual time saved' : 'Actual time cleared');
+  }
+
+  function currentTimeValue() {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  }
+
+  function medicationTime(value) {
+    return value && typeof value === 'object' && value.taken ? (value.time || '') : '';
+  }
+
+  function buildMedicationRow(row, item, value) {
+    const taken = entryIsLogged(item, value);
+    const time = medicationTime(value);
+    row.classList.toggle('done', taken);
+    row.innerHTML = `<div class="task-main medication-main"><span class="medication-icon" aria-hidden="true">Rx</span><span class="task-name">${escapeHtml(item.name)}<span class="task-meta">${escapeHtml(metaForItem(item))}${taken ? ` · ${time ? `Taken ${formatTime(time)}` : 'Taken · time not logged'}` : ''}</span></span></div><div class="medication-actions"></div>`;
+    const actions = row.querySelector('.medication-actions');
+    if (!taken) {
+      actions.innerHTML = `<button class="primary-button medication-now" type="button">Taken now</button><button class="small-button medication-manual" type="button">Add time</button>`;
+      actions.querySelector('.medication-now').addEventListener('click', () => logMedicationNow(item));
+      actions.querySelector('.medication-manual').addEventListener('click', () => saveMedicationTime(item, currentTimeValue(), true));
+    } else {
+      actions.innerHTML = `<label class="med-time-edit"><span>Taken at</span><input class="task-input" type="time" value="${escapeHtml(time)}" /></label><button class="small-button medication-clear" type="button">Clear</button>`;
+      actions.querySelector('input').addEventListener('change', event => saveMedicationTime(item, event.target.value, true));
+      actions.querySelector('.medication-clear').addEventListener('click', () => clearMedication(item));
+    }
+    return row;
+  }
+
+  function logMedicationNow(item) { saveMedicationTime(item, currentTimeValue(), true); }
+
+  function saveMedicationTime(item, time, rerender = true) {
+    const day = ensureDay(dateKey(selectedDate));
+    const selected = fromDateKey(dateKey(selectedDate));
+    if (time) {
+      const [hours, minutes] = time.split(':').map(Number);
+      selected.setHours(hours, minutes, 0, 0);
+      day.entries[item.id] = { taken: true, time, timestamp: selected.toISOString() };
+    } else {
+      day.entries[item.id] = { taken: true, time: '', timestamp: null };
+    }
+    saveState();
+    if (rerender) renderToday(); else renderStats();
+    showToast(time ? `Medication logged at ${formatTime(time)}` : 'Medication logged');
+  }
+
+  function clearMedication(item) {
+    const day = ensureDay(dateKey(selectedDate));
+    delete day.entries[item.id];
+    saveState(); renderToday(); showToast('Medication log cleared');
+  }
+
+  function eligibleMemories(item) {
+    const category = item.memoryCategory || 'any';
+    return state.memories.filter(memory => category === 'any' || memory.category === category);
+  }
+
+  function recentMemoryIds(item, limit = 5) {
+    const ids = [];
+    const today = startOfToday();
+    for (let i = 0; i < 30 && ids.length < limit; i += 1) {
+      const day = state.days[dateKey(shiftDate(today, -i))];
+      const entry = day?.entries?.[item.id];
+      if (entry?.memoryId && !ids.includes(entry.memoryId)) ids.push(entry.memoryId);
+    }
+    return ids;
+  }
+
+  function chooseMemory(item, excludeId = '') {
+    const available = eligibleMemories(item);
+    if (!available.length) return null;
+    const recent = new Set(recentMemoryIds(item));
+    let pool = available.filter(memory => memory.id !== excludeId && !recent.has(memory.id));
+    if (!pool.length) pool = available.filter(memory => memory.id !== excludeId);
+    if (!pool.length) pool = available;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  function memoryEntryForToday(item, value) {
+    if (value && typeof value === 'object' && value.memoryId && state.memories.some(memory => memory.id === value.memoryId)) return value;
+    const memory = chooseMemory(item);
+    if (!memory) return null;
+    const entry = { memoryId: memory.id, reflected: false, shownAt: new Date().toISOString() };
+    ensureDay(dateKey(selectedDate)).entries[item.id] = entry;
+    saveState();
+    return entry;
+  }
+
+  function buildMemoryRow(row, item, value) {
+    const entry = memoryEntryForToday(item, value);
+    row.classList.add('memory-routine-row');
+    if (!entry) {
+      row.innerHTML = `<div class="task-main"><span class="task-name">${escapeHtml(item.name)}<span class="task-meta">${escapeHtml(metaForItem(item))}</span></span></div><div class="memory-empty-inline"><span>No saved ${item.memoryCategory && item.memoryCategory !== 'any' ? escapeHtml(item.memoryCategory) + 's' : 'memories'} yet.</span><button class="primary-button" type="button">+ Remember something</button></div>`;
+      row.querySelector('button').addEventListener('click', () => openMemoryDialog(item.memoryCategory === 'any' ? 'blessing' : item.memoryCategory));
+      return row;
+    }
+    const memory = state.memories.find(candidate => candidate.id === entry.memoryId);
+    if (!memory) return row;
+    row.classList.toggle('done', Boolean(entry.reflected));
+    row.innerHTML = `<div class="memory-routine-head"><div><span class="memory-category">${escapeHtml(memoryCategoryLabel(memory.category))}</span><strong>${escapeHtml(item.name)}</strong></div><span class="task-meta">${escapeHtml(metaForItem(item))}</span></div><blockquote>${escapeHtml(memory.text)}</blockquote><div class="memory-routine-meta">${escapeHtml(formatMemoryDate(memory.createdAt))}</div><div class="memory-routine-actions"><button class="small-button another-memory" type="button">Another one ↻</button><button class="${entry.reflected ? 'secondary-button' : 'primary-button'} reflect-memory" type="button">${entry.reflected ? 'Reflected ✓' : 'I reflected on this'}</button></div>`;
+    row.querySelector('.another-memory').addEventListener('click', () => rotateMemory(item, entry.memoryId));
+    row.querySelector('.reflect-memory').addEventListener('click', () => toggleMemoryReflected(item));
+    return row;
+  }
+
+  function rotateMemory(item, currentId) {
+    const memory = chooseMemory(item, currentId);
+    if (!memory) { showToast('No other memories available yet'); return; }
+    const day = ensureDay(dateKey(selectedDate));
+    day.entries[item.id] = { memoryId: memory.id, reflected: false, shownAt: new Date().toISOString() };
+    saveState(); renderToday();
+  }
+
+  function toggleMemoryReflected(item) {
+    const day = ensureDay(dateKey(selectedDate));
+    const entry = day.entries[item.id];
+    if (!entry?.memoryId) return;
+    entry.reflected = !entry.reflected;
+    entry.reflectedAt = entry.reflected ? new Date().toISOString() : null;
+    saveState(); renderToday();
+  }
+
+  function openMemoryDialog(category = 'blessing') {
+    els.memoryTextInput.value = '';
+    els.memoryCategoryCaptureInput.value = ['blessing','gratitude','prayer','thought','quote','memory'].includes(category) ? category : 'blessing';
+    els.memoryDateTimeInput.value = toDateTimeLocal(new Date());
+    els.memoryDialog.showModal();
+    setTimeout(() => els.memoryTextInput.focus(), 50);
+  }
+
+  function saveMemory(event) {
+    event.preventDefault();
+    const text = els.memoryTextInput.value.trim();
+    if (!text) return;
+    const when = new Date(els.memoryDateTimeInput.value);
+    const createdAt = Number.isNaN(when.getTime()) ? new Date().toISOString() : when.toISOString();
+    state.memories.push({ id: `memory-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, text, category: els.memoryCategoryCaptureInput.value, createdAt });
+    saveState(); els.memoryDialog.close(); renderAll(); showToast('Memory saved');
+  }
+
+  function renderMemoryPreview() {
+    const memories = [...state.memories].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    if (!memories.length) {
+      els.memoryTodayPreview.innerHTML = '<span class="muted">Capture small blessings, moments, prayers, or thoughts so the app can bring them back later.</span>';
+      return;
+    }
+    const latest = memories[0];
+    els.memoryTodayPreview.innerHTML = `<div><strong>${state.memories.length} saved</strong><span>Latest · ${escapeHtml(memoryCategoryLabel(latest.category))} · ${escapeHtml(formatMemoryDate(latest.createdAt))}</span></div><p>${escapeHtml(latest.text)}</p>`;
+  }
+
+  function renderMemoryArchive() {
+    els.memoryCount.textContent = state.memories.length;
+    const memories = [...state.memories].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 25);
+    if (!memories.length) { els.memoryArchive.innerHTML = '<div class="analytics-empty">Nothing saved yet. Capture the first small thing you do not want to forget.</div>'; return; }
+    els.memoryArchive.innerHTML = '';
+    memories.forEach(memory => {
+      const row = document.createElement('div'); row.className = 'memory-archive-row';
+      row.innerHTML = `<div><span class="memory-category">${escapeHtml(memoryCategoryLabel(memory.category))}</span><p>${escapeHtml(memory.text)}</p><small>${escapeHtml(formatMemoryDate(memory.createdAt))}</small></div><button class="edit-button" type="button" aria-label="Delete memory">Delete</button>`;
+      row.querySelector('button').addEventListener('click', () => deleteMemory(memory.id));
+      els.memoryArchive.appendChild(row);
+    });
+  }
+
+  function deleteMemory(id) {
+    const memory = state.memories.find(candidate => candidate.id === id);
+    if (!memory || !confirm('Delete this saved memory?')) return;
+    state.memories = state.memories.filter(candidate => candidate.id !== id);
+    Object.values(state.days).forEach(day => Object.entries(day.entries || {}).forEach(([itemId, entry]) => { if (entry?.memoryId === id) delete day.entries[itemId]; }));
+    saveState(); renderAll(); showToast('Memory deleted');
+  }
+
+  function exportMemoriesCsv() {
+    const rows = [['Date & Time', 'Category', 'Memory']];
+    [...state.memories].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)).forEach(memory => rows.push([new Date(memory.createdAt).toLocaleString(), memoryCategoryLabel(memory.category), memory.text]));
+    downloadBlob(rows.map(row => row.map(csvCell).join(',')).join('\r\n'), `daily-routine-memories-${dateKey(startOfToday())}.csv`, 'text/csv;charset=utf-8');
+    showToast('Memories exported');
+  }
+
+  function memoryCategoryLabel(category) { return ({ blessing:'Blessing', gratitude:'Gratitude', prayer:'Prayer', thought:'Thought', quote:'Quote', memory:'Memory' })[category] || 'Memory'; }
+  function formatMemoryDate(value) { const date = new Date(value); return Number.isNaN(date.getTime()) ? '' : new Intl.DateTimeFormat(undefined, { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' }).format(date); }
+  function toDateTimeLocal(date) { const offset = date.getTimezoneOffset(); const local = new Date(date.getTime() - offset * 60000); return local.toISOString().slice(0, 16); }
+
+  async function updateAppBadge() {
+    try {
+      if (!('setAppBadge' in navigator) || !('clearAppBadge' in navigator)) return;
+      if (state.settings.badgeEnabled === false) { await navigator.clearAppBadge(); return; }
+      const c = completionForDate(startOfToday());
+      const remaining = Math.max(0, c.total - c.completed);
+      if (remaining > 0) await navigator.setAppBadge(remaining); else await navigator.clearAppBadge();
+    } catch { /* Some browsers expose the API but do not permit badges outside an installed app. */ }
+  }
+
+  function timeToMinutes(value) {
+    if (!/^\d{2}:\d{2}$/.test(value || '')) return null;
+    const [hours, minutes] = value.split(':').map(Number);
+    return hours * 60 + minutes;
+  }
+
+  function averageClock(values, eveningWrap = false) {
+    if (!values.length) return null;
+    const adjusted = values.map(value => eveningWrap && value < 360 ? value + 1440 : value);
+    const avg = adjusted.reduce((sum, value) => sum + value, 0) / adjusted.length;
+    return ((Math.round(avg) % 1440) + 1440) % 1440;
+  }
+
+  function formatMinutesClock(minutes) {
+    if (minutes === null || minutes === undefined) return '—';
+    const normalized = ((Math.round(minutes) % 1440) + 1440) % 1440;
+    return formatTime(`${String(Math.floor(normalized / 60)).padStart(2, '0')}:${String(normalized % 60).padStart(2, '0')}`);
+  }
+
+  function formatDurationMinutes(minutes) {
+    const rounded = Math.max(0, Math.round(minutes));
+    const hours = Math.floor(rounded / 60), mins = rounded % 60;
+    return `${hours}h ${String(mins).padStart(2, '0')}m`;
+  }
+
+  function renderMedicationTiming() {
+    const medicationItems = state.items.filter(item => item.type === 'medication');
+    if (!medicationItems.length) { els.medicationInsights.innerHTML = '<div class="analytics-empty">Change a routine item to “Medication + time” to start building timing history.</div>'; return; }
+    const dates = activeRangeDates();
+    const blocks = medicationItems.map(item => medicationTimingMetric(item, dates)).filter(metric => metric.loggedTimes.length);
+    if (!blocks.length) { els.medicationInsights.innerHTML = '<div class="analytics-empty">Tap “Taken now” on a medication item to start building this view.</div>'; return; }
+    els.medicationInsights.innerHTML = blocks.map(metric => {
+      const avgTaken = averageClock(metric.loggedTimes, true);
+      const avgWake = averageClock(metric.pairs.map(pair => pair.wake), false);
+      const avgInterval = metric.pairs.length ? average(metric.pairs.map(pair => pair.interval)) : null;
+      let comparison = '';
+      if (metric.pairs.length >= 6) {
+        const sorted = [...metric.pairs].sort((a,b) => a.medAdjusted - b.medAdjusted);
+        const cut = Math.floor(sorted.length / 2);
+        const early = sorted.slice(0, cut), late = sorted.slice(cut);
+        const earlyWake = averageClock(early.map(pair => pair.wake));
+        const lateWake = averageClock(late.map(pair => pair.wake));
+        comparison = `<div class="med-compare"><span>Earlier half → <b>${formatMinutesClock(earlyWake)}</b> avg next wake</span><span>Later half → <b>${formatMinutesClock(lateWake)}</b> avg next wake</span></div>`;
+      }
+      return `<div class="med-insight"><div class="med-insight-head"><strong>${escapeHtml(metric.item.name)}</strong><span>${metric.loggedTimes.length} timed dose${metric.loggedTimes.length === 1 ? '' : 's'} · ${metric.pairs.length} paired with next wake</span></div><div class="med-stat-grid"><div><b>${formatMinutesClock(avgTaken)}</b><span>Avg taken</span></div><div><b>${formatMinutesClock(avgWake)}</b><span>Avg next wake</span></div><div><b>${avgInterval === null ? '—' : formatDurationMinutes(avgInterval)}</b><span>Avg taken → wake</span></div></div>${comparison}</div>`;
+    }).join('');
+  }
+
+  function medicationTimingMetric(item, dates) {
+    const loggedTimes = [], pairs = [];
+    dates.forEach(date => {
+      const day = state.days[dateKey(date)] || {};
+      const entry = day.entries?.[item.id];
+      const med = timeToMinutes(medicationTime(entry));
+      if (med === null) return;
+      loggedTimes.push(med);
+      const nextDay = state.days[dateKey(shiftDate(date, 1))] || {};
+      const wake = timeToMinutes(nextDay.actualWakeTime);
+      if (wake === null) return;
+      const medAdjusted = med < 360 ? med + 1440 : med;
+      let wakeAdjusted = wake;
+      while (wakeAdjusted <= medAdjusted) wakeAdjusted += 1440;
+      pairs.push({ med, medAdjusted, wake, interval: wakeAdjusted - medAdjusted });
+    });
+    return { item, loggedTimes, pairs };
   }
 
   function scaleLabel(item) { const scale = normalizeScale(item.scale); return `${formatNumber(scale.min)}–${formatNumber(scale.max)} scale`; }

@@ -43,6 +43,20 @@
           <button id="nextDay" class="ghost-button" type="button" aria-label="Next day">›</button>
         </div>
 
+        <section class="card actual-time-card">
+          <div class="section-heading"><div><p class="eyebrow">Timing</p><h2>Actual sleep times</h2></div><span class="section-progress">for this day</span></div>
+          <div class="actual-time-grid">
+            <label class="actual-time-field"><span>Woke up</span><div><input id="actualWakeInput" type="time" /><button id="wakeNowButton" class="small-button" type="button">Now</button></div></label>
+            <label class="actual-time-field"><span>Went to bed</span><div><input id="actualBedInput" type="time" /><button id="bedNowButton" class="small-button" type="button">Now</button></div></label>
+          </div>
+          <p class="muted micro-copy">These actual times can be compared with medication timing in Progress.</p>
+        </section>
+
+        <section class="card capture-card">
+          <div class="section-heading"><div><p class="eyebrow">Remember</p><h2>Capture a small thing</h2></div><button id="quickMemoryButton" class="primary-button" type="button">+ Remember</button></div>
+          <div id="memoryTodayPreview" class="memory-preview"></div>
+        </section>
+
         <div id="routineSections"></div>
 
         <section class="card summary-card">
@@ -101,6 +115,12 @@
         </section>
 
         <section class="card">
+          <div class="section-heading"><div><p class="eyebrow">Medication</p><h2>Timing & next wake</h2></div></div>
+          <p class="muted setup-help">A descriptive look at your logged timing. It does not establish that medication timing caused a particular wake time.</p>
+          <div id="medicationInsights" class="medication-insights"></div>
+        </section>
+
+        <section class="card">
           <div class="section-heading"><div><p class="eyebrow">Patterns</p><h2>What seems connected?</h2></div></div>
           <p class="muted setup-help">These are associations in your own logs, not proof that one habit caused the other result.</p>
           <div id="patternInsights" class="insight-list"></div>
@@ -119,6 +139,7 @@
             <label class="text-field compact"><span>Wake-up time</span><input id="wakeTimeInput" type="time" /></label>
             <label class="text-field compact"><span>Bedtime target</span><input id="bedTimeInput" type="time" /></label>
           </div>
+          <label class="toggle-field schedule-toggle"><input id="badgeEnabledInput" type="checkbox" /><span><b>Home Screen progress badge</b><small>When supported by your installed web app, show the number of required items still remaining today.</small></span></label>
         </section>
 
         <section class="card">
@@ -143,6 +164,13 @@
           <div class="section-heading"><div><p class="eyebrow">Reflection</p><h2>Check-ins & prompts</h2></div><button id="addCheckinButton" class="primary-button" type="button">+ Add</button></div>
           <p class="muted setup-help">Build your own mood, sleep, stress, focus, gratitude, or reflection questions and place them in Morning, Day, or Evening.</p>
           <div id="checkinEditor" class="routine-editor"></div>
+        </section>
+
+        <section class="card">
+          <div class="section-heading"><div><p class="eyebrow">Remember</p><h2>Memory bank</h2></div><button id="addMemoryButton" class="primary-button" type="button">+ Add</button></div>
+          <p class="muted setup-help">Save blessings, gratitude, prayers, thoughts, quotes, and memories. A Memory reflection routine can randomly bring them back during your day.</p>
+          <div class="memory-bank-stats"><strong id="memoryCount">0</strong><span>saved</span><button id="exportMemoriesButton" class="small-button" type="button">Export CSV</button></div>
+          <div id="memoryArchive" class="memory-archive"></div>
         </section>
 
         <section class="card">
@@ -178,7 +206,7 @@
       <label class="text-field compact"><span>Name / question</span><input id="itemNameInput" type="text" maxlength="80" required placeholder="Example: Prayer" /></label>
       <label class="text-field compact"><span>Part of day</span><select id="itemSectionInput"><option value="morning">Morning</option><option value="day">Throughout the day</option><option value="evening">Evening</option></select></label>
       <label class="text-field compact"><span>How to log it</span><select id="itemTypeInput">
-        <option value="checkbox">Checkbox</option><option value="scale">Rating scale</option><option value="number">Number</option><option value="time">Time</option><option value="text">Short comment</option><option value="longtext">Journal entry</option>
+        <option value="checkbox">Checkbox</option><option value="medication">Medication + time</option><option value="memory">Memory reflection</option><option value="scale">Rating scale</option><option value="number">Number</option><option value="time">Time</option><option value="text">Short comment</option><option value="longtext">Journal entry</option>
       </select></label>
       <label class="text-field compact"><span>Schedule</span><select id="itemFrequencyInput"><option value="daily">Every day</option><option value="weekdays">Weekdays</option><option value="weekends">Weekends</option><option value="custom">Specific days</option></select></label>
 
@@ -205,11 +233,32 @@
         <p class="muted setup-help">The rating value can be changed by dragging the bar, tapping −/+, or typing the number.</p>
       </div>
 
+      <div id="medicationFields" class="builder-subcard" hidden>
+        <strong class="builder-note-title">Medication timing</strong>
+        <p class="muted setup-help">On Today, tap <b>Taken now</b> to save the time automatically. You can edit the recorded time afterward.</p>
+      </div>
+
+      <label id="memoryFields" class="text-field compact" hidden><span>Which memories should this surface?</span><select id="memoryCategoryInput">
+        <option value="any">Any category</option><option value="blessing">Blessings</option><option value="gratitude">Gratitude</option><option value="prayer">Prayers</option><option value="thought">Thoughts</option><option value="quote">Quotes</option><option value="memory">Memories</option>
+      </select></label>
+
       <label id="promptField" class="text-field compact" hidden><span>Answer hint (optional)</span><input id="itemPlaceholderInput" type="text" maxlength="80" placeholder="Example: Anything worth remembering?" /></label>
 
       <label id="optionalField" class="toggle-field"><input id="itemOptionalInput" type="checkbox" /><span><b>Optional item</b><small>Track it, but do not let it lower the daily completion score.</small></span></label>
 
       <div class="dialog-actions"><button id="deleteItemButton" class="danger-button" type="button" hidden>Delete</button><button class="primary-button" type="submit">Save</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="memoryDialog" class="item-dialog memory-dialog">
+    <form id="memoryForm" method="dialog">
+      <div class="dialog-header"><div><p class="eyebrow">Capture</p><h2>Remember this</h2></div><button id="closeMemoryDialogButton" class="icon-button" type="button" aria-label="Close">×</button></div>
+      <label class="text-field compact"><span>What happened?</span><textarea id="memoryTextInput" rows="4" maxlength="1000" required placeholder="A small blessing, moment, prayer, quote, or thought…"></textarea></label>
+      <div class="two-column-fields">
+        <label class="text-field compact"><span>Category</span><select id="memoryCategoryCaptureInput"><option value="blessing">Blessing</option><option value="gratitude">Gratitude</option><option value="prayer">Prayer</option><option value="thought">Thought</option><option value="quote">Quote</option><option value="memory">Memory</option></select></label>
+        <label class="text-field compact"><span>Date & time</span><input id="memoryDateTimeInput" type="datetime-local" required /></label>
+      </div>
+      <div class="dialog-actions"><button class="primary-button" type="submit">Save memory</button></div>
     </form>
   </dialog>
 
