@@ -4,14 +4,15 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#163a33" />
-  <meta name="description" content="A private, customizable daily routine and mood tracker." />
+  <meta name="description" content="A private, customizable daily routine and check-in tracker." />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icon-192.png" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <link rel="stylesheet" href="styles.css" />
   <title>Daily Routine</title>
 </head>
-<body>
+<body data-theme="calm">
+  <div class="background-overlay" aria-hidden="true"></div>
   <div class="app-shell">
     <header class="topbar">
       <div>
@@ -23,21 +24,20 @@
 
     <main id="appMain" class="main-content" tabindex="-1">
       <section id="todayView" class="view active" aria-labelledby="pageTitle">
-        <div class="hero-card">
-          <div>
-            <p class="muted small">Daily target</p>
-            <div class="wake-row">
-              <span class="wake-icon" aria-hidden="true">☀</span>
-              <div>
-                <strong id="wakeTimeDisplay">6:00 AM</strong>
-                <span>Wake-up time</span>
-              </div>
+        <section class="hero-card">
+          <div class="hero-copy">
+            <p class="hero-kicker" id="heroGreeting">Good morning</p>
+            <h2 id="heroDate">Today</h2>
+            <div class="hero-targets">
+              <span><b id="wakeTimeDisplay">6:00 AM</b> wake</span>
+              <span><b id="bedTimeDisplay">10:30 PM</b> bed</span>
             </div>
+            <p class="hero-status" id="heroStatus">Start deliberately.</p>
           </div>
           <div class="progress-ring" id="progressRing" aria-label="0 percent complete">
             <span id="progressPercent">0%</span>
           </div>
-        </div>
+        </section>
 
         <div class="date-nav" aria-label="Choose date">
           <button id="prevDay" class="ghost-button" type="button" aria-label="Previous day">‹</button>
@@ -46,36 +46,6 @@
         </div>
 
         <div id="routineSections"></div>
-
-        <section class="card mood-card">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Check-in</p>
-              <h2>How are you doing?</h2>
-            </div>
-          </div>
-          <div class="scale-grid">
-            <label class="scale-field">
-              <span>Mood <b id="moodValue">—</b></span>
-              <input id="moodInput" type="range" min="0" max="10" step="1" value="5" />
-              <span class="scale-ends"><span>Low</span><span>Great</span></span>
-            </label>
-            <label class="scale-field">
-              <span>Energy <b id="energyValue">—</b></span>
-              <input id="energyInput" type="range" min="0" max="10" step="1" value="5" />
-              <span class="scale-ends"><span>Empty</span><span>Strong</span></span>
-            </label>
-            <label class="scale-field">
-              <span>Stress <b id="stressValue">—</b></span>
-              <input id="stressInput" type="range" min="0" max="10" step="1" value="5" />
-              <span class="scale-ends"><span>Calm</span><span>High</span></span>
-            </label>
-          </div>
-          <label class="text-field">
-            <span>Notes</span>
-            <textarea id="moodNotes" rows="3" placeholder="Anything worth remembering about today?"></textarea>
-          </label>
-        </section>
 
         <section class="card summary-card">
           <div class="section-heading">
@@ -86,9 +56,10 @@
             <button id="copySummaryButton" class="small-button" type="button">Copy</button>
           </div>
           <div class="stats-grid">
-            <div><strong id="statCompleted">0/0</strong><span>Logged</span></div>
+            <div><strong id="statCompleted">0/0</strong><span>Required</span></div>
+            <div><strong id="statOptional">0</strong><span>Optional logged</span></div>
             <div><strong id="statStreak">0</strong><span>80%+ streak</span></div>
-            <div><strong id="statMood">—</strong><span>Mood</span></div>
+            <div><strong id="statMood">—</strong><span>Latest mood</span></div>
           </div>
         </section>
       </section>
@@ -128,12 +99,36 @@
         <section class="card">
           <div class="section-heading">
             <div>
+              <p class="eyebrow">Personalize</p>
+              <h2>Make it yours</h2>
+            </div>
+          </div>
+          <label class="text-field compact">
+            <span>Theme</span>
+            <select id="themeInput">
+              <option value="calm">Calm</option>
+              <option value="sunrise">Sunrise</option>
+              <option value="dusk">Dusk</option>
+              <option value="minimal">Minimal</option>
+              <option value="midnight">Midnight</option>
+            </select>
+          </label>
+          <div class="background-controls">
+            <label class="secondary-button file-button">Use a background photo<input id="backgroundImageInput" type="file" accept="image/*" /></label>
+            <button id="clearBackgroundButton" class="secondary-button" type="button">Remove photo</button>
+          </div>
+          <p class="muted setup-help">A background photo stays only on this device. It is compressed before being saved.</p>
+        </section>
+
+        <section class="card">
+          <div class="section-heading">
+            <div>
               <p class="eyebrow">Customize</p>
               <h2>Routine items</h2>
             </div>
             <button id="addItemButton" class="primary-button" type="button">+ Add</button>
           </div>
-          <p class="muted setup-help">Use a checkbox for habits, a 0–10 scale for ratings, a number for measurable goals, a time field for timing, or notes for reflection.</p>
+          <p class="muted setup-help">Set specific days, measurable targets, and whether an item should count toward your daily completion score. Use the arrows to change the order.</p>
           <div id="routineEditor" class="routine-editor"></div>
         </section>
 
@@ -144,7 +139,7 @@
               <h2>Backup & export</h2>
             </div>
           </div>
-          <p class="muted setup-help">This version stores your information only in this browser on this device. Nothing is automatically uploaded anywhere.</p>
+          <p class="muted setup-help">Your information is still stored only in this browser on this device. Nothing is automatically uploaded anywhere.</p>
           <div class="button-stack">
             <button id="exportCsvButton" class="secondary-button" type="button">Export progress as CSV</button>
             <button id="exportJsonButton" class="secondary-button" type="button">Download backup</button>
@@ -160,7 +155,7 @@
               <h2>Private accountability</h2>
             </div>
           </div>
-          <p>We can connect this app to a private cloud record so one approved person can view progress without seeing anyone else's data. The app is intentionally local-only until that secure sharing layer is added.</p>
+          <p>Once the daily experience is where we want it, the next step is secure accounts and permission-based sharing with one approved accountability person.</p>
         </section>
       </section>
     </main>
@@ -182,6 +177,7 @@
         <button id="closeDialogButton" class="icon-button" type="button" aria-label="Close">×</button>
       </div>
       <input id="editingItemId" type="hidden" />
+
       <label class="text-field compact">
         <span>Name</span>
         <input id="itemNameInput" type="text" maxlength="60" required placeholder="Example: Prayer" />
@@ -201,21 +197,47 @@
           <option value="scale">0–10 rating</option>
           <option value="number">Number</option>
           <option value="time">Time</option>
-          <option value="text">Comments</option>
+          <option value="text">Short comment</option>
+          <option value="longtext">Journal entry</option>
         </select>
       </label>
       <label class="text-field compact">
-        <span>Frequency</span>
+        <span>Schedule</span>
         <select id="itemFrequencyInput">
           <option value="daily">Every day</option>
           <option value="weekdays">Weekdays</option>
           <option value="weekends">Weekends</option>
+          <option value="custom">Specific days</option>
         </select>
       </label>
-      <label id="itemUnitLabel" class="text-field compact" hidden>
-        <span>Unit (optional)</span>
-        <input id="itemUnitInput" type="text" maxlength="20" placeholder="cups, minutes, pages…" />
+
+      <fieldset id="customDaysField" class="day-picker" hidden>
+        <legend>Which days?</legend>
+        <label><input type="checkbox" value="1" /><span>M</span></label>
+        <label><input type="checkbox" value="2" /><span>T</span></label>
+        <label><input type="checkbox" value="3" /><span>W</span></label>
+        <label><input type="checkbox" value="4" /><span>T</span></label>
+        <label><input type="checkbox" value="5" /><span>F</span></label>
+        <label><input type="checkbox" value="6" /><span>S</span></label>
+        <label><input type="checkbox" value="0" /><span>S</span></label>
+      </fieldset>
+
+      <div id="numberGoalFields" class="two-column-fields" hidden>
+        <label class="text-field compact">
+          <span>Target (optional)</span>
+          <input id="itemTargetInput" type="number" min="0" step="any" inputmode="decimal" placeholder="8" />
+        </label>
+        <label class="text-field compact">
+          <span>Unit (optional)</span>
+          <input id="itemUnitInput" type="text" maxlength="20" placeholder="cups, minutes, pages…" />
+        </label>
+      </div>
+
+      <label class="toggle-field">
+        <input id="itemOptionalInput" type="checkbox" />
+        <span><b>Optional item</b><small>Track it, but do not let it lower the daily completion score.</small></span>
       </label>
+
       <div class="dialog-actions">
         <button id="deleteItemButton" class="danger-button" type="button" hidden>Delete</button>
         <button class="primary-button" type="submit">Save item</button>
