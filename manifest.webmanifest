@@ -1,25 +1,14 @@
 {
-  "name": "Ten-Category Bible Reading Plan",
-  "short_name": "Bible Plan",
-  "description": "A 365-day Bible reading tracker with LSB links, catch-up mode, category progress, and a continue-reading workflow.",
-  "start_url": "./index.html",
+  "name": "Daily Routine",
+  "short_name": "Routine",
+  "description": "A private, customizable daily routine and mood tracker.",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#fbfaf6",
-  "theme_color": "#1f3a5f",
-  "orientation": "portrait-primary",
+  "background_color": "#edf2ee",
+  "theme_color": "#163a33",
   "icons": [
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
   ]
 }
