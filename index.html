@@ -1,351 +1,1137 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#163a33" />
-  <meta name="description" content="A private, customizable daily routine and check-in tracker." />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1f3a5f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Bible Plan" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="icon" href="icon-192.png" />
   <link rel="apple-touch-icon" href="icon-192.png" />
-  <link rel="stylesheet" href="styles.css" />
-  <title>Daily Routine</title>
+  <title>Ten-Category Bible Reading Plan</title>
+  <style>
+    :root {
+      --navy:#1f3a5f; --navy2:#294d78; --cream:#fbfaf6; --paper:#fff;
+      --gold:#b38732; --text:#17202a; --muted:#617080; --line:#d9e0e7;
+      --green:#2f7d4a; --green-soft:#e7f4eb; --amber:#b77713;
+      --amber-soft:#fff3d6; --danger:#9d2f2f; --blue-soft:#e8f1f8;
+      --shadow:0 12px 28px rgba(31,58,95,.12);
+    }
+    * { box-sizing:border-box; }
+    body {
+      margin:0; min-height:100vh; color:var(--text);
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      background:linear-gradient(180deg,#eef3f8 0,var(--cream) 245px);
+    }
+    button,input,select { font:inherit; }
+    .shell { width:min(1050px,calc(100% - 28px)); margin:auto; padding:24px 0 60px; }
+    header {
+      color:white; background:linear-gradient(135deg,var(--navy),var(--navy2));
+      border-radius:22px; padding:24px; box-shadow:var(--shadow);
+    }
+    .eyebrow { text-transform:uppercase; letter-spacing:.14em; font-size:.75rem; opacity:.78; }
+    h1 { margin:6px 0 8px; font-size:clamp(1.9rem,5vw,3rem); line-height:1.05; }
+    header p { margin:0; opacity:.86; max-width:760px; line-height:1.5; }
+    .panel,.toolbar {
+      background:var(--paper); border:1px solid var(--line); border-radius:18px;
+      box-shadow:0 8px 20px rgba(31,58,95,.06);
+    }
+    .toolbar {
+      margin-top:18px; padding:14px; display:grid; grid-template-columns:auto 1fr auto;
+      gap:12px; align-items:center;
+    }
+    .toolbar-center { text-align:center; }
+    .day-title { font-weight:850; font-size:1.18rem; }
+    .date-title { color:var(--muted); font-size:.92rem; margin-top:2px; }
+    .btn {
+      border:1px solid var(--line); background:white; color:var(--text); border-radius:12px;
+      padding:10px 14px; cursor:pointer; font-weight:760;
+    }
+    .btn:hover { border-color:#9fb0c2; }
+    .btn.primary { background:var(--navy); color:white; border-color:var(--navy); }
+    .btn.success { background:var(--green); color:white; border-color:var(--green); }
+    .btn.amber { background:var(--amber); color:white; border-color:var(--amber); }
+    .btn.audio { background:#7a3fb0; color:white; border-color:#7a3fb0; }
+    .btn.danger { color:var(--danger); }
+    .btn.small { padding:8px 11px; font-size:.9rem; }
+    .btn:disabled { opacity:.45; cursor:not-allowed; }
+    .panel { margin-top:14px; padding:16px; }
+    .panel h2 { margin:0 0 12px; font-size:1.13rem; }
+    .progress-row {
+      display:flex; justify-content:space-between; gap:18px; color:var(--muted); font-size:.92rem;
+    }
+    .progress-row strong { color:var(--text); }
+    .progress-track { height:12px; background:#edf1f4; border-radius:999px; overflow:hidden; margin:11px 0; }
+    .progress-fill { height:100%; width:0; background:linear-gradient(90deg,var(--green),#55a76b); transition:.2s; }
+    .actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    .catchup-panel { border-color:#e6c477; background:linear-gradient(180deg,#fffaf0,#fff); }
+    .catchup-summary {
+      display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-bottom:12px;
+    }
+    .mini-stat { background:white; border:1px solid #ead8aa; border-radius:13px; padding:11px; text-align:center; }
+    .mini-stat strong { display:block; font-size:1.2rem; }
+    .mini-stat span { color:var(--muted); font-size:.76rem; }
+    select {
+      border:1px solid var(--line); border-radius:10px; padding:8px; background:white;
+    }
+    .continue-box {
+      background:var(--blue-soft); border:1px solid #b9cee0; border-radius:14px; padding:13px;
+      display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap;
+    }
+    .continue-copy strong { display:block; }
+    .continue-copy span { color:var(--muted); font-size:.84rem; }
+    .grid {
+      display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:14px;
+    }
+    .reading-card {
+      background:var(--paper); border:1px solid var(--line); border-radius:18px; padding:16px;
+      box-shadow:0 7px 18px rgba(31,58,95,.05); display:grid;
+      grid-template-columns:auto 1fr; gap:13px; align-items:start; min-height:112px;
+    }
+    .reading-card.done { background:var(--green-soft); border-color:#a8d4b6; }
+    .reading-card.catchup { background:var(--amber-soft); border-color:#e1bf6b; }
+    .check {
+      appearance:none; width:26px; height:26px; border:2px solid #9babb9; border-radius:8px;
+      display:grid; place-content:center; cursor:pointer; background:white; margin-top:2px;
+    }
+    .check::before { content:"✓"; transform:scale(0); color:white; font-size:18px; line-height:1; transition:.1s; }
+    .check:checked { background:var(--green); border-color:var(--green); }
+    .check:checked::before { transform:scale(1); }
+    .category-label {
+      color:var(--gold); text-transform:uppercase; font-weight:850; letter-spacing:.08em; font-size:.75rem;
+    }
+    .catchup .category-label { color:var(--amber); }
+    .reference { margin-top:5px; font-size:1.27rem; font-weight:850; }
+    .cycle-note { color:var(--muted); font-size:.78rem; margin-top:4px; }
+    .reading-footer {
+      display:flex; justify-content:space-between; align-items:center; gap:9px; margin-top:10px; flex-wrap:wrap;
+    }
+    .lsb-link {
+      text-decoration:none; color:white; background:var(--navy); border-radius:10px;
+      padding:7px 10px; font-weight:800; font-size:.82rem; white-space:nowrap;
+    }
+    .category-progress-grid {
+      display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px;
+    }
+    .category-progress {
+      border:1px solid var(--line); border-radius:14px; padding:12px; background:#fff;
+    }
+    .category-progress-head { display:flex; justify-content:space-between; gap:10px; font-weight:800; }
+    .category-progress-meta { color:var(--muted); font-size:.78rem; margin:5px 0 8px; line-height:1.4; }
+    .category-bar { height:8px; background:#edf1f4; border-radius:999px; overflow:hidden; }
+    .category-bar-fill { height:100%; background:var(--green); }
+    .settings-panel summary,.progress-details summary { cursor:pointer; font-weight:830; }
+    .settings-content { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:14px; }
+    .field label { display:block; font-weight:760; margin-bottom:6px; }
+    .field input { width:100%; border:1px solid var(--line); border-radius:10px; padding:10px; background:white; }
+    .footnote { color:var(--muted); font-size:.86rem; line-height:1.5; margin:18px 4px 0; }
+    .help-text { color:var(--muted); font-size:.8rem; line-height:1.45; margin-top:6px; }
+    .reader-backdrop {
+      position:fixed; inset:0; z-index:1000; background:rgba(10,20,30,.72);
+      display:grid; place-items:end center; padding:14px;
+    }
+    .reader-backdrop[hidden] { display:none; }
+    .reader-sheet {
+      width:min(720px,100%); max-height:92vh; overflow:auto; background:var(--paper);
+      border-radius:22px 22px 16px 16px; padding:20px; box-shadow:0 22px 60px rgba(0,0,0,.35);
+    }
+    .reader-top {
+      display:flex; justify-content:space-between; align-items:flex-start; gap:14px;
+    }
+    .reader-kicker {
+      color:var(--gold); text-transform:uppercase; font-size:.74rem; font-weight:850;
+      letter-spacing:.1em;
+    }
+    .reader-title { margin:4px 0 2px; font-size:1.55rem; }
+    .reader-status { color:var(--muted); font-size:.88rem; }
+    .reader-close {
+      border:1px solid var(--line); width:38px; height:38px; border-radius:50%;
+      background:white; font-size:1.35rem; cursor:pointer;
+    }
+    .reader-verse {
+      margin-top:16px; min-height:150px; padding:18px; border:1px solid var(--line);
+      border-radius:16px; background:#f8fafb; font-family:Georgia,"Times New Roman",serif;
+      font-size:1.24rem; line-height:1.65;
+    }
+    .reader-verse-number {
+      color:var(--gold); font-family:Inter,ui-sans-serif,system-ui,sans-serif;
+      font-size:.82rem; font-weight:850; margin-right:7px; vertical-align:top;
+    }
+    .reader-progress-label {
+      display:flex; justify-content:space-between; gap:10px; margin-top:13px;
+      color:var(--muted); font-size:.8rem;
+    }
+    .reader-controls {
+      display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:13px;
+    }
+    .reader-controls select { min-width:105px; }
+    .reader-attribution {
+      margin-top:15px; padding:11px; border-radius:12px; background:#f4f1e8;
+      color:#5c564b; font-size:.72rem; line-height:1.45;
+    }
+    .reader-attribution a { color:inherit; }
+    .service-status {
+      display:inline-block; margin-top:7px; font-size:.78rem; font-weight:750;
+      color:var(--muted);
+    }
+    body.reader-open { overflow:hidden; }
+    .toast {
+      position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px);
+      background:#17202a; color:white; padding:10px 16px; border-radius:999px;
+      opacity:0; pointer-events:none; transition:.2s; z-index:20;
+    }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    @media(max-width:720px) {
+      .grid,.category-progress-grid { grid-template-columns:1fr; }
+      .toolbar { grid-template-columns:1fr 1fr; }
+      .toolbar-center { grid-column:1/-1; grid-row:1; }
+      .toolbar button:first-child { grid-row:2; }
+      .toolbar button:last-child { grid-row:2; }
+      .settings-content { grid-template-columns:1fr; }
+      .catchup-summary { grid-template-columns:repeat(3,1fr); }
+    }
+  </style>
 </head>
-<body data-theme="calm">
-  <div class="background-overlay" aria-hidden="true"></div>
-  <div class="app-shell">
-    <header class="topbar">
+<body>
+<main class="shell">
+  <header>
+    <div class="eyebrow">365-Day Plan</div>
+    <h1>Ten-Category Bible Reading</h1>
+    <p>Read each chapter in the Legacy Standard Bible or have it read aloud inside the app, then keep moving without losing your place.</p>
+  </header>
+
+  <section class="toolbar" aria-label="Day navigation">
+    <button class="btn" id="previousDay">← Previous</button>
+    <div class="toolbar-center">
+      <div class="day-title" id="dayTitle">Day 1</div>
+      <div class="date-title" id="dateTitle"></div>
+    </div>
+    <button class="btn" id="nextDay">Next →</button>
+  </section>
+
+  <section class="panel">
+    <div class="progress-row">
+      <span>Selected day: <strong id="dayProgress">0 of 10</strong></span>
+      <span>Year: <strong id="yearProgress">0 of 3,650</strong></span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="actions">
+      <button class="btn primary small" id="todayButton">Go to Today</button>
+      <button class="btn success small" id="markDayButton">Mark Day Complete</button>
+      <button class="btn small" id="clearDayButton">Clear Day</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Continue reading</h2>
+    <div class="continue-box">
+      <div class="continue-copy">
+        <strong id="nextReadingTitle">Your next unfinished chapter</strong>
+        <span id="nextReadingMeta">The app will select the first unfinished reading.</span>
+      </div>
+      <div class="actions">
+        <button class="btn primary small" id="readNextButton">Read Next in LSB</button>
+        <button class="btn audio small" id="listenNextButton">🔊 Read Next Aloud</button>
+        <button class="btn success small" id="completeAndNextButton" hidden>Mark Read & Continue</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel catchup-panel">
+    <h2>Catch-up mode</h2>
+    <div class="catchup-summary">
+      <div class="mini-stat"><strong id="missedDaysCount">0</strong><span>missed days</span></div>
+      <div class="mini-stat"><strong id="missedReadingsCount">0</strong><span>unfinished readings</span></div>
+      <div class="mini-stat"><strong id="earliestMissed">—</strong><span>earliest missed</span></div>
+    </div>
+    <div class="actions">
+      <button class="btn amber small" id="openMissedButton">Open Earliest Missed Day</button>
+      <label>
+        <span class="sr-only">Spread over</span>
+        <select id="spreadDays">
+          <option value="2">Spread over 2 days</option>
+          <option value="3" selected>Spread over 3 days</option>
+          <option value="5">Spread over 5 days</option>
+        </select>
+      </label>
+      <button class="btn amber small" id="spreadMissedButton">Schedule Catch-up Extras</button>
+      <button class="btn small" id="skipMissedButton">Skip Earliest Missed Day</button>
+      <button class="btn small" id="unskipDayButton">Unskip Selected Day</button>
+    </div>
+  </section>
+
+  <section class="grid" id="readingGrid" aria-live="polite"></section>
+
+  <details class="panel progress-details" open>
+    <summary>Progress by category</summary>
+    <div class="category-progress-grid" id="categoryProgressGrid" style="margin-top:12px;"></div>
+  </details>
+
+  <details class="panel settings-panel">
+    <summary>Plan settings and backup</summary>
+    <div class="settings-content">
+      <div class="field">
+        <label for="startDate">Plan start date</label>
+        <input id="startDate" type="date" />
+      </div>
+      <div class="field">
+        <label for="dayNumber">Jump to day</label>
+        <input id="dayNumber" type="number" min="1" max="365" />
+      </div>
+      <div class="field" style="grid-column:1/-1;">
+        <label for="readerServiceUrl">LSB read-aloud service URL</label>
+        <input id="readerServiceUrl" type="url" inputmode="url"
+               placeholder="Paste the Google Apps Script URL ending in /exec" />
+        <div class="help-text">
+          This private helper loads one requested chapter at a time from the official LSB reader.
+          It does not store a copy of the Bible.
+        </div>
+        <span class="service-status" id="readerServiceStatus">Not configured</span>
+      </div>
+      <div class="actions" style="grid-column:1/-1;">
+        <button class="btn primary small" id="saveReaderServiceButton">Save Read-Aloud Service</button>
+        <button class="btn small" id="testReaderServiceButton">Test with John 1</button>
+      </div>
+      <div class="actions">
+        <button class="btn small" id="exportButton">Export Progress</button>
+        <label class="btn small" for="importInput" style="display:inline-block;">Import Progress</label>
+        <input id="importInput" type="file" accept="application/json" hidden />
+        <button class="btn danger small" id="resetButton">Reset Everything</button>
+      </div>
+    </div>
+  </details>
+
+  <p class="footnote">
+    Catch-up extras remain linked to their original day. Read Aloud loads only the chapter you request and uses your device’s built-in voice inside this app.
+  </p>
+</main>
+<div class="toast" id="toast"></div>
+
+<div class="reader-backdrop" id="readerModal" hidden>
+  <section class="reader-sheet" role="dialog" aria-modal="true" aria-labelledby="readerTitle">
+    <div class="reader-top">
       <div>
-        <p class="eyebrow" id="todayEyebrow">Daily Routine</p>
-        <h1 id="pageTitle">Today</h1>
+        <div class="reader-kicker">LSB read aloud</div>
+        <h2 class="reader-title" id="readerTitle">Loading chapter…</h2>
+        <div class="reader-status" id="readerStatus">Connecting to the LSB reader</div>
       </div>
-      <button class="icon-button" id="installButton" type="button" hidden aria-label="Install app">＋</button>
-    </header>
+      <button class="reader-close" id="readerCloseButton" aria-label="Close reader">×</button>
+    </div>
 
-    <main id="appMain" class="main-content" tabindex="-1">
-      <section id="todayView" class="view active" aria-labelledby="pageTitle">
-        <section class="hero-card">
-          <div class="hero-copy">
-            <p class="hero-kicker" id="heroGreeting">Good morning</p>
-            <h2 id="heroDate">Today</h2>
-            <div class="hero-targets">
-              <span><b id="wakeTimeDisplay">6:00 AM</b> wake</span>
-              <span><b id="bedTimeDisplay">10:30 PM</b> bed</span>
-            </div>
-            <p class="hero-status" id="heroStatus">Start deliberately.</p>
-            <p class="week-focus-banner" id="weekFocusBanner" hidden></p>
-          </div>
-          <div class="progress-ring" id="progressRing" aria-label="0 percent complete"><span id="progressPercent">0%</span></div>
-        </section>
+    <div class="reader-verse" id="readerVerseText">
+      The chapter will appear here.
+    </div>
 
-        <div class="date-nav date-nav-v15" aria-label="Choose date">
-          <button id="prevDay" class="ghost-button" type="button" aria-label="Previous day">‹</button>
-          <button id="selectedDateButton" class="date-button" type="button" aria-label="Return to today"></button>
-          <label class="calendar-button" aria-label="Jump to a date">📅<input id="datePickerInput" type="date" /></label>
-          <button id="nextDay" class="ghost-button" type="button" aria-label="Next day">›</button>
+    <div class="reader-progress-label">
+      <span id="readerVerseProgress">Verse —</span>
+      <span id="readerPercent">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="readerProgressFill"></div>
+    </div>
+
+    <div class="reader-controls">
+      <button class="btn audio" id="readerPlayPauseButton">▶ Play</button>
+      <button class="btn" id="readerRestartButton">↺ Restart</button>
+      <button class="btn" id="readerStopButton">■ Stop</button>
+      <label>
+        <span class="sr-only">Reading speed</span>
+        <select id="readerRateSelect" aria-label="Reading speed">
+          <option value="0.8">0.8×</option>
+          <option value="0.9">0.9×</option>
+          <option value="1" selected>1.0×</option>
+          <option value="1.1">1.1×</option>
+          <option value="1.2">1.2×</option>
+          <option value="1.35">1.35×</option>
+          <option value="1.5">1.5×</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="actions" style="margin-top:13px;">
+      <button class="btn success" id="readerCompleteNextButton">
+        Mark Complete & Read Next Aloud
+      </button>
+      <a class="btn small" id="readerOfficialLink" target="_blank" rel="noopener noreferrer">
+        Open Official LSB Text ↗
+      </a>
+    </div>
+
+    <div class="reader-attribution">
+      Scripture quotations taken from the (LSB®) Legacy Standard Bible®,
+      Copyright © 2021 by The Lockman Foundation. Used by permission.
+      All rights reserved. Managed in partnership with Three Sixteen Publishing Inc.
+      <a href="https://lsbible.org/" target="_blank" rel="noopener">LSBible.org</a>
+      and
+      <a href="https://316publishing.com/" target="_blank" rel="noopener">316Publishing.com</a>.
+    </div>
+  </section>
+</div>
+
+<script>
+const CATEGORY_BOOKS = {"1": [["Genesis", 50], ["Exodus", 40]], "2": [["Leviticus", 27], ["Numbers", 36], ["Deuteronomy", 34], ["Joshua", 24], ["Judges", 21]], "3": [["Ruth", 4], ["1 Samuel", 31], ["2 Samuel", 24], ["1 Kings", 22], ["2 Kings", 25], ["1 Chronicles", 29], ["2 Chronicles", 36], ["Ezra", 10], ["Nehemiah", 13], ["Esther", 10]], "4": [["Psalms", 150]], "5": [["Proverbs", 31], ["John", 21], ["Romans", 16]], "6": [["Job", 42], ["Ecclesiastes", 12], ["Song of Solomon", 8], ["Lamentations", 5], ["Ezekiel", 48], ["Daniel", 12], ["Hosea", 14], ["Joel", 3], ["Amos", 9], ["Obadiah", 1], ["Jonah", 4], ["Micah", 7], ["Nahum", 3], ["Habakkuk", 3], ["Zephaniah", 3], ["Haggai", 2], ["Zechariah", 14], ["Malachi", 4]], "7": [["Isaiah", 66], ["Jeremiah", 52]], "8": [["Matthew", 28], ["Mark", 16], ["Luke", 24]], "9": [["Acts", 28], ["Titus", 3], ["Philemon", 1], ["Hebrews", 13], ["James", 5], ["1 Peter", 5], ["2 Peter", 3], ["1 John", 5], ["2 John", 1], ["3 John", 1], ["Jude", 1], ["Revelation", 22]], "10": [["1 Corinthians", 16], ["2 Corinthians", 13], ["Galatians", 6], ["Ephesians", 6], ["Philippians", 4], ["Colossians", 4], ["1 Thessalonians", 5], ["2 Thessalonians", 3], ["1 Timothy", 6], ["2 Timothy", 4]]};
+const STORAGE_KEY = "tenCategoryBiblePlan.v1";
+
+function buildSequence(bookList) {
+  const sequence=[];
+  for(const [book,count] of bookList) {
+    for(let chapter=1; chapter<=count; chapter++) sequence.push(`${book} ${chapter}`);
+  }
+  return sequence;
+}
+const sequences={};
+for(let category=1;category<=10;category++) sequences[category]=buildSequence(CATEGORY_BOOKS[String(category)]);
+
+function defaultStartDate() {
+  const now=new Date();
+  return `${now.getFullYear()}-01-01`;
+}
+function normalizeState(parsed) {
+  return {
+    startDate: parsed?.startDate || defaultStartDate(),
+    selectedDay: Math.min(365,Math.max(1,Number(parsed?.selectedDay)||1)),
+    checked: parsed?.checked || {},
+    skippedDays: parsed?.skippedDays || {},
+    catchUpAssignments: Array.isArray(parsed?.catchUpAssignments) ? parsed.catchUpAssignments : [],
+    lastOpened: parsed?.lastOpened || null,
+    readerServiceUrl: parsed?.readerServiceUrl || "",
+    readerRate: Number(parsed?.readerRate) || 1
+  };
+}
+function loadState() {
+  try { return normalizeState(JSON.parse(localStorage.getItem(STORAGE_KEY))); }
+  catch { return normalizeState({}); }
+}
+let state=loadState();
+
+const $=id=>document.getElementById(id);
+const grid=$("readingGrid");
+
+function saveState() { localStorage.setItem(STORAGE_KEY,JSON.stringify(state)); }
+function showToast(message) {
+  const el=$("toast"); el.textContent=message; el.classList.add("show");
+  clearTimeout(showToast.timer); showToast.timer=setTimeout(()=>el.classList.remove("show"),1800);
+}
+function storageId(day,category) { return `d${day}c${category}`; }
+function getReading(day,category) {
+  const sequence=sequences[category];
+  return sequence[(day-1)%sequence.length];
+}
+function dateForDay(day) {
+  const [y,m,d]=state.startDate.split("-").map(Number);
+  const result=new Date(y,m-1,d); result.setDate(result.getDate()+day-1); return result;
+}
+function formatDate(date) {
+  return new Intl.DateTimeFormat(undefined,{weekday:"long",year:"numeric",month:"long",day:"numeric"}).format(date);
+}
+function todayDayNumber() {
+  const [y,m,d]=state.startDate.split("-").map(Number);
+  const start=new Date(y,m-1,d);
+  const now=new Date(); const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  return Math.min(365,Math.max(1,Math.floor((today-start)/86400000)+1));
+}
+function dayReadCount(day) {
+  let count=0;
+  for(let c=1;c<=10;c++) if(state.checked[storageId(day,c)]) count++;
+  return count;
+}
+function dayComplete(day) { return dayReadCount(day)===10; }
+function isSkipped(day) { return Boolean(state.skippedDays[String(day)]); }
+function missedDays() {
+  const today=todayDayNumber(); const result=[];
+  for(let day=1;day<today;day++) if(!dayComplete(day) && !isSkipped(day)) result.push(day);
+  return result;
+}
+function incompleteForDay(day) {
+  const items=[];
+  for(let category=1;category<=10;category++) {
+    if(!state.checked[storageId(day,category)]) items.push({sourceDay:day,category});
+  }
+  return items;
+}
+function cleanupAssignments() {
+  const seen=new Set();
+  state.catchUpAssignments=state.catchUpAssignments.filter(item=>{
+    const id=storageId(item.sourceDay,item.category);
+    const key=`${id}-t${item.targetDay}`;
+    if(state.checked[id] || seen.has(key)) return false;
+    seen.add(key); return true;
+  });
+}
+function assignmentsForDay(day) {
+  cleanupAssignments();
+  return state.catchUpAssignments.filter(a=>a.targetDay===day && !state.checked[storageId(a.sourceDay,a.category)]);
+}
+function annualCheckedCount() {
+  let total=0;
+  for(let day=1;day<=365;day++) for(let c=1;c<=10;c++) if(state.checked[storageId(day,c)]) total++;
+  return total;
+}
+function categoryCheckedCount(category) {
+  let count=0;
+  for(let day=1;day<=365;day++) if(state.checked[storageId(day,category)]) count++;
+  return count;
+}
+function readingDescriptor(item) {
+  const reference=getReading(item.sourceDay,item.category);
+  return {...item,reference,id:storageId(item.sourceDay,item.category)};
+}
+const LSB_COPYRIGHT_SPOKEN =
+  "Scripture quotations taken from the Legacy Standard Bible, copyright 2021 by The Lockman Foundation. " +
+  "Used by permission. All rights reserved. Managed in partnership with Three Sixteen Publishing Incorporated, " +
+  "LS Bible dot org and 316 Publishing dot com.";
+
+const chapterMemoryCache = new Map();
+let readerState = {
+  item: null,
+  verses: [],
+  index: 0,
+  playing: false,
+  paused: false,
+  finished: false,
+  requestId: 0
+};
+
+function normalizedServiceUrl() {
+  return String(state.readerServiceUrl || "").trim();
+}
+
+function jsonpChapter(reference) {
+  const serviceUrl = normalizedServiceUrl();
+  if (!serviceUrl) {
+    return Promise.reject(new Error("The LSB read-aloud service has not been configured."));
+  }
+
+  if (chapterMemoryCache.has(reference)) {
+    return Promise.resolve(chapterMemoryCache.get(reference));
+  }
+
+  return new Promise((resolve, reject) => {
+    const callbackName = `__lsbReader_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const script = document.createElement("script");
+    let settled = false;
+
+    const cleanup = () => {
+      delete window[callbackName];
+      script.remove();
+    };
+
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error("The LSB reader service timed out."));
+    }, 25000);
+
+    window[callbackName] = payload => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      cleanup();
+
+      if (!payload || payload.ok !== true) {
+        reject(new Error(payload?.error || "The chapter could not be loaded."));
+        return;
+      }
+
+      chapterMemoryCache.set(reference, payload);
+      resolve(payload);
+    };
+
+    script.onerror = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      cleanup();
+      reject(new Error("The LSB reader service could not be reached."));
+    };
+
+    const separator = serviceUrl.includes("?") ? "&" : "?";
+    script.src =
+      `${serviceUrl}${separator}callback=${encodeURIComponent(callbackName)}` +
+      `&q=${encodeURIComponent(reference)}&_=${Date.now()}`;
+    document.head.appendChild(script);
+  });
+}
+
+function extractVersesFromPassageHtml(passageHtml) {
+  const documentFragment = new DOMParser().parseFromString(
+    `<main>${passageHtml || ""}</main>`,
+    "text/html"
+  );
+
+  const verseElements = [...documentFragment.querySelectorAll("span.verse")];
+  const verses = verseElements.map((element, index) => {
+    const numberElement = element.querySelector("small[data-verse]");
+    const number = Number(numberElement?.getAttribute("data-verse")) || index + 1;
+    const clone = element.cloneNode(true);
+
+    clone.querySelectorAll(
+      "small[data-verse], .chapter-number, .subhead, sup, button, svg, " +
+      ".footnote, [data-footnote], [role='note']"
+    ).forEach(node => node.remove());
+
+    const text = clone.textContent.replace(/\s+/g, " ").trim();
+    return { number, text };
+  }).filter(verse => verse.text);
+
+  if (verses.length) return verses;
+
+  const fallbackText = documentFragment.body.textContent.replace(/\s+/g, " ").trim();
+  return fallbackText ? [{ number: 1, text: fallbackText }] : [];
+}
+
+function bestEnglishVoice() {
+  const voices = window.speechSynthesis?.getVoices?.() || [];
+  const english = voices.filter(voice => /^en([-_]|$)/i.test(voice.lang || ""));
+  return (
+    english.find(voice => /Samantha|Ava|Daniel|Aaron|Karen|Moira/i.test(voice.name)) ||
+    english.find(voice => voice.localService) ||
+    english[0] ||
+    voices[0] ||
+    null
+  );
+}
+
+function setReaderModalVisible(visible) {
+  $("readerModal").hidden = !visible;
+  document.body.classList.toggle("reader-open", visible);
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function updateReaderDisplay() {
+  const total = readerState.verses.length;
+  const current = total ? readerState.verses[Math.min(readerState.index, total - 1)] : null;
+  const completedCount = readerState.finished ? total : Math.min(readerState.index, total);
+  const percent = total ? Math.round((completedCount / total) * 100) : 0;
+
+  $("readerTitle").textContent = readerState.item?.reference || "LSB read aloud";
+  $("readerVerseText").innerHTML = current
+    ? `<span class="reader-verse-number">${current.number}</span>${escapeHtml(current.text)}`
+    : "The chapter will appear here.";
+  $("readerVerseProgress").textContent = current
+    ? `Verse ${current.number} · ${Math.min(readerState.index + 1, total)} of ${total}`
+    : "Verse —";
+  $("readerPercent").textContent = `${percent}%`;
+  $("readerProgressFill").style.width = `${percent}%`;
+
+  if (readerState.finished) {
+    $("readerStatus").textContent = "Chapter finished";
+    $("readerPlayPauseButton").textContent = "▶ Replay";
+  } else if (readerState.paused) {
+    $("readerStatus").textContent = "Paused";
+    $("readerPlayPauseButton").textContent = "▶ Resume";
+  } else if (readerState.playing) {
+    $("readerStatus").textContent = "Reading aloud";
+    $("readerPlayPauseButton").textContent = "Ⅱ Pause";
+  } else if (total) {
+    $("readerStatus").textContent = "Ready";
+    $("readerPlayPauseButton").textContent = "▶ Play";
+  }
+}
+
+function cancelSpeech(resetIndex = false) {
+  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  readerState.playing = false;
+  readerState.paused = false;
+  readerState.finished = false;
+  if (resetIndex) readerState.index = 0;
+  updateReaderDisplay();
+}
+
+function speakAttributionThenVerse() {
+  if (sessionStorage.getItem("lsbAttributionSpoken") === "yes") {
+    speakCurrentVerse();
+    return;
+  }
+
+  const notice = new SpeechSynthesisUtterance(LSB_COPYRIGHT_SPOKEN);
+  notice.rate = Math.min(1.1, Number(state.readerRate) || 1);
+  const voice = bestEnglishVoice();
+  if (voice) notice.voice = voice;
+  notice.onend = () => {
+    sessionStorage.setItem("lsbAttributionSpoken", "yes");
+    speakCurrentVerse();
+  };
+  notice.onerror = () => speakCurrentVerse();
+  window.speechSynthesis.speak(notice);
+}
+
+function speakCurrentVerse() {
+  if (!readerState.verses.length || readerState.index >= readerState.verses.length) {
+    readerState.playing = false;
+    readerState.paused = false;
+    readerState.finished = true;
+    updateReaderDisplay();
+    return;
+  }
+
+  const verse = readerState.verses[readerState.index];
+  const utterance = new SpeechSynthesisUtterance(verse.text);
+  utterance.rate = Number(state.readerRate) || 1;
+  utterance.pitch = 1;
+  const voice = bestEnglishVoice();
+  if (voice) utterance.voice = voice;
+
+  utterance.onstart = () => {
+    readerState.playing = true;
+    readerState.paused = false;
+    updateReaderDisplay();
+  };
+  utterance.onend = () => {
+    if (!readerState.playing) return;
+    readerState.index += 1;
+    updateReaderDisplay();
+    speakCurrentVerse();
+  };
+  utterance.onerror = event => {
+    if (event.error === "canceled" || event.error === "interrupted") return;
+    readerState.playing = false;
+    readerState.paused = false;
+    $("readerStatus").textContent = "The device voice stopped. Tap Play to continue.";
+    updateReaderDisplay();
+  };
+
+  window.speechSynthesis.speak(utterance);
+}
+
+function startOrResumeReader() {
+  if (!("speechSynthesis" in window)) {
+    $("readerStatus").textContent = "This browser does not support read-aloud.";
+    return;
+  }
+
+  if (readerState.finished) {
+    readerState.index = 0;
+    readerState.finished = false;
+  }
+
+  if (readerState.paused) {
+    window.speechSynthesis.resume();
+    readerState.paused = false;
+    readerState.playing = true;
+    updateReaderDisplay();
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+  readerState.playing = true;
+  readerState.paused = false;
+  updateReaderDisplay();
+  speakAttributionThenVerse();
+}
+
+function pauseReader() {
+  if (!readerState.playing || readerState.paused) return;
+  window.speechSynthesis.pause();
+  readerState.paused = true;
+  updateReaderDisplay();
+}
+
+async function openInAppReader(item, autoPlay = true) {
+  if (!item) return;
+
+  if (!normalizedServiceUrl()) {
+    const settingsPanel = document.querySelector(".settings-panel");
+    settingsPanel.open = true;
+    settingsPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    showToast("Add the LSB read-aloud service URL in Settings");
+    return;
+  }
+
+  if (!("speechSynthesis" in window)) {
+    showToast("Read Aloud is not supported in this browser");
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+  readerState = {
+    item,
+    verses: [],
+    index: 0,
+    playing: false,
+    paused: false,
+    finished: false,
+    requestId: readerState.requestId + 1
+  };
+  const requestId = readerState.requestId;
+
+  state.lastOpened = {
+    sourceDay: item.sourceDay,
+    category: item.category,
+    targetDay: state.selectedDay,
+    mode: "listen"
+  };
+  saveState();
+  renderContinue();
+
+  $("readerOfficialLink").href =
+    `https://read.lsbible.org/?q=${encodeURIComponent(item.reference)}`;
+  $("readerTitle").textContent = item.reference;
+  $("readerStatus").textContent = "Loading exact LSB chapter…";
+  $("readerVerseText").textContent = "Please wait.";
+  $("readerProgressFill").style.width = "0%";
+  $("readerVerseProgress").textContent = "Verse —";
+  $("readerPercent").textContent = "0%";
+  setReaderModalVisible(true);
+
+  try {
+    const payload = await jsonpChapter(item.reference);
+    if (requestId !== readerState.requestId) return;
+
+    const verses = extractVersesFromPassageHtml(payload.passageHtml);
+    if (!verses.length) throw new Error("No readable verses were returned.");
+
+    readerState.verses = verses;
+    readerState.index = 0;
+    readerState.finished = false;
+    updateReaderDisplay();
+
+    if (autoPlay) startOrResumeReader();
+  } catch (error) {
+    if (requestId !== readerState.requestId) return;
+    readerState.playing = false;
+    $("readerStatus").textContent = "Could not load this chapter";
+    $("readerVerseText").textContent = error.message || "Unknown error";
+    $("readerPlayPauseButton").textContent = "▶ Try Again";
+  }
+}
+
+function closeReader() {
+  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  readerState.playing = false;
+  readerState.paused = false;
+  readerState.requestId += 1;
+  setReaderModalVisible(false);
+}
+
+function nextUnfinishedItem() {
+  const day=state.selectedDay;
+  for(let category=1;category<=10;category++) {
+    if(!state.checked[storageId(day,category)]) return readingDescriptor({sourceDay:day,category,targetDay:day,kind:"regular"});
+  }
+  const extra=assignmentsForDay(day)[0];
+  if(extra) return readingDescriptor({...extra,kind:"catchup"});
+  return null;
+}
+function openReading(item) {
+  if(!item) return;
+  state.lastOpened={sourceDay:item.sourceDay,category:item.category,targetDay:state.selectedDay,mode:"read"};
+  saveState(); renderContinue();
+  window.open(`https://read.lsbible.org/?q=${encodeURIComponent(item.reference)}`,"_blank","noopener");
+}
+function openListening(item) {
+  if(!item) return;
+  openInAppReader(item, true);
+}
+function markItemComplete(item) {
+  if(!item) return;
+  state.checked[storageId(item.sourceDay,item.category)]=true;
+  cleanupAssignments(); saveState();
+}
+function nextAfterLastOpened() {
+  if(!state.lastOpened) return null;
+  const item=readingDescriptor(state.lastOpened);
+  if(state.checked[item.id]) return null;
+  return item;
+}
+
+function renderCard(item,catchup=false) {
+  const descriptor=readingDescriptor(item);
+  const checked=Boolean(state.checked[descriptor.id]);
+  const total=sequences[item.category].length;
+  const position=((item.sourceDay-1)%total)+1;
+  const card=document.createElement("article");
+  card.className=`reading-card${checked?" done":""}${catchup?" catchup":""}`;
+  card.innerHTML=`
+    <input class="check" type="checkbox" ${checked?"checked":""} aria-label="Mark ${descriptor.reference} complete">
+    <div>
+      <div class="category-label">${catchup?`Catch-up · Day ${item.sourceDay} · `:""}Category ${item.category}</div>
+      <div class="reference">${descriptor.reference}</div>
+      <div class="cycle-note">${catchup?"Scheduled catch-up reading":`Chapter ${position} of ${total} in this category cycle`}</div>
+      <div class="reading-footer">
+        <div class="actions">
+          <button class="btn small read-card-button">Read in LSB ↗</button>
+          <button class="btn audio small listen-card-button">🔊 Read Aloud</button>
         </div>
-
-        <section class="card day-mode-card">
-          <div class="day-mode-copy"><span class="eyebrow">Flexibility</span><strong>How should this day count?</strong></div>
-          <select id="dayModeInput" aria-label="Day mode"><option value="normal">Normal day</option><option value="sick">Sick day</option><option value="travel">Travel day</option><option value="vacation">Vacation</option><option value="rest">Planned rest</option></select>
-          <button id="undoButton" class="small-button" type="button" disabled>Undo</button>
-        </section>
-
-        <section class="card actual-time-card">
-          <div class="section-heading"><div><p class="eyebrow">Timing</p><h2>Actual sleep times</h2></div><span class="section-progress">for this day</span></div>
-          <div class="actual-time-grid">
-            <label class="actual-time-field"><span>Woke up</span><div><input id="actualWakeInput" type="time" /><button id="wakeNowButton" class="small-button" type="button">Now</button></div></label>
-            <label class="actual-time-field"><span>Went to bed</span><div><input id="actualBedInput" type="time" /><button id="bedNowButton" class="small-button" type="button">Now</button></div></label>
-          </div>
-          <p class="muted micro-copy">These actual times can be compared with medication timing in Progress.</p>
-        </section>
-
-        <section class="card capture-card">
-          <div class="section-heading"><div><p class="eyebrow">Remember</p><h2>Capture a small thing</h2></div><button id="quickMemoryButton" class="primary-button" type="button">+ Remember</button></div>
-          <div id="onThisDayMemory" class="on-this-day" hidden></div>
-          <div id="memoryTodayPreview" class="memory-preview"></div>
-        </section>
-
-        <div id="routineSections"></div>
-
-        <section class="card summary-card">
-          <div class="section-heading">
-            <div><p class="eyebrow">Daily snapshot</p><h2>At a glance</h2></div>
-            <button id="copySummaryButton" class="small-button" type="button">Copy</button>
-          </div>
-          <div class="stats-grid">
-            <div><strong id="statCompleted">0/0</strong><span>Required</span></div>
-            <div><strong id="statOptional">0</strong><span>Optional logged</span></div>
-            <div><strong id="statStreak">0</strong><span>Current streak</span></div>
-            <div><strong id="statMood">—</strong><span>Latest mood</span></div>
-          </div>
-        </section>
-      </section>
-
-      <section id="historyView" class="view" aria-labelledby="pageTitle">
-        <section class="card progress-overview-card">
-          <div class="section-heading progress-heading">
-            <div><p class="eyebrow">Progress</p><h2>Your patterns</h2></div>
-            <div id="rangeSelector" class="range-selector" aria-label="Analytics range">
-              <button class="range-button active" type="button" data-range="7">7D</button>
-              <button class="range-button" type="button" data-range="30">30D</button>
-              <button class="range-button" type="button" data-range="90">90D</button>
-            </div>
-          </div>
-          <div class="progress-stats-grid">
-            <div><strong id="progressOverall">—</strong><span>Overall</span></div>
-            <div><strong id="progress80Days">—</strong><span>80%+ days</span></div>
-            <div><strong id="progressTrackedDays">—</strong><span>Days tracked</span></div>
-          </div>
-          <p id="progressRangeNote" class="muted progress-range-note"></p>
-        </section>
-
-        <section class="card">
-          <div class="section-heading"><div><p class="eyebrow">This week</p><h2>Daily completion</h2></div><strong id="weekOverall" class="section-progress">—</strong></div>
-          <div id="weekSummary" class="week-summary"></div>
-        </section>
-
-        <section class="card">
-          <div class="section-heading"><div><p class="eyebrow">Routine</p><h2>By part of day</h2></div></div>
-          <div id="sectionBreakdown" class="breakdown-list"></div>
-        </section>
-
-        <section class="card">
-          <div class="section-heading"><div><p class="eyebrow">Consistency</p><h2>Habit performance</h2></div></div>
-          <div class="habit-columns">
-            <div><h3>Strongest</h3><div id="strongHabits" class="habit-list"></div></div>
-            <div><h3>Needs attention</h3><div id="weakHabits" class="habit-list"></div></div>
-          </div>
-        </section>
-
-        <section class="card">
-          <div class="section-heading"><div><p class="eyebrow">Check-ins</p><h2>Rating trends</h2></div></div>
-          <div id="trendList" class="trend-list"></div>
-        </section>
-
-        <section class="card" id="medicationProgressCard">
-          <div class="section-heading"><div><p class="eyebrow">Medication</p><h2>Timing & next wake</h2></div></div>
-          <p class="muted setup-help">A descriptive look at your logged timing. It does not establish that medication timing caused a particular wake time.</p>
-          <div id="medicationInsights" class="medication-insights"></div>
-        </section>
-
-        <section class="card">
-          <div class="section-heading"><div><p class="eyebrow">Patterns</p><h2>What seems connected?</h2></div></div>
-          <p class="muted setup-help">These are associations in your own logs, not proof that one habit caused the other result.</p>
-          <div id="patternInsights" class="insight-list"></div>
-        </section>
-
-        <section class="card weekly-review-card" id="weeklyReviewCard">
-          <div class="section-heading"><div><p class="eyebrow">Weekly review</p><h2>Close the loop</h2></div><span id="weeklyReviewLabel" class="section-progress"></span></div>
-          <div id="weeklyReviewSummary" class="weekly-review-summary"></div>
-          <label class="text-field"><span>What do you want to focus on next week?</span><textarea id="weeklyFocusInput" rows="2" maxlength="300" placeholder="One clear focus for the week ahead…"></textarea></label>
-          <button id="saveWeeklyFocusButton" class="primary-button weekly-focus-save" type="button">Save weekly focus</button>
-        </section>
-
-        <section class="card">
-          <div class="section-heading"><div><p class="eyebrow">History</p><h2>Recent days</h2></div></div>
-          <div id="historyList" class="history-list"></div>
-        </section>
-      </section>
-
-      <section id="setupView" class="view" aria-labelledby="pageTitle">
-        <section class="card">
-          <div class="section-heading"><div><p class="eyebrow">Schedule</p><h2>Daily times</h2></div></div>
-          <div class="two-column-fields">
-            <label class="text-field compact"><span>Wake-up time</span><input id="wakeTimeInput" type="time" /></label>
-            <label class="text-field compact"><span>Bedtime target</span><input id="bedTimeInput" type="time" /></label>
-          </div>
-          <label class="toggle-field schedule-toggle"><input id="badgeEnabledInput" type="checkbox" /><span><b>Home Screen progress badge</b><small>When supported by your installed web app, show the number of required items still remaining today.</small></span></label>
-        </section>
-
-        <section class="card">
-          <div class="section-heading"><div><p class="eyebrow">Streaks</p><h2>Make streaks fit real life</h2></div></div>
-          <div class="two-column-fields">
-            <label class="text-field compact"><span>Completion needed</span><div class="percent-input"><input id="streakThresholdInput" type="number" min="1" max="100" step="1" /><b>%</b></div></label>
-            <label class="text-field compact"><span>Excused days</span><select id="streakModeInput"><option value="forgiving">Do not break streak</option><option value="strict">Break streak</option></select></label>
-          </div>
-          <label class="toggle-field schedule-toggle"><input id="streakWeekdaysOnlyInput" type="checkbox" /><span><b>Weekdays-only streak</b><small>Saturday and Sunday are ignored when calculating the streak.</small></span></label>
-        </section>
-
-        <section class="card">
-          <div class="section-heading"><div><p class="eyebrow">Personalize</p><h2>Make it yours</h2></div></div>
-          <label class="text-field compact"><span>Theme</span><select id="themeInput">
-            <option value="calm">Calm</option><option value="sunrise">Sunrise</option><option value="dusk">Dusk</option><option value="minimal">Minimal</option><option value="midnight">Midnight</option>
-          </select></label>
-          <div class="background-controls">
-            <label class="secondary-button file-button">Use a background photo<input id="backgroundImageInput" type="file" accept="image/*" /></label>
-            <button id="clearBackgroundButton" class="secondary-button" type="button">Remove photo</button>
-          </div>
-          <p class="muted setup-help">A background photo stays only on this device. It is compressed before being saved.</p>
-        </section>
-
-        <section class="card connections-card" id="connectionsCard">
-          <div class="section-heading"><div><p class="eyebrow">Connections</p><h2>Apps & smart actions</h2></div><button id="syncConnectionsButton" class="small-button" type="button">Sync now</button></div>
-          <p class="muted setup-help">Link routine items to the Bible plan, websites, iPhone Shortcuts, calls, texts, email, Maps, or another part of this app.</p>
-          <div class="connection-status-card">
-            <div class="connection-icon">📖</div>
-            <div class="connection-copy"><strong>Ten-Category Bible Reading</strong><span id="bibleConnectionStatus">Checking connection…</span></div>
-            <button id="openBibleConnectionButton" class="small-button" type="button">Open</button>
-          </div>
-          <label class="text-field"><span>Bible app address</span><input id="bibleAppUrlInput" type="url" inputmode="url" placeholder="https://bojangles4x4.github.io/Bible-Reading-Plan/" /></label>
-          <div class="connection-actions">
-            <button id="saveBibleConnectionButton" class="primary-button" type="button">Save connection</button>
-            <button id="testBibleConnectionButton" class="secondary-button" type="button">Test connection</button>
-          </div>
-          <div class="integration-template-heading"><strong>Add an action</strong><span>Start with a template, then customize it.</span></div>
-          <div id="connectionTemplates" class="integration-template-grid">
-            <button type="button" data-template="bible"><span>📖</span><b>Bible reading</b></button>
-            <button type="button" data-template="website"><span>↗</span><b>Website</b></button>
-            <button type="button" data-template="shortcut"><span>⚡</span><b>Shortcut</b></button>
-            <button type="button" data-template="phone"><span>☎</span><b>Call</b></button>
-            <button type="button" data-template="text"><span>💬</span><b>Text</b></button>
-            <button type="button" data-template="email"><span>✉</span><b>Email</b></button>
-            <button type="button" data-template="maps"><span>⌖</span><b>Maps</b></button>
-            <button type="button" data-template="internal"><span>◎</span><b>Inside app</b></button>
-          </div>
-        </section>
-
-        <section class="card">
-          <div class="section-heading"><div><p class="eyebrow">Daily routine</p><h2>Routine items</h2></div><button id="addItemButton" class="primary-button" type="button">+ Add</button></div>
-          <p class="muted setup-help">Habits and measurable goals. Required items affect the daily completion score.</p>
-          <div id="routineEditor" class="routine-editor"></div>
-        </section>
-
-        <section class="card">
-          <div class="section-heading"><div><p class="eyebrow">Reflection</p><h2>Check-ins & prompts</h2></div><button id="addCheckinButton" class="primary-button" type="button">+ Add</button></div>
-          <p class="muted setup-help">Build your own mood, sleep, stress, focus, gratitude, or reflection questions and place them in Morning, Day, or Evening.</p>
-          <div id="checkinEditor" class="routine-editor"></div>
-        </section>
-
-        <section class="card" id="memoryBankCard">
-          <div class="section-heading"><div><p class="eyebrow">Remember</p><h2>Memory bank</h2></div><button id="addMemoryButton" class="primary-button" type="button">+ Add</button></div>
-          <p class="muted setup-help">Save blessings, gratitude, prayers, thoughts, quotes, and memories. A Memory reflection routine can randomly bring them back during your day.</p>
-          <div class="memory-bank-stats"><strong id="memoryCount">0</strong><span>saved</span><button id="exportMemoriesButton" class="small-button" type="button">Export CSV</button></div>
-          <div class="memory-filter-bar">
-            <input id="memorySearchInput" type="search" placeholder="Search memories…" aria-label="Search memories" />
-            <select id="memoryFilterInput" aria-label="Filter memories"><option value="all">All categories</option><option value="blessing">Blessings</option><option value="gratitude">Gratitude</option><option value="prayer">Prayers</option><option value="thought">Thoughts</option><option value="quote">Quotes</option><option value="memory">Memories</option><option value="archived">Archived</option></select>
-            <label class="favorite-filter"><input id="memoryFavoritesOnlyInput" type="checkbox" /> ★ only</label>
-          </div>
-          <div id="memoryArchive" class="memory-archive"></div>
-        </section>
-
-        <section class="card" id="dataBackupCard">
-          <div class="section-heading"><div><p class="eyebrow">Data</p><h2>Backup & export</h2></div></div>
-          <p class="muted setup-help">Your information is still stored only in this browser on this device. Nothing is automatically uploaded anywhere.</p>
-          <div class="button-stack">
-            <button id="exportCsvButton" class="secondary-button" type="button">Export progress as CSV</button>
-            <button id="exportJsonButton" class="secondary-button" type="button">Download backup</button>
-            <label class="secondary-button file-button">Restore backup<input id="importJsonInput" type="file" accept="application/json,.json" /></label>
-            <button id="createSnapshotButton" class="secondary-button" type="button">Create local snapshot</button>
-            <button id="restoreSnapshotButton" class="secondary-button" type="button">Restore latest local snapshot</button>
-            <button id="resetDataButton" class="danger-button" type="button">Reset app data</button>
-          </div>
-          <p id="snapshotStatus" class="muted micro-copy"></p>
-          <p class="app-version">Daily Routine <b id="appVersion">v1.6</b></p>
-        </section>
-
-        <section class="card private-sharing-card">
-          <div class="section-heading"><div><p class="eyebrow">Next phase</p><h2>Private accountability</h2></div></div>
-          <p>Once the daily experience is where we want it, the next step is secure accounts and permission-based sharing with one approved accountability person.</p>
-        </section>
-      </section>
-    </main>
-
-    <nav class="bottom-nav" aria-label="Main navigation">
-      <button class="nav-button active" data-view="today" type="button"><span>✓</span><b>Today</b></button>
-      <button class="nav-button" data-view="history" type="button"><span>▤</span><b>Progress</b></button>
-      <button class="nav-button" data-view="setup" type="button"><span>⚙</span><b>Setup</b></button>
-    </nav>
-  </div>
-
-  <dialog id="itemDialog" class="item-dialog">
-    <form id="itemForm" method="dialog">
-      <div class="dialog-header"><div><p class="eyebrow" id="builderEyebrow">Routine builder</p><h2 id="dialogTitle">Add item</h2></div><button id="closeDialogButton" class="icon-button" type="button" aria-label="Close">×</button></div>
-      <input id="editingItemId" type="hidden" />
-      <input id="editingItemKind" type="hidden" value="routine" />
-      <label class="text-field compact"><span>Name / question</span><input id="itemNameInput" type="text" maxlength="80" required placeholder="Example: Prayer" /></label>
-      <label class="text-field compact"><span>Part of day</span><select id="itemSectionInput"><option value="morning">Morning</option><option value="day">Throughout the day</option><option value="evening">Evening</option></select></label>
-      <label class="text-field compact"><span>How to log it</span><select id="itemTypeInput">
-        <option value="checkbox">Checkbox</option><option value="linked">Linked app / action</option><option value="medication">Medication + time</option><option value="memory">Memory reflection</option><option value="scale">Rating scale</option><option value="number">Number</option><option value="time">Time</option><option value="text">Short comment</option><option value="longtext">Journal entry</option>
-      </select></label>
-      <label class="text-field compact"><span>Schedule</span><select id="itemFrequencyInput"><option value="daily">Every day</option><option value="weekdays">Weekdays</option><option value="weekends">Weekends</option><option value="custom">Specific days</option></select></label>
-
-      <fieldset id="customDaysField" class="day-picker" hidden>
-        <legend>Which days?</legend>
-        <label><input type="checkbox" value="1" /><span>M</span></label><label><input type="checkbox" value="2" /><span>T</span></label><label><input type="checkbox" value="3" /><span>W</span></label><label><input type="checkbox" value="4" /><span>T</span></label><label><input type="checkbox" value="5" /><span>F</span></label><label><input type="checkbox" value="6" /><span>S</span></label><label><input type="checkbox" value="0" /><span>S</span></label>
-      </fieldset>
-
-      <div id="numberGoalFields" class="two-column-fields" hidden>
-        <label class="text-field compact"><span>Target (optional)</span><input id="itemTargetInput" type="number" min="0" step="any" inputmode="decimal" placeholder="8" /></label>
-        <label class="text-field compact"><span>Unit (optional)</span><input id="itemUnitInput" type="text" maxlength="20" placeholder="cups, minutes, pages…" /></label>
+        ${catchup?`<button class="btn small remove-extra-button">Remove extra</button>`:""}
       </div>
+    </div>`;
+  const checkbox=card.querySelector(".check");
+  checkbox.addEventListener("change",()=>{
+    if(checkbox.checked) state.checked[descriptor.id]=true;
+    else delete state.checked[descriptor.id];
+    cleanupAssignments(); saveState(); render();
+  });
+  card.querySelector(".read-card-button").addEventListener("click",()=>openReading(descriptor));
+  card.querySelector(".listen-card-button").addEventListener("click",()=>openListening(descriptor));
+  const remove=card.querySelector(".remove-extra-button");
+  if(remove) remove.addEventListener("click",()=>{
+    state.catchUpAssignments=state.catchUpAssignments.filter(a=>!(
+      a.sourceDay===item.sourceDay && a.category===item.category && a.targetDay===item.targetDay
+    ));
+    saveState(); render(); showToast("Catch-up extra removed");
+  });
+  return card;
+}
 
-      <div id="scaleFields" class="builder-subcard" hidden>
-        <div class="three-column-fields">
-          <label class="text-field compact"><span>Minimum</span><input id="scaleMinInput" type="number" step="any" value="0" /></label>
-          <label class="text-field compact"><span>Maximum</span><input id="scaleMaxInput" type="number" step="any" value="10" /></label>
-          <label class="text-field compact"><span>Step</span><input id="scaleStepInput" type="number" min="0.1" step="any" value="1" /></label>
-        </div>
-        <div class="two-column-fields scale-label-fields">
-          <label class="text-field compact"><span>Low-end label</span><input id="scaleLowLabelInput" type="text" maxlength="24" placeholder="Low" /></label>
-          <label class="text-field compact"><span>High-end label</span><input id="scaleHighLabelInput" type="text" maxlength="24" placeholder="Great" /></label>
-        </div>
-        <p class="muted setup-help">The rating value can be changed by dragging the bar, tapping −/+, or typing the number.</p>
-      </div>
+function renderContinue() {
+  const last=nextAfterLastOpened();
+  const next=nextUnfinishedItem();
+  $("completeAndNextButton").hidden=!last;
+  if(last) {
+    const mode=state.lastOpened?.mode==="listen" ? "listening to" : "reading";
+    $("nextReadingTitle").textContent=`Finished ${last.reference}?`;
+    $("nextReadingMeta").textContent=`You were ${mode} this chapter. Mark it complete, then continue in the same mode.`;
+    $("completeAndNextButton").textContent=state.lastOpened?.mode==="listen"
+      ? "Mark Complete & Read Next Aloud"
+      : "Mark Read & Open Next";
+  } else if(next) {
+    $("nextReadingTitle").textContent=next.reference;
+    $("nextReadingMeta").textContent=`Day ${next.sourceDay}, Category ${next.category}${next.kind==="catchup"?" · Catch-up":""}`;
+  } else {
+    $("nextReadingTitle").textContent="Selected day is complete";
+    $("nextReadingMeta").textContent="There are no unfinished readings scheduled for this day.";
+  }
+  $("readNextButton").disabled=!next;
+  $("listenNextButton").disabled=!next;
+}
 
-      <div id="medicationFields" class="builder-subcard" hidden>
-        <strong class="builder-note-title">Medication timing</strong>
-        <p class="muted setup-help">On Today, tap <b>Taken now</b> to save the time automatically. You can edit the recorded time afterward.</p>
-        <label class="text-field compact"><span>Usual dose (optional)</span><input id="medicationDoseInput" type="text" maxlength="40" placeholder="Example: 50 mg" /></label>
-      </div>
+function renderCatchup() {
+  const missed=missedDays();
+  const missedReadingTotal=missed.reduce((sum,day)=>sum+incompleteForDay(day).length,0);
+  $("missedDaysCount").textContent=missed.length;
+  $("missedReadingsCount").textContent=missedReadingTotal;
+  $("earliestMissed").textContent=missed.length?`Day ${missed[0]}`:"—";
+  $("openMissedButton").disabled=!missed.length;
+  $("spreadMissedButton").disabled=!missed.length;
+  $("skipMissedButton").disabled=!missed.length;
+  $("unskipDayButton").disabled=!isSkipped(state.selectedDay);
+}
 
-      <div id="linkedActionFields" class="builder-subcard" hidden>
-        <strong class="builder-note-title">Linked app or smart action</strong>
-        <div class="two-column-fields">
-          <label class="text-field compact"><span>Action type</span><select id="linkedTemplateInput"><option value="bible">Bible reading app</option><option value="website">Website</option><option value="shortcut">iPhone Shortcut</option><option value="phone">Phone call</option><option value="text">Text message</option><option value="email">Email</option><option value="maps">Maps</option><option value="internal">Inside Daily Routine</option></select></label>
-          <label class="text-field compact"><span>Completion</span><select id="linkedCompletionInput"><option value="manual">Open, then mark complete</option><option value="confirm">Ask when I return</option><option value="sync">Sync automatically</option></select></label>
-        </div>
-        <label id="linkedUrlField" class="text-field compact"><span>Link or app URL</span><input id="linkedUrlInput" type="text" inputmode="url" maxlength="500" placeholder="https://… or shortcuts://…" /></label>
-        <label id="linkedInternalField" class="text-field compact" hidden><span>Open this part of Daily Routine</span><select id="linkedInternalTargetInput"><option value="memory">Capture or review a blessing</option><option value="weekly">Weekly review</option><option value="medication">Medication history</option><option value="backup">Backup & export</option></select></label>
-        <label class="text-field compact"><span>Button label</span><input id="linkedButtonLabelInput" type="text" maxlength="30" placeholder="Open, Continue, Call…" /></label>
-        <p class="muted setup-help">Bible reading can sync progress automatically. Other actions can stay manual or ask whether you finished when you return.</p>
-      </div>
+function renderCategoryProgress() {
+  const container=$("categoryProgressGrid"); container.innerHTML="";
+  const today=todayDayNumber();
+  for(let category=1;category<=10;category++) {
+    const completed=categoryCheckedCount(category);
+    const percent=completed/365*100;
+    const cycleLength=sequences[category].length;
+    const cycle=Math.floor((today-1)/cycleLength)+1;
+    const position=((today-1)%cycleLength)+1;
+    const reference=getReading(today,category);
+    const el=document.createElement("div");
+    el.className="category-progress";
+    el.innerHTML=`
+      <div class="category-progress-head"><span>Category ${category}</span><span>${completed}/365</span></div>
+      <div class="category-progress-meta">Today: ${reference} · Cycle ${cycle}, chapter ${position} of ${cycleLength}</div>
+      <div class="category-bar"><div class="category-bar-fill" style="width:${percent}%"></div></div>`;
+    container.appendChild(el);
+  }
+}
 
-      <div id="timeWindowFields" class="builder-subcard">
-        <strong class="builder-note-title">Time window (optional)</strong>
-        <div class="two-column-fields">
-          <label class="text-field compact"><span>Start</span><input id="timeWindowStartInput" type="time" /></label>
-          <label class="text-field compact"><span>End</span><input id="timeWindowEndInput" type="time" /></label>
-        </div>
-        <p class="muted setup-help">Today can show Upcoming, Due now, or Late based on the window you set.</p>
-      </div>
+function render() {
+  cleanupAssignments();
+  const day=state.selectedDay;
+  $("dayTitle").textContent=`Day ${day}${isSkipped(day)?" · Skipped":""}`;
+  $("dateTitle").textContent=formatDate(dateForDay(day));
+  $("startDate").value=state.startDate;
+  $("dayNumber").value=day;
+  $("readerServiceUrl").value=state.readerServiceUrl || "";
+  $("readerRateSelect").value=String(state.readerRate || 1);
+  $("readerServiceStatus").textContent=normalizedServiceUrl()
+    ? "Configured"
+    : "Not configured";
+  $("readerServiceStatus").style.color=normalizedServiceUrl()
+    ? "var(--green)"
+    : "var(--muted)";
 
-      <label id="memoryFields" class="text-field compact" hidden><span>Which memories should this surface?</span><select id="memoryCategoryInput">
-        <option value="any">Any category</option><option value="blessing">Blessings</option><option value="gratitude">Gratitude</option><option value="prayer">Prayers</option><option value="thought">Thoughts</option><option value="quote">Quotes</option><option value="memory">Memories</option>
-      </select></label>
+  grid.innerHTML="";
+  for(let category=1;category<=10;category++) grid.appendChild(renderCard({sourceDay:day,category,targetDay:day},false));
 
-      <label id="promptField" class="text-field compact" hidden><span>Answer hint (optional)</span><input id="itemPlaceholderInput" type="text" maxlength="80" placeholder="Example: Anything worth remembering?" /></label>
+  const extras=assignmentsForDay(day);
+  extras.forEach(extra=>grid.appendChild(renderCard(extra,true)));
 
-      <label id="optionalField" class="toggle-field"><input id="itemOptionalInput" type="checkbox" /><span><b>Optional item</b><small>Track it, but do not let it lower the daily completion score.</small></span></label>
-      <label class="text-field compact"><span>Pause through (optional)</span><input id="pauseUntilInput" type="date" /><small class="field-help">Pausing starts today and does not rewrite earlier history.</small></label>
+  const checked=dayReadCount(day);
+  const annual=annualCheckedCount();
+  $("dayProgress").textContent=`${checked} of 10${extras.length?` + ${extras.length} catch-up`:""}`;
+  $("yearProgress").textContent=`${annual.toLocaleString()} of 3,650`;
+  $("progressFill").style.width=`${annual/3650*100}%`;
+  $("previousDay").disabled=day<=1;
+  $("nextDay").disabled=day>=365;
+  $("markDayButton").textContent=checked===10?"Day Complete ✓":"Mark Day Complete";
 
-      <div class="dialog-actions"><button id="deleteItemButton" class="danger-button" type="button" hidden>Delete</button><button class="primary-button" type="submit">Save</button></div>
-    </form>
-  </dialog>
+  renderContinue(); renderCatchup(); renderCategoryProgress(); saveState();
+}
 
-  <dialog id="memoryDialog" class="item-dialog memory-dialog">
-    <form id="memoryForm" method="dialog">
-      <div class="dialog-header"><div><p class="eyebrow">Capture</p><h2>Remember this</h2></div><button id="closeMemoryDialogButton" class="icon-button" type="button" aria-label="Close">×</button></div>
-      <label class="text-field compact"><span>What happened?</span><textarea id="memoryTextInput" rows="4" maxlength="1000" required placeholder="A small blessing, moment, prayer, quote, or thought…"></textarea></label>
-      <div class="two-column-fields">
-        <label class="text-field compact"><span>Category</span><select id="memoryCategoryCaptureInput"><option value="blessing">Blessing</option><option value="gratitude">Gratitude</option><option value="prayer">Prayer</option><option value="thought">Thought</option><option value="quote">Quote</option><option value="memory">Memory</option></select></label>
-        <label class="text-field compact"><span>Date & time</span><input id="memoryDateTimeInput" type="datetime-local" required /></label>
-      </div>
-      <div class="dialog-actions"><button class="primary-button" type="submit">Save memory</button></div>
-    </form>
-  </dialog>
+$("previousDay").onclick=()=>{state.selectedDay=Math.max(1,state.selectedDay-1);saveState();render();};
+$("nextDay").onclick=()=>{state.selectedDay=Math.min(365,state.selectedDay+1);saveState();render();};
+$("todayButton").onclick=()=>{state.selectedDay=todayDayNumber();saveState();render();};
+$("markDayButton").onclick=()=>{
+  for(let c=1;c<=10;c++) state.checked[storageId(state.selectedDay,c)]=true;
+  cleanupAssignments(); saveState(); render(); showToast("Day marked complete");
+};
+$("clearDayButton").onclick=()=>{
+  for(let c=1;c<=10;c++) delete state.checked[storageId(state.selectedDay,c)];
+  saveState(); render(); showToast("Day cleared");
+};
+$("readNextButton").onclick=()=>openReading(nextUnfinishedItem());
+$("listenNextButton").onclick=()=>openListening(nextUnfinishedItem());
+$("completeAndNextButton").onclick=()=>{
+  const last=nextAfterLastOpened();
+  if(!last) return;
+  const mode=state.lastOpened?.mode==="listen" ? "listen" : "read";
+  markItemComplete(last); state.lastOpened=null; saveState(); render();
+  const next=nextUnfinishedItem();
+  if(next) {
+    if(mode==="listen") openListening(next);
+    else openReading(next);
+  } else showToast("Selected day complete");
+};
+$("openMissedButton").onclick=()=>{
+  const missed=missedDays(); if(!missed.length)return;
+  state.selectedDay=missed[0]; saveState(); render();
+};
+$("skipMissedButton").onclick=()=>{
+  const missed=missedDays(); if(!missed.length)return;
+  const day=missed[0];
+  state.skippedDays[String(day)]=true;
+  state.catchUpAssignments=state.catchUpAssignments.filter(a=>a.sourceDay!==day);
+  saveState(); render(); showToast(`Day ${day} skipped`);
+};
+$("unskipDayButton").onclick=()=>{
+  delete state.skippedDays[String(state.selectedDay)];
+  saveState(); render(); showToast("Selected day restored");
+};
+$("spreadMissedButton").onclick=()=>{
+  const missed=missedDays(); if(!missed.length)return;
+  const sourceDay=missed[0];
+  const items=incompleteForDay(sourceDay);
+  const spread=Math.max(2,Number($("spreadDays").value)||3);
+  const today=todayDayNumber();
+  state.catchUpAssignments=state.catchUpAssignments.filter(a=>a.sourceDay!==sourceDay);
+  items.forEach((item,index)=>{
+    const targetDay=Math.min(365,today+(index%spread));
+    state.catchUpAssignments.push({...item,targetDay});
+  });
+  saveState(); render();
+  showToast(`Day ${sourceDay} spread across ${spread} days`);
+};
+$("startDate").onchange=()=>{
+  if(!$("startDate").value)return;
+  state.startDate=$("startDate").value; saveState(); render(); showToast("Start date updated");
+};
+$("dayNumber").onchange=()=>{
+  state.selectedDay=Math.min(365,Math.max(1,Number($("dayNumber").value)||1));
+  saveState(); render();
+};
+$("saveReaderServiceButton").onclick=()=>{
+  state.readerServiceUrl=$("readerServiceUrl").value.trim();
+  saveState();
+  render();
+  showToast(state.readerServiceUrl ? "Read-aloud service saved" : "Service URL cleared");
+};
 
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="app.js" defer></script>
+$("testReaderServiceButton").onclick=async()=>{
+  const candidate=$("readerServiceUrl").value.trim();
+  if(!candidate) {
+    showToast("Paste the Apps Script URL first");
+    return;
+  }
+  state.readerServiceUrl=candidate;
+  saveState();
+  $("readerServiceStatus").textContent="Testing…";
+  $("readerServiceStatus").style.color="var(--amber)";
+  try {
+    chapterMemoryCache.delete("John 1");
+    const payload=await jsonpChapter("John 1");
+    const verses=extractVersesFromPassageHtml(payload.passageHtml);
+    if(!verses.length) throw new Error("No verses returned");
+    $("readerServiceStatus").textContent=`Working · ${verses.length} verses loaded`;
+    $("readerServiceStatus").style.color="var(--green)";
+    showToast("LSB read-aloud service is working");
+  } catch(error) {
+    $("readerServiceStatus").textContent=`Test failed · ${error.message}`;
+    $("readerServiceStatus").style.color="var(--danger)";
+    showToast("Service test failed");
+  }
+};
+
+$("readerPlayPauseButton").onclick=()=>{
+  if(!readerState.verses.length) {
+    if(readerState.item) openInAppReader(readerState.item,true);
+    return;
+  }
+  if(readerState.playing && !readerState.paused) pauseReader();
+  else startOrResumeReader();
+};
+
+$("readerRestartButton").onclick=()=>{
+  cancelSpeech(true);
+  startOrResumeReader();
+};
+
+$("readerStopButton").onclick=()=>cancelSpeech(false);
+$("readerCloseButton").onclick=closeReader;
+$("readerModal").addEventListener("click",event=>{
+  if(event.target===$("readerModal")) closeReader();
+});
+$("readerRateSelect").onchange=()=>{
+  state.readerRate=Number($("readerRateSelect").value)||1;
+  saveState();
+  if(readerState.playing) {
+    window.speechSynthesis.cancel();
+    readerState.playing=false;
+    readerState.paused=false;
+    startOrResumeReader();
+  }
+};
+
+$("readerCompleteNextButton").onclick=()=>{
+  const item=readerState.item;
+  if(!item) return;
+  markItemComplete(item);
+  state.lastOpened=null;
+  saveState();
+  closeReader();
+  render();
+  const next=nextUnfinishedItem();
+  if(next) openListening(next);
+  else showToast("Selected day complete");
+};
+
+$("exportButton").onclick=()=>{
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob); const a=document.createElement("a");
+  a.href=url; a.download="bible-reading-progress.json"; a.click(); URL.revokeObjectURL(url);
+  showToast("Progress exported");
+};
+$("importInput").onchange=async event=>{
+  const file=event.target.files?.[0]; if(!file)return;
+  try { state=normalizeState(JSON.parse(await file.text())); saveState(); render(); showToast("Progress imported"); }
+  catch { alert("That file could not be imported."); }
+  event.target.value="";
+};
+$("resetButton").onclick=()=>{
+  if(!confirm("Reset the plan and erase all progress, skipped days, catch-up assignments, and read-aloud settings?"))return;
+  state=normalizeState({}); state.selectedDay=todayDayNumber(); saveState(); render(); showToast("Plan reset");
+};
+
+if(!localStorage.getItem(STORAGE_KEY)) {
+  state.selectedDay=todayDayNumber(); saveState();
+}
+if("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(()=>{}));
+}
+render();
+</script>
 </body>
 </html>
