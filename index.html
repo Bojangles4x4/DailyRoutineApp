@@ -52,7 +52,6 @@
     .btn.primary { background:var(--navy); color:white; border-color:var(--navy); }
     .btn.success { background:var(--green); color:white; border-color:var(--green); }
     .btn.amber { background:var(--amber); color:white; border-color:var(--amber); }
-    .btn.audio { background:#7a3fb0; color:white; border-color:#7a3fb0; }
     .btn.danger { color:var(--danger); }
     .btn.small { padding:8px 11px; font-size:.9rem; }
     .btn:disabled { opacity:.45; cursor:not-allowed; }
@@ -126,56 +125,6 @@
     .field label { display:block; font-weight:760; margin-bottom:6px; }
     .field input { width:100%; border:1px solid var(--line); border-radius:10px; padding:10px; background:white; }
     .footnote { color:var(--muted); font-size:.86rem; line-height:1.5; margin:18px 4px 0; }
-    .help-text { color:var(--muted); font-size:.8rem; line-height:1.45; margin-top:6px; }
-    .reader-backdrop {
-      position:fixed; inset:0; z-index:1000; background:rgba(10,20,30,.72);
-      display:grid; place-items:end center; padding:14px;
-    }
-    .reader-backdrop[hidden] { display:none; }
-    .reader-sheet {
-      width:min(720px,100%); max-height:92vh; overflow:auto; background:var(--paper);
-      border-radius:22px 22px 16px 16px; padding:20px; box-shadow:0 22px 60px rgba(0,0,0,.35);
-    }
-    .reader-top {
-      display:flex; justify-content:space-between; align-items:flex-start; gap:14px;
-    }
-    .reader-kicker {
-      color:var(--gold); text-transform:uppercase; font-size:.74rem; font-weight:850;
-      letter-spacing:.1em;
-    }
-    .reader-title { margin:4px 0 2px; font-size:1.55rem; }
-    .reader-status { color:var(--muted); font-size:.88rem; }
-    .reader-close {
-      border:1px solid var(--line); width:38px; height:38px; border-radius:50%;
-      background:white; font-size:1.35rem; cursor:pointer;
-    }
-    .reader-verse {
-      margin-top:16px; min-height:150px; padding:18px; border:1px solid var(--line);
-      border-radius:16px; background:#f8fafb; font-family:Georgia,"Times New Roman",serif;
-      font-size:1.24rem; line-height:1.65;
-    }
-    .reader-verse-number {
-      color:var(--gold); font-family:Inter,ui-sans-serif,system-ui,sans-serif;
-      font-size:.82rem; font-weight:850; margin-right:7px; vertical-align:top;
-    }
-    .reader-progress-label {
-      display:flex; justify-content:space-between; gap:10px; margin-top:13px;
-      color:var(--muted); font-size:.8rem;
-    }
-    .reader-controls {
-      display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:13px;
-    }
-    .reader-controls select { min-width:105px; }
-    .reader-attribution {
-      margin-top:15px; padding:11px; border-radius:12px; background:#f4f1e8;
-      color:#5c564b; font-size:.72rem; line-height:1.45;
-    }
-    .reader-attribution a { color:inherit; }
-    .service-status {
-      display:inline-block; margin-top:7px; font-size:.78rem; font-weight:750;
-      color:var(--muted);
-    }
-    body.reader-open { overflow:hidden; }
     .toast {
       position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px);
       background:#17202a; color:white; padding:10px 16px; border-radius:999px;
@@ -198,7 +147,7 @@
   <header>
     <div class="eyebrow">365-Day Plan</div>
     <h1>Ten-Category Bible Reading</h1>
-    <p>Read each chapter in the Legacy Standard Bible or have it read aloud inside the app, then keep moving without losing your place.</p>
+    <p>Read one chapter from each category, open it directly in the Legacy Standard Bible, and keep your original plan intact even when you need to catch up.</p>
   </header>
 
   <section class="toolbar" aria-label="Day navigation">
@@ -232,8 +181,7 @@
       </div>
       <div class="actions">
         <button class="btn primary small" id="readNextButton">Read Next in LSB</button>
-        <button class="btn audio small" id="listenNextButton">🔊 Read Next Aloud</button>
-        <button class="btn success small" id="completeAndNextButton" hidden>Mark Read & Continue</button>
+        <button class="btn success small" id="completeAndNextButton" hidden>Mark Read & Open Next</button>
       </div>
     </div>
   </section>
@@ -279,20 +227,6 @@
         <label for="dayNumber">Jump to day</label>
         <input id="dayNumber" type="number" min="1" max="365" />
       </div>
-      <div class="field" style="grid-column:1/-1;">
-        <label for="readerServiceUrl">LSB read-aloud service URL</label>
-        <input id="readerServiceUrl" type="url" inputmode="url"
-               placeholder="Paste the Google Apps Script URL ending in /exec" />
-        <div class="help-text">
-          This private helper loads one requested chapter at a time from the official LSB reader.
-          It does not store a copy of the Bible.
-        </div>
-        <span class="service-status" id="readerServiceStatus">Not configured</span>
-      </div>
-      <div class="actions" style="grid-column:1/-1;">
-        <button class="btn primary small" id="saveReaderServiceButton">Save Read-Aloud Service</button>
-        <button class="btn small" id="testReaderServiceButton">Test with John 1</button>
-      </div>
       <div class="actions">
         <button class="btn small" id="exportButton">Export Progress</button>
         <label class="btn small" for="importInput" style="display:inline-block;">Import Progress</label>
@@ -303,71 +237,10 @@
   </details>
 
   <p class="footnote">
-    Catch-up extras remain linked to their original day. Read Aloud loads only the chapter you request and uses your device’s built-in voice inside this app.
+    Catch-up extras remain linked to their original day: checking one off completes that missed chapter in the original schedule. Skipped days are excluded from the missed-day count but are not marked as read.
   </p>
 </main>
 <div class="toast" id="toast"></div>
-
-<div class="reader-backdrop" id="readerModal" hidden>
-  <section class="reader-sheet" role="dialog" aria-modal="true" aria-labelledby="readerTitle">
-    <div class="reader-top">
-      <div>
-        <div class="reader-kicker">LSB read aloud</div>
-        <h2 class="reader-title" id="readerTitle">Loading chapter…</h2>
-        <div class="reader-status" id="readerStatus">Connecting to the LSB reader</div>
-      </div>
-      <button class="reader-close" id="readerCloseButton" aria-label="Close reader">×</button>
-    </div>
-
-    <div class="reader-verse" id="readerVerseText">
-      The chapter will appear here.
-    </div>
-
-    <div class="reader-progress-label">
-      <span id="readerVerseProgress">Verse —</span>
-      <span id="readerPercent">0%</span>
-    </div>
-    <div class="progress-track">
-      <div class="progress-fill" id="readerProgressFill"></div>
-    </div>
-
-    <div class="reader-controls">
-      <button class="btn audio" id="readerPlayPauseButton">▶ Play</button>
-      <button class="btn" id="readerRestartButton">↺ Restart</button>
-      <button class="btn" id="readerStopButton">■ Stop</button>
-      <label>
-        <span class="sr-only">Reading speed</span>
-        <select id="readerRateSelect" aria-label="Reading speed">
-          <option value="0.8">0.8×</option>
-          <option value="0.9">0.9×</option>
-          <option value="1" selected>1.0×</option>
-          <option value="1.1">1.1×</option>
-          <option value="1.2">1.2×</option>
-          <option value="1.35">1.35×</option>
-          <option value="1.5">1.5×</option>
-        </select>
-      </label>
-    </div>
-
-    <div class="actions" style="margin-top:13px;">
-      <button class="btn success" id="readerCompleteNextButton">
-        Mark Complete & Read Next Aloud
-      </button>
-      <a class="btn small" id="readerOfficialLink" target="_blank" rel="noopener noreferrer">
-        Open Official LSB Text ↗
-      </a>
-    </div>
-
-    <div class="reader-attribution">
-      Scripture quotations taken from the (LSB®) Legacy Standard Bible®,
-      Copyright © 2021 by The Lockman Foundation. Used by permission.
-      All rights reserved. Managed in partnership with Three Sixteen Publishing Inc.
-      <a href="https://lsbible.org/" target="_blank" rel="noopener">LSBible.org</a>
-      and
-      <a href="https://316publishing.com/" target="_blank" rel="noopener">316Publishing.com</a>.
-    </div>
-  </section>
-</div>
 
 <script>
 const CATEGORY_BOOKS = {"1": [["Genesis", 50], ["Exodus", 40]], "2": [["Leviticus", 27], ["Numbers", 36], ["Deuteronomy", 34], ["Joshua", 24], ["Judges", 21]], "3": [["Ruth", 4], ["1 Samuel", 31], ["2 Samuel", 24], ["1 Kings", 22], ["2 Kings", 25], ["1 Chronicles", 29], ["2 Chronicles", 36], ["Ezra", 10], ["Nehemiah", 13], ["Esther", 10]], "4": [["Psalms", 150]], "5": [["Proverbs", 31], ["John", 21], ["Romans", 16]], "6": [["Job", 42], ["Ecclesiastes", 12], ["Song of Solomon", 8], ["Lamentations", 5], ["Ezekiel", 48], ["Daniel", 12], ["Hosea", 14], ["Joel", 3], ["Amos", 9], ["Obadiah", 1], ["Jonah", 4], ["Micah", 7], ["Nahum", 3], ["Habakkuk", 3], ["Zephaniah", 3], ["Haggai", 2], ["Zechariah", 14], ["Malachi", 4]], "7": [["Isaiah", 66], ["Jeremiah", 52]], "8": [["Matthew", 28], ["Mark", 16], ["Luke", 24]], "9": [["Acts", 28], ["Titus", 3], ["Philemon", 1], ["Hebrews", 13], ["James", 5], ["1 Peter", 5], ["2 Peter", 3], ["1 John", 5], ["2 John", 1], ["3 John", 1], ["Jude", 1], ["Revelation", 22]], "10": [["1 Corinthians", 16], ["2 Corinthians", 13], ["Galatians", 6], ["Ephesians", 6], ["Philippians", 4], ["Colossians", 4], ["1 Thessalonians", 5], ["2 Thessalonians", 3], ["1 Timothy", 6], ["2 Timothy", 4]]};
@@ -394,9 +267,7 @@ function normalizeState(parsed) {
     checked: parsed?.checked || {},
     skippedDays: parsed?.skippedDays || {},
     catchUpAssignments: Array.isArray(parsed?.catchUpAssignments) ? parsed.catchUpAssignments : [],
-    lastOpened: parsed?.lastOpened || null,
-    readerServiceUrl: parsed?.readerServiceUrl || "",
-    readerRate: Number(parsed?.readerRate) || 1
+    lastOpened: parsed?.lastOpened || null
   };
 }
 function loadState() {
@@ -477,343 +348,6 @@ function readingDescriptor(item) {
   const reference=getReading(item.sourceDay,item.category);
   return {...item,reference,id:storageId(item.sourceDay,item.category)};
 }
-const LSB_COPYRIGHT_SPOKEN =
-  "Scripture quotations taken from the Legacy Standard Bible, copyright 2021 by The Lockman Foundation. " +
-  "Used by permission. All rights reserved. Managed in partnership with Three Sixteen Publishing Incorporated, " +
-  "LS Bible dot org and 316 Publishing dot com.";
-
-const chapterMemoryCache = new Map();
-let readerState = {
-  item: null,
-  verses: [],
-  index: 0,
-  playing: false,
-  paused: false,
-  finished: false,
-  requestId: 0
-};
-
-function normalizedServiceUrl() {
-  return String(state.readerServiceUrl || "").trim();
-}
-
-function jsonpChapter(reference) {
-  const serviceUrl = normalizedServiceUrl();
-  if (!serviceUrl) {
-    return Promise.reject(new Error("The LSB read-aloud service has not been configured."));
-  }
-
-  if (chapterMemoryCache.has(reference)) {
-    return Promise.resolve(chapterMemoryCache.get(reference));
-  }
-
-  return new Promise((resolve, reject) => {
-    const callbackName = `__lsbReader_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-    const script = document.createElement("script");
-    let settled = false;
-
-    const cleanup = () => {
-      delete window[callbackName];
-      script.remove();
-    };
-
-    const timer = setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      cleanup();
-      reject(new Error("The LSB reader service timed out."));
-    }, 25000);
-
-    window[callbackName] = payload => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      cleanup();
-
-      if (!payload || payload.ok !== true) {
-        reject(new Error(payload?.error || "The chapter could not be loaded."));
-        return;
-      }
-
-      chapterMemoryCache.set(reference, payload);
-      resolve(payload);
-    };
-
-    script.onerror = () => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      cleanup();
-      reject(new Error("The LSB reader service could not be reached."));
-    };
-
-    const separator = serviceUrl.includes("?") ? "&" : "?";
-    script.src =
-      `${serviceUrl}${separator}callback=${encodeURIComponent(callbackName)}` +
-      `&q=${encodeURIComponent(reference)}&_=${Date.now()}`;
-    document.head.appendChild(script);
-  });
-}
-
-function extractVersesFromPassageHtml(passageHtml) {
-  const documentFragment = new DOMParser().parseFromString(
-    `<main>${passageHtml || ""}</main>`,
-    "text/html"
-  );
-
-  const verseElements = [...documentFragment.querySelectorAll("span.verse")];
-  const verses = verseElements.map((element, index) => {
-    const numberElement = element.querySelector("small[data-verse]");
-    const number = Number(numberElement?.getAttribute("data-verse")) || index + 1;
-    const clone = element.cloneNode(true);
-
-    clone.querySelectorAll(
-      "small[data-verse], .chapter-number, .subhead, sup, button, svg, " +
-      ".footnote, [data-footnote], [role='note']"
-    ).forEach(node => node.remove());
-
-    const text = clone.textContent.replace(/\s+/g, " ").trim();
-    return { number, text };
-  }).filter(verse => verse.text);
-
-  if (verses.length) return verses;
-
-  const fallbackText = documentFragment.body.textContent.replace(/\s+/g, " ").trim();
-  return fallbackText ? [{ number: 1, text: fallbackText }] : [];
-}
-
-function bestEnglishVoice() {
-  const voices = window.speechSynthesis?.getVoices?.() || [];
-  const english = voices.filter(voice => /^en([-_]|$)/i.test(voice.lang || ""));
-  return (
-    english.find(voice => /Samantha|Ava|Daniel|Aaron|Karen|Moira/i.test(voice.name)) ||
-    english.find(voice => voice.localService) ||
-    english[0] ||
-    voices[0] ||
-    null
-  );
-}
-
-function setReaderModalVisible(visible) {
-  $("readerModal").hidden = !visible;
-  document.body.classList.toggle("reader-open", visible);
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function updateReaderDisplay() {
-  const total = readerState.verses.length;
-  const current = total ? readerState.verses[Math.min(readerState.index, total - 1)] : null;
-  const completedCount = readerState.finished ? total : Math.min(readerState.index, total);
-  const percent = total ? Math.round((completedCount / total) * 100) : 0;
-
-  $("readerTitle").textContent = readerState.item?.reference || "LSB read aloud";
-  $("readerVerseText").innerHTML = current
-    ? `<span class="reader-verse-number">${current.number}</span>${escapeHtml(current.text)}`
-    : "The chapter will appear here.";
-  $("readerVerseProgress").textContent = current
-    ? `Verse ${current.number} · ${Math.min(readerState.index + 1, total)} of ${total}`
-    : "Verse —";
-  $("readerPercent").textContent = `${percent}%`;
-  $("readerProgressFill").style.width = `${percent}%`;
-
-  if (readerState.finished) {
-    $("readerStatus").textContent = "Chapter finished";
-    $("readerPlayPauseButton").textContent = "▶ Replay";
-  } else if (readerState.paused) {
-    $("readerStatus").textContent = "Paused";
-    $("readerPlayPauseButton").textContent = "▶ Resume";
-  } else if (readerState.playing) {
-    $("readerStatus").textContent = "Reading aloud";
-    $("readerPlayPauseButton").textContent = "Ⅱ Pause";
-  } else if (total) {
-    $("readerStatus").textContent = "Ready";
-    $("readerPlayPauseButton").textContent = "▶ Play";
-  }
-}
-
-function cancelSpeech(resetIndex = false) {
-  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-  readerState.playing = false;
-  readerState.paused = false;
-  readerState.finished = false;
-  if (resetIndex) readerState.index = 0;
-  updateReaderDisplay();
-}
-
-function speakAttributionThenVerse() {
-  if (sessionStorage.getItem("lsbAttributionSpoken") === "yes") {
-    speakCurrentVerse();
-    return;
-  }
-
-  const notice = new SpeechSynthesisUtterance(LSB_COPYRIGHT_SPOKEN);
-  notice.rate = Math.min(1.1, Number(state.readerRate) || 1);
-  const voice = bestEnglishVoice();
-  if (voice) notice.voice = voice;
-  notice.onend = () => {
-    sessionStorage.setItem("lsbAttributionSpoken", "yes");
-    speakCurrentVerse();
-  };
-  notice.onerror = () => speakCurrentVerse();
-  window.speechSynthesis.speak(notice);
-}
-
-function speakCurrentVerse() {
-  if (!readerState.verses.length || readerState.index >= readerState.verses.length) {
-    readerState.playing = false;
-    readerState.paused = false;
-    readerState.finished = true;
-    updateReaderDisplay();
-    return;
-  }
-
-  const verse = readerState.verses[readerState.index];
-  const utterance = new SpeechSynthesisUtterance(verse.text);
-  utterance.rate = Number(state.readerRate) || 1;
-  utterance.pitch = 1;
-  const voice = bestEnglishVoice();
-  if (voice) utterance.voice = voice;
-
-  utterance.onstart = () => {
-    readerState.playing = true;
-    readerState.paused = false;
-    updateReaderDisplay();
-  };
-  utterance.onend = () => {
-    if (!readerState.playing) return;
-    readerState.index += 1;
-    updateReaderDisplay();
-    speakCurrentVerse();
-  };
-  utterance.onerror = event => {
-    if (event.error === "canceled" || event.error === "interrupted") return;
-    readerState.playing = false;
-    readerState.paused = false;
-    $("readerStatus").textContent = "The device voice stopped. Tap Play to continue.";
-    updateReaderDisplay();
-  };
-
-  window.speechSynthesis.speak(utterance);
-}
-
-function startOrResumeReader() {
-  if (!("speechSynthesis" in window)) {
-    $("readerStatus").textContent = "This browser does not support read-aloud.";
-    return;
-  }
-
-  if (readerState.finished) {
-    readerState.index = 0;
-    readerState.finished = false;
-  }
-
-  if (readerState.paused) {
-    window.speechSynthesis.resume();
-    readerState.paused = false;
-    readerState.playing = true;
-    updateReaderDisplay();
-    return;
-  }
-
-  window.speechSynthesis.cancel();
-  readerState.playing = true;
-  readerState.paused = false;
-  updateReaderDisplay();
-  speakAttributionThenVerse();
-}
-
-function pauseReader() {
-  if (!readerState.playing || readerState.paused) return;
-  window.speechSynthesis.pause();
-  readerState.paused = true;
-  updateReaderDisplay();
-}
-
-async function openInAppReader(item, autoPlay = true) {
-  if (!item) return;
-
-  if (!normalizedServiceUrl()) {
-    const settingsPanel = document.querySelector(".settings-panel");
-    settingsPanel.open = true;
-    settingsPanel.scrollIntoView({ behavior: "smooth", block: "start" });
-    showToast("Add the LSB read-aloud service URL in Settings");
-    return;
-  }
-
-  if (!("speechSynthesis" in window)) {
-    showToast("Read Aloud is not supported in this browser");
-    return;
-  }
-
-  window.speechSynthesis.cancel();
-  readerState = {
-    item,
-    verses: [],
-    index: 0,
-    playing: false,
-    paused: false,
-    finished: false,
-    requestId: readerState.requestId + 1
-  };
-  const requestId = readerState.requestId;
-
-  state.lastOpened = {
-    sourceDay: item.sourceDay,
-    category: item.category,
-    targetDay: state.selectedDay,
-    mode: "listen"
-  };
-  saveState();
-  renderContinue();
-
-  $("readerOfficialLink").href =
-    `https://read.lsbible.org/?q=${encodeURIComponent(item.reference)}`;
-  $("readerTitle").textContent = item.reference;
-  $("readerStatus").textContent = "Loading exact LSB chapter…";
-  $("readerVerseText").textContent = "Please wait.";
-  $("readerProgressFill").style.width = "0%";
-  $("readerVerseProgress").textContent = "Verse —";
-  $("readerPercent").textContent = "0%";
-  setReaderModalVisible(true);
-
-  try {
-    const payload = await jsonpChapter(item.reference);
-    if (requestId !== readerState.requestId) return;
-
-    const verses = extractVersesFromPassageHtml(payload.passageHtml);
-    if (!verses.length) throw new Error("No readable verses were returned.");
-
-    readerState.verses = verses;
-    readerState.index = 0;
-    readerState.finished = false;
-    updateReaderDisplay();
-
-    if (autoPlay) startOrResumeReader();
-  } catch (error) {
-    if (requestId !== readerState.requestId) return;
-    readerState.playing = false;
-    $("readerStatus").textContent = "Could not load this chapter";
-    $("readerVerseText").textContent = error.message || "Unknown error";
-    $("readerPlayPauseButton").textContent = "▶ Try Again";
-  }
-}
-
-function closeReader() {
-  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-  readerState.playing = false;
-  readerState.paused = false;
-  readerState.requestId += 1;
-  setReaderModalVisible(false);
-}
-
 function nextUnfinishedItem() {
   const day=state.selectedDay;
   for(let category=1;category<=10;category++) {
@@ -825,13 +359,9 @@ function nextUnfinishedItem() {
 }
 function openReading(item) {
   if(!item) return;
-  state.lastOpened={sourceDay:item.sourceDay,category:item.category,targetDay:state.selectedDay,mode:"read"};
+  state.lastOpened={sourceDay:item.sourceDay,category:item.category,targetDay:state.selectedDay};
   saveState(); renderContinue();
   window.open(`https://read.lsbible.org/?q=${encodeURIComponent(item.reference)}`,"_blank","noopener");
-}
-function openListening(item) {
-  if(!item) return;
-  openInAppReader(item, true);
 }
 function markItemComplete(item) {
   if(!item) return;
@@ -859,10 +389,7 @@ function renderCard(item,catchup=false) {
       <div class="reference">${descriptor.reference}</div>
       <div class="cycle-note">${catchup?"Scheduled catch-up reading":`Chapter ${position} of ${total} in this category cycle`}</div>
       <div class="reading-footer">
-        <div class="actions">
-          <button class="btn small read-card-button">Read in LSB ↗</button>
-          <button class="btn audio small listen-card-button">🔊 Read Aloud</button>
-        </div>
+        <button class="btn small read-card-button">Read in LSB ↗</button>
         ${catchup?`<button class="btn small remove-extra-button">Remove extra</button>`:""}
       </div>
     </div>`;
@@ -873,7 +400,6 @@ function renderCard(item,catchup=false) {
     cleanupAssignments(); saveState(); render();
   });
   card.querySelector(".read-card-button").addEventListener("click",()=>openReading(descriptor));
-  card.querySelector(".listen-card-button").addEventListener("click",()=>openListening(descriptor));
   const remove=card.querySelector(".remove-extra-button");
   if(remove) remove.addEventListener("click",()=>{
     state.catchUpAssignments=state.catchUpAssignments.filter(a=>!(
@@ -889,12 +415,8 @@ function renderContinue() {
   const next=nextUnfinishedItem();
   $("completeAndNextButton").hidden=!last;
   if(last) {
-    const mode=state.lastOpened?.mode==="listen" ? "listening to" : "reading";
-    $("nextReadingTitle").textContent=`Finished ${last.reference}?`;
-    $("nextReadingMeta").textContent=`You were ${mode} this chapter. Mark it complete, then continue in the same mode.`;
-    $("completeAndNextButton").textContent=state.lastOpened?.mode==="listen"
-      ? "Mark Complete & Read Next Aloud"
-      : "Mark Read & Open Next";
+    $("nextReadingTitle").textContent=`Return from ${last.reference}?`;
+    $("nextReadingMeta").textContent="Mark it complete, then the app will open the next unfinished chapter.";
   } else if(next) {
     $("nextReadingTitle").textContent=next.reference;
     $("nextReadingMeta").textContent=`Day ${next.sourceDay}, Category ${next.category}${next.kind==="catchup"?" · Catch-up":""}`;
@@ -903,7 +425,6 @@ function renderContinue() {
     $("nextReadingMeta").textContent="There are no unfinished readings scheduled for this day.";
   }
   $("readNextButton").disabled=!next;
-  $("listenNextButton").disabled=!next;
 }
 
 function renderCatchup() {
@@ -945,14 +466,6 @@ function render() {
   $("dateTitle").textContent=formatDate(dateForDay(day));
   $("startDate").value=state.startDate;
   $("dayNumber").value=day;
-  $("readerServiceUrl").value=state.readerServiceUrl || "";
-  $("readerRateSelect").value=String(state.readerRate || 1);
-  $("readerServiceStatus").textContent=normalizedServiceUrl()
-    ? "Configured"
-    : "Not configured";
-  $("readerServiceStatus").style.color=normalizedServiceUrl()
-    ? "var(--green)"
-    : "var(--muted)";
 
   grid.innerHTML="";
   for(let category=1;category<=10;category++) grid.appendChild(renderCard({sourceDay:day,category,targetDay:day},false));
@@ -984,17 +497,12 @@ $("clearDayButton").onclick=()=>{
   saveState(); render(); showToast("Day cleared");
 };
 $("readNextButton").onclick=()=>openReading(nextUnfinishedItem());
-$("listenNextButton").onclick=()=>openListening(nextUnfinishedItem());
 $("completeAndNextButton").onclick=()=>{
   const last=nextAfterLastOpened();
   if(!last) return;
-  const mode=state.lastOpened?.mode==="listen" ? "listen" : "read";
   markItemComplete(last); state.lastOpened=null; saveState(); render();
   const next=nextUnfinishedItem();
-  if(next) {
-    if(mode==="listen") openListening(next);
-    else openReading(next);
-  } else showToast("Selected day complete");
+  if(next) openReading(next); else showToast("Selected day complete");
 };
 $("openMissedButton").onclick=()=>{
   const missed=missedDays(); if(!missed.length)return;
@@ -1033,81 +541,6 @@ $("dayNumber").onchange=()=>{
   state.selectedDay=Math.min(365,Math.max(1,Number($("dayNumber").value)||1));
   saveState(); render();
 };
-$("saveReaderServiceButton").onclick=()=>{
-  state.readerServiceUrl=$("readerServiceUrl").value.trim();
-  saveState();
-  render();
-  showToast(state.readerServiceUrl ? "Read-aloud service saved" : "Service URL cleared");
-};
-
-$("testReaderServiceButton").onclick=async()=>{
-  const candidate=$("readerServiceUrl").value.trim();
-  if(!candidate) {
-    showToast("Paste the Apps Script URL first");
-    return;
-  }
-  state.readerServiceUrl=candidate;
-  saveState();
-  $("readerServiceStatus").textContent="Testing…";
-  $("readerServiceStatus").style.color="var(--amber)";
-  try {
-    chapterMemoryCache.delete("John 1");
-    const payload=await jsonpChapter("John 1");
-    const verses=extractVersesFromPassageHtml(payload.passageHtml);
-    if(!verses.length) throw new Error("No verses returned");
-    $("readerServiceStatus").textContent=`Working · ${verses.length} verses loaded`;
-    $("readerServiceStatus").style.color="var(--green)";
-    showToast("LSB read-aloud service is working");
-  } catch(error) {
-    $("readerServiceStatus").textContent=`Test failed · ${error.message}`;
-    $("readerServiceStatus").style.color="var(--danger)";
-    showToast("Service test failed");
-  }
-};
-
-$("readerPlayPauseButton").onclick=()=>{
-  if(!readerState.verses.length) {
-    if(readerState.item) openInAppReader(readerState.item,true);
-    return;
-  }
-  if(readerState.playing && !readerState.paused) pauseReader();
-  else startOrResumeReader();
-};
-
-$("readerRestartButton").onclick=()=>{
-  cancelSpeech(true);
-  startOrResumeReader();
-};
-
-$("readerStopButton").onclick=()=>cancelSpeech(false);
-$("readerCloseButton").onclick=closeReader;
-$("readerModal").addEventListener("click",event=>{
-  if(event.target===$("readerModal")) closeReader();
-});
-$("readerRateSelect").onchange=()=>{
-  state.readerRate=Number($("readerRateSelect").value)||1;
-  saveState();
-  if(readerState.playing) {
-    window.speechSynthesis.cancel();
-    readerState.playing=false;
-    readerState.paused=false;
-    startOrResumeReader();
-  }
-};
-
-$("readerCompleteNextButton").onclick=()=>{
-  const item=readerState.item;
-  if(!item) return;
-  markItemComplete(item);
-  state.lastOpened=null;
-  saveState();
-  closeReader();
-  render();
-  const next=nextUnfinishedItem();
-  if(next) openListening(next);
-  else showToast("Selected day complete");
-};
-
 $("exportButton").onclick=()=>{
   const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob); const a=document.createElement("a");
@@ -1121,7 +554,7 @@ $("importInput").onchange=async event=>{
   event.target.value="";
 };
 $("resetButton").onclick=()=>{
-  if(!confirm("Reset the plan and erase all progress, skipped days, catch-up assignments, and read-aloud settings?"))return;
+  if(!confirm("Reset the plan and erase all progress, skipped days, and catch-up assignments?"))return;
   state=normalizeState({}); state.selectedDay=todayDayNumber(); saveState(); render(); showToast("Plan reset");
 };
 
