@@ -52,6 +52,11 @@
           <button id="openGodMomentsButton" class="small-button" type="button">Open God Moments</button>
         </section>
 
+        <section id="backupReminder" class="card backup-reminder" hidden>
+          <div><p class="eyebrow">Keep your data safe</p><h2>A fresh backup is due</h2><p id="backupReminderText" class="muted"></p></div>
+          <button id="openBackupButton" class="small-button" type="button">Back up now</button>
+        </section>
+
         <div class="date-nav date-nav-v15" aria-label="Choose date">
           <button id="prevDay" class="ghost-button" type="button" aria-label="Previous day">‹</button>
           <button id="selectedDateButton" class="date-button" type="button" aria-label="Return to today"></button>
@@ -75,7 +80,7 @@
         </section>
 
         <section class="card capture-card">
-          <div class="section-heading"><div><p class="eyebrow">Remember</p><h2>Capture a small thing</h2></div><button id="quickMemoryButton" class="primary-button" type="button">+ Remember</button></div>
+          <div class="section-heading"><div><p class="eyebrow">Remember</p><h2>Capture a small thing</h2></div><div class="section-tools"><button id="quickNoteButton" class="secondary-button" type="button">+ Note</button><button id="quickMemoryButton" class="primary-button" type="button">+ Remember</button></div></div>
           <div id="onThisDayMemory" class="on-this-day" hidden></div>
           <div id="memoryTodayPreview" class="memory-preview"></div>
         </section>
@@ -110,13 +115,32 @@
           </div>
         </section>
 
+        <section id="reflectionReviewCard" class="card reflection-review-card">
+          <div class="section-heading">
+            <div><p class="eyebrow">Review & Reflect</p><h2>Close the loop gently</h2></div>
+            <button id="toggleReflectionReviewButton" class="primary-button" type="button" aria-controls="reflectionReviewPanel" aria-expanded="false">Begin review</button>
+          </div>
+          <p id="reflectionReviewStatus" class="muted setup-help">Return to what needs prayer, action, or remembrance without carrying everything at once.</p>
+          <div class="reflection-review-stats">
+            <div><strong id="reviewDueCount">0</strong><span>Due</span></div>
+            <div><strong id="reviewActionCount">0</strong><span>Actions</span></div>
+            <div><strong id="reviewPrayerCount">0</strong><span>Prayers</span></div>
+            <div><strong id="reviewMomentCount">0</strong><span>God Moments</span></div>
+          </div>
+          <div id="reflectionReviewPanel" class="reflection-review-panel" hidden>
+            <div id="reflectionReviewLists" class="reflection-review-lists"></div>
+            <label class="text-field"><span>What do you want to carry forward?</span><textarea id="weeklyReflectionInput" rows="3" maxlength="1000" placeholder="A prayer, next step, or truth to remember…"></textarea></label>
+            <button id="finishReflectionReviewButton" class="primary-button reflection-finish" type="button">Finish this week’s review</button>
+          </div>
+        </section>
+
         <section class="card notes-filter-card">
           <label class="notes-search-field"><span class="sr-only">Search notes</span><input id="notesSearchInput" type="search" placeholder="Search everything you’ve captured…" /></label>
           <div class="notes-filter-row">
             <label><span>Type</span><select id="notesTypeFilter">
               <option value="all">All notes</option><option value="routine">Routine notes</option><option value="memory">Memory Bank</option><option value="entrust">Entrust to the Lord</option><option value="review">Review later</option><option value="action">Action items</option><option value="prayer">Prayers</option><option value="god-moment">God Moments</option><option value="general">General notes</option>
             </select></label>
-            <label><span>Status</span><select id="notesStatusFilter"><option value="all">All statuses</option><option value="open">Open</option><option value="completed">Completed</option><option value="due">Ready to review</option></select></label>
+            <label><span>Status</span><select id="notesStatusFilter"><option value="all">All statuses</option><option value="open">Open</option><option value="completed">Completed</option><option value="due">Ready to review</option><option value="snoozed">Snoozed</option><option value="pinned">Pinned</option><option value="answered">Answered prayers</option></select></label>
           </div>
         </section>
 
@@ -229,6 +253,12 @@
           <p class="muted setup-help">A background photo stays only on this device. It is compressed before being saved.</p>
         </section>
 
+        <section class="card">
+          <div class="section-heading"><div><p class="eyebrow">Gentle reminders</p><h2>God Moment resurfacing</h2></div></div>
+          <label class="text-field compact"><span>How often?</span><select id="resurfacingFrequencyInput"><option value="occasional">Occasionally</option><option value="weekly">Once a week</option><option value="never">Never</option></select></label>
+          <p class="muted setup-help">Only God Moments individually marked for resurfacing can appear on Today.</p>
+        </section>
+
         <section class="card connections-card" id="connectionsCard">
           <div class="section-heading"><div><p class="eyebrow">Connections</p><h2>Apps & smart actions</h2></div><button id="syncConnectionsButton" class="small-button" type="button">Sync now</button></div>
           <p class="muted setup-help">Link routine items to the Bible plan, websites, iPhone Shortcuts, calls, texts, email, Maps, or another part of this app.</p>
@@ -291,7 +321,8 @@
             <button id="resetDataButton" class="danger-button" type="button">Reset app data</button>
           </div>
           <p id="snapshotStatus" class="muted micro-copy"></p>
-          <p class="app-version">Daily Routine <b id="appVersion">v1.7</b></p>
+          <p id="backupDownloadStatus" class="muted micro-copy"></p>
+          <p class="app-version">Daily Routine <b id="appVersion">v1.8</b></p>
         </section>
 
         <section class="card private-sharing-card">
@@ -405,9 +436,14 @@
         <option value="entrust">Entrust to the Lord</option><option value="review">Review later</option><option value="action">Action item</option><option value="prayer">Prayer</option><option value="god-moment">God Moment</option><option value="general">General note</option>
       </select></label>
       <label id="noteScriptureField" class="text-field compact" hidden><span>Scripture / biblical truth to remember first (optional)</span><textarea id="noteScriptureInput" rows="2" maxlength="1000" placeholder="Remember what is true before bringing the request…"></textarea></label>
+      <label id="notePrayerStatusField" class="text-field compact" hidden><span>Prayer status</span><select id="notePrayerStatusInput"><option value="active">Still praying</option><option value="answered">Answered</option><option value="archived">Archived</option></select></label>
       <div class="two-column-fields">
         <label class="text-field compact"><span>Review date & time (optional)</span><input id="noteReviewAtInput" type="datetime-local" /></label>
-        <label class="text-field compact"><span>Source</span><select id="noteSourceInput"><option value="Daily Routine">Daily Routine</option><option value="Apple Watch">Apple Watch</option><option value="Pushcut">Pushcut</option><option value="Shortcut">Shortcut</option><option value="Apple Notes">Apple Notes</option><option value="Imported Thought Inbox">Imported Thought Inbox</option></select></label>
+        <label class="text-field compact"><span>Snooze until (optional)</span><input id="noteSnoozedUntilInput" type="datetime-local" /></label>
+      </div>
+      <div class="two-column-fields">
+        <label class="text-field compact"><span>Source</span><select id="noteSourceInput"><option value="Daily Routine">Daily Routine</option><option value="Apple Watch">Apple Watch</option><option value="Pushcut">Pushcut</option><option value="Shortcut">Shortcut</option><option value="Apple Notes">Apple Notes</option><option value="Answered prayer">Answered prayer</option><option value="Imported Thought Inbox">Imported Thought Inbox</option></select></label>
+        <label class="toggle-field compact-toggle"><input id="notePinnedInput" type="checkbox" /><span><b>Pin this note</b><small>Keep it above unpinned notes.</small></span></label>
       </div>
       <label id="noteResurfaceField" class="toggle-field" hidden><input id="noteResurfaceInput" type="checkbox" checked /><span><b>Show this occasionally</b><small>Allow this God Moment to appear as a gentle reminder of God’s faithfulness.</small></span></label>
       <div class="dialog-actions"><button id="deleteNoteButton" class="danger-button" type="button" hidden>Delete</button><button class="primary-button" type="submit">Save note</button></div>

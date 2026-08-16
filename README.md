@@ -2,7 +2,7 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.7 features
+## Version 1.8 features
 
 - Morning, Throughout the Day, and Evening routine sections
 - Custom wake-up and bedtime targets
@@ -25,6 +25,11 @@ A mobile-first private routine and mood tracker designed to run as a Progressive
 - God Moments Markdown/text import and occasional in-app resurfacing
 - Migration of legacy Thought Inbox entries without deleting the old storage
 - URL-prefilled quick capture for future Apple Watch, Pushcut, and Shortcuts integrations
+- Guided weekly Review & Reflect dashboard for due notes, action items, active prayers, and recent God Moments
+- Prayer follow-up states for still praying, answered, and archived, with answered prayers convertible to God Moments
+- Pinned notes and chosen-date snoozing
+- Occasional, weekly, or disabled God Moment resurfacing
+- Visible backup age with a gentle monthly reminder
 - Works offline after first load
 - All data remains in this browser's local storage
 
