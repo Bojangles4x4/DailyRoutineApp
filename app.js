@@ -3,13 +3,13 @@
 
   const STORAGE_KEY = 'dailyRoutineApp.v1';
   const SNAPSHOT_KEY = 'dailyRoutineApp.snapshots.v1';
-  const APP_VERSION = '1.7';
+  const APP_VERSION = '1.8';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const DEFAULT_BIBLE_APP_URL = 'https://bojangles4x4.github.io/Bible-Reading-Plan/';
   const DEFAULT_SCALE = { min: 0, max: 10, step: 1, lowLabel: 'Low', highLabel: 'Great' };
   const DEFAULT_STATE = {
-    settings: { wakeTime: '06:00', bedTime: '22:30', theme: 'calm', backgroundImage: '', badgeEnabled: true, streakThreshold: 80, streakMode: 'forgiving', streakWeekdaysOnly: false, bibleAppUrl: DEFAULT_BIBLE_APP_URL },
+    settings: { wakeTime: '06:00', bedTime: '22:30', theme: 'calm', backgroundImage: '', badgeEnabled: true, streakThreshold: 80, streakMode: 'forgiving', streakWeekdaysOnly: false, bibleAppUrl: DEFAULT_BIBLE_APP_URL, resurfacingFrequency: 'occasional', lastBackupAt: '' },
     items: [
       { id: 'morning-prayer', name: 'Prayer', kind: 'routine', section: 'morning', type: 'checkbox', frequency: 'daily', days: [], optional: false, unit: '', target: null },
       { id: 'morning-teeth', name: 'Brush teeth', kind: 'routine', section: 'morning', type: 'checkbox', frequency: 'daily', days: [], optional: false, unit: '', target: null },
@@ -52,6 +52,7 @@
   let undoAction = null;
   let pendingLinkedAction = null;
   let integrationChannel = null;
+  let reflectionReviewExpanded = false;
   const collapsedSections = new Set();
 
   const $ = id => document.getElementById(id);
@@ -71,12 +72,13 @@
     promptField: $('promptField'), itemPlaceholderInput: $('itemPlaceholderInput'), optionalField: $('optionalField'), itemOptionalInput: $('itemOptionalInput'),
     medicationFields: $('medicationFields'), medicationDoseInput: $('medicationDoseInput'), memoryFields: $('memoryFields'), memoryCategoryInput: $('memoryCategoryInput'), pauseUntilInput: $('pauseUntilInput'),
     actualWakeInput: $('actualWakeInput'), actualBedInput: $('actualBedInput'), wakeNowButton: $('wakeNowButton'), bedNowButton: $('bedNowButton'), badgeEnabledInput: $('badgeEnabledInput'),
-    quickMemoryButton: $('quickMemoryButton'), memoryTodayPreview: $('memoryTodayPreview'), addMemoryButton: $('addMemoryButton'), memoryCount: $('memoryCount'), memoryArchive: $('memoryArchive'), exportMemoriesButton: $('exportMemoriesButton'), memorySearchInput: $('memorySearchInput'), memoryFilterInput: $('memoryFilterInput'), memoryFavoritesOnlyInput: $('memoryFavoritesOnlyInput'),
-    godMomentReminder: $('godMomentReminder'), godMomentReminderText: $('godMomentReminderText'), godMomentReminderDate: $('godMomentReminderDate'), openGodMomentsButton: $('openGodMomentsButton'),
+    quickNoteButton: $('quickNoteButton'), quickMemoryButton: $('quickMemoryButton'), memoryTodayPreview: $('memoryTodayPreview'), addMemoryButton: $('addMemoryButton'), memoryCount: $('memoryCount'), memoryArchive: $('memoryArchive'), exportMemoriesButton: $('exportMemoriesButton'), memorySearchInput: $('memorySearchInput'), memoryFilterInput: $('memoryFilterInput'), memoryFavoritesOnlyInput: $('memoryFavoritesOnlyInput'),
+    godMomentReminder: $('godMomentReminder'), godMomentReminderText: $('godMomentReminderText'), godMomentReminderDate: $('godMomentReminderDate'), openGodMomentsButton: $('openGodMomentsButton'), backupReminder: $('backupReminder'), backupReminderText: $('backupReminderText'), openBackupButton: $('openBackupButton'),
     addNoteButton: $('addNoteButton'), notesOpenCount: $('notesOpenCount'), godMomentCount: $('godMomentCount'), notesDueCount: $('notesDueCount'), notesSearchInput: $('notesSearchInput'), notesTypeFilter: $('notesTypeFilter'), notesStatusFilter: $('notesStatusFilter'), notesResultsTitle: $('notesResultsTitle'), notesResultCount: $('notesResultCount'), notesList: $('notesList'), importGodMomentsInput: $('importGodMomentsInput'),
-    noteDialog: $('noteDialog'), noteForm: $('noteForm'), noteDialogTitle: $('noteDialogTitle'), closeNoteDialogButton: $('closeNoteDialogButton'), editingNoteId: $('editingNoteId'), noteTextInput: $('noteTextInput'), noteTypeInput: $('noteTypeInput'), noteScriptureField: $('noteScriptureField'), noteScriptureInput: $('noteScriptureInput'), noteReviewAtInput: $('noteReviewAtInput'), noteSourceInput: $('noteSourceInput'), noteResurfaceField: $('noteResurfaceField'), noteResurfaceInput: $('noteResurfaceInput'), deleteNoteButton: $('deleteNoteButton'),
+    reflectionReviewCard: $('reflectionReviewCard'), toggleReflectionReviewButton: $('toggleReflectionReviewButton'), reflectionReviewStatus: $('reflectionReviewStatus'), reflectionReviewPanel: $('reflectionReviewPanel'), reflectionReviewLists: $('reflectionReviewLists'), reviewDueCount: $('reviewDueCount'), reviewActionCount: $('reviewActionCount'), reviewPrayerCount: $('reviewPrayerCount'), reviewMomentCount: $('reviewMomentCount'), weeklyReflectionInput: $('weeklyReflectionInput'), finishReflectionReviewButton: $('finishReflectionReviewButton'),
+    noteDialog: $('noteDialog'), noteForm: $('noteForm'), noteDialogTitle: $('noteDialogTitle'), closeNoteDialogButton: $('closeNoteDialogButton'), editingNoteId: $('editingNoteId'), noteTextInput: $('noteTextInput'), noteTypeInput: $('noteTypeInput'), noteScriptureField: $('noteScriptureField'), noteScriptureInput: $('noteScriptureInput'), notePrayerStatusField: $('notePrayerStatusField'), notePrayerStatusInput: $('notePrayerStatusInput'), noteReviewAtInput: $('noteReviewAtInput'), noteSnoozedUntilInput: $('noteSnoozedUntilInput'), noteSourceInput: $('noteSourceInput'), notePinnedInput: $('notePinnedInput'), noteResurfaceField: $('noteResurfaceField'), noteResurfaceInput: $('noteResurfaceInput'), deleteNoteButton: $('deleteNoteButton'),
     medicationInsights: $('medicationInsights'), weeklyReviewLabel: $('weeklyReviewLabel'), weeklyReviewSummary: $('weeklyReviewSummary'), weeklyFocusInput: $('weeklyFocusInput'), saveWeeklyFocusButton: $('saveWeeklyFocusButton'), memoryDialog: $('memoryDialog'), memoryForm: $('memoryForm'), closeMemoryDialogButton: $('closeMemoryDialogButton'), memoryTextInput: $('memoryTextInput'), memoryCategoryCaptureInput: $('memoryCategoryCaptureInput'), memoryDateTimeInput: $('memoryDateTimeInput'),
-    createSnapshotButton: $('createSnapshotButton'), restoreSnapshotButton: $('restoreSnapshotButton'), snapshotStatus: $('snapshotStatus'), appVersion: $('appVersion'),
+    createSnapshotButton: $('createSnapshotButton'), restoreSnapshotButton: $('restoreSnapshotButton'), snapshotStatus: $('snapshotStatus'), backupDownloadStatus: $('backupDownloadStatus'), appVersion: $('appVersion'), resurfacingFrequencyInput: $('resurfacingFrequencyInput'),
     connectionsCard: $('connectionsCard'), syncConnectionsButton: $('syncConnectionsButton'), bibleConnectionStatus: $('bibleConnectionStatus'), openBibleConnectionButton: $('openBibleConnectionButton'), bibleAppUrlInput: $('bibleAppUrlInput'), saveBibleConnectionButton: $('saveBibleConnectionButton'), testBibleConnectionButton: $('testBibleConnectionButton'), connectionTemplates: $('connectionTemplates'),
     linkedActionFields: $('linkedActionFields'), linkedTemplateInput: $('linkedTemplateInput'), linkedCompletionInput: $('linkedCompletionInput'), linkedUrlField: $('linkedUrlField'), linkedUrlInput: $('linkedUrlInput'), linkedInternalField: $('linkedInternalField'), linkedInternalTargetInput: $('linkedInternalTargetInput'), linkedButtonLabelInput: $('linkedButtonLabelInput'), timeWindowFields: $('timeWindowFields'), timeWindowStartInput: $('timeWindowStartInput'), timeWindowEndInput: $('timeWindowEndInput'),
     medicationProgressCard: $('medicationProgressCard'), weeklyReviewCard: $('weeklyReviewCard'), memoryBankCard: $('memoryBankCard'), dataBackupCard: $('dataBackupCard'),
@@ -150,19 +152,42 @@
     const typeAliases = { later: 'review', 'review-later': 'review', task: 'action', 'action-item': 'action', godmoment: 'god-moment', thought: 'general' };
     const requestedType = typeAliases[String(note?.type || '').toLowerCase()] || String(note?.type || '').toLowerCase();
     const createdAt = validDateValue(note?.createdAt || note?.date || note?.timestamp) || new Date().toISOString();
+    const type = allowedTypes.includes(requestedType) ? requestedType : 'general';
+    const requestedPrayerStatus = String(note?.prayerStatus || '').toLowerCase();
+    const prayerStatus = type === 'prayer' && ['active', 'answered', 'archived'].includes(requestedPrayerStatus) ? requestedPrayerStatus : type === 'prayer' ? (note?.completedAt ? 'archived' : 'active') : '';
+    const completedAt = validDateValue(note?.completedAt || (note?.completed ? note?.updatedAt || createdAt : '') || (['answered', 'archived'].includes(prayerStatus) ? note?.answeredAt || note?.updatedAt || createdAt : ''));
     return {
       id: String(note?.id || `note-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 7)}`),
       text: String(note?.text || note?.content || note?.body || note?.title || '').trim(),
-      type: allowedTypes.includes(requestedType) ? requestedType : 'general',
+      type,
       scripture: String(note?.scripture || note?.truth || '').trim(),
       reviewAt: validDateValue(note?.reviewAt || note?.reviewDate || note?.remindAt),
+      snoozedUntil: validDateValue(note?.snoozedUntil || note?.snoozeUntil),
       source: String(note?.source || 'Daily Routine'),
       createdAt,
       updatedAt: validDateValue(note?.updatedAt) || createdAt,
-      completedAt: validDateValue(note?.completedAt || (note?.completed ? note?.updatedAt || createdAt : '')),
+      completedAt,
+      prayerStatus,
+      answeredAt: validDateValue(note?.answeredAt || (prayerStatus === 'answered' ? completedAt : '')),
+      pinned: Boolean(note?.pinned ?? note?.favorite),
       resurface: note?.resurface === undefined ? requestedType === 'god-moment' : Boolean(note.resurface),
       migrationKey: String(note?.migrationKey || '')
     };
+  }
+
+  function noteIsClosed(note) {
+    return Boolean(note.completedAt) || (note.type === 'prayer' && ['answered', 'archived'].includes(note.prayerStatus));
+  }
+
+  function noteIsSnoozed(note, now = Date.now()) {
+    return !noteIsClosed(note) && Boolean(note.snoozedUntil && new Date(note.snoozedUntil).getTime() > now);
+  }
+
+  function noteIsDue(note, now = Date.now()) {
+    if (noteIsClosed(note) || noteIsSnoozed(note, now)) return false;
+    const reviewTime = note.reviewAt ? new Date(note.reviewAt).getTime() : NaN;
+    const snoozeTime = note.snoozedUntil ? new Date(note.snoozedUntil).getTime() : NaN;
+    return (!Number.isNaN(reviewTime) && reviewTime <= now) || (!Number.isNaN(snoozeTime) && snoozeTime <= now);
   }
 
   function validDateValue(value) {
@@ -227,6 +252,14 @@
     if (!els.snapshotStatus) return;
     const latest = readSnapshots()[0];
     els.snapshotStatus.textContent = latest ? `Latest local snapshot: ${new Date(latest.createdAt).toLocaleString()} · ${latest.label}` : 'No local snapshots yet.';
+  }
+
+  function renderBackupDownloadStatus() {
+    if (!els.backupDownloadStatus) return;
+    const last = state.settings.lastBackupAt ? new Date(state.settings.lastBackupAt) : null;
+    els.backupDownloadStatus.textContent = last && !Number.isNaN(last.getTime())
+      ? `Last downloaded backup: ${last.toLocaleString()}`
+      : 'No downloaded backup recorded yet. Local snapshots do not replace a downloaded backup.';
   }
 
   function restoreLatestSnapshot() {
@@ -422,7 +455,9 @@
     els.wakeNowButton.addEventListener('click', () => { const value = currentTimeValue(); els.actualWakeInput.value = value; saveActualTime('actualWakeTime', value); });
     els.bedNowButton.addEventListener('click', () => { const value = currentTimeValue(); els.actualBedInput.value = value; saveActualTime('actualBedTime', value); });
     els.quickMemoryButton.addEventListener('click', () => openMemoryDialog('blessing'));
+    els.quickNoteButton.addEventListener('click', () => { switchView('notes'); openNoteDialog(); });
     els.openGodMomentsButton.addEventListener('click', () => { switchView('notes'); els.notesTypeFilter.value = 'god-moment'; renderNotes(); });
+    els.openBackupButton.addEventListener('click', () => { switchView('setup'); els.dataBackupCard?.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
   }
 
   function bindNotesControls() {
@@ -435,6 +470,8 @@
     els.notesTypeFilter.addEventListener('change', renderNotes);
     els.notesStatusFilter.addEventListener('change', renderNotes);
     els.importGodMomentsInput.addEventListener('change', importGodMoments);
+    els.toggleReflectionReviewButton.addEventListener('click', () => { reflectionReviewExpanded = !reflectionReviewExpanded; renderReflectionReview(); });
+    els.finishReflectionReviewButton.addEventListener('click', finishReflectionReview);
   }
 
   function bindProgressControls() {
@@ -454,6 +491,7 @@
     els.streakModeInput.addEventListener('change', () => { state.settings.streakMode = els.streakModeInput.value; saveState(); renderAll(); });
     els.streakWeekdaysOnlyInput.addEventListener('change', () => { state.settings.streakWeekdaysOnly = els.streakWeekdaysOnlyInput.checked; saveState(); renderAll(); });
     els.themeInput.addEventListener('change', () => { state.settings.theme = els.themeInput.value; saveState(); applyPersonalization(); });
+    els.resurfacingFrequencyInput.addEventListener('change', () => { state.settings.resurfacingFrequency = els.resurfacingFrequencyInput.value; saveState(); renderToday(); showToast('Resurfacing preference saved'); });
     els.backgroundImageInput.addEventListener('change', handleBackgroundImage);
     els.clearBackgroundButton.addEventListener('click', () => { state.settings.backgroundImage = ''; saveState(); applyPersonalization(); showToast('Background photo removed'); });
     els.addItemButton.addEventListener('click', () => openItemDialog(null, 'routine'));
@@ -517,32 +555,37 @@
     const search = els.notesSearchInput.value.trim().toLowerCase();
     const typeFilter = els.notesTypeFilter.value;
     const statusFilter = els.notesStatusFilter.value;
-    const standaloneOpen = state.notes.filter(note => !note.completedAt).length;
+    const standaloneOpen = state.notes.filter(note => !noteIsClosed(note)).length;
     const godMoments = state.notes.filter(note => note.type === 'god-moment').length;
-    const due = state.notes.filter(note => !note.completedAt && note.reviewAt && new Date(note.reviewAt).getTime() <= now).length;
+    const due = state.notes.filter(note => noteIsDue(note, now)).length;
     els.notesOpenCount.textContent = String(standaloneOpen);
     els.godMomentCount.textContent = String(godMoments);
     els.notesDueCount.textContent = String(due);
 
     let records = allNoteRecords().filter(note => {
       if (typeFilter !== 'all' && note.type !== typeFilter) return false;
-      const isCompleted = Boolean(note.completedAt);
-      const isDue = !isCompleted && note.reviewAt && new Date(note.reviewAt).getTime() <= now;
+      const isCompleted = noteIsClosed(note);
+      const isDue = noteIsDue(note, now);
+      const isSnoozed = noteIsSnoozed(note, now);
       if (statusFilter === 'open' && isCompleted) return false;
       if (statusFilter === 'completed' && !isCompleted) return false;
       if (statusFilter === 'due' && !isDue) return false;
+      if (statusFilter === 'snoozed' && !isSnoozed) return false;
+      if (statusFilter === 'pinned' && !note.pinned) return false;
+      if (statusFilter === 'answered' && !(note.type === 'prayer' && note.prayerStatus === 'answered')) return false;
       if (!search) return true;
       return [note.title, note.text, note.scripture, note.source, noteTypeLabels[note.type]].some(value => String(value || '').toLowerCase().includes(search));
     });
     records.sort((a, b) => {
-      const aDue = !a.completedAt && a.reviewAt && new Date(a.reviewAt).getTime() <= now ? 1 : 0;
-      const bDue = !b.completedAt && b.reviewAt && new Date(b.reviewAt).getTime() <= now ? 1 : 0;
-      return bDue - aDue || new Date(b.createdAt) - new Date(a.createdAt);
+      const aDue = noteIsDue(a, now) ? 1 : 0;
+      const bDue = noteIsDue(b, now) ? 1 : 0;
+      return Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)) || bDue - aDue || new Date(b.createdAt) - new Date(a.createdAt);
     });
     els.notesResultsTitle.textContent = typeFilter === 'all' ? 'All notes' : noteTypeLabels[typeFilter] || 'Notes';
     els.notesResultCount.textContent = `${records.length} shown`;
     if (!records.length) {
       els.notesList.innerHTML = '<div class="empty-state notes-empty">No notes match these filters. Capture a thought or clear a filter to begin.</div>';
+      renderReflectionReview();
       return;
     }
     els.notesList.innerHTML = records.map(note => noteCardHtml(note, now)).join('');
@@ -551,18 +594,31 @@
       if (note) openNoteDialog(note);
     }));
     els.notesList.querySelectorAll('[data-toggle-note]').forEach(button => button.addEventListener('click', () => toggleNoteCompletion(button.dataset.toggleNote)));
+    els.notesList.querySelectorAll('[data-pin-note]').forEach(button => button.addEventListener('click', () => toggleNotePinned(button.dataset.pinNote)));
+    els.notesList.querySelectorAll('[data-prayer-status]').forEach(button => button.addEventListener('click', () => setPrayerStatus(button.dataset.prayerStatus, button.dataset.status)));
+    els.notesList.querySelectorAll('[data-god-moment-from-prayer]').forEach(button => button.addEventListener('click', () => createGodMomentFromPrayer(button.dataset.godMomentFromPrayer)));
+    renderReflectionReview();
   }
 
   function noteCardHtml(note, now) {
-    const completed = Boolean(note.completedAt);
-    const due = !completed && note.reviewAt && new Date(note.reviewAt).getTime() <= now;
+    const completed = noteIsClosed(note);
+    const due = noteIsDue(note, now);
+    const snoozed = noteIsSnoozed(note, now);
     const actionable = note.kind === 'standalone' && ['action', 'review'].includes(note.type);
-    const classes = ['note-card', `note-${note.type}`, completed ? 'completed' : '', due ? 'due' : ''].filter(Boolean).join(' ');
+    const classes = ['note-card', `note-${note.type}`, completed ? 'completed' : '', due ? 'due' : '', note.pinned ? 'pinned' : ''].filter(Boolean).join(' ');
     const scripture = note.scripture ? `<blockquote class="note-scripture"><span>Remember first</span>${escapeHtml(note.scripture)}</blockquote>` : '';
     const review = note.reviewAt ? `<span class="note-review${due ? ' due' : ''}">${due ? 'Ready to review' : 'Review'} · ${escapeHtml(formatNoteDate(note.reviewAt))}</span>` : '';
-    const status = completed ? `<span class="note-completed">Completed ${escapeHtml(formatNoteDate(note.completedAt))}</span>` : '';
-    const actions = note.kind === 'standalone' ? `<div class="note-actions">${actionable ? `<button class="${completed ? 'secondary-button' : 'primary-button'}" type="button" data-toggle-note="${escapeHtml(note.id)}">${completed ? 'Reopen' : 'Complete'}</button>` : ''}<button class="small-button" type="button" data-edit-note="${escapeHtml(note.id)}">Edit / move</button></div>` : '<span class="read-only-note">Shown from its original source</span>';
-    return `<article class="${classes}"><div class="note-card-head"><span class="note-type-badge">${escapeHtml(noteTypeLabels[note.type] || note.title)}</span>${note.favorite ? '<span class="note-favorite">★</span>' : ''}</div>${note.title && !['standalone'].includes(note.kind) ? `<h3>${escapeHtml(note.title)}</h3>` : ''}${scripture}<p>${escapeHtml(note.text)}</p><div class="note-meta"><span>${escapeHtml(formatNoteDate(note.createdAt))}</span><span>${escapeHtml(note.source || 'Daily Routine')}</span>${review}${status}</div>${actions}</article>`;
+    const snooze = snoozed ? `<span class="note-snoozed">Snoozed until ${escapeHtml(formatNoteDate(note.snoozedUntil))}</span>` : '';
+    const prayerLabel = note.type === 'prayer' ? `<span class="note-prayer-status ${escapeHtml(note.prayerStatus || 'active')}">${note.prayerStatus === 'answered' ? 'Answered' : note.prayerStatus === 'archived' ? 'Archived' : 'Still praying'}</span>` : '';
+    const status = completed && note.type !== 'prayer' ? `<span class="note-completed">Completed ${escapeHtml(formatNoteDate(note.completedAt))}</span>` : '';
+    let prayerActions = '';
+    if (note.type === 'prayer') {
+      prayerActions = note.prayerStatus === 'active'
+        ? `<button class="primary-button" type="button" data-prayer-status="${escapeHtml(note.id)}" data-status="answered">Answered</button><button class="small-button" type="button" data-prayer-status="${escapeHtml(note.id)}" data-status="archived">Archive</button>`
+        : `<button class="secondary-button" type="button" data-prayer-status="${escapeHtml(note.id)}" data-status="active">Pray again</button>${note.prayerStatus === 'answered' ? `<button class="small-button" type="button" data-god-moment-from-prayer="${escapeHtml(note.id)}">Save as God Moment</button>` : ''}`;
+    }
+    const actions = note.kind === 'standalone' ? `<div class="note-actions">${actionable ? `<button class="${completed ? 'secondary-button' : 'primary-button'}" type="button" data-toggle-note="${escapeHtml(note.id)}">${completed ? 'Reopen' : 'Complete'}</button>` : ''}${prayerActions}<button class="small-button pin-note-button" type="button" data-pin-note="${escapeHtml(note.id)}">${note.pinned ? 'Unpin' : 'Pin'}</button><button class="small-button" type="button" data-edit-note="${escapeHtml(note.id)}">Edit / move</button></div>` : '<span class="read-only-note">Shown from its original source</span>';
+    return `<article class="${classes}"><div class="note-card-head"><span class="note-type-badge">${escapeHtml(noteTypeLabels[note.type] || note.title)}</span>${note.pinned || note.favorite ? '<span class="note-favorite" aria-label="Pinned">★</span>' : ''}</div>${note.title && !['standalone'].includes(note.kind) ? `<h3>${escapeHtml(note.title)}</h3>` : ''}${scripture}<p>${escapeHtml(note.text)}</p><div class="note-meta"><span>${escapeHtml(formatNoteDate(note.createdAt))}</span><span>${escapeHtml(note.source || 'Daily Routine')}</span>${review}${snooze}${prayerLabel}${status}</div>${actions}</article>`;
   }
 
   function formatNoteDate(value) {
@@ -578,8 +634,11 @@
     els.noteTextInput.value = prefill.text || note?.text || '';
     els.noteTypeInput.value = normalizeNoteType(prefill.type || note?.type || 'entrust');
     els.noteScriptureInput.value = note?.scripture || '';
+    els.notePrayerStatusInput.value = note?.prayerStatus || 'active';
     els.noteReviewAtInput.value = note?.reviewAt ? localDateTimeValue(new Date(note.reviewAt)) : '';
+    els.noteSnoozedUntilInput.value = note?.snoozedUntil ? localDateTimeValue(new Date(note.snoozedUntil)) : '';
     els.noteSourceInput.value = [...els.noteSourceInput.options].some(option => option.value === source) ? source : 'Daily Routine';
+    els.notePinnedInput.checked = Boolean(note?.pinned);
     els.noteResurfaceInput.checked = note?.resurface === undefined ? true : Boolean(note.resurface);
     els.deleteNoteButton.hidden = !note;
     toggleNoteFields();
@@ -602,6 +661,7 @@
   function toggleNoteFields() {
     const type = els.noteTypeInput.value;
     els.noteScriptureField.hidden = type !== 'prayer';
+    els.notePrayerStatusField.hidden = type !== 'prayer';
     els.noteResurfaceField.hidden = type !== 'god-moment';
   }
 
@@ -618,10 +678,14 @@
       type: els.noteTypeInput.value,
       scripture: els.noteScriptureInput.value.trim(),
       reviewAt: els.noteReviewAtInput.value ? new Date(els.noteReviewAtInput.value).toISOString() : '',
+      snoozedUntil: els.noteSnoozedUntilInput.value ? new Date(els.noteSnoozedUntilInput.value).toISOString() : '',
       source: els.noteSourceInput.value,
       createdAt: existing?.createdAt || now,
       updatedAt: now,
-      completedAt: existing?.completedAt || '',
+      completedAt: els.noteTypeInput.value === 'prayer' && ['answered', 'archived'].includes(els.notePrayerStatusInput.value) ? (existing?.completedAt || now) : els.noteTypeInput.value === 'prayer' ? '' : existing?.completedAt || '',
+      prayerStatus: els.noteTypeInput.value === 'prayer' ? els.notePrayerStatusInput.value : '',
+      answeredAt: els.noteTypeInput.value === 'prayer' && els.notePrayerStatusInput.value === 'answered' ? (existing?.answeredAt || now) : '',
+      pinned: els.notePinnedInput.checked,
       resurface: els.noteTypeInput.value === 'god-moment' && els.noteResurfaceInput.checked,
       migrationKey: existing?.migrationKey || ''
     });
@@ -646,6 +710,94 @@
     note.completedAt = note.completedAt ? '' : new Date().toISOString();
     note.updatedAt = new Date().toISOString();
     saveState(); renderNotes(); showToast(note.completedAt ? 'Note completed' : 'Note reopened');
+  }
+
+  function toggleNotePinned(id) {
+    const note = state.notes.find(candidate => candidate.id === id);
+    if (!note) return;
+    note.pinned = !note.pinned;
+    note.updatedAt = new Date().toISOString();
+    saveState(); renderNotes(); showToast(note.pinned ? 'Note pinned' : 'Note unpinned');
+  }
+
+  function setPrayerStatus(id, status) {
+    const note = state.notes.find(candidate => candidate.id === id && candidate.type === 'prayer');
+    if (!note || !['active', 'answered', 'archived'].includes(status)) return;
+    const now = new Date().toISOString();
+    note.prayerStatus = status;
+    note.answeredAt = status === 'answered' ? now : '';
+    note.completedAt = status === 'active' ? '' : now;
+    note.updatedAt = now;
+    saveState(); renderNotes();
+    showToast(status === 'answered' ? 'Prayer marked answered' : status === 'archived' ? 'Prayer archived' : 'Prayer reopened');
+  }
+
+  function createGodMomentFromPrayer(id) {
+    const prayer = state.notes.find(candidate => candidate.id === id && candidate.type === 'prayer');
+    if (!prayer) return;
+    const duplicate = state.notes.some(note => note.type === 'god-moment' && note.text === prayer.text && note.source === 'Answered prayer');
+    if (duplicate) { showToast('This answered prayer is already a God Moment'); return; }
+    const now = new Date().toISOString();
+    state.notes.push(normalizeNote({ text: prayer.text, type: 'god-moment', scripture: prayer.scripture, source: 'Answered prayer', createdAt: prayer.answeredAt || now, updatedAt: now, resurface: true, pinned: prayer.pinned }));
+    saveState(); renderNotes(); showToast('Answered prayer saved as a God Moment');
+  }
+
+  function renderReflectionReview() {
+    if (!els.reflectionReviewCard) return;
+    const now = Date.now();
+    const weekStart = startOfCurrentWeek();
+    const due = state.notes.filter(note => noteIsDue(note, now));
+    const actions = state.notes.filter(note => note.type === 'action' && !noteIsClosed(note) && !noteIsSnoozed(note, now));
+    const prayers = state.notes.filter(note => note.type === 'prayer' && note.prayerStatus === 'active' && !noteIsSnoozed(note, now));
+    const moments = state.notes.filter(note => note.type === 'god-moment' && new Date(note.createdAt).getTime() >= weekStart.getTime());
+    els.reviewDueCount.textContent = String(due.length);
+    els.reviewActionCount.textContent = String(actions.length);
+    els.reviewPrayerCount.textContent = String(prayers.length);
+    els.reviewMomentCount.textContent = String(moments.length);
+    els.reflectionReviewPanel.hidden = !reflectionReviewExpanded;
+    els.toggleReflectionReviewButton.textContent = reflectionReviewExpanded ? 'Close review' : 'Begin review';
+    els.toggleReflectionReviewButton.setAttribute('aria-expanded', String(reflectionReviewExpanded));
+    const review = state.weeklyReviews?.[currentWeekKey()] || {};
+    els.reflectionReviewStatus.textContent = review.reviewedAt
+      ? `Last completed ${formatNoteDate(review.reviewedAt)}. You can return anytime this week.`
+      : 'Return to what needs prayer, action, or remembrance without carrying everything at once.';
+    if (!reflectionReviewExpanded) return;
+    els.weeklyReflectionInput.value = review.reflection || '';
+    els.reflectionReviewLists.innerHTML = [
+      reviewGroupHtml('Ready to review', due, 'due'),
+      reviewGroupHtml('Open action items', actions, 'action'),
+      reviewGroupHtml('Still praying', prayers, 'prayer'),
+      reviewGroupHtml('God Moments this week', moments, 'god-moment')
+    ].join('');
+    els.reflectionReviewLists.querySelectorAll('[data-review-note]').forEach(button => button.addEventListener('click', () => {
+      const note = state.notes.find(candidate => candidate.id === button.dataset.reviewNote);
+      if (note) openNoteDialog(note);
+    }));
+    els.reflectionReviewLists.querySelectorAll('[data-review-filter]').forEach(button => button.addEventListener('click', () => {
+      const filter = button.dataset.reviewFilter;
+      els.notesSearchInput.value = '';
+      if (filter === 'due') { els.notesTypeFilter.value = 'all'; els.notesStatusFilter.value = 'due'; }
+      else { els.notesTypeFilter.value = filter; els.notesStatusFilter.value = 'all'; }
+      renderNotes();
+      els.notesList.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }));
+  }
+
+  function reviewGroupHtml(title, notes, filter) {
+    const rows = [...notes].sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)) || new Date(b.updatedAt) - new Date(a.updatedAt)).slice(0, 4);
+    const content = rows.length
+      ? rows.map(note => `<button class="reflection-note-row" type="button" data-review-note="${escapeHtml(note.id)}"><span>${note.pinned ? '★ ' : ''}${escapeHtml(note.text.length > 110 ? `${note.text.slice(0, 107)}…` : note.text)}</span><small>${escapeHtml(noteTypeLabels[note.type] || 'Note')} · ${escapeHtml(formatNoteDate(note.createdAt))}</small></button>`).join('')
+      : '<p class="reflection-empty">Nothing waiting here.</p>';
+    return `<section class="reflection-review-group"><div><h3>${escapeHtml(title)}</h3>${notes.length ? `<button type="button" data-review-filter="${escapeHtml(filter)}">View all ${notes.length}</button>` : ''}</div>${content}</section>`;
+  }
+
+  function finishReflectionReview() {
+    const key = currentWeekKey();
+    state.weeklyReviews[key] = { ...(state.weeklyReviews[key] || {}), reflection: els.weeklyReflectionInput.value.trim(), reviewedAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    saveState();
+    reflectionReviewExpanded = false;
+    renderReflectionReview();
+    showToast('Weekly review complete');
   }
 
   async function importGodMoments(event) {
@@ -690,13 +842,27 @@
   function renderGodMomentReminder() {
     if (!els.godMomentReminder) return;
     const eligible = state.notes.filter(note => note.type === 'god-moment' && note.resurface !== false && !note.completedAt);
-    const showToday = isSameDay(selectedDate, startOfToday()) && [1, 3, 6].includes(new Date().getDay());
+    const frequency = state.settings.resurfacingFrequency || 'occasional';
+    const allowedDays = frequency === 'weekly' ? [0] : frequency === 'never' ? [] : [1, 3, 6];
+    const showToday = isSameDay(selectedDate, startOfToday()) && allowedDays.includes(new Date().getDay());
     if (!eligible.length || !showToday) { els.godMomentReminder.hidden = true; return; }
     const index = Math.abs(hashString(`${dateKey(startOfToday())}:${eligible.length}`)) % eligible.length;
     const note = eligible[index];
     els.godMomentReminderText.textContent = note.text;
     els.godMomentReminderDate.textContent = formatNoteDate(note.createdAt);
     els.godMomentReminder.hidden = false;
+  }
+
+  function renderBackupReminder() {
+    if (!els.backupReminder) return;
+    const today = startOfToday();
+    const lastBackup = state.settings.lastBackupAt ? new Date(state.settings.lastBackupAt) : null;
+    const firstUse = state.settings.firstUseDate ? fromDateKey(state.settings.firstUseDate) : today;
+    const daysSinceBackup = lastBackup && !Number.isNaN(lastBackup.getTime()) ? Math.floor((today - lastBackup) / 86400000) : null;
+    const daysUsingApp = Math.max(0, Math.floor((today - firstUse) / 86400000));
+    const due = daysSinceBackup !== null ? daysSinceBackup >= 30 : daysUsingApp >= 30;
+    els.backupReminder.hidden = !due || !isSameDay(selectedDate, today);
+    els.backupReminderText.textContent = daysSinceBackup === null ? 'Your routine and notes live only on this device. Download a backup to protect them.' : `Your last downloaded backup was ${daysSinceBackup} days ago.`;
   }
 
   function hashString(value) {
@@ -721,6 +887,7 @@
     renderWeekFocusBanner();
     renderOnThisDay();
     renderGodMomentReminder();
+    renderBackupReminder();
     els.selectedDateButton.textContent = isSameDay(selectedDate, today) ? 'Today' : new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' }).format(selectedDate);
     els.nextDay.disabled = dateKey(selectedDate) >= dateKey(today);
     els.nextDay.style.opacity = els.nextDay.disabled ? '.35' : '1';
@@ -1135,10 +1302,12 @@
     els.streakModeInput.value = state.settings.streakMode || 'forgiving';
     els.streakWeekdaysOnlyInput.checked = Boolean(state.settings.streakWeekdaysOnly);
     els.themeInput.value = state.settings.theme || 'calm';
+    els.resurfacingFrequencyInput.value = ['occasional', 'weekly', 'never'].includes(state.settings.resurfacingFrequency) ? state.settings.resurfacingFrequency : 'occasional';
     els.appVersion.textContent = `v${APP_VERSION}`;
     els.bibleAppUrlInput.value = state.settings.bibleAppUrl || DEFAULT_BIBLE_APP_URL;
     renderConnections();
     renderSnapshotStatus();
+    renderBackupDownloadStatus();
     els.routineEditor.innerHTML = '';
     els.checkinEditor.innerHTML = '';
     renderEditorGroup('routine', els.routineEditor);
@@ -1366,7 +1535,13 @@
     showToast('CSV exported');
   }
 
-  function exportJson() { downloadBlob(JSON.stringify({ version: 1.7, exportedAt: new Date().toISOString(), state }, null, 2), `daily-routine-backup-${dateKey(startOfToday())}.json`, 'application/json'); showToast('Backup downloaded'); }
+  function exportJson() {
+    const exportedAt = new Date().toISOString();
+    state.settings.lastBackupAt = exportedAt;
+    saveState();
+    downloadBlob(JSON.stringify({ version: 1.8, exportedAt, state }, null, 2), `daily-routine-backup-${dateKey(startOfToday())}.json`, 'application/json');
+    renderSetup(); renderToday(); showToast('Backup downloaded');
+  }
 
   async function importJson(event) {
     const file = event.target.files?.[0]; event.target.value = ''; if (!file) return;
@@ -1930,6 +2105,9 @@
     const sleepItem = state.items.find(item => item.type === 'scale' && /sleep/i.test(item.name));
     const sleepValues = sleepItem ? scaleSeries(sleepItem, dates) : [];
     const memories = state.memories.filter(memory => { const d = new Date(memory.createdAt); return !Number.isNaN(d.getTime()) && dateKey(d) >= dateKey(weekStart) && dateKey(d) <= dateKey(today); });
+    const openActions = state.notes.filter(note => note.type === 'action' && !noteIsClosed(note)).length;
+    const activePrayers = state.notes.filter(note => note.type === 'prayer' && note.prayerStatus === 'active').length;
+    const godMoments = state.notes.filter(note => note.type === 'god-moment' && new Date(note.createdAt).getTime() >= weekStart.getTime()).length;
     els.weeklyReviewLabel.textContent = `${formatShortDate(weekStart)} – ${formatShortDate(shiftDate(weekStart, 6))}`;
     const cards = [
       ['Routine', completion.percent === null ? '—' : `${completion.percent}%`],
@@ -1937,7 +2115,10 @@
       ['Most consistent', bestHabit ? `${bestHabit.item.name} ${bestHabit.percent}%` : '—'],
       ['Most missed', missedHabit ? `${missedHabit.item.name} ${missedHabit.percent}%` : '—'],
       ['Avg sleep', sleepValues.length ? average(sleepValues).toFixed(1) : '—'],
-      ['Memories', String(memories.length)]
+      ['Memories', String(memories.length)],
+      ['Open actions', String(openActions)],
+      ['Active prayers', String(activePrayers)],
+      ['God Moments', String(godMoments)]
     ];
     els.weeklyReviewSummary.innerHTML = cards.map(([label,value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('');
     els.weeklyFocusInput.value = state.weeklyReviews?.[nextWeekKey()]?.focus || '';
