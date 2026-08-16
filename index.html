@@ -38,6 +38,20 @@
           <div class="progress-ring" id="progressRing" aria-label="0 percent complete"><span id="progressPercent">0%</span></div>
         </section>
 
+        <section class="card foundation-card" aria-label="Today's foundation">
+          <div class="foundation-mark" aria-hidden="true">100%</div>
+          <div>
+            <p class="eyebrow">Today’s foundation</p>
+            <h2>You are loved, accepted, adopted, and forgiven because of Jesus.</h2>
+            <p>I do these because of what Christ has done for me—not to earn what He has already given.</p>
+          </div>
+        </section>
+
+        <section id="godMomentReminder" class="card god-moment-reminder" hidden>
+          <div><p class="eyebrow">Remember this God Moment…</p><blockquote id="godMomentReminderText"></blockquote><small id="godMomentReminderDate"></small></div>
+          <button id="openGodMomentsButton" class="small-button" type="button">Open God Moments</button>
+        </section>
+
         <div class="date-nav date-nav-v15" aria-label="Choose date">
           <button id="prevDay" class="ghost-button" type="button" aria-label="Previous day">‹</button>
           <button id="selectedDateButton" class="date-button" type="button" aria-label="Return to today"></button>
@@ -79,6 +93,42 @@
             <div><strong id="statStreak">0</strong><span>Current streak</span></div>
             <div><strong id="statMood">—</strong><span>Latest mood</span></div>
           </div>
+        </section>
+      </section>
+
+      <section id="notesView" class="view" aria-labelledby="pageTitle">
+        <section class="card notes-intro-card">
+          <div class="section-heading">
+            <div><p class="eyebrow">Notes & Thoughts</p><h2>Capture it. Preserve it. Release it.</h2></div>
+            <button id="addNoteButton" class="primary-button" type="button">+ Note</button>
+          </div>
+          <p class="muted setup-help">Routine comments, journal entries, Memory Bank items, and standalone notes live together here without being duplicated.</p>
+          <div class="notes-stats">
+            <div><strong id="notesOpenCount">0</strong><span>Open notes</span></div>
+            <div><strong id="godMomentCount">0</strong><span>God Moments</span></div>
+            <div><strong id="notesDueCount">0</strong><span>Ready to review</span></div>
+          </div>
+        </section>
+
+        <section class="card notes-filter-card">
+          <label class="notes-search-field"><span class="sr-only">Search notes</span><input id="notesSearchInput" type="search" placeholder="Search everything you’ve captured…" /></label>
+          <div class="notes-filter-row">
+            <label><span>Type</span><select id="notesTypeFilter">
+              <option value="all">All notes</option><option value="routine">Routine notes</option><option value="memory">Memory Bank</option><option value="entrust">Entrust to the Lord</option><option value="review">Review later</option><option value="action">Action items</option><option value="prayer">Prayers</option><option value="god-moment">God Moments</option><option value="general">General notes</option>
+            </select></label>
+            <label><span>Status</span><select id="notesStatusFilter"><option value="all">All statuses</option><option value="open">Open</option><option value="completed">Completed</option><option value="due">Ready to review</option></select></label>
+          </div>
+        </section>
+
+        <section id="godMomentsLibrary" class="card god-moments-library">
+          <div class="section-heading"><div><p class="eyebrow">God Moments</p><h2>Remember His faithfulness</h2></div></div>
+          <p class="muted setup-help">Export individual Apple Notes as Markdown, then select them here. Each file becomes one God Moment and can resurface occasionally.</p>
+          <label class="secondary-button file-button import-god-moments">Import Apple Notes (.md or .txt)<input id="importGodMomentsInput" type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" multiple /></label>
+        </section>
+
+        <section class="notes-results-section">
+          <div class="section-heading notes-results-heading"><div><p class="eyebrow">Your library</p><h2 id="notesResultsTitle">All notes</h2></div><span id="notesResultCount" class="section-progress">0</span></div>
+          <div id="notesList" class="notes-list"></div>
         </section>
       </section>
 
@@ -241,7 +291,7 @@
             <button id="resetDataButton" class="danger-button" type="button">Reset app data</button>
           </div>
           <p id="snapshotStatus" class="muted micro-copy"></p>
-          <p class="app-version">Daily Routine <b id="appVersion">v1.6</b></p>
+          <p class="app-version">Daily Routine <b id="appVersion">v1.7</b></p>
         </section>
 
         <section class="card private-sharing-card">
@@ -253,6 +303,7 @@
 
     <nav class="bottom-nav" aria-label="Main navigation">
       <button class="nav-button active" data-view="today" type="button"><span>✓</span><b>Today</b></button>
+      <button class="nav-button" data-view="notes" type="button"><span>✎</span><b>Notes</b></button>
       <button class="nav-button" data-view="history" type="button"><span>▤</span><b>Progress</b></button>
       <button class="nav-button" data-view="setup" type="button"><span>⚙</span><b>Setup</b></button>
     </nav>
@@ -306,7 +357,7 @@
           <label class="text-field compact"><span>Completion</span><select id="linkedCompletionInput"><option value="manual">Open, then mark complete</option><option value="confirm">Ask when I return</option><option value="sync">Sync automatically</option></select></label>
         </div>
         <label id="linkedUrlField" class="text-field compact"><span>Link or app URL</span><input id="linkedUrlInput" type="text" inputmode="url" maxlength="500" placeholder="https://… or shortcuts://…" /></label>
-        <label id="linkedInternalField" class="text-field compact" hidden><span>Open this part of Daily Routine</span><select id="linkedInternalTargetInput"><option value="memory">Capture or review a blessing</option><option value="weekly">Weekly review</option><option value="medication">Medication history</option><option value="backup">Backup & export</option></select></label>
+        <label id="linkedInternalField" class="text-field compact" hidden><span>Open this part of Daily Routine</span><select id="linkedInternalTargetInput"><option value="notes">Capture a note</option><option value="memory">Capture or review a blessing</option><option value="weekly">Weekly review</option><option value="medication">Medication history</option><option value="backup">Backup & export</option></select></label>
         <label class="text-field compact"><span>Button label</span><input id="linkedButtonLabelInput" type="text" maxlength="30" placeholder="Open, Continue, Call…" /></label>
         <p class="muted setup-help">Bible reading can sync progress automatically. Other actions can stay manual or ask whether you finished when you return.</p>
       </div>
@@ -342,6 +393,24 @@
         <label class="text-field compact"><span>Date & time</span><input id="memoryDateTimeInput" type="datetime-local" required /></label>
       </div>
       <div class="dialog-actions"><button class="primary-button" type="submit">Save memory</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="noteDialog" class="item-dialog note-dialog">
+    <form id="noteForm" method="dialog">
+      <div class="dialog-header"><div><p class="eyebrow">Quick capture</p><h2 id="noteDialogTitle">Add a note</h2></div><button id="closeNoteDialogButton" class="icon-button" type="button" aria-label="Close">×</button></div>
+      <input id="editingNoteId" type="hidden" />
+      <label class="text-field compact"><span>What is on your mind?</span><textarea id="noteTextInput" rows="5" maxlength="4000" required placeholder="Capture it here so you do not have to hold it right now…"></textarea></label>
+      <label class="text-field compact"><span>Note type</span><select id="noteTypeInput">
+        <option value="entrust">Entrust to the Lord</option><option value="review">Review later</option><option value="action">Action item</option><option value="prayer">Prayer</option><option value="god-moment">God Moment</option><option value="general">General note</option>
+      </select></label>
+      <label id="noteScriptureField" class="text-field compact" hidden><span>Scripture / biblical truth to remember first (optional)</span><textarea id="noteScriptureInput" rows="2" maxlength="1000" placeholder="Remember what is true before bringing the request…"></textarea></label>
+      <div class="two-column-fields">
+        <label class="text-field compact"><span>Review date & time (optional)</span><input id="noteReviewAtInput" type="datetime-local" /></label>
+        <label class="text-field compact"><span>Source</span><select id="noteSourceInput"><option value="Daily Routine">Daily Routine</option><option value="Apple Watch">Apple Watch</option><option value="Pushcut">Pushcut</option><option value="Shortcut">Shortcut</option><option value="Apple Notes">Apple Notes</option><option value="Imported Thought Inbox">Imported Thought Inbox</option></select></label>
+      </div>
+      <label id="noteResurfaceField" class="toggle-field" hidden><input id="noteResurfaceInput" type="checkbox" checked /><span><b>Show this occasionally</b><small>Allow this God Moment to appear as a gentle reminder of God’s faithfulness.</small></span></label>
+      <div class="dialog-actions"><button id="deleteNoteButton" class="danger-button" type="button" hidden>Delete</button><button class="primary-button" type="submit">Save note</button></div>
     </form>
   </dialog>
 

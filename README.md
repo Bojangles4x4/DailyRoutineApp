@@ -2,7 +2,7 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1 features
+## Version 1.7 features
 
 - Morning, Throughout the Day, and Evening routine sections
 - Custom wake-up and bedtime targets
@@ -18,8 +18,25 @@ A mobile-first private routine and mood tracker designed to run as a Progressive
 - 30-day history
 - CSV progress export
 - JSON backup / restore
+- Grace-first daily foundation that keeps identity separate from completion
+- Searchable Notes & Thoughts hub for routine notes, Memory Bank entries, and standalone notes
+- Standalone note types for Entrust to the Lord, Review later, Action items, Prayer, God Moments, and General notes
+- Optional review dates, prayer Scripture/truth, completion/reopening, and capture-source metadata
+- God Moments Markdown/text import and occasional in-app resurfacing
+- Migration of legacy Thought Inbox entries without deleting the old storage
+- URL-prefilled quick capture for future Apple Watch, Pushcut, and Shortcuts integrations
 - Works offline after first load
 - All data remains in this browser's local storage
+
+## Quick capture links
+
+The app can open directly into a prefilled note capture. Parameters are URL encoded:
+
+```text
+?capture=note&text=Remember%20this&type=entrust&source=watch
+```
+
+Supported types are `entrust`, `review`, `action`, `prayer`, `god-moment`, and `general`. Common source aliases such as `watch`, `pushcut`, and `shortcut` are normalized for display.
 
 ## GitHub Pages deployment
 
@@ -36,7 +53,7 @@ Open the GitHub Pages URL in Safari → Share → **Add to Home Screen** → ena
 
 ## Privacy note
 
-This version has no account system and does not transmit routine or mood data. Data is stored locally on the device/browser. Clearing browser storage can erase it, so use Download backup periodically.
+This version has no account system and does not transmit routine, mood, or note data. Data is stored locally on the device/browser. Clearing browser storage can erase it, so use Download backup periodically.
 
 ## Recommended next phase: private accountability sharing
 
