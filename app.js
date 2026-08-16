@@ -3,7 +3,7 @@
 
   const STORAGE_KEY = 'dailyRoutineApp.v1';
   const SNAPSHOT_KEY = 'dailyRoutineApp.snapshots.v1';
-  const APP_VERSION = '1.6';
+  const APP_VERSION = '1.7';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const DEFAULT_BIBLE_APP_URL = 'https://bojangles4x4.github.io/Bible-Reading-Plan/';
@@ -31,6 +31,7 @@
     ],
     days: {},
     memories: [],
+    notes: [],
     weeklyReviews: {}
   };
 
@@ -40,6 +41,8 @@
     evening: ['Evening', 'Close the day well']
   };
   const typeLabels = { checkbox: 'Checkbox', linked: 'Linked app / action', medication: 'Medication + time', memory: 'Memory reflection', scale: 'Rating scale', number: 'Number', time: 'Time', text: 'Short comment', longtext: 'Journal entry' };
+  const noteTypeLabels = { entrust: 'Entrust to the Lord', review: 'Review later', action: 'Action item', prayer: 'Prayer', 'god-moment': 'God Moment', general: 'General note', routine: 'Routine note', memory: 'Memory Bank' };
+  const THOUGHT_INBOX_KEYS = ['dailyRoutine.thoughtInbox.v1', 'dailyRoutineApp.thoughtInbox.v1', 'dailyRoutineApp.thoughts.v1', 'thoughtInbox'];
 
   let state = loadState();
   let selectedDate = startOfToday();
@@ -69,6 +72,9 @@
     medicationFields: $('medicationFields'), medicationDoseInput: $('medicationDoseInput'), memoryFields: $('memoryFields'), memoryCategoryInput: $('memoryCategoryInput'), pauseUntilInput: $('pauseUntilInput'),
     actualWakeInput: $('actualWakeInput'), actualBedInput: $('actualBedInput'), wakeNowButton: $('wakeNowButton'), bedNowButton: $('bedNowButton'), badgeEnabledInput: $('badgeEnabledInput'),
     quickMemoryButton: $('quickMemoryButton'), memoryTodayPreview: $('memoryTodayPreview'), addMemoryButton: $('addMemoryButton'), memoryCount: $('memoryCount'), memoryArchive: $('memoryArchive'), exportMemoriesButton: $('exportMemoriesButton'), memorySearchInput: $('memorySearchInput'), memoryFilterInput: $('memoryFilterInput'), memoryFavoritesOnlyInput: $('memoryFavoritesOnlyInput'),
+    godMomentReminder: $('godMomentReminder'), godMomentReminderText: $('godMomentReminderText'), godMomentReminderDate: $('godMomentReminderDate'), openGodMomentsButton: $('openGodMomentsButton'),
+    addNoteButton: $('addNoteButton'), notesOpenCount: $('notesOpenCount'), godMomentCount: $('godMomentCount'), notesDueCount: $('notesDueCount'), notesSearchInput: $('notesSearchInput'), notesTypeFilter: $('notesTypeFilter'), notesStatusFilter: $('notesStatusFilter'), notesResultsTitle: $('notesResultsTitle'), notesResultCount: $('notesResultCount'), notesList: $('notesList'), importGodMomentsInput: $('importGodMomentsInput'),
+    noteDialog: $('noteDialog'), noteForm: $('noteForm'), noteDialogTitle: $('noteDialogTitle'), closeNoteDialogButton: $('closeNoteDialogButton'), editingNoteId: $('editingNoteId'), noteTextInput: $('noteTextInput'), noteTypeInput: $('noteTypeInput'), noteScriptureField: $('noteScriptureField'), noteScriptureInput: $('noteScriptureInput'), noteReviewAtInput: $('noteReviewAtInput'), noteSourceInput: $('noteSourceInput'), noteResurfaceField: $('noteResurfaceField'), noteResurfaceInput: $('noteResurfaceInput'), deleteNoteButton: $('deleteNoteButton'),
     medicationInsights: $('medicationInsights'), weeklyReviewLabel: $('weeklyReviewLabel'), weeklyReviewSummary: $('weeklyReviewSummary'), weeklyFocusInput: $('weeklyFocusInput'), saveWeeklyFocusButton: $('saveWeeklyFocusButton'), memoryDialog: $('memoryDialog'), memoryForm: $('memoryForm'), closeMemoryDialogButton: $('closeMemoryDialogButton'), memoryTextInput: $('memoryTextInput'), memoryCategoryCaptureInput: $('memoryCategoryCaptureInput'), memoryDateTimeInput: $('memoryDateTimeInput'),
     createSnapshotButton: $('createSnapshotButton'), restoreSnapshotButton: $('restoreSnapshotButton'), snapshotStatus: $('snapshotStatus'), appVersion: $('appVersion'),
     connectionsCard: $('connectionsCard'), syncConnectionsButton: $('syncConnectionsButton'), bibleConnectionStatus: $('bibleConnectionStatus'), openBibleConnectionButton: $('openBibleConnectionButton'), bibleAppUrlInput: $('bibleAppUrlInput'), saveBibleConnectionButton: $('saveBibleConnectionButton'), testBibleConnectionButton: $('testBibleConnectionButton'), connectionTemplates: $('connectionTemplates'),
@@ -85,12 +91,14 @@
     syncLinkedIntegrations(false);
     bindNavigation();
     bindTodayControls();
+    bindNotesControls();
     bindProgressControls();
     bindSetupControls();
     bindInstall();
     bindIntegrationEvents();
     applyPersonalization();
     renderAll();
+    consumeQuickCapture();
     maybeAutoSnapshot();
     if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(() => {}));
   }
@@ -137,6 +145,32 @@
     };
   }
 
+  function normalizeNote(note, index = 0) {
+    const allowedTypes = ['entrust', 'review', 'action', 'prayer', 'god-moment', 'general'];
+    const typeAliases = { later: 'review', 'review-later': 'review', task: 'action', 'action-item': 'action', godmoment: 'god-moment', thought: 'general' };
+    const requestedType = typeAliases[String(note?.type || '').toLowerCase()] || String(note?.type || '').toLowerCase();
+    const createdAt = validDateValue(note?.createdAt || note?.date || note?.timestamp) || new Date().toISOString();
+    return {
+      id: String(note?.id || `note-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 7)}`),
+      text: String(note?.text || note?.content || note?.body || note?.title || '').trim(),
+      type: allowedTypes.includes(requestedType) ? requestedType : 'general',
+      scripture: String(note?.scripture || note?.truth || '').trim(),
+      reviewAt: validDateValue(note?.reviewAt || note?.reviewDate || note?.remindAt),
+      source: String(note?.source || 'Daily Routine'),
+      createdAt,
+      updatedAt: validDateValue(note?.updatedAt) || createdAt,
+      completedAt: validDateValue(note?.completedAt || (note?.completed ? note?.updatedAt || createdAt : '')),
+      resurface: note?.resurface === undefined ? requestedType === 'god-moment' : Boolean(note.resurface),
+      migrationKey: String(note?.migrationKey || '')
+    };
+  }
+
+  function validDateValue(value) {
+    if (!value) return '';
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? '' : date.toISOString();
+  }
+
   function loadState() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -147,6 +181,7 @@
         items: Array.isArray(parsed.items) ? parsed.items.map(normalizeItem) : structuredClone(DEFAULT_STATE.items),
         days: parsed.days && typeof parsed.days === 'object' ? parsed.days : {},
         memories: Array.isArray(parsed.memories) ? parsed.memories.map(memory => ({ ...memory, favorite: Boolean(memory.favorite), archived: Boolean(memory.archived) })) : [],
+        notes: Array.isArray(parsed.notes) ? parsed.notes.map(normalizeNote).filter(note => note.text) : [],
         weeklyReviews: parsed.weeklyReviews && typeof parsed.weeklyReviews === 'object' ? parsed.weeklyReviews : {}
       };
     } catch {
@@ -203,6 +238,7 @@
       items: Array.isArray(latest.state.items) ? latest.state.items.map(normalizeItem) : [],
       days: latest.state.days || {},
       memories: Array.isArray(latest.state.memories) ? latest.state.memories : [],
+      notes: Array.isArray(latest.state.notes) ? latest.state.notes.map(normalizeNote).filter(note => note.text) : [],
       weeklyReviews: latest.state.weeklyReviews || {}
     };
     ensureFirstUseDate(); localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); applyPersonalization(); renderAll(); showToast('Snapshot restored');
@@ -223,6 +259,8 @@
     }
     if (!Array.isArray(state.memories)) { state.memories = []; changed = true; }
     state.memories = state.memories.map(memory => ({ ...memory, favorite: Boolean(memory.favorite), archived: Boolean(memory.archived) }));
+    if (!Array.isArray(state.notes)) { state.notes = []; changed = true; }
+    state.notes = state.notes.map(normalizeNote).filter(note => note.text);
     if (!state.weeklyReviews || typeof state.weeklyReviews !== 'object') { state.weeklyReviews = {}; changed = true; }
     state.items.forEach((item, index) => {
       const normalized = normalizeItem(item, index);
@@ -250,7 +288,39 @@
       state.settings.v16Seeded = true;
       changed = true;
     }
+    if (!state.settings.notesV2Migrated) {
+      const migrated = migrateThoughtInbox();
+      state.settings.notesV2Migrated = true;
+      changed = true;
+      if (migrated) state.settings.notesV2MigratedCount = migrated;
+    }
     if (changed) saveState();
+  }
+
+  function migrateThoughtInbox() {
+    let migrated = 0;
+    const existingKeys = new Set(state.notes.map(note => note.migrationKey).filter(Boolean));
+    THOUGHT_INBOX_KEYS.forEach(storageKey => {
+      let parsed;
+      try { parsed = JSON.parse(localStorage.getItem(storageKey) || 'null'); } catch { parsed = null; }
+      const candidates = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.notes) ? parsed.notes : Array.isArray(parsed?.thoughts) ? parsed.thoughts : Array.isArray(parsed?.entries) ? parsed.entries : [];
+      candidates.forEach((candidate, index) => {
+        if (typeof candidate === 'string') candidate = { text: candidate };
+        const migrationKey = `${storageKey}:${candidate?.id || index}`;
+        if (existingKeys.has(migrationKey)) return;
+        const note = normalizeNote({
+          ...candidate,
+          type: candidate?.type || candidate?.category || (candidate?.entrusted ? 'entrust' : candidate?.actionable ? 'action' : 'review'),
+          source: candidate?.source || 'Imported Thought Inbox',
+          migrationKey
+        }, index);
+        if (!note.text) return;
+        state.notes.push(note);
+        existingKeys.add(migrationKey);
+        migrated += 1;
+      });
+    });
+    return migrated;
   }
 
   function scheduledItemsForDate(date) {
@@ -331,7 +401,8 @@
     document.querySelectorAll('.nav-button').forEach(button => button.classList.toggle('active', button.dataset.view === view));
     document.querySelectorAll('.view').forEach(node => node.classList.remove('active'));
     $(`${view}View`).classList.add('active');
-    els.pageTitle.textContent = ({ today: 'Today', history: 'Progress', setup: 'Setup' })[view] || 'Daily Routine';
+    els.pageTitle.textContent = ({ today: 'Today', notes: 'Notes', history: 'Progress', setup: 'Setup' })[view] || 'Daily Routine';
+    if (view === 'notes') renderNotes();
     if (view === 'history') renderHistory();
     if (view === 'setup') renderSetup();
     $('appMain').focus({ preventScroll: true });
@@ -351,6 +422,19 @@
     els.wakeNowButton.addEventListener('click', () => { const value = currentTimeValue(); els.actualWakeInput.value = value; saveActualTime('actualWakeTime', value); });
     els.bedNowButton.addEventListener('click', () => { const value = currentTimeValue(); els.actualBedInput.value = value; saveActualTime('actualBedTime', value); });
     els.quickMemoryButton.addEventListener('click', () => openMemoryDialog('blessing'));
+    els.openGodMomentsButton.addEventListener('click', () => { switchView('notes'); els.notesTypeFilter.value = 'god-moment'; renderNotes(); });
+  }
+
+  function bindNotesControls() {
+    els.addNoteButton.addEventListener('click', () => openNoteDialog());
+    els.closeNoteDialogButton.addEventListener('click', () => els.noteDialog.close());
+    els.noteTypeInput.addEventListener('change', toggleNoteFields);
+    els.noteForm.addEventListener('submit', saveNote);
+    els.deleteNoteButton.addEventListener('click', deleteNote);
+    els.notesSearchInput.addEventListener('input', renderNotes);
+    els.notesTypeFilter.addEventListener('change', renderNotes);
+    els.notesStatusFilter.addEventListener('change', renderNotes);
+    els.importGodMomentsInput.addEventListener('change', importGodMoments);
   }
 
   function bindProgressControls() {
@@ -411,7 +495,217 @@
     });
   }
 
-  function renderAll() { renderToday(); renderHistory(); renderSetup(); }
+  function allNoteRecords() {
+    const records = state.notes.map(note => ({ ...note, kind: 'standalone', title: noteTypeLabels[note.type] || 'Note', readOnly: false }));
+    Object.entries(state.days || {}).forEach(([key, day]) => {
+      Object.entries(day.entries || {}).forEach(([itemId, value]) => {
+        const item = state.items.find(candidate => candidate.id === itemId);
+        if (!item || !['text', 'longtext'].includes(item.type) || value === undefined || value === null || !String(value).trim()) return;
+        const createdAt = new Date(`${key}T12:00:00`).toISOString();
+        records.push({ id: `routine:${key}:${itemId}`, kind: 'routine', type: 'routine', title: item.name, text: String(value).trim(), scripture: '', reviewAt: '', source: `Daily Routine · ${sectionLabels[item.section]?.[0] || 'Routine'}`, createdAt, updatedAt: createdAt, completedAt: '', readOnly: true });
+      });
+    });
+    state.memories.forEach(memory => {
+      records.push({ id: `memory:${memory.id}`, kind: 'memory', type: 'memory', title: memoryCategoryLabel(memory.category), text: memory.text, scripture: '', reviewAt: '', source: 'Memory Bank', createdAt: validDateValue(memory.createdAt) || new Date().toISOString(), updatedAt: validDateValue(memory.createdAt) || new Date().toISOString(), completedAt: memory.archived ? validDateValue(memory.createdAt) : '', readOnly: true, favorite: Boolean(memory.favorite), archived: Boolean(memory.archived) });
+    });
+    return records;
+  }
+
+  function renderNotes() {
+    if (!els.notesList) return;
+    const now = Date.now();
+    const search = els.notesSearchInput.value.trim().toLowerCase();
+    const typeFilter = els.notesTypeFilter.value;
+    const statusFilter = els.notesStatusFilter.value;
+    const standaloneOpen = state.notes.filter(note => !note.completedAt).length;
+    const godMoments = state.notes.filter(note => note.type === 'god-moment').length;
+    const due = state.notes.filter(note => !note.completedAt && note.reviewAt && new Date(note.reviewAt).getTime() <= now).length;
+    els.notesOpenCount.textContent = String(standaloneOpen);
+    els.godMomentCount.textContent = String(godMoments);
+    els.notesDueCount.textContent = String(due);
+
+    let records = allNoteRecords().filter(note => {
+      if (typeFilter !== 'all' && note.type !== typeFilter) return false;
+      const isCompleted = Boolean(note.completedAt);
+      const isDue = !isCompleted && note.reviewAt && new Date(note.reviewAt).getTime() <= now;
+      if (statusFilter === 'open' && isCompleted) return false;
+      if (statusFilter === 'completed' && !isCompleted) return false;
+      if (statusFilter === 'due' && !isDue) return false;
+      if (!search) return true;
+      return [note.title, note.text, note.scripture, note.source, noteTypeLabels[note.type]].some(value => String(value || '').toLowerCase().includes(search));
+    });
+    records.sort((a, b) => {
+      const aDue = !a.completedAt && a.reviewAt && new Date(a.reviewAt).getTime() <= now ? 1 : 0;
+      const bDue = !b.completedAt && b.reviewAt && new Date(b.reviewAt).getTime() <= now ? 1 : 0;
+      return bDue - aDue || new Date(b.createdAt) - new Date(a.createdAt);
+    });
+    els.notesResultsTitle.textContent = typeFilter === 'all' ? 'All notes' : noteTypeLabels[typeFilter] || 'Notes';
+    els.notesResultCount.textContent = `${records.length} shown`;
+    if (!records.length) {
+      els.notesList.innerHTML = '<div class="empty-state notes-empty">No notes match these filters. Capture a thought or clear a filter to begin.</div>';
+      return;
+    }
+    els.notesList.innerHTML = records.map(note => noteCardHtml(note, now)).join('');
+    els.notesList.querySelectorAll('[data-edit-note]').forEach(button => button.addEventListener('click', () => {
+      const note = state.notes.find(candidate => candidate.id === button.dataset.editNote);
+      if (note) openNoteDialog(note);
+    }));
+    els.notesList.querySelectorAll('[data-toggle-note]').forEach(button => button.addEventListener('click', () => toggleNoteCompletion(button.dataset.toggleNote)));
+  }
+
+  function noteCardHtml(note, now) {
+    const completed = Boolean(note.completedAt);
+    const due = !completed && note.reviewAt && new Date(note.reviewAt).getTime() <= now;
+    const actionable = note.kind === 'standalone' && ['action', 'review'].includes(note.type);
+    const classes = ['note-card', `note-${note.type}`, completed ? 'completed' : '', due ? 'due' : ''].filter(Boolean).join(' ');
+    const scripture = note.scripture ? `<blockquote class="note-scripture"><span>Remember first</span>${escapeHtml(note.scripture)}</blockquote>` : '';
+    const review = note.reviewAt ? `<span class="note-review${due ? ' due' : ''}">${due ? 'Ready to review' : 'Review'} · ${escapeHtml(formatNoteDate(note.reviewAt))}</span>` : '';
+    const status = completed ? `<span class="note-completed">Completed ${escapeHtml(formatNoteDate(note.completedAt))}</span>` : '';
+    const actions = note.kind === 'standalone' ? `<div class="note-actions">${actionable ? `<button class="${completed ? 'secondary-button' : 'primary-button'}" type="button" data-toggle-note="${escapeHtml(note.id)}">${completed ? 'Reopen' : 'Complete'}</button>` : ''}<button class="small-button" type="button" data-edit-note="${escapeHtml(note.id)}">Edit / move</button></div>` : '<span class="read-only-note">Shown from its original source</span>';
+    return `<article class="${classes}"><div class="note-card-head"><span class="note-type-badge">${escapeHtml(noteTypeLabels[note.type] || note.title)}</span>${note.favorite ? '<span class="note-favorite">★</span>' : ''}</div>${note.title && !['standalone'].includes(note.kind) ? `<h3>${escapeHtml(note.title)}</h3>` : ''}${scripture}<p>${escapeHtml(note.text)}</p><div class="note-meta"><span>${escapeHtml(formatNoteDate(note.createdAt))}</span><span>${escapeHtml(note.source || 'Daily Routine')}</span>${review}${status}</div>${actions}</article>`;
+  }
+
+  function formatNoteDate(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: date.getFullYear() === new Date().getFullYear() ? undefined : 'numeric', hour: 'numeric', minute: '2-digit' }).format(date);
+  }
+
+  function openNoteDialog(note = null, prefill = {}) {
+    const source = normalizeNoteSource(prefill.source || note?.source || 'Daily Routine');
+    els.editingNoteId.value = note?.id || '';
+    els.noteDialogTitle.textContent = note ? 'Edit note' : 'Add a note';
+    els.noteTextInput.value = prefill.text || note?.text || '';
+    els.noteTypeInput.value = normalizeNoteType(prefill.type || note?.type || 'entrust');
+    els.noteScriptureInput.value = note?.scripture || '';
+    els.noteReviewAtInput.value = note?.reviewAt ? localDateTimeValue(new Date(note.reviewAt)) : '';
+    els.noteSourceInput.value = [...els.noteSourceInput.options].some(option => option.value === source) ? source : 'Daily Routine';
+    els.noteResurfaceInput.checked = note?.resurface === undefined ? true : Boolean(note.resurface);
+    els.deleteNoteButton.hidden = !note;
+    toggleNoteFields();
+    els.noteDialog.showModal();
+    setTimeout(() => els.noteTextInput.focus(), 0);
+  }
+
+  function normalizeNoteType(value) {
+    const aliases = { later: 'review', 'review-later': 'review', task: 'action', 'action-item': 'action', godmoment: 'god-moment', 'god-moments': 'god-moment', thought: 'general' };
+    const type = aliases[String(value || '').toLowerCase()] || String(value || '').toLowerCase();
+    return ['entrust', 'review', 'action', 'prayer', 'god-moment', 'general'].includes(type) ? type : 'general';
+  }
+
+  function normalizeNoteSource(value) {
+    const aliases = { watch: 'Apple Watch', applewatch: 'Apple Watch', pushcut: 'Pushcut', shortcut: 'Shortcut', 'apple-notes': 'Apple Notes', notes: 'Apple Notes', app: 'Daily Routine' };
+    const raw = String(value || '').trim();
+    return aliases[raw.toLowerCase()] || raw || 'Daily Routine';
+  }
+
+  function toggleNoteFields() {
+    const type = els.noteTypeInput.value;
+    els.noteScriptureField.hidden = type !== 'prayer';
+    els.noteResurfaceField.hidden = type !== 'god-moment';
+  }
+
+  function saveNote(event) {
+    event.preventDefault();
+    const text = els.noteTextInput.value.trim();
+    if (!text) return;
+    const now = new Date().toISOString();
+    const existing = state.notes.find(note => note.id === els.editingNoteId.value);
+    const next = normalizeNote({
+      ...(existing || {}),
+      id: existing?.id || `note-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      text,
+      type: els.noteTypeInput.value,
+      scripture: els.noteScriptureInput.value.trim(),
+      reviewAt: els.noteReviewAtInput.value ? new Date(els.noteReviewAtInput.value).toISOString() : '',
+      source: els.noteSourceInput.value,
+      createdAt: existing?.createdAt || now,
+      updatedAt: now,
+      completedAt: existing?.completedAt || '',
+      resurface: els.noteTypeInput.value === 'god-moment' && els.noteResurfaceInput.checked,
+      migrationKey: existing?.migrationKey || ''
+    });
+    if (existing) Object.assign(existing, next); else state.notes.push(next);
+    saveState();
+    els.noteDialog.close();
+    renderAll();
+    showToast(existing ? 'Note updated' : next.type === 'entrust' ? 'Captured. You do not need to resolve this now.' : 'Note saved');
+  }
+
+  function deleteNote() {
+    const id = els.editingNoteId.value;
+    const note = state.notes.find(candidate => candidate.id === id);
+    if (!note || !confirm('Delete this standalone note? This cannot be undone.')) return;
+    state.notes = state.notes.filter(candidate => candidate.id !== id);
+    saveState(); els.noteDialog.close(); renderAll(); showToast('Note deleted');
+  }
+
+  function toggleNoteCompletion(id) {
+    const note = state.notes.find(candidate => candidate.id === id);
+    if (!note || !['action', 'review'].includes(note.type)) return;
+    note.completedAt = note.completedAt ? '' : new Date().toISOString();
+    note.updatedAt = new Date().toISOString();
+    saveState(); renderNotes(); showToast(note.completedAt ? 'Note completed' : 'Note reopened');
+  }
+
+  async function importGodMoments(event) {
+    const files = [...(event.target.files || [])]; event.target.value = '';
+    if (!files.length) return;
+    let imported = 0, skipped = 0;
+    for (const file of files) {
+      try {
+        const text = cleanImportedMarkdown(await file.text(), file.name);
+        if (!text || state.notes.some(note => note.type === 'god-moment' && note.text === text)) { skipped += 1; continue; }
+        state.notes.push(normalizeNote({ text, type: 'god-moment', source: 'Apple Notes', createdAt: new Date(file.lastModified || Date.now()).toISOString(), resurface: true }));
+        imported += 1;
+      } catch { skipped += 1; }
+    }
+    if (imported) saveState();
+    renderAll();
+    showToast(`${imported} God Moment${imported === 1 ? '' : 's'} imported${skipped ? ` · ${skipped} skipped` : ''}`);
+  }
+
+  function cleanImportedMarkdown(content, filename) {
+    let text = String(content || '')
+      .replace(/^---\s*\n[\s\S]*?\n---\s*(?:\n|$)/, '')
+      .replace(/^#{1,6}\s+/gm, '')
+      .replace(/\[([^\]]+)]\([^)]+\)/g, '$1')
+      .trim();
+    const fallbackTitle = String(filename || '').replace(/\.(md|markdown|txt)$/i, '').trim();
+    if (!text && fallbackTitle) text = fallbackTitle;
+    return text;
+  }
+
+  function consumeQuickCapture() {
+    const params = new URLSearchParams(location.search);
+    const capture = params.get('capture');
+    if (!capture || !['1', 'true', 'note', 'thought'].includes(capture.toLowerCase())) return;
+    switchView('notes');
+    openNoteDialog(null, { text: params.get('text') || '', type: params.get('type') || 'general', source: params.get('source') || 'Daily Routine' });
+    const clean = new URL(location.href);
+    ['capture', 'text', 'type', 'source'].forEach(key => clean.searchParams.delete(key));
+    history.replaceState({}, '', clean.pathname + clean.search + clean.hash);
+  }
+
+  function renderGodMomentReminder() {
+    if (!els.godMomentReminder) return;
+    const eligible = state.notes.filter(note => note.type === 'god-moment' && note.resurface !== false && !note.completedAt);
+    const showToday = isSameDay(selectedDate, startOfToday()) && [1, 3, 6].includes(new Date().getDay());
+    if (!eligible.length || !showToday) { els.godMomentReminder.hidden = true; return; }
+    const index = Math.abs(hashString(`${dateKey(startOfToday())}:${eligible.length}`)) % eligible.length;
+    const note = eligible[index];
+    els.godMomentReminderText.textContent = note.text;
+    els.godMomentReminderDate.textContent = formatNoteDate(note.createdAt);
+    els.godMomentReminder.hidden = false;
+  }
+
+  function hashString(value) {
+    let hash = 0;
+    for (let i = 0; i < value.length; i += 1) hash = ((hash << 5) - hash + value.charCodeAt(i)) | 0;
+    return hash;
+  }
+
+  function renderAll() { renderToday(); renderNotes(); renderHistory(); renderSetup(); }
 
   function renderToday() {
     const day = state.days[dateKey(selectedDate)] || { entries: {} };
@@ -426,6 +720,7 @@
     els.datePickerInput.value = dateKey(selectedDate);
     renderWeekFocusBanner();
     renderOnThisDay();
+    renderGodMomentReminder();
     els.selectedDateButton.textContent = isSameDay(selectedDate, today) ? 'Today' : new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' }).format(selectedDate);
     els.nextDay.disabled = dateKey(selectedDate) >= dateKey(today);
     els.nextDay.style.opacity = els.nextDay.disabled ? '.35' : '1';
@@ -1071,7 +1366,7 @@
     showToast('CSV exported');
   }
 
-  function exportJson() { downloadBlob(JSON.stringify({ version: 1.6, exportedAt: new Date().toISOString(), state }, null, 2), `daily-routine-backup-${dateKey(startOfToday())}.json`, 'application/json'); showToast('Backup downloaded'); }
+  function exportJson() { downloadBlob(JSON.stringify({ version: 1.7, exportedAt: new Date().toISOString(), state }, null, 2), `daily-routine-backup-${dateKey(startOfToday())}.json`, 'application/json'); showToast('Backup downloaded'); }
 
   async function importJson(event) {
     const file = event.target.files?.[0]; event.target.value = ''; if (!file) return;
@@ -1080,13 +1375,13 @@
       if (!incoming || !Array.isArray(incoming.items) || typeof incoming.days !== 'object') throw new Error('Invalid backup');
       if (!confirm('Restore this backup? It will replace current app data on this device.')) return;
       createLocalSnapshot('Before backup restore', true);
-      state = { settings: { ...DEFAULT_STATE.settings, ...(incoming.settings || {}) }, items: incoming.items.map(normalizeItem), days: incoming.days, memories: Array.isArray(incoming.memories) ? incoming.memories : [], weeklyReviews: incoming.weeklyReviews && typeof incoming.weeklyReviews === 'object' ? incoming.weeklyReviews : {} };
+      state = { settings: { ...DEFAULT_STATE.settings, ...(incoming.settings || {}) }, items: incoming.items.map(normalizeItem), days: incoming.days, memories: Array.isArray(incoming.memories) ? incoming.memories : [], notes: Array.isArray(incoming.notes) ? incoming.notes.map(normalizeNote).filter(note => note.text) : [], weeklyReviews: incoming.weeklyReviews && typeof incoming.weeklyReviews === 'object' ? incoming.weeklyReviews : {} };
       ensureFirstUseDate(); saveState(); applyPersonalization(); renderAll(); showToast('Backup restored');
     } catch { alert('That file does not look like a valid Daily Routine backup.'); }
   }
 
   function resetData() {
-    if (!confirm('Reset all routines, history, and settings on this device?')) return;
+    if (!confirm('Reset all routines, notes, history, and settings on this device?')) return;
     createLocalSnapshot('Before app reset', true);
     state = structuredClone(DEFAULT_STATE); state.settings.firstUseDate = dateKey(startOfToday()); ensureFirstUseDate(); saveState(); selectedDate = startOfToday(); undoAction = null; applyPersonalization(); renderAll(); showToast('App reset');
   }
@@ -1471,6 +1766,7 @@
   }
 
   function openInternalAction(target) {
+    if (target === 'notes') { switchView('notes'); openNoteDialog(); return; }
     if (target === 'memory') { switchView('today'); openMemoryDialog('blessing'); return; }
     if (target === 'weekly') { switchView('history'); els.weeklyReviewCard?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     if (target === 'medication') { switchView('history'); els.medicationProgressCard?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
