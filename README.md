@@ -2,7 +2,7 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.8 features
+## Version 1.8.1 features
 
 - Morning, Throughout the Day, and Evening routine sections
 - Custom wake-up and bedtime targets
@@ -30,6 +30,7 @@ A mobile-first private routine and mood tracker designed to run as a Progressive
 - Pinned notes and chosen-date snoozing
 - Occasional, weekly, or disabled God Moment resurfacing
 - Visible backup age with a gentle monthly reminder
+- Phone-sized note capture with a keyboard-safe scrolling body and always-visible Save button
 - Works offline after first load
 - All data remains in this browser's local storage
 
