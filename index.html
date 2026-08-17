@@ -430,22 +430,24 @@
   <dialog id="noteDialog" class="item-dialog note-dialog">
     <form id="noteForm" method="dialog">
       <div class="dialog-header"><div><p class="eyebrow">Quick capture</p><h2 id="noteDialogTitle">Add a note</h2></div><button id="closeNoteDialogButton" class="icon-button" type="button" aria-label="Close">×</button></div>
-      <input id="editingNoteId" type="hidden" />
-      <label class="text-field compact"><span>What is on your mind?</span><textarea id="noteTextInput" rows="5" maxlength="4000" required placeholder="Capture it here so you do not have to hold it right now…"></textarea></label>
-      <label class="text-field compact"><span>Note type</span><select id="noteTypeInput">
-        <option value="entrust">Entrust to the Lord</option><option value="review">Review later</option><option value="action">Action item</option><option value="prayer">Prayer</option><option value="god-moment">God Moment</option><option value="general">General note</option>
-      </select></label>
-      <label id="noteScriptureField" class="text-field compact" hidden><span>Scripture / biblical truth to remember first (optional)</span><textarea id="noteScriptureInput" rows="2" maxlength="1000" placeholder="Remember what is true before bringing the request…"></textarea></label>
-      <label id="notePrayerStatusField" class="text-field compact" hidden><span>Prayer status</span><select id="notePrayerStatusInput"><option value="active">Still praying</option><option value="answered">Answered</option><option value="archived">Archived</option></select></label>
-      <div class="two-column-fields">
-        <label class="text-field compact"><span>Review date & time (optional)</span><input id="noteReviewAtInput" type="datetime-local" /></label>
-        <label class="text-field compact"><span>Snooze until (optional)</span><input id="noteSnoozedUntilInput" type="datetime-local" /></label>
+      <div class="note-dialog-body">
+        <input id="editingNoteId" type="hidden" />
+        <label class="text-field compact"><span>What is on your mind?</span><textarea id="noteTextInput" rows="5" maxlength="4000" required placeholder="Capture it here so you do not have to hold it right now…"></textarea></label>
+        <label class="text-field compact"><span>Note type</span><select id="noteTypeInput">
+          <option value="entrust">Entrust to the Lord</option><option value="review">Review later</option><option value="action">Action item</option><option value="prayer">Prayer</option><option value="god-moment">God Moment</option><option value="general">General note</option>
+        </select></label>
+        <label id="noteScriptureField" class="text-field compact" hidden><span>Scripture / biblical truth to remember first (optional)</span><textarea id="noteScriptureInput" rows="2" maxlength="1000" placeholder="Remember what is true before bringing the request…"></textarea></label>
+        <label id="notePrayerStatusField" class="text-field compact" hidden><span>Prayer status</span><select id="notePrayerStatusInput"><option value="active">Still praying</option><option value="answered">Answered</option><option value="archived">Archived</option></select></label>
+        <div class="two-column-fields">
+          <label class="text-field compact"><span>Review date & time (optional)</span><input id="noteReviewAtInput" type="datetime-local" /></label>
+          <label class="text-field compact"><span>Snooze until (optional)</span><input id="noteSnoozedUntilInput" type="datetime-local" /></label>
+        </div>
+        <div class="two-column-fields">
+          <label class="text-field compact"><span>Source</span><select id="noteSourceInput"><option value="Daily Routine">Daily Routine</option><option value="Apple Watch">Apple Watch</option><option value="Pushcut">Pushcut</option><option value="Shortcut">Shortcut</option><option value="Apple Notes">Apple Notes</option><option value="Answered prayer">Answered prayer</option><option value="Imported Thought Inbox">Imported Thought Inbox</option></select></label>
+          <label class="toggle-field compact-toggle"><input id="notePinnedInput" type="checkbox" /><span><b>Pin this note</b><small>Keep it above unpinned notes.</small></span></label>
+        </div>
+        <label id="noteResurfaceField" class="toggle-field" hidden><input id="noteResurfaceInput" type="checkbox" checked /><span><b>Show this occasionally</b><small>Allow this God Moment to appear as a gentle reminder of God’s faithfulness.</small></span></label>
       </div>
-      <div class="two-column-fields">
-        <label class="text-field compact"><span>Source</span><select id="noteSourceInput"><option value="Daily Routine">Daily Routine</option><option value="Apple Watch">Apple Watch</option><option value="Pushcut">Pushcut</option><option value="Shortcut">Shortcut</option><option value="Apple Notes">Apple Notes</option><option value="Answered prayer">Answered prayer</option><option value="Imported Thought Inbox">Imported Thought Inbox</option></select></label>
-        <label class="toggle-field compact-toggle"><input id="notePinnedInput" type="checkbox" /><span><b>Pin this note</b><small>Keep it above unpinned notes.</small></span></label>
-      </div>
-      <label id="noteResurfaceField" class="toggle-field" hidden><input id="noteResurfaceInput" type="checkbox" checked /><span><b>Show this occasionally</b><small>Allow this God Moment to appear as a gentle reminder of God’s faithfulness.</small></span></label>
       <div class="dialog-actions"><button id="deleteNoteButton" class="danger-button" type="button" hidden>Delete</button><button class="primary-button" type="submit">Save note</button></div>
     </form>
   </dialog>
