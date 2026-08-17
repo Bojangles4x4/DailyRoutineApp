@@ -3,7 +3,7 @@
 
   const STORAGE_KEY = 'dailyRoutineApp.v1';
   const SNAPSHOT_KEY = 'dailyRoutineApp.snapshots.v1';
-  const APP_VERSION = '1.8.1';
+  const APP_VERSION = '1.8.2';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const DEFAULT_BIBLE_APP_URL = 'https://bojangles4x4.github.io/Bible-Reading-Plan/';
@@ -1539,7 +1539,7 @@
     const exportedAt = new Date().toISOString();
     state.settings.lastBackupAt = exportedAt;
     saveState();
-    downloadBlob(JSON.stringify({ version: '1.8.1', exportedAt, state }, null, 2), `daily-routine-backup-${dateKey(startOfToday())}.json`, 'application/json');
+    downloadBlob(JSON.stringify({ version: '1.8.2', exportedAt, state }, null, 2), `daily-routine-backup-${dateKey(startOfToday())}.json`, 'application/json');
     renderSetup(); renderToday(); showToast('Backup downloaded');
   }
 
