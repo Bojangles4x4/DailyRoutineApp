@@ -3,7 +3,7 @@
 
   const STORAGE_KEY = 'dailyRoutineApp.v1';
   const SNAPSHOT_KEY = 'dailyRoutineApp.snapshots.v1';
-  const APP_VERSION = '1.8.2';
+  const APP_VERSION = '1.8.3';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const DEFAULT_BIBLE_APP_URL = 'https://bojangles4x4.github.io/Bible-Reading-Plan/';
@@ -76,7 +76,7 @@
     godMomentReminder: $('godMomentReminder'), godMomentReminderText: $('godMomentReminderText'), godMomentReminderDate: $('godMomentReminderDate'), openGodMomentsButton: $('openGodMomentsButton'), backupReminder: $('backupReminder'), backupReminderText: $('backupReminderText'), openBackupButton: $('openBackupButton'),
     addNoteButton: $('addNoteButton'), notesOpenCount: $('notesOpenCount'), godMomentCount: $('godMomentCount'), notesDueCount: $('notesDueCount'), notesSearchInput: $('notesSearchInput'), notesTypeFilter: $('notesTypeFilter'), notesStatusFilter: $('notesStatusFilter'), notesResultsTitle: $('notesResultsTitle'), notesResultCount: $('notesResultCount'), notesList: $('notesList'), importGodMomentsInput: $('importGodMomentsInput'),
     reflectionReviewCard: $('reflectionReviewCard'), toggleReflectionReviewButton: $('toggleReflectionReviewButton'), reflectionReviewStatus: $('reflectionReviewStatus'), reflectionReviewPanel: $('reflectionReviewPanel'), reflectionReviewLists: $('reflectionReviewLists'), reviewDueCount: $('reviewDueCount'), reviewActionCount: $('reviewActionCount'), reviewPrayerCount: $('reviewPrayerCount'), reviewMomentCount: $('reviewMomentCount'), weeklyReflectionInput: $('weeklyReflectionInput'), finishReflectionReviewButton: $('finishReflectionReviewButton'),
-    noteDialog: $('noteDialog'), noteForm: $('noteForm'), noteDialogTitle: $('noteDialogTitle'), closeNoteDialogButton: $('closeNoteDialogButton'), editingNoteId: $('editingNoteId'), noteTextInput: $('noteTextInput'), noteTypeInput: $('noteTypeInput'), noteScriptureField: $('noteScriptureField'), noteScriptureInput: $('noteScriptureInput'), notePrayerStatusField: $('notePrayerStatusField'), notePrayerStatusInput: $('notePrayerStatusInput'), noteReviewAtInput: $('noteReviewAtInput'), noteSnoozedUntilInput: $('noteSnoozedUntilInput'), noteSourceInput: $('noteSourceInput'), notePinnedInput: $('notePinnedInput'), noteResurfaceField: $('noteResurfaceField'), noteResurfaceInput: $('noteResurfaceInput'), deleteNoteButton: $('deleteNoteButton'),
+    noteDialog: $('noteDialog'), noteForm: $('noteForm'), noteDialogTitle: $('noteDialogTitle'), closeNoteDialogButton: $('closeNoteDialogButton'), editingNoteId: $('editingNoteId'), noteTextInput: $('noteTextInput'), noteTypeInput: $('noteTypeInput'), noteScriptureField: $('noteScriptureField'), noteScriptureInput: $('noteScriptureInput'), notePrayerStatusField: $('notePrayerStatusField'), notePrayerStatusInput: $('notePrayerStatusInput'), noteReviewAtInput: $('noteReviewAtInput'), noteSnoozeField: $('noteSnoozeField'), noteSnoozedUntilInput: $('noteSnoozedUntilInput'), noteOptionalDetails: $('noteOptionalDetails'), noteSourceInput: $('noteSourceInput'), notePinnedInput: $('notePinnedInput'), noteResurfaceField: $('noteResurfaceField'), noteResurfaceInput: $('noteResurfaceInput'), deleteNoteButton: $('deleteNoteButton'),
     medicationInsights: $('medicationInsights'), weeklyReviewLabel: $('weeklyReviewLabel'), weeklyReviewSummary: $('weeklyReviewSummary'), weeklyFocusInput: $('weeklyFocusInput'), saveWeeklyFocusButton: $('saveWeeklyFocusButton'), memoryDialog: $('memoryDialog'), memoryForm: $('memoryForm'), closeMemoryDialogButton: $('closeMemoryDialogButton'), memoryTextInput: $('memoryTextInput'), memoryCategoryCaptureInput: $('memoryCategoryCaptureInput'), memoryDateTimeInput: $('memoryDateTimeInput'),
     createSnapshotButton: $('createSnapshotButton'), restoreSnapshotButton: $('restoreSnapshotButton'), snapshotStatus: $('snapshotStatus'), backupDownloadStatus: $('backupDownloadStatus'), appVersion: $('appVersion'), resurfacingFrequencyInput: $('resurfacingFrequencyInput'),
     connectionsCard: $('connectionsCard'), syncConnectionsButton: $('syncConnectionsButton'), bibleConnectionStatus: $('bibleConnectionStatus'), openBibleConnectionButton: $('openBibleConnectionButton'), bibleAppUrlInput: $('bibleAppUrlInput'), saveBibleConnectionButton: $('saveBibleConnectionButton'), testBibleConnectionButton: $('testBibleConnectionButton'), connectionTemplates: $('connectionTemplates'),
@@ -637,6 +637,8 @@
     els.notePrayerStatusInput.value = note?.prayerStatus || 'active';
     els.noteReviewAtInput.value = note?.reviewAt ? localDateTimeValue(new Date(note.reviewAt)) : '';
     els.noteSnoozedUntilInput.value = note?.snoozedUntil ? localDateTimeValue(new Date(note.snoozedUntil)) : '';
+    els.noteSnoozeField.hidden = !note;
+    els.noteOptionalDetails.open = Boolean(note?.snoozedUntil);
     els.noteSourceInput.value = [...els.noteSourceInput.options].some(option => option.value === source) ? source : 'Daily Routine';
     els.notePinnedInput.checked = Boolean(note?.pinned);
     els.noteResurfaceInput.checked = note?.resurface === undefined ? true : Boolean(note.resurface);
@@ -1539,7 +1541,7 @@
     const exportedAt = new Date().toISOString();
     state.settings.lastBackupAt = exportedAt;
     saveState();
-    downloadBlob(JSON.stringify({ version: '1.8.2', exportedAt, state }, null, 2), `daily-routine-backup-${dateKey(startOfToday())}.json`, 'application/json');
+    downloadBlob(JSON.stringify({ version: '1.8.3', exportedAt, state }, null, 2), `daily-routine-backup-${dateKey(startOfToday())}.json`, 'application/json');
     renderSetup(); renderToday(); showToast('Backup downloaded');
   }
 

@@ -438,14 +438,15 @@
         </select></label>
         <label id="noteScriptureField" class="text-field compact" hidden><span>Scripture / biblical truth to remember first (optional)</span><textarea id="noteScriptureInput" rows="2" maxlength="1000" placeholder="Remember what is true before bringing the request…"></textarea></label>
         <label id="notePrayerStatusField" class="text-field compact" hidden><span>Prayer status</span><select id="notePrayerStatusInput"><option value="active">Still praying</option><option value="answered">Answered</option><option value="archived">Archived</option></select></label>
-        <div class="two-column-fields">
-          <label class="text-field compact"><span>Review date & time (optional)</span><input id="noteReviewAtInput" type="datetime-local" /></label>
-          <label class="text-field compact"><span>Snooze until (optional)</span><input id="noteSnoozedUntilInput" type="datetime-local" /></label>
-        </div>
-        <div class="two-column-fields">
-          <label class="text-field compact"><span>Source</span><select id="noteSourceInput"><option value="Daily Routine">Daily Routine</option><option value="Apple Watch">Apple Watch</option><option value="Pushcut">Pushcut</option><option value="Shortcut">Shortcut</option><option value="Apple Notes">Apple Notes</option><option value="Answered prayer">Answered prayer</option><option value="Imported Thought Inbox">Imported Thought Inbox</option></select></label>
-          <label class="toggle-field compact-toggle"><input id="notePinnedInput" type="checkbox" /><span><b>Pin this note</b><small>Keep it above unpinned notes.</small></span></label>
-        </div>
+        <label class="text-field compact"><span>Bring this back on (optional)</span><input id="noteReviewAtInput" type="datetime-local" /><small class="field-help">Shows as ready in Review & Reflect after this time. It does not send a phone notification.</small></label>
+        <label class="toggle-field compact-toggle note-pin-toggle"><input id="notePinnedInput" type="checkbox" /><span><b>Pin this note</b><small>Keep it above unpinned notes.</small></span></label>
+        <details id="noteOptionalDetails" class="note-optional-details">
+          <summary>Optional details</summary>
+          <div class="note-optional-details-body">
+            <label id="noteSnoozeField" class="text-field compact" hidden><span>Snooze this note until</span><input id="noteSnoozedUntilInput" type="datetime-local" /><small class="field-help">Keep it out of Review & Reflect until this time.</small></label>
+            <label class="text-field compact"><span>Where this note came from</span><select id="noteSourceInput"><option value="Daily Routine">Daily Routine</option><option value="Apple Watch">Apple Watch</option><option value="Pushcut">Pushcut</option><option value="Shortcut">Shortcut</option><option value="Apple Notes">Apple Notes</option><option value="Answered prayer">Answered prayer</option><option value="Imported Thought Inbox">Imported Thought Inbox</option></select><small class="field-help">Set automatically for notes captured or imported through connected tools.</small></label>
+          </div>
+        </details>
         <label id="noteResurfaceField" class="toggle-field" hidden><input id="noteResurfaceInput" type="checkbox" checked /><span><b>Show this occasionally</b><small>Allow this God Moment to appear as a gentle reminder of God’s faithfulness.</small></span></label>
       </div>
       <div class="dialog-actions"><button id="deleteNoteButton" class="danger-button" type="button" hidden>Delete</button><button class="primary-button" type="submit">Save note</button></div>

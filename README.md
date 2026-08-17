@@ -2,9 +2,10 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.8.2 features
+## Version 1.8.3 features
 
-- Note capture stays within the phone viewport, with stacked date fields on iPhone
+- Note capture stays within the phone viewport, with stacked and fully inset date fields on iPhone
+- Simplified note capture with one resurfacing date and optional source/snooze details
 - Morning, Throughout the Day, and Evening routine sections
 - Custom wake-up and bedtime targets
 - Custom routine items with five input types:
