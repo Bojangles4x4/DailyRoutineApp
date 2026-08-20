@@ -253,6 +253,16 @@
           <p class="muted setup-help">A background photo stays only on this device. It is compressed before being saved.</p>
         </section>
 
+        <section class="card handedness-card">
+          <div class="section-heading"><div><p class="eyebrow">Accessibility</p><h2>One-handed controls</h2></div></div>
+          <label class="text-field compact"><span>Preferred hand</span><select id="handednessInput">
+            <option value="right">Right-handed · checks on right</option>
+            <option value="left">Left-handed · checks on left</option>
+          </select></label>
+          <div class="handedness-preview" aria-hidden="true"><span class="preview-check">✓</span><b>Example routine item</b><span class="preview-action">Skip</span></div>
+          <p class="muted setup-help">Keeps checks and bulk-complete controls near your thumb, while moving Skip to the opposite side to prevent accidental taps. Date arrows stay standard.</p>
+        </section>
+
         <section class="card">
           <div class="section-heading"><div><p class="eyebrow">Gentle reminders</p><h2>God Moment resurfacing</h2></div></div>
           <label class="text-field compact"><span>How often?</span><select id="resurfacingFrequencyInput"><option value="occasional">Occasionally</option><option value="weekly">Once a week</option><option value="never">Never</option></select></label>
@@ -282,6 +292,25 @@
             <button type="button" data-template="email"><span>✉</span><b>Email</b></button>
             <button type="button" data-template="maps"><span>⌖</span><b>Maps</b></button>
             <button type="button" data-template="internal"><span>◎</span><b>Inside app</b></button>
+          </div>
+        </section>
+
+        <section class="card apple-native-card" id="appleNativeCard" hidden>
+          <div class="section-heading"><div><p class="eyebrow">Apple integration</p><h2>Health & Watch</h2></div><span class="native-badge">Native app</span></div>
+          <p class="muted setup-help">Connect only the health categories you choose. Daily Routine reads a small summary and never silently changes your routine.</p>
+          <div class="apple-health-grid">
+            <div><strong id="appleStepCount">—</strong><span>Steps today</span></div>
+            <div><strong id="appleSleepHours">—</strong><span>Sleep hours</span></div>
+            <div><strong id="appleWorkoutCount">—</strong><span>Workouts</span></div>
+          </div>
+          <p id="appleHealthStatus" class="muted setup-help">Health access has not been requested.</p>
+          <div class="connection-actions">
+            <button id="connectAppleHealthButton" class="primary-button" type="button">Connect Health</button>
+            <button id="refreshAppleHealthButton" class="secondary-button" type="button">Refresh summary</button>
+          </div>
+          <div class="connection-status-card apple-watch-status">
+            <div class="connection-icon">⌚</div>
+            <div class="connection-copy"><strong>Apple Watch companion</strong><span id="appleWatchStatus">Ready for quick-action testing after the Watch app is installed.</span></div>
           </div>
         </section>
 

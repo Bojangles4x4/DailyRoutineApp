@@ -3,13 +3,13 @@
 
   const STORAGE_KEY = 'dailyRoutineApp.v1';
   const SNAPSHOT_KEY = 'dailyRoutineApp.snapshots.v1';
-  const APP_VERSION = '1.8.3';
+  const APP_VERSION = '1.8.4';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const DEFAULT_BIBLE_APP_URL = 'https://bojangles4x4.github.io/Bible-Reading-Plan/';
   const DEFAULT_SCALE = { min: 0, max: 10, step: 1, lowLabel: 'Low', highLabel: 'Great' };
   const DEFAULT_STATE = {
-    settings: { wakeTime: '06:00', bedTime: '22:30', theme: 'calm', backgroundImage: '', badgeEnabled: true, streakThreshold: 80, streakMode: 'forgiving', streakWeekdaysOnly: false, bibleAppUrl: DEFAULT_BIBLE_APP_URL, resurfacingFrequency: 'occasional', lastBackupAt: '' },
+    settings: { wakeTime: '06:00', bedTime: '22:30', theme: 'calm', handedness: 'right', backgroundImage: '', badgeEnabled: true, streakThreshold: 80, streakMode: 'forgiving', streakWeekdaysOnly: false, bibleAppUrl: DEFAULT_BIBLE_APP_URL, resurfacingFrequency: 'occasional', lastBackupAt: '' },
     items: [
       { id: 'morning-prayer', name: 'Prayer', kind: 'routine', section: 'morning', type: 'checkbox', frequency: 'daily', days: [], optional: false, unit: '', target: null },
       { id: 'morning-teeth', name: 'Brush teeth', kind: 'routine', section: 'morning', type: 'checkbox', frequency: 'daily', days: [], optional: false, unit: '', target: null },
@@ -63,7 +63,7 @@
     statCompleted: $('statCompleted'), statOptional: $('statOptional'), statStreak: $('statStreak'), statMood: $('statMood'), copySummaryButton: $('copySummaryButton'),
     historyList: $('historyList'), rangeSelector: $('rangeSelector'), progressOverall: $('progressOverall'), progress80Days: $('progress80Days'), progressTrackedDays: $('progressTrackedDays'),
     progressRangeNote: $('progressRangeNote'), weekSummary: $('weekSummary'), weekOverall: $('weekOverall'), sectionBreakdown: $('sectionBreakdown'), strongHabits: $('strongHabits'), weakHabits: $('weakHabits'), trendList: $('trendList'), patternInsights: $('patternInsights'),
-    wakeTimeInput: $('wakeTimeInput'), bedTimeInput: $('bedTimeInput'), streakThresholdInput: $('streakThresholdInput'), streakModeInput: $('streakModeInput'), streakWeekdaysOnlyInput: $('streakWeekdaysOnlyInput'), themeInput: $('themeInput'), backgroundImageInput: $('backgroundImageInput'), clearBackgroundButton: $('clearBackgroundButton'),
+    wakeTimeInput: $('wakeTimeInput'), bedTimeInput: $('bedTimeInput'), streakThresholdInput: $('streakThresholdInput'), streakModeInput: $('streakModeInput'), streakWeekdaysOnlyInput: $('streakWeekdaysOnlyInput'), themeInput: $('themeInput'), handednessInput: $('handednessInput'), backgroundImageInput: $('backgroundImageInput'), clearBackgroundButton: $('clearBackgroundButton'),
     routineEditor: $('routineEditor'), checkinEditor: $('checkinEditor'), addItemButton: $('addItemButton'), addCheckinButton: $('addCheckinButton'),
     exportCsvButton: $('exportCsvButton'), exportJsonButton: $('exportJsonButton'), importJsonInput: $('importJsonInput'), resetDataButton: $('resetDataButton'),
     itemDialog: $('itemDialog'), itemForm: $('itemForm'), builderEyebrow: $('builderEyebrow'), dialogTitle: $('dialogTitle'), editingItemId: $('editingItemId'), editingItemKind: $('editingItemKind'),
@@ -80,6 +80,7 @@
     medicationInsights: $('medicationInsights'), weeklyReviewLabel: $('weeklyReviewLabel'), weeklyReviewSummary: $('weeklyReviewSummary'), weeklyFocusInput: $('weeklyFocusInput'), saveWeeklyFocusButton: $('saveWeeklyFocusButton'), memoryDialog: $('memoryDialog'), memoryForm: $('memoryForm'), closeMemoryDialogButton: $('closeMemoryDialogButton'), memoryTextInput: $('memoryTextInput'), memoryCategoryCaptureInput: $('memoryCategoryCaptureInput'), memoryDateTimeInput: $('memoryDateTimeInput'),
     createSnapshotButton: $('createSnapshotButton'), restoreSnapshotButton: $('restoreSnapshotButton'), snapshotStatus: $('snapshotStatus'), backupDownloadStatus: $('backupDownloadStatus'), appVersion: $('appVersion'), resurfacingFrequencyInput: $('resurfacingFrequencyInput'),
     connectionsCard: $('connectionsCard'), syncConnectionsButton: $('syncConnectionsButton'), bibleConnectionStatus: $('bibleConnectionStatus'), openBibleConnectionButton: $('openBibleConnectionButton'), bibleAppUrlInput: $('bibleAppUrlInput'), saveBibleConnectionButton: $('saveBibleConnectionButton'), testBibleConnectionButton: $('testBibleConnectionButton'), connectionTemplates: $('connectionTemplates'),
+    appleNativeCard: $('appleNativeCard'), appleStepCount: $('appleStepCount'), appleSleepHours: $('appleSleepHours'), appleWorkoutCount: $('appleWorkoutCount'), appleHealthStatus: $('appleHealthStatus'), connectAppleHealthButton: $('connectAppleHealthButton'), refreshAppleHealthButton: $('refreshAppleHealthButton'), appleWatchStatus: $('appleWatchStatus'),
     linkedActionFields: $('linkedActionFields'), linkedTemplateInput: $('linkedTemplateInput'), linkedCompletionInput: $('linkedCompletionInput'), linkedUrlField: $('linkedUrlField'), linkedUrlInput: $('linkedUrlInput'), linkedInternalField: $('linkedInternalField'), linkedInternalTargetInput: $('linkedInternalTargetInput'), linkedButtonLabelInput: $('linkedButtonLabelInput'), timeWindowFields: $('timeWindowFields'), timeWindowStartInput: $('timeWindowStartInput'), timeWindowEndInput: $('timeWindowEndInput'),
     medicationProgressCard: $('medicationProgressCard'), weeklyReviewCard: $('weeklyReviewCard'), memoryBankCard: $('memoryBankCard'), dataBackupCard: $('dataBackupCard'),
     deleteItemButton: $('deleteItemButton'), closeDialogButton: $('closeDialogButton'), installButton: $('installButton'), toast: $('toast')
@@ -96,6 +97,7 @@
     bindNotesControls();
     bindProgressControls();
     bindSetupControls();
+    bindNativeAppleBridge();
     bindInstall();
     bindIntegrationEvents();
     applyPersonalization();
@@ -491,6 +493,7 @@
     els.streakModeInput.addEventListener('change', () => { state.settings.streakMode = els.streakModeInput.value; saveState(); renderAll(); });
     els.streakWeekdaysOnlyInput.addEventListener('change', () => { state.settings.streakWeekdaysOnly = els.streakWeekdaysOnlyInput.checked; saveState(); renderAll(); });
     els.themeInput.addEventListener('change', () => { state.settings.theme = els.themeInput.value; saveState(); applyPersonalization(); });
+    els.handednessInput.addEventListener('change', () => { state.settings.handedness = els.handednessInput.value === 'left' ? 'left' : 'right'; saveState(); applyPersonalization(); showToast('Control placement updated'); });
     els.resurfacingFrequencyInput.addEventListener('change', () => { state.settings.resurfacingFrequency = els.resurfacingFrequencyInput.value; saveState(); renderToday(); showToast('Resurfacing preference saved'); });
     els.backgroundImageInput.addEventListener('change', handleBackgroundImage);
     els.clearBackgroundButton.addEventListener('click', () => { state.settings.backgroundImage = ''; saveState(); applyPersonalization(); showToast('Background photo removed'); });
@@ -530,6 +533,51 @@
       await deferredInstallPrompt.userChoice;
       deferredInstallPrompt = null;
       els.installButton.hidden = true;
+    });
+  }
+
+  function bindNativeAppleBridge() {
+    const bridge = () => window.DailyRoutineNative;
+    const send = (action, value) => {
+      if (!bridge()?.postMessage) return false;
+      bridge().postMessage(value === undefined ? { action } : { action, value });
+      return true;
+    };
+    const reveal = () => {
+      if (!bridge()?.postMessage) return;
+      els.appleNativeCard.hidden = false;
+    };
+
+    reveal();
+    window.addEventListener('dailyRoutine:native-ready', reveal);
+    els.connectAppleHealthButton.addEventListener('click', () => {
+      els.appleHealthStatus.textContent = 'Waiting for your Health permission choice…';
+      send('health.authorization.request');
+    });
+    els.refreshAppleHealthButton.addEventListener('click', () => {
+      els.appleHealthStatus.textContent = 'Refreshing your on-device summary…';
+      send('health.summary.request');
+    });
+    window.addEventListener('dailyRoutine:native', event => {
+      const detail = event.detail || {};
+      if (detail.name === 'native.ready') {
+        const value = detail.value || {};
+        els.appleHealthStatus.textContent = value.healthAvailable ? 'Apple Health is available and ready to connect.' : 'Apple Health is not available on this device.';
+        els.appleWatchStatus.textContent = value.watchReachable ? 'Apple Watch is connected and reachable.' : 'Install and open the Watch companion to begin quick-action testing.';
+      } else if (detail.name === 'health.authorization.completed') {
+        els.appleHealthStatus.textContent = 'Health permission choice saved on this iPhone.';
+        send('health.summary.request');
+      } else if (detail.name === 'health.summary') {
+        const value = detail.value || {};
+        els.appleStepCount.textContent = Math.round(Number(value.stepCount) || 0).toLocaleString();
+        els.appleSleepHours.textContent = `${(Number(value.sleepHours) || 0).toFixed(1)}h`;
+        els.appleWorkoutCount.textContent = String(Math.round(Number(value.workoutCount) || 0));
+        els.appleHealthStatus.textContent = 'Summary refreshed from Apple Health on this device.';
+      } else if (detail.name === 'watch.event') {
+        els.appleWatchStatus.textContent = 'Watch action received. Routine mapping is ready for the next build step.';
+      } else if (detail.name === 'native.error') {
+        els.appleHealthStatus.textContent = detail.value?.message || 'The native connection could not complete that request.';
+      }
     });
   }
 
@@ -1304,6 +1352,7 @@
     els.streakModeInput.value = state.settings.streakMode || 'forgiving';
     els.streakWeekdaysOnlyInput.checked = Boolean(state.settings.streakWeekdaysOnly);
     els.themeInput.value = state.settings.theme || 'calm';
+    els.handednessInput.value = state.settings.handedness === 'left' ? 'left' : 'right';
     els.resurfacingFrequencyInput.value = ['occasional', 'weekly', 'never'].includes(state.settings.resurfacingFrequency) ? state.settings.resurfacingFrequency : 'occasional';
     els.appVersion.textContent = `v${APP_VERSION}`;
     els.bibleAppUrlInput.value = state.settings.bibleAppUrl || DEFAULT_BIBLE_APP_URL;
@@ -1492,6 +1541,7 @@
 
   function applyPersonalization() {
     document.body.dataset.theme = state.settings.theme || 'calm';
+    document.body.dataset.handedness = state.settings.handedness === 'left' ? 'left' : 'right';
     document.body.style.setProperty('--custom-bg', state.settings.backgroundImage ? `url("${state.settings.backgroundImage}")` : 'none');
     document.body.classList.toggle('has-custom-bg', Boolean(state.settings.backgroundImage));
   }
@@ -1541,7 +1591,7 @@
     const exportedAt = new Date().toISOString();
     state.settings.lastBackupAt = exportedAt;
     saveState();
-    downloadBlob(JSON.stringify({ version: '1.8.3', exportedAt, state }, null, 2), `daily-routine-backup-${dateKey(startOfToday())}.json`, 'application/json');
+    downloadBlob(JSON.stringify({ version: APP_VERSION, exportedAt, state }, null, 2), `daily-routine-backup-${dateKey(startOfToday())}.json`, 'application/json');
     renderSetup(); renderToday(); showToast('Backup downloaded');
   }
 

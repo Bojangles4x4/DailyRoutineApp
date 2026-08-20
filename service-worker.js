@@ -1,4 +1,4 @@
-const CACHE_NAME = 'daily-routine-v1-8-3-ios-datetime-edges';
+const CACHE_NAME = 'daily-routine-v1-8-4-handedness';
 const ASSETS = ['./','./index.html','./styles.css','./app.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install', event => {
