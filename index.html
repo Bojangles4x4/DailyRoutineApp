@@ -23,6 +23,30 @@
     </header>
 
     <main id="appMain" class="main-content" tabindex="-1">
+
+      <section id="truthView" class="view truth-view" aria-labelledby="pageTitle">
+        <section class="truth-hero">
+          <p class="eyebrow">Begin with what is true</p>
+          <h2>Truth Before Tasks</h2>
+          <p class="truth-intro">Before plans, pressure, or productivity, take a few quiet minutes to remember who God is and what Christ has done.</p>
+          <div class="truth-progress" aria-label="Opening meditation progress"><span id="truthProgressBar"></span></div>
+          <p id="truthProgressText" class="muted truth-progress-text" aria-live="polite"></p>
+        </section>
+        <section class="card truth-stage">
+          <div class="truth-step-heading">
+            <p id="truthStepLabel" class="eyebrow">Step 1 of 5</p>
+            <h3 id="truthStepTitle">A plea from a clear moment</h3>
+          </div>
+          <div id="truthStepBody" class="truth-step-body"></div>
+          <div class="truth-controls">
+            <button id="truthPreviousButton" class="secondary-button" type="button">Previous</button>
+            <button id="truthContinueButton" class="primary-button" type="button">Continue</button>
+          </div>
+          <button id="truthEnterDayButton" class="primary-button truth-enter-button" type="button" disabled>Enter the Day</button>
+          <p class="muted micro-copy truth-gospel-note">This practice does not earn God’s acceptance. It helps you begin from the acceptance, righteousness, and life already given in Christ.</p>
+        </section>
+      </section>
+
       <section id="todayView" class="view active" aria-labelledby="pageTitle">
         <section class="hero-card">
           <div class="hero-copy">
@@ -351,7 +375,35 @@
           </div>
           <p id="snapshotStatus" class="muted micro-copy"></p>
           <p id="backupDownloadStatus" class="muted micro-copy"></p>
-          <p class="app-version">Daily Routine <b id="appVersion">v1.8</b></p>
+          <p class="app-version">Daily Routine <b id="appVersion">v1.9.0</b></p>
+        </section>
+
+
+        <section class="card truth-settings-card">
+          <div class="section-heading"><div><p class="eyebrow">Opening practice</p><h2>Truth Before Tasks</h2></div></div>
+          <p class="muted">Edit the words you will see before the rest of the app unlocks each day. Core identity truths remain daily; one supporting theme rotates from the content bank.</p>
+          <div class="form-stack truth-copy-fields">
+            <label class="text-field"><span>Personal plea</span><textarea id="truthPleaInput" rows="5"></textarea></label>
+            <label class="text-field"><span>Opening prayer</span><textarea id="truthPrayerInput" rows="4"></textarea></label>
+            <label class="text-field"><span>Core identity truths <small>(one per line)</small></span><textarea id="truthCoreInput" rows="5"></textarea></label>
+            <button id="saveTruthCopyButton" class="primary-button" type="button">Save opening words</button>
+          </div>
+          <div class="truth-bank-heading">
+            <div><p class="eyebrow">Rotating content bank</p><h3>Supporting themes</h3></div>
+            <p class="muted micro-copy">Each day uses one complete theme so the teaching and Scriptures stay coherent.</p>
+          </div>
+          <div id="truthThemeList" class="truth-theme-list"></div>
+          <form id="truthThemeForm" class="truth-theme-form">
+            <input id="truthThemeIdInput" type="hidden" />
+            <label class="text-field"><span>Theme name</span><input id="truthThemeNameInput" type="text" required /></label>
+            <label class="text-field"><span>Who God is</span><textarea id="truthWhoGodInput" rows="3" required></textarea></label>
+            <label class="text-field"><span>What Christ has done</span><textarea id="truthChristInput" rows="3" required></textarea></label>
+            <label class="text-field"><span>Scriptures <small>(2–3 lines; Reference | passage)</small></span><textarea id="truthScripturesInput" rows="5" required placeholder="Romans 8:1 | There is therefore now no condemnation..."></textarea></label>
+            <div class="form-actions">
+              <button id="truthThemeSubmitButton" class="primary-button" type="submit">Add theme</button>
+              <button id="truthThemeCancelButton" class="secondary-button" type="button" hidden>Cancel edit</button>
+            </div>
+          </form>
         </section>
 
         <section class="card private-sharing-card">

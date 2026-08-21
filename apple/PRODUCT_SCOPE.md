@@ -16,6 +16,8 @@ Recent Daily Routine work points to a clear native product direction:
 
 ### Phase 1 — Native shell and safe migration
 
+- Make Truth Before Tasks the daily opening gate: a minimum three-minute, Scripture-centered meditation completed before the rest of the app unlocks.
+- Remember completion for the local calendar day while keeping the practice rooted in grace rather than achievement.
 - Bundle the current web experience inside the iPhone app for reliable offline use.
 - Add an explicit import path for an existing Daily Routine JSON backup.
 - Add a native bridge status screen so Health and Watch connections are understandable.
