@@ -1,4 +1,4 @@
-const CACHE_NAME = 'daily-routine-v1-9-1-fixed-bottom-nav';
+const CACHE_NAME = 'daily-routine-v1-9-2-medication-time-warning';
 const ASSETS = ['./','./index.html','./styles.css','./app.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install', event => {

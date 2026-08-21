@@ -3,7 +3,7 @@
 
   const STORAGE_KEY = 'dailyRoutineApp.v1';
   const SNAPSHOT_KEY = 'dailyRoutineApp.snapshots.v1';
-  const APP_VERSION = '1.9.1';
+  const APP_VERSION = '1.9.2';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const DEFAULT_BIBLE_APP_URL = 'https://bojangles4x4.github.io/Bible-Reading-Plan/';
@@ -1755,6 +1755,22 @@
     return value && typeof value === 'object' && value.taken ? (value.time || '') : '';
   }
 
+  function medicationPeriodWarning(item, time) {
+    if (!time || !['morning', 'evening'].includes(item.section)) return '';
+    const hours = Number(time.split(':')[0]);
+    if (!Number.isFinite(hours)) return '';
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const expectedPeriod = item.section === 'morning' ? 'AM' : 'PM';
+    if (period === expectedPeriod) return '';
+    const section = item.section === 'morning' ? 'Morning' : 'Evening';
+    return `${item.name} is in your ${section} routine, but ${formatTime(time)} was entered.\n\nLog it under ${section} anyway?`;
+  }
+
+  function confirmMedicationPeriod(item, time) {
+    const warning = medicationPeriodWarning(item, time);
+    return !warning || confirm(warning);
+  }
+
   function buildMedicationRow(row, item, value) {
     const taken = entryIsLogged(item, value), time = medicationTime(value), dose = value?.dose ?? item.medicationDose ?? '', note = value?.note ?? '';
     row.classList.toggle('done', taken);
@@ -1778,6 +1794,11 @@
 
   function saveMedicationTime(item, time, rerender = true) {
     const key = dateKey(selectedDate), day = ensureDay(key), previous = structuredClone(day.entries[item.id]);
+    if (!confirmMedicationPeriod(item, time)) {
+      if (rerender) renderToday();
+      showToast('Medication time not changed');
+      return false;
+    }
     const selected = fromDateKey(key), existing = day.entries[item.id] && typeof day.entries[item.id] === 'object' ? day.entries[item.id] : {};
     if (time) {
       const [hours, minutes] = time.split(':').map(Number); selected.setHours(hours, minutes, 0, 0);
@@ -1785,6 +1806,7 @@
     } else day.entries[item.id] = { ...existing, taken: true, time: '', timestamp: null, dose: existing.dose ?? item.medicationDose ?? '', note: existing.note ?? '' };
     pushUndo(`Log ${item.name}`, () => { const target = ensureDay(key); if (previous === undefined) delete target.entries[item.id]; else target.entries[item.id] = previous; localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); renderToday(); renderHistory(); });
     saveState(); if (rerender) renderToday(); else renderStats(); showToast(time ? `Medication logged at ${formatTime(time)}` : 'Medication logged');
+    return true;
   }
 
   function saveMedicationDetail(item, field, value) {
