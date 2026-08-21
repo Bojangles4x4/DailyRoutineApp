@@ -9,6 +9,10 @@ struct WatchContentView: View {
         return min(max(Double(context.completed) / Double(context.total), 0), 1)
     }
 
+    private var truthBeforeTasksComplete: Bool {
+        session.context?.truthBeforeTasksComplete == true
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -23,8 +27,12 @@ struct WatchContentView: View {
                     VStack(spacing: 10) {
                         statusHeader
                         progressCard
-                        quickActions
-                        moodCard
+                        if truthBeforeTasksComplete {
+                            quickActions
+                            moodCard
+                        } else {
+                            truthLockCard
+                        }
 
                         if let deliveryStatus = session.deliveryStatus {
                             Label(
@@ -91,7 +99,11 @@ struct WatchContentView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("\(session.context?.completed ?? 0) of \(session.context?.total ?? 0)")
                     .font(.system(.title3, design: .rounded, weight: .bold))
-                Text(session.context?.nextItemName.map { "Next: \($0)" } ?? "Open iPhone to sync today")
+                Text(
+                    truthBeforeTasksComplete
+                        ? session.context?.nextItemName.map { "Next: \($0)" } ?? "Today’s routine is complete"
+                        : "Begin with Truth Before Tasks on iPhone"
+                )
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(3)
@@ -108,6 +120,27 @@ struct WatchContentView: View {
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
+    private var truthLockCard: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "lock.shield.fill")
+                .font(.title2)
+                .foregroundStyle(.yellow)
+                .accessibilityHidden(true)
+            Text("Complete Truth Before Tasks on iPhone")
+                .font(.headline)
+                .multilineTextAlignment(.center)
+            Text("Quick actions will unlock as soon as today’s opening is complete.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(12)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("truthBeforeTasksLock")
+    }
+
     private var quickActions: some View {
         VStack(spacing: 8) {
             Button {
@@ -120,7 +153,7 @@ struct WatchContentView: View {
             .buttonStyle(.borderedProminent)
             .buttonBorderShape(.roundedRectangle(radius: 14))
             .tint(.mint)
-            .disabled(session.context?.canCompleteNext == false)
+            .disabled(session.context?.canCompleteNext != true)
 
             Button {
                 session.send(WatchEvent(action: .addWater, value: 1))

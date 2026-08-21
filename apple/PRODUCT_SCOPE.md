@@ -33,6 +33,7 @@ Recent Daily Routine work points to a clear native product direction:
 ### Phase 3 — Apple Watch quick actions
 
 - Show today’s completion summary.
+- Require Truth Before Tasks on iPhone before enabling Watch quick actions.
 - Complete the next routine item.
 - Add one water unit.
 - Record a lightweight mood check-in.

@@ -62,6 +62,10 @@ struct DailyRoutineWidgetView: View {
     @Environment(\.widgetFamily) private var family
     let entry: RoutineTimelineEntry
 
+    private var truthIsLocked: Bool {
+        entry.snapshot.truthBeforeTasksComplete == false
+    }
+
     var body: some View {
         switch family {
         case .accessoryCircular:
@@ -73,52 +77,83 @@ struct DailyRoutineWidgetView: View {
         }
     }
 
+    @ViewBuilder
     private var circularView: some View {
-        Gauge(value: entry.snapshot.progress) {
-            Image(systemName: "checkmark")
-        } currentValueLabel: {
-            Text("\(entry.snapshot.completed)")
-                .font(.system(.headline, design: .rounded, weight: .bold))
-        }
-        .gaugeStyle(.accessoryCircularCapacity)
-        .widgetAccentable()
-        .accessibilityLabel("Routine progress")
-        .accessibilityValue("\(entry.snapshot.completed) of \(entry.snapshot.total) complete")
-    }
-
-    private var inlineView: some View {
-        Label(
-            "\(entry.snapshot.completed)/\(entry.snapshot.total) • \(entry.snapshot.nextItemName ?? "Routine")",
-            systemImage: "checkmark.circle"
-        )
-    }
-
-    private var rectangularView: some View {
-        HStack(spacing: 9) {
+        if truthIsLocked {
+            Image(systemName: "lock.fill")
+                .font(.title3)
+                .widgetAccentable()
+                .accessibilityLabel("Truth Before Tasks is required on iPhone")
+        } else {
             Gauge(value: entry.snapshot.progress) {
                 Image(systemName: "checkmark")
             } currentValueLabel: {
-                Text("\(Int((entry.snapshot.progress * 100).rounded()))%")
-                    .font(.system(.caption, design: .rounded, weight: .bold))
+                Text("\(entry.snapshot.completed)")
+                    .font(.system(.headline, design: .rounded, weight: .bold))
             }
             .gaugeStyle(.accessoryCircularCapacity)
             .widgetAccentable()
-            .frame(width: 42, height: 42)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text("TODAY")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(.secondary)
-                Text("\(entry.snapshot.completed) of \(entry.snapshot.total) complete")
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                Text(entry.snapshot.nextItemName.map { "Next: \($0)" } ?? "Open Daily Routine")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
+            .accessibilityLabel("Routine progress")
+            .accessibilityValue("\(entry.snapshot.completed) of \(entry.snapshot.total) complete")
         }
-        .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder
+    private var inlineView: some View {
+        if truthIsLocked {
+            Label("Truth Before Tasks", systemImage: "lock.fill")
+        } else {
+            Label(
+                "\(entry.snapshot.completed)/\(entry.snapshot.total) • \(entry.snapshot.nextItemName ?? "Routine")",
+                systemImage: "checkmark.circle"
+            )
+        }
+    }
+
+    @ViewBuilder
+    private var rectangularView: some View {
+        if truthIsLocked {
+            HStack(spacing: 9) {
+                Image(systemName: "lock.shield.fill")
+                    .font(.title2)
+                    .widgetAccentable()
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("TRUTH BEFORE TASKS")
+                        .font(.system(size: 10, weight: .bold))
+                    Text("Begin on iPhone")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Complete Truth Before Tasks on iPhone")
+        } else {
+            HStack(spacing: 9) {
+                Gauge(value: entry.snapshot.progress) {
+                    Image(systemName: "checkmark")
+                } currentValueLabel: {
+                    Text("\(Int((entry.snapshot.progress * 100).rounded()))%")
+                        .font(.system(.caption, design: .rounded, weight: .bold))
+                }
+                .gaugeStyle(.accessoryCircularCapacity)
+                .widgetAccentable()
+                .frame(width: 42, height: 42)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("TODAY")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.secondary)
+                    Text("\(entry.snapshot.completed) of \(entry.snapshot.total) complete")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                    Text(entry.snapshot.nextItemName.map { "Next: \($0)" } ?? "Open Daily Routine")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+            .accessibilityElement(children: .combine)
+        }
     }
 }
 

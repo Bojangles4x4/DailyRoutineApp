@@ -5,6 +5,7 @@ struct RoutineWidgetSnapshot: Codable, Sendable {
     let total: Int
     let nextItemName: String?
     let lastActionMessage: String?
+    let truthBeforeTasksComplete: Bool?
     let updatedAt: Date
 
     init(
@@ -12,12 +13,14 @@ struct RoutineWidgetSnapshot: Codable, Sendable {
         total: Int,
         nextItemName: String?,
         lastActionMessage: String?,
+        truthBeforeTasksComplete: Bool? = nil,
         updatedAt: Date = Date()
     ) {
         self.completed = completed
         self.total = total
         self.nextItemName = nextItemName
         self.lastActionMessage = lastActionMessage
+        self.truthBeforeTasksComplete = truthBeforeTasksComplete
         self.updatedAt = updatedAt
     }
 
@@ -26,7 +29,8 @@ struct RoutineWidgetSnapshot: Codable, Sendable {
             completed: context.completed,
             total: context.total,
             nextItemName: context.nextItemName,
-            lastActionMessage: context.lastActionMessage
+            lastActionMessage: context.lastActionMessage,
+            truthBeforeTasksComplete: context.truthBeforeTasksComplete
         )
     }
 
@@ -34,7 +38,8 @@ struct RoutineWidgetSnapshot: Codable, Sendable {
         completed: 6,
         total: 9,
         nextItemName: "Evening walk",
-        lastActionMessage: nil
+        lastActionMessage: nil,
+        truthBeforeTasksComplete: true
     )
 
     var progress: Double {

@@ -10,10 +10,41 @@ final class WatchSessionManager: NSObject, ObservableObject {
 
     override init() {
         super.init()
+#if DEBUG
+        if let testContext = Self.uiTestContext() {
+            context = testContext
+            isReachable = true
+            return
+        }
+#endif
         guard WCSession.isSupported() else { return }
         WCSession.default.delegate = self
         WCSession.default.activate()
     }
+
+#if DEBUG
+    private static func uiTestContext() -> WatchRoutineContext? {
+        let arguments = ProcessInfo.processInfo.arguments
+        let truthComplete: Bool
+        if arguments.contains("UI_TESTING_TRUTH_COMPLETE") {
+            truthComplete = true
+        } else if arguments.contains("UI_TESTING_TRUTH_REQUIRED") {
+            truthComplete = false
+        } else {
+            return nil
+        }
+
+        return WatchRoutineContext(
+            dateKey: "2026-08-21",
+            completed: 4,
+            total: 9,
+            nextItemName: truthComplete ? "Morning walk" : "Complete Truth Before Tasks on iPhone",
+            canCompleteNext: truthComplete,
+            truthBeforeTasksComplete: truthComplete,
+            lastActionMessage: nil
+        )
+    }
+#endif
 
     func send(_ event: WatchEvent) {
         guard let data = try? JSONEncoder().encode(event) else { return }
