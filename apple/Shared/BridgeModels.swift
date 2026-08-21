@@ -48,4 +48,6 @@ struct WatchRoutineContext: Codable, Sendable {
     let completed: Int
     let total: Int
     let nextItemName: String?
+    let canCompleteNext: Bool?
+    let lastActionMessage: String?
 }

@@ -53,6 +53,8 @@
   let pendingLinkedAction = null;
   let integrationChannel = null;
   let reflectionReviewExpanded = false;
+  let watchLastActionMessage = '';
+  const processedWatchEventIds = new Set();
   const collapsedSections = new Set();
 
   const $ = id => document.getElementById(id);
@@ -219,6 +221,7 @@
   function saveState() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     maybeAutoSnapshot();
+    syncWatchContext();
   }
 
   function snapshotPayload() {
@@ -538,11 +541,6 @@
 
   function bindNativeAppleBridge() {
     const bridge = () => window.DailyRoutineNative;
-    const send = (action, value) => {
-      if (!bridge()?.postMessage) return false;
-      bridge().postMessage(value === undefined ? { action } : { action, value });
-      return true;
-    };
     const reveal = () => {
       if (!bridge()?.postMessage) return;
       els.appleNativeCard.hidden = false;
@@ -552,21 +550,22 @@
     window.addEventListener('dailyRoutine:native-ready', reveal);
     els.connectAppleHealthButton.addEventListener('click', () => {
       els.appleHealthStatus.textContent = 'Waiting for your Health permission choice…';
-      send('health.authorization.request');
+      sendNativeBridgeMessage('health.authorization.request');
     });
     els.refreshAppleHealthButton.addEventListener('click', () => {
       els.appleHealthStatus.textContent = 'Refreshing your on-device summary…';
-      send('health.summary.request');
+      sendNativeBridgeMessage('health.summary.request');
     });
     window.addEventListener('dailyRoutine:native', event => {
       const detail = event.detail || {};
       if (detail.name === 'native.ready') {
         const value = detail.value || {};
         els.appleHealthStatus.textContent = value.healthAvailable ? 'Apple Health is available and ready to connect.' : 'Apple Health is not available on this device.';
-        els.appleWatchStatus.textContent = value.watchReachable ? 'Apple Watch is connected and reachable.' : 'Install and open the Watch companion to begin quick-action testing.';
+        els.appleWatchStatus.textContent = value.watchReachable ? 'Apple Watch is connected and reachable.' : value.watchInstalled ? 'Open Daily Routine on Apple Watch to enable live quick actions.' : 'Install the Daily Routine Watch companion to begin quick-action testing.';
+        syncWatchContext();
       } else if (detail.name === 'health.authorization.completed') {
         els.appleHealthStatus.textContent = 'Health permission choice saved on this iPhone.';
-        send('health.summary.request');
+        sendNativeBridgeMessage('health.summary.request');
       } else if (detail.name === 'health.summary') {
         const value = detail.value || {};
         els.appleStepCount.textContent = Math.round(Number(value.stepCount) || 0).toLocaleString();
@@ -574,11 +573,129 @@
         els.appleWorkoutCount.textContent = String(Math.round(Number(value.workoutCount) || 0));
         els.appleHealthStatus.textContent = 'Summary refreshed from Apple Health on this device.';
       } else if (detail.name === 'watch.event') {
-        els.appleWatchStatus.textContent = 'Watch action received. Routine mapping is ready for the next build step.';
+        handleWatchEvent(detail.value || {});
+      } else if (detail.name === 'watch.context.updated') {
+        els.appleWatchStatus.textContent = detail.value?.queued ? 'Today’s progress is ready and will sync when the Watch companion finishes installing.' : watchLastActionMessage || 'Today’s progress is synced with Apple Watch.';
       } else if (detail.name === 'native.error') {
         els.appleHealthStatus.textContent = detail.value?.message || 'The native connection could not complete that request.';
       }
     });
+  }
+
+  function sendNativeBridgeMessage(action, value) {
+    const bridge = window.DailyRoutineNative;
+    if (!bridge?.postMessage) return false;
+    bridge.postMessage(value === undefined ? { action } : { action, value });
+    return true;
+  }
+
+  function watchActionableItems(date, day) {
+    const sectionOrder = { morning: 0, day: 1, evening: 2 };
+    return scheduledItemsForDate(date)
+      .filter(item => item.kind === 'routine' && item.type === 'checkbox' && !day.skippedItems?.[item.id] && !entryMeetsTarget(item, day.entries?.[item.id]))
+      .sort((a, b) => (sectionOrder[a.section] ?? 9) - (sectionOrder[b.section] ?? 9) || (a.order ?? 0) - (b.order ?? 0));
+  }
+
+  function watchRoutineContext() {
+    const today = startOfToday();
+    const day = state.days[dateKey(today)] || { entries: {}, skippedItems: {} };
+    const completion = completionForDate(today);
+    const next = watchActionableItems(today, day)[0];
+    return {
+      dateKey: dateKey(today),
+      completed: completion.completed,
+      total: completion.total,
+      nextItemName: next?.name || null,
+      canCompleteNext: Boolean(next),
+      lastActionMessage: watchLastActionMessage || null
+    };
+  }
+
+  function syncWatchContext() {
+    return sendNativeBridgeMessage('watch.context.update', watchRoutineContext());
+  }
+
+  function watchMoodItem(items) {
+    const candidates = items.filter(item => item.type === 'scale' && /mood|overall day/i.test(item.name));
+    const currentSection = new Date().getHours() >= 17 ? 'evening' : new Date().getHours() < 12 ? 'morning' : 'day';
+    return candidates.sort((a, b) => {
+      const rank = item => item.section === currentSection ? 0 : /mood/i.test(item.name) ? 1 : item.section === 'evening' ? 2 : 3;
+      return rank(a) - rank(b) || (a.order ?? 0) - (b.order ?? 0);
+    })[0];
+  }
+
+  function saveWatchEntry(item, value, message) {
+    const key = dateKey(startOfToday());
+    const day = ensureDay(key);
+    const hadPrevious = Object.prototype.hasOwnProperty.call(day.entries, item.id);
+    const previous = hadPrevious ? structuredClone(day.entries[item.id]) : undefined;
+    day.entries[item.id] = value;
+    watchLastActionMessage = message;
+    pushUndo(message, () => {
+      const target = ensureDay(key);
+      if (hadPrevious) target.entries[item.id] = previous;
+      else delete target.entries[item.id];
+      watchLastActionMessage = `${item.name} was undone on iPhone`;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      syncWatchContext();
+      renderAll();
+    });
+    saveState();
+    renderAll();
+    els.appleWatchStatus.textContent = message;
+    showToast(message);
+  }
+
+  function handleWatchEvent(event) {
+    const eventId = String(event.id || '');
+    if (!eventId || processedWatchEventIds.has(eventId)) return;
+    processedWatchEventIds.add(eventId);
+    if (processedWatchEventIds.size > 200) processedWatchEventIds.delete(processedWatchEventIds.values().next().value);
+
+    const today = startOfToday();
+    const day = ensureDay(dateKey(today));
+    const scheduled = scheduledItemsForDate(today).filter(item => !day.skippedItems?.[item.id]);
+    let item;
+
+    if (event.action === 'completeNext') {
+      item = watchActionableItems(today, day)[0];
+      if (item) saveWatchEntry(item, true, `${item.name} completed from Apple Watch`);
+      else {
+        watchLastActionMessage = 'No unfinished checkbox routines';
+        els.appleWatchStatus.textContent = watchLastActionMessage;
+        syncWatchContext();
+        showToast(watchLastActionMessage);
+      }
+      return;
+    }
+
+    if (event.action === 'addWater') {
+      item = scheduled.find(candidate => candidate.id === 'day-water') || scheduled.find(candidate => candidate.type === 'number' && /water/i.test(candidate.name));
+      if (item) {
+        const amount = Number.isFinite(Number(event.value)) && Number(event.value) > 0 ? Number(event.value) : 1;
+        const next = Math.max(0, (Number(day.entries[item.id]) || 0) + amount);
+        saveWatchEntry(item, next, `${item.name} updated to ${formatNumber(next)}${item.unit ? ` ${item.unit}` : ''}`);
+      } else {
+        watchLastActionMessage = 'Add a Water number routine on iPhone first';
+        els.appleWatchStatus.textContent = watchLastActionMessage;
+        syncWatchContext();
+        showToast(watchLastActionMessage);
+      }
+      return;
+    }
+
+    if (event.action === 'recordMood') {
+      item = watchMoodItem(scheduled);
+      if (item) {
+        const mood = clampScale(Number(event.value), normalizeScale(item.scale));
+        saveWatchEntry(item, mood, `${item.name} saved as ${formatNumber(mood)}`);
+      } else {
+        watchLastActionMessage = 'Add a mood rating on iPhone first';
+        els.appleWatchStatus.textContent = watchLastActionMessage;
+        syncWatchContext();
+        showToast(watchLastActionMessage);
+      }
+    }
   }
 
   function allNoteRecords() {

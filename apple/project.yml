@@ -8,6 +8,17 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
     CODE_SIGN_STYLE: Automatic
+schemes:
+  DailyRoutineWatch:
+    build:
+      targets:
+        DailyRoutineWatch: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - DailyRoutineWatchUITests
 targets:
   DailyRoutine:
     type: application
@@ -56,10 +67,22 @@ targets:
       path: Config/DailyRoutineWatch-Info.plist
       properties:
         CFBundleDisplayName: Daily Routine
-        WKWatchKitApp: true
+        WKApplication: true
         WKCompanionAppBundleIdentifier: com.bojangles4x4.DailyRoutine
         WKRunsIndependentlyOfCompanionApp: false
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.bojangles4x4.DailyRoutine.watchkitapp
-        SKIP_INSTALL: false
+        SKIP_INSTALL: true
+  DailyRoutineWatchUITests:
+    type: bundle.ui-testing
+    platform: watchOS
+    sources:
+      - path: Tests/WatchUITests
+    dependencies:
+      - target: DailyRoutineWatch
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: true
+        PRODUCT_BUNDLE_IDENTIFIER: com.bojangles4x4.DailyRoutine.watchuitests
+        TEST_TARGET_NAME: DailyRoutineWatch

@@ -5,6 +5,7 @@ import WatchConnectivity
 final class WatchSessionManager: NSObject, ObservableObject {
     @Published private(set) var context: WatchRoutineContext?
     @Published private(set) var isReachable = false
+    @Published private(set) var deliveryStatus: String?
 
     override init() {
         super.init()
@@ -20,9 +21,14 @@ final class WatchSessionManager: NSObject, ObservableObject {
         if WCSession.default.isReachable {
             WCSession.default.sendMessage(payload, replyHandler: nil) { _ in
                 WCSession.default.transferUserInfo(payload)
+                Task { @MainActor in
+                    self.deliveryStatus = "Queued for iPhone"
+                }
             }
+            deliveryStatus = "Sent to iPhone"
         } else {
             WCSession.default.transferUserInfo(payload)
+            deliveryStatus = "Queued for iPhone"
         }
     }
 
