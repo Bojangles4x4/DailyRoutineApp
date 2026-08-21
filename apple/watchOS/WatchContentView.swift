@@ -7,6 +7,16 @@ struct WatchContentView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section("Quick actions") {
+                    Button(WatchQuickAction.completeNext.title) {
+                        session.send(WatchEvent(action: .completeNext))
+                    }
+                    .disabled(session.context?.canCompleteNext == false)
+                    Button(WatchQuickAction.addWater.title) {
+                        session.send(WatchEvent(action: .addWater, value: 1))
+                    }
+                }
+
                 if let context = session.context {
                     Section("Today") {
                         Text("\(context.completed) of \(context.total) complete")
@@ -15,15 +25,19 @@ struct WatchContentView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
+                        if let message = context.lastActionMessage {
+                            Label(message, systemImage: "checkmark.circle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.green)
+                        }
                     }
                 }
 
-                Section("Quick actions") {
-                    Button(WatchQuickAction.completeNext.title) {
-                        session.send(WatchEvent(action: .completeNext))
-                    }
-                    Button(WatchQuickAction.addWater.title) {
-                        session.send(WatchEvent(action: .addWater, value: 1))
+                if let deliveryStatus = session.deliveryStatus {
+                    Section {
+                        Label(deliveryStatus, systemImage: session.isReachable ? "iphone.and.arrow.forward" : "clock.arrow.circlepath")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
 

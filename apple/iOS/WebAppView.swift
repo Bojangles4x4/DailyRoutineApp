@@ -47,6 +47,9 @@ struct WebAppView: UIViewRepresentable {
     @MainActor
     final class Coordinator: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         private let model: AppModel
+        private var isWebAppReady = false
+        private var pendingWatchEvents: [WatchEvent] = []
+        private var processedWatchEventIDs = Set<UUID>()
         weak var webView: WKWebView?
 
         init(model: AppModel) {
@@ -55,7 +58,16 @@ struct WebAppView: UIViewRepresentable {
 
         func connectWatchEvents() {
             model.watch.onEvent = { [weak self] event in
-                self?.emit(name: "watch.event", value: event)
+                self?.receiveWatchEvent(event)
+            }
+        }
+
+        private func receiveWatchEvent(_ event: WatchEvent) {
+            guard processedWatchEventIDs.insert(event.id).inserted else { return }
+            if isWebAppReady {
+                emit(name: "watch.event", value: event)
+            } else {
+                pendingWatchEvents.append(event)
             }
         }
 
@@ -97,23 +109,23 @@ struct WebAppView: UIViewRepresentable {
                     emitError("The Watch context was not valid.")
                     return
                 }
-                do {
-                    try model.watch.update(context: context)
-                    emit(name: "watch.context.updated", value: ["updated": true])
-                } catch {
-                    emitError(error.localizedDescription)
-                }
+                let updated = model.watch.update(context: context)
+                emit(name: "watch.context.updated", value: ["updated": updated, "queued": !updated])
             }
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            isWebAppReady = true
             emit(
                 name: "native.ready",
                 value: [
                     "healthAvailable": model.health.isAvailable,
-                    "watchReachable": model.watch.isReachable
+                    "watchReachable": model.watch.isReachable,
+                    "watchInstalled": model.watch.isWatchAppInstalled
                 ]
             )
+            pendingWatchEvents.forEach { emit(name: "watch.event", value: $0) }
+            pendingWatchEvents.removeAll()
         }
 
         private func emit<T: Encodable>(name: String, value: T) {

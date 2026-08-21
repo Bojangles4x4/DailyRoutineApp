@@ -19,9 +19,11 @@ This is intentionally more than a website wrapper. The native HealthKit and Watc
 - JavaScript-to-native message bridge
 - iPhone-to-Watch current-context sync
 - Watch-to-iPhone queued quick actions
+- Web routine mapping for Complete next, Water +1, and mood check-ins
+- Watch delivery feedback and refreshed completion totals
 - XcodeGen project specification
 
-The current web app does not consume the bridge events yet. That is the next integration step after the Xcode project can be generated and run on a physical iPhone and Apple Watch.
+For safety, Complete next only marks unfinished checkbox routines. Medication logs and linked-app routines must still be completed deliberately on iPhone. If the Watch companion is not installed yet, the iPhone keeps the latest routine context ready and sends it when Watch Connectivity reports the companion is available.
 
 ## Prerequisites
 
@@ -31,6 +33,8 @@ The current web app does not consume the bridge events yet. That is the next int
 4. From this folder, run `xcodegen generate` and open `DailyRoutineApple.xcodeproj`.
 5. In Xcode, select your developer team for both targets and let Xcode manage signing.
 6. Test HealthKit and Watch Connectivity on a physical iPhone and Apple Watch.
+
+Project generation applies an Xcode 26 compatibility adjustment so the modern watchOS app is embedded in the iPhone app's `PlugIns` folder.
 
 ## Privacy defaults
 

@@ -4,7 +4,9 @@ import WatchConnectivity
 @MainActor
 final class PhoneWatchSessionManager: NSObject, ObservableObject {
     @Published private(set) var isReachable = false
+    @Published private(set) var isWatchAppInstalled = false
     var onEvent: ((WatchEvent) -> Void)?
+    private var pendingContext: WatchRoutineContext?
 
     override init() {
         super.init()
@@ -13,9 +15,29 @@ final class PhoneWatchSessionManager: NSObject, ObservableObject {
         WCSession.default.activate()
     }
 
-    func update(context: WatchRoutineContext) throws {
-        let data = try JSONEncoder().encode(context)
-        try WCSession.default.updateApplicationContext(["routineContext": data])
+    @discardableResult
+    func update(context: WatchRoutineContext) -> Bool {
+        pendingContext = context
+        return sendPendingContext()
+    }
+
+    @discardableResult
+    private func sendPendingContext() -> Bool {
+        guard
+            let context = pendingContext,
+            WCSession.default.activationState == .activated,
+            WCSession.default.isPaired,
+            WCSession.default.isWatchAppInstalled,
+            let data = try? JSONEncoder().encode(context)
+        else { return false }
+
+        do {
+            try WCSession.default.updateApplicationContext(["routineContext": data])
+            pendingContext = nil
+            return true
+        } catch {
+            return false
+        }
     }
 }
 
@@ -27,6 +49,8 @@ extension PhoneWatchSessionManager: WCSessionDelegate {
     ) {
         Task { @MainActor in
             isReachable = session.isReachable
+            isWatchAppInstalled = session.isWatchAppInstalled
+            sendPendingContext()
         }
     }
 
@@ -39,6 +63,16 @@ extension PhoneWatchSessionManager: WCSessionDelegate {
     nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
         Task { @MainActor in
             isReachable = session.isReachable
+            isWatchAppInstalled = session.isWatchAppInstalled
+            sendPendingContext()
+        }
+    }
+
+    nonisolated func sessionWatchStateDidChange(_ session: WCSession) {
+        Task { @MainActor in
+            isReachable = session.isReachable
+            isWatchAppInstalled = session.isWatchAppInstalled
+            sendPendingContext()
         }
     }
 
