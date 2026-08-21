@@ -1,5 +1,6 @@
 import Foundation
 import WatchConnectivity
+import WidgetKit
 
 @MainActor
 final class WatchSessionManager: NSObject, ObservableObject {
@@ -39,6 +40,8 @@ final class WatchSessionManager: NSObject, ObservableObject {
         else { return }
 
         context = nextContext
+        WidgetSnapshotStore.save(context: nextContext)
+        WidgetCenter.shared.reloadTimelines(ofKind: WidgetSnapshotStore.widgetKind)
     }
 }
 

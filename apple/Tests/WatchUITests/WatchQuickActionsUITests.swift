@@ -20,4 +20,17 @@ final class WatchQuickActionsUITests: XCTestCase {
         XCTAssertTrue(addWater.isEnabled)
         addWater.tap()
     }
+
+    func testMoodQuickAction() {
+        let app = XCUIApplication()
+        app.launch()
+
+        let saveMood = app.buttons["Save mood 5"]
+        if !saveMood.waitForExistence(timeout: 2) {
+            app.swipeUp()
+        }
+        XCTAssertTrue(saveMood.waitForExistence(timeout: 10))
+        XCTAssertTrue(saveMood.isEnabled)
+        saveMood.tap()
+    }
 }

@@ -21,9 +21,13 @@ This is intentionally more than a website wrapper. The native HealthKit and Watc
 - Watch-to-iPhone queued quick actions
 - Web routine mapping for Complete next, Water +1, and mood check-ins
 - Watch delivery feedback and refreshed completion totals
+- Glanceable Watch dashboard with progress, next routine, and thumb-friendly actions
+- WidgetKit complications for circular, inline, and rectangular layouts, including the Watch Smart Stack
 - XcodeGen project specification
 
 For safety, Complete next only marks unfinished checkbox routines. Medication logs and linked-app routines must still be completed deliberately on iPhone. If the Watch companion is not installed yet, the iPhone keeps the latest routine context ready and sends it when Watch Connectivity reports the companion is available.
+
+The Watch app writes its latest received routine summary to an App Group shared with the WidgetKit extension. This lets complications show current progress without exposing the full routine database or Health information.
 
 ## Prerequisites
 
