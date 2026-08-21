@@ -1,4 +1,4 @@
-const CACHE_NAME = 'daily-routine-v1-8-4-handedness';
+const CACHE_NAME = 'daily-routine-v1-9-0-truth-before-tasks';
 const ASSETS = ['./','./index.html','./styles.css','./app.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install', event => {

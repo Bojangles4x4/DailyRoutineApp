@@ -3,7 +3,7 @@
 
   const STORAGE_KEY = 'dailyRoutineApp.v1';
   const SNAPSHOT_KEY = 'dailyRoutineApp.snapshots.v1';
-  const APP_VERSION = '1.8.4';
+  const APP_VERSION = '1.9.0';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const DEFAULT_BIBLE_APP_URL = 'https://bojangles4x4.github.io/Bible-Reading-Plan/';
@@ -86,6 +86,15 @@
     linkedActionFields: $('linkedActionFields'), linkedTemplateInput: $('linkedTemplateInput'), linkedCompletionInput: $('linkedCompletionInput'), linkedUrlField: $('linkedUrlField'), linkedUrlInput: $('linkedUrlInput'), linkedInternalField: $('linkedInternalField'), linkedInternalTargetInput: $('linkedInternalTargetInput'), linkedButtonLabelInput: $('linkedButtonLabelInput'), timeWindowFields: $('timeWindowFields'), timeWindowStartInput: $('timeWindowStartInput'), timeWindowEndInput: $('timeWindowEndInput'),
     medicationProgressCard: $('medicationProgressCard'), weeklyReviewCard: $('weeklyReviewCard'), memoryBankCard: $('memoryBankCard'), dataBackupCard: $('dataBackupCard'),
     deleteItemButton: $('deleteItemButton'), closeDialogButton: $('closeDialogButton'), installButton: $('installButton'), toast: $('toast')
+  };
+
+  window.DailyRoutineApp = {
+    getState: () => state,
+    saveState,
+    switchView,
+    showToast,
+    dateKey,
+    startOfToday
   };
 
   init();
@@ -2314,4 +2323,419 @@
   function escapeHtml(value) { return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char])); }
   function debounce(fn, delay) { let timer; return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); }; }
   function showToast(message) { clearTimeout(toastTimer); els.toast.textContent = message; els.toast.classList.add('show'); toastTimer = setTimeout(() => els.toast.classList.remove('show'), 1800); }
+})();
+
+(function truthFeature() {
+  (() => {
+    'use strict';
+
+    const api = window.DailyRoutineApp;
+    if (!api) return;
+
+    const MINIMUM_MS = 3 * 60 * 1000;
+    const DEFAULTS = {
+      personalPlea: 'Taylor, I wrote this while thinking clearly. I may not feel clear or steady every time I read it, but I will trust what the Lord led me to write when I could see these truths clearly. I plead with you now: set everything else aside for these few minutes and meditate on what is true.',
+      openingPrayer: 'Father, quiet my heart. Help me receive what is true rather than follow what feels urgent. Fix my eyes on Christ and lead me by Your Word today.',
+      coreTruths: [
+        'I am 100% called, welcomed, purchased, adopted, and loved because of Jesus.',
+        'These practices do not make me right with God. They remind me of my need for the Lord and press me to see Christ.',
+        'Jesus is my righteousness, my confidence, and my guide.'
+      ],
+      themes: [
+        {
+          id: 'steadfast-rule',
+          name: 'The Lord rules and keeps me',
+          whoGodIs: 'God is sovereign, wise, and steadfast. Nothing urgent on my list has escaped His rule, and no weakness in me has exhausted His patience.',
+          christHasDone: 'Jesus has reconciled me to the Father and holds me fast. I can obey from security rather than scramble for control.',
+          scriptures: [
+            { reference: 'Psalm 46:10', text: 'Be still, and know that I am God.' },
+            { reference: 'Isaiah 41:10', text: 'Fear thou not; for I am with thee: be not dismayed; for I am thy God.' },
+            { reference: 'John 10:28', text: 'I give unto them eternal life; and they shall never perish, neither shall any man pluck them out of my hand.' }
+          ]
+        },
+        {
+          id: 'adopted-and-welcomed',
+          name: 'Adopted and welcomed',
+          whoGodIs: 'The Father is not reluctant toward His children. He is compassionate, near, and generous, and He welcomes me to come honestly.',
+          christHasDone: 'Through Christ I have received adoption, access, and peace with God. I begin today as a beloved child, not an applicant trying to earn a place.',
+          scriptures: [
+            { reference: 'Romans 8:15', text: 'Ye have received the Spirit of adoption, whereby we cry, Abba, Father.' },
+            { reference: 'Ephesians 1:6', text: 'He hath made us accepted in the beloved.' },
+            { reference: 'Hebrews 4:16', text: 'Let us therefore come boldly unto the throne of grace, that we may obtain mercy, and find grace to help in time of need.' }
+          ]
+        },
+        {
+          id: 'christ-is-sufficient',
+          name: 'Christ is sufficient',
+          whoGodIs: 'God is holy, merciful, and completely trustworthy. His grace is not a reward for a successful day; it is the ground beneath every faithful step.',
+          christHasDone: 'Jesus has finished the work I could never complete. There is no condemnation for me in Him, and His strength is made perfect in weakness.',
+          scriptures: [
+            { reference: 'John 19:30', text: 'When Jesus therefore had received the vinegar, he said, It is finished.' },
+            { reference: 'Romans 8:1', text: 'There is therefore now no condemnation to them which are in Christ Jesus.' },
+            { reference: '2 Corinthians 12:9', text: 'My grace is sufficient for thee: for my strength is made perfect in weakness.' }
+          ]
+        }
+      ],
+      completions: {},
+      sessions: {}
+    };
+
+    const el = id => document.getElementById(id);
+    let stepIndex = 0;
+    let activeDateKey = '';
+    let timer = null;
+
+    function clone(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
+
+    function normalizeTheme(theme) {
+      if (!theme || typeof theme !== 'object') return null;
+      const scriptures = Array.isArray(theme.scriptures)
+        ? theme.scriptures.map(item => ({
+            reference: String(item?.reference || '').trim(),
+            text: String(item?.text || '').trim()
+          })).filter(item => item.reference && item.text).slice(0, 3)
+        : [];
+      if (!String(theme.name || '').trim() || scriptures.length < 2) return null;
+      return {
+        id: String(theme.id || `theme-${Date.now()}-${Math.random().toString(16).slice(2)}`),
+        name: String(theme.name).trim(),
+        whoGodIs: String(theme.whoGodIs || '').trim(),
+        christHasDone: String(theme.christHasDone || '').trim(),
+        scriptures
+      };
+    }
+
+    function normalizeConfig() {
+      const currentState = api.getState();
+      const stored = currentState.settings.truthBeforeTasks || {};
+      const result = {
+        personalPlea: typeof stored.personalPlea === 'string' && stored.personalPlea.trim() ? stored.personalPlea : DEFAULTS.personalPlea,
+        openingPrayer: typeof stored.openingPrayer === 'string' && stored.openingPrayer.trim() ? stored.openingPrayer : DEFAULTS.openingPrayer,
+        coreTruths: Array.isArray(stored.coreTruths) && stored.coreTruths.length ? stored.coreTruths.filter(Boolean).map(String) : clone(DEFAULTS.coreTruths),
+        themes: Array.isArray(stored.themes) && stored.themes.length ? stored.themes.map(normalizeTheme).filter(Boolean) : clone(DEFAULTS.themes),
+        completions: stored.completions && typeof stored.completions === 'object' ? stored.completions : {},
+        sessions: stored.sessions && typeof stored.sessions === 'object' ? stored.sessions : {}
+      };
+      if (!result.themes.length) result.themes = clone(DEFAULTS.themes);
+      currentState.settings.truthBeforeTasks = result;
+      return result;
+    }
+
+    function todayKey() {
+      return api.dateKey(api.startOfToday());
+    }
+
+    function config() {
+      const currentState = api.getState();
+      if (!currentState.settings.truthBeforeTasks) normalizeConfig();
+      return currentState.settings.truthBeforeTasks;
+    }
+
+    function isComplete(key = todayKey()) {
+      return Boolean(config().completions[key]);
+    }
+
+    function themeForDate(key) {
+      const themes = config().themes;
+      let hash = 0;
+      for (const character of key) hash = ((hash * 31) + character.charCodeAt(0)) >>> 0;
+      return themes[hash % themes.length];
+    }
+
+    function getSession(key) {
+      if (!config().sessions[key]) {
+        config().sessions[key] = { startedAt: Date.now(), visited: [0] };
+        api.saveState();
+      }
+      const session = config().sessions[key];
+      if (!Number.isFinite(Number(session.startedAt))) session.startedAt = Date.now();
+      session.visited = Array.isArray(session.visited) ? session.visited.map(Number).filter(Number.isInteger) : [0];
+      if (!session.visited.includes(0)) session.visited.push(0);
+      return session;
+    }
+
+    function showTruth() {
+      activeDateKey = todayKey();
+      const session = getSession(activeDateKey);
+      stepIndex = Math.min(4, Math.max(0, Number(session.currentStep) || 0));
+      document.body.classList.add('truth-locked');
+      document.querySelectorAll('.nav-button').forEach(button => {
+        button.classList.remove('active');
+        button.setAttribute('aria-disabled', 'true');
+      });
+      document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+      el('truthView').classList.add('active');
+      el('pageTitle').textContent = 'Truth Before Tasks';
+      renderStep();
+      if (!timer) timer = window.setInterval(tick, 1000);
+      el('appMain')?.focus({ preventScroll: true });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function unlock() {
+      document.body.classList.remove('truth-locked');
+      document.querySelectorAll('.nav-button').forEach(button => button.removeAttribute('aria-disabled'));
+      if (timer) {
+        window.clearInterval(timer);
+        timer = null;
+      }
+    }
+
+    function textNode(tag, text, className) {
+      const node = document.createElement(tag);
+      node.textContent = text;
+      if (className) node.className = className;
+      return node;
+    }
+
+    function renderStep() {
+      const currentConfig = config();
+      const theme = themeForDate(activeDateKey || todayKey());
+      const session = getSession(activeDateKey || todayKey());
+      const body = el('truthStepBody');
+      body.replaceChildren();
+      const steps = [
+        { title: 'A plea from a clear moment', render() { body.append(textNode('p', currentConfig.personalPlea, 'truth-lead')); } },
+        { title: 'Ask the Father for help', render() { body.append(textNode('p', currentConfig.openingPrayer, 'truth-lead')); } },
+        { title: 'Remember who God is', render() { body.append(textNode('p', theme.whoGodIs, 'truth-lead')); } },
+        {
+          title: 'Remember what Christ has done',
+          render() {
+            body.append(textNode('p', theme.christHasDone, 'truth-lead'));
+            const list = document.createElement('ul');
+            list.className = 'truth-core-list';
+            currentConfig.coreTruths.forEach(truth => list.append(textNode('li', truth)));
+            body.append(list);
+          }
+        },
+        {
+          title: 'Receive the Word',
+          render() {
+            theme.scriptures.forEach(scripture => {
+              const quote = document.createElement('blockquote');
+              quote.append(textNode('p', scripture.text));
+              quote.append(textNode('cite', scripture.reference));
+              body.append(quote);
+            });
+          }
+        }
+      ];
+      const step = steps[stepIndex];
+      el('truthStepLabel').textContent = `${theme.name} · Step ${stepIndex + 1} of ${steps.length}`;
+      el('truthStepTitle').textContent = step.title;
+      step.render();
+      el('truthPreviousButton').disabled = stepIndex === 0;
+      el('truthContinueButton').hidden = stepIndex === steps.length - 1;
+      if (!session.visited.includes(stepIndex)) {
+        session.visited.push(stepIndex);
+        session.currentStep = stepIndex;
+        api.saveState();
+      }
+      updateProgress();
+    }
+
+    function updateProgress() {
+      if (isComplete()) return;
+      const key = todayKey();
+      if (key !== activeDateKey) {
+        showTruth();
+        return;
+      }
+      const session = getSession(key);
+      const elapsed = Math.max(0, Date.now() - Number(session.startedAt));
+      const timeProgress = Math.min(1, elapsed / MINIMUM_MS);
+      const visitProgress = new Set(session.visited).size / 5;
+      el('truthProgressBar').style.width = `${Math.round((timeProgress * .55 + visitProgress * .45) * 100)}%`;
+      const remaining = Math.max(0, MINIMUM_MS - elapsed);
+      if (remaining > 60000) el('truthProgressText').textContent = `Take your time. About ${Math.ceil(remaining / 60000)} minutes remain.`;
+      else if (remaining > 0) el('truthProgressText').textContent = 'Stay here for a few more quiet moments.';
+      else if (new Set(session.visited).size < 5) el('truthProgressText').textContent = 'Continue through each truth before entering the day.';
+      else el('truthProgressText').textContent = 'You are ready to enter the day.';
+      el('truthEnterDayButton').disabled = remaining > 0 || new Set(session.visited).size < 5;
+    }
+
+    function tick() {
+      if (isComplete()) unlock();
+      else updateProgress();
+    }
+
+    function enterDay() {
+      const key = todayKey();
+      const session = getSession(key);
+      const ready = Date.now() - Number(session.startedAt) >= MINIMUM_MS && new Set(session.visited).size >= 5;
+      if (!ready) {
+        api.showToast('Remain with the truth a little longer.');
+        return;
+      }
+      config().completions[key] = new Date().toISOString();
+      delete config().sessions[key];
+      api.saveState();
+      unlock();
+      api.switchView('today');
+      api.showToast('Truth carried into the day.');
+    }
+
+    function bindGate() {
+      document.addEventListener('click', event => {
+        const button = event.target.closest?.('.nav-button');
+        if (!button || !document.body.classList.contains('truth-locked')) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        api.showToast('Truth before tasks.');
+      }, true);
+      el('truthPreviousButton').addEventListener('click', () => {
+        stepIndex = Math.max(0, stepIndex - 1);
+        config().sessions[todayKey()].currentStep = stepIndex;
+        api.saveState();
+        renderStep();
+      });
+      el('truthContinueButton').addEventListener('click', () => {
+        stepIndex = Math.min(4, stepIndex + 1);
+        config().sessions[todayKey()].currentStep = stepIndex;
+        api.saveState();
+        renderStep();
+      });
+      el('truthEnterDayButton').addEventListener('click', enterDay);
+      window.addEventListener('focus', tick);
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && !isComplete()) showTruth();
+      });
+    }
+
+    function scriptureLines(theme) {
+      return theme.scriptures.map(item => `${item.reference} | ${item.text}`).join('\n');
+    }
+
+    function renderThemeList() {
+      const list = el('truthThemeList');
+      list.replaceChildren();
+      config().themes.forEach(theme => {
+        const card = document.createElement('article');
+        card.className = 'truth-theme-card';
+        card.append(textNode('h4', theme.name));
+        card.append(textNode('p', `Who God is: ${theme.whoGodIs}`));
+        card.append(textNode('p', `What Christ has done: ${theme.christHasDone}`));
+        card.append(textNode('p', theme.scriptures.map(item => item.reference).join(' · '), 'muted micro-copy'));
+        const actions = document.createElement('div');
+        actions.className = 'theme-actions';
+        const edit = textNode('button', 'Edit', 'secondary-button');
+        edit.type = 'button';
+        edit.dataset.editTheme = theme.id;
+        const remove = textNode('button', 'Delete', 'danger-button');
+        remove.type = 'button';
+        remove.dataset.deleteTheme = theme.id;
+        actions.append(edit, remove);
+        card.append(actions);
+        list.append(card);
+      });
+    }
+
+    function resetThemeForm() {
+      el('truthThemeForm').reset();
+      el('truthThemeIdInput').value = '';
+      el('truthThemeSubmitButton').textContent = 'Add theme';
+      el('truthThemeCancelButton').hidden = true;
+    }
+
+    function renderSettings() {
+      el('truthPleaInput').value = config().personalPlea;
+      el('truthPrayerInput').value = config().openingPrayer;
+      el('truthCoreInput').value = config().coreTruths.join('\n');
+      renderThemeList();
+    }
+
+    function parseScriptures(value) {
+      return value.split('\n').map(line => {
+        const divider = line.indexOf('|');
+        if (divider < 0) return null;
+        return { reference: line.slice(0, divider).trim(), text: line.slice(divider + 1).trim() };
+      }).filter(item => item?.reference && item?.text);
+    }
+
+    function bindSettings() {
+      el('saveTruthCopyButton').addEventListener('click', () => {
+        const plea = el('truthPleaInput').value.trim();
+        const prayer = el('truthPrayerInput').value.trim();
+        const truths = el('truthCoreInput').value.split('\n').map(line => line.trim()).filter(Boolean);
+        if (!plea || !prayer || !truths.length) {
+          api.showToast('Keep a plea, prayer, and at least one core truth.');
+          return;
+        }
+        config().personalPlea = plea;
+        config().openingPrayer = prayer;
+        config().coreTruths = truths;
+        api.saveState();
+        api.showToast('Opening words saved.');
+      });
+
+      el('truthThemeList').addEventListener('click', event => {
+        const editId = event.target.dataset.editTheme;
+        const deleteId = event.target.dataset.deleteTheme;
+        if (editId) {
+          const theme = config().themes.find(item => item.id === editId);
+          if (!theme) return;
+          el('truthThemeIdInput').value = theme.id;
+          el('truthThemeNameInput').value = theme.name;
+          el('truthWhoGodInput').value = theme.whoGodIs;
+          el('truthChristInput').value = theme.christHasDone;
+          el('truthScripturesInput').value = scriptureLines(theme);
+          el('truthThemeSubmitButton').textContent = 'Save theme';
+          el('truthThemeCancelButton').hidden = false;
+          el('truthThemeNameInput').focus();
+        }
+        if (deleteId) {
+          if (config().themes.length <= 1) {
+            api.showToast('Keep at least one rotating theme.');
+            return;
+          }
+          config().themes = config().themes.filter(item => item.id !== deleteId);
+          api.saveState();
+          renderThemeList();
+          resetThemeForm();
+          api.showToast('Theme deleted.');
+        }
+      });
+
+      el('truthThemeForm').addEventListener('submit', event => {
+        event.preventDefault();
+        const scriptures = parseScriptures(el('truthScripturesInput').value);
+        if (scriptures.length < 2 || scriptures.length > 3) {
+          api.showToast('Add two or three Scripture lines.');
+          return;
+        }
+        const theme = normalizeTheme({
+          id: el('truthThemeIdInput').value || `theme-${Date.now()}`,
+          name: el('truthThemeNameInput').value,
+          whoGodIs: el('truthWhoGodInput').value,
+          christHasDone: el('truthChristInput').value,
+          scriptures
+        });
+        if (!theme || !theme.whoGodIs || !theme.christHasDone) {
+          api.showToast('Complete every theme field.');
+          return;
+        }
+        const index = config().themes.findIndex(item => item.id === theme.id);
+        if (index >= 0) config().themes[index] = theme;
+        else config().themes.push(theme);
+        api.saveState();
+        renderThemeList();
+        resetThemeForm();
+        api.showToast(index >= 0 ? 'Theme updated.' : 'Theme added.');
+      });
+      el('truthThemeCancelButton').addEventListener('click', resetThemeForm);
+    }
+
+    normalizeConfig();
+    bindGate();
+    bindSettings();
+    renderSettings();
+    if (isComplete()) unlock();
+    else showTruth();
+    window.setInterval(() => {
+      const key = todayKey();
+      if (!isComplete(key) && (!document.body.classList.contains('truth-locked') || key !== activeDateKey)) showTruth();
+    }, 60000);
+  })();
 })();
