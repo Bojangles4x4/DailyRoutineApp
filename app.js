@@ -93,6 +93,7 @@
     saveState,
     switchView,
     showToast,
+    syncWatchContext,
     dateKey,
     startOfToday
   };
@@ -610,12 +611,14 @@
     const day = state.days[dateKey(today)] || { entries: {}, skippedItems: {} };
     const completion = completionForDate(today);
     const next = watchActionableItems(today, day)[0];
+    const truthBeforeTasksComplete = !document.body.classList.contains('truth-locked');
     return {
       dateKey: dateKey(today),
       completed: completion.completed,
       total: completion.total,
-      nextItemName: next?.name || null,
-      canCompleteNext: Boolean(next),
+      nextItemName: truthBeforeTasksComplete ? next?.name || null : 'Complete Truth Before Tasks on iPhone',
+      canCompleteNext: truthBeforeTasksComplete && Boolean(next),
+      truthBeforeTasksComplete,
       lastActionMessage: watchLastActionMessage || null
     };
   }
@@ -660,6 +663,14 @@
     if (!eventId || processedWatchEventIds.has(eventId)) return;
     processedWatchEventIds.add(eventId);
     if (processedWatchEventIds.size > 200) processedWatchEventIds.delete(processedWatchEventIds.values().next().value);
+
+    if (document.body.classList.contains('truth-locked')) {
+      watchLastActionMessage = 'Complete Truth Before Tasks on iPhone first';
+      els.appleWatchStatus.textContent = watchLastActionMessage;
+      syncWatchContext();
+      showToast(watchLastActionMessage);
+      return;
+    }
 
     const today = startOfToday();
     const day = ensureDay(dateKey(today));
@@ -2492,6 +2503,7 @@
       el('pageTitle').textContent = 'Truth Before Tasks';
       renderStep();
       if (!timer) timer = window.setInterval(tick, 1000);
+      api.syncWatchContext();
       el('appMain')?.focus({ preventScroll: true });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -2503,6 +2515,7 @@
         window.clearInterval(timer);
         timer = null;
       }
+      api.syncWatchContext();
     }
 
     function textNode(tag, text, className) {

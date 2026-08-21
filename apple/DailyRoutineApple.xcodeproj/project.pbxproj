@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0500D84ACCED224BEFA8BB37 /* WidgetSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8096AA8C4DC525F750013EEC /* WidgetSnapshotStore.swift */; };
 		05F62511934122D09C2E3D93 /* PhoneWatchSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17CD184FE3D8B6273C7708A1 /* PhoneWatchSessionManager.swift */; };
 		166786542EC96F1AA0C5919E /* HealthKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 138B5200C630CA1BBDECBD89 /* HealthKitService.swift */; };
 		1B4A79B5E3D22CC5670A0D69 /* WatchQuickActionsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 257F0F7544BC18F981B9B551 /* WatchQuickActionsUITests.swift */; };
@@ -15,15 +16,20 @@
 		3C8EFB710A7D9E291A35C98A /* app.js in Resources */ = {isa = PBXBuildFile; fileRef = 10E6F55D19A361D999DC14D5 /* app.js */; };
 		4B8D7EA7155D3CAE8DF8F463 /* styles.css in Resources */ = {isa = PBXBuildFile; fileRef = D1A95175FAC3CC1E05F33E56 /* styles.css */; };
 		591486D40F0612C6EF229E7A /* BridgeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23CF6F479542799A7E80F4BA /* BridgeModels.swift */; };
+		6231E4C1EC4CBE5BCE6827DE /* WidgetSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8096AA8C4DC525F750013EEC /* WidgetSnapshotStore.swift */; };
+		716A1BB63BE760F86E893CE1 /* DailyRoutineWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2189365ED52A585536004293 /* DailyRoutineWidget.swift */; };
 		80D05D187A20118D1DFDDABA /* manifest.webmanifest in Resources */ = {isa = PBXBuildFile; fileRef = EEB6294F12C1A4CEA749044F /* manifest.webmanifest */; };
 		8BEF776BB9C8787C12572ED3 /* icon-512.png in Resources */ = {isa = PBXBuildFile; fileRef = 08074A312C8759C6DAAC1741 /* icon-512.png */; };
 		A574F7F679A3EA0E3F858505 /* BridgeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23CF6F479542799A7E80F4BA /* BridgeModels.swift */; };
+		A6D80EDB06CDBAA44BA621E1 /* DailyRoutineWatchWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 1A698DCFE06EF6EE4972D27A /* DailyRoutineWatchWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		BE7F4621371B2407B8CC40ED /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A96EFF2B195E0DA4B5B9F18 /* AppModel.swift */; };
 		BED1C32113F663A3E1EB22FE /* WatchSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9CD412035E618B429C99C67 /* WatchSessionManager.swift */; };
 		C2F082AB129B354730706633 /* DailyRoutineAppleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A535F5FF0A19279B38B92EE /* DailyRoutineAppleApp.swift */; };
 		D6C211E2362593C25DD65D90 /* DailyRoutineWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 566ED5F8606B577FFAB6A93C /* DailyRoutineWatchApp.swift */; };
 		DDF7188BFC7F79DB0A7B68A7 /* WatchContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49322339D19B74F64851BBB8 /* WatchContentView.swift */; };
+		DF10BEA3D7A6B78BBE419AE8 /* WidgetSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8096AA8C4DC525F750013EEC /* WidgetSnapshotStore.swift */; };
 		E275C54338CC184B37E7E4E0 /* DailyRoutineWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = B97BBECEFE2DF2727D5E833D /* DailyRoutineWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		E2A20CF11685E6E3FC7A9358 /* BridgeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23CF6F479542799A7E80F4BA /* BridgeModels.swift */; };
 		EE185B74056E92A6704B7CBF /* index.html in Resources */ = {isa = PBXBuildFile; fileRef = EF24BE7890341E426ABE06A6 /* index.html */; };
 /* End PBXBuildFile section */
 
@@ -34,6 +40,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 056055C2D25CBC8EAD01665D;
 			remoteInfo = DailyRoutineWatch;
+		};
+		4CE9CC2C91451839D909C6C8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CEC04297AF03A9EF036680FA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E712BC7C30A186C498BDAA2B;
+			remoteInfo = DailyRoutineWatchWidgets;
 		};
 		923E1C4214C6C63A6F425DC0 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -56,6 +69,17 @@
 			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		EB17CA7A722AA9E8D2FFE572 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				A6D80EDB06CDBAA44BA621E1 /* DailyRoutineWatchWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -63,6 +87,8 @@
 		10E6F55D19A361D999DC14D5 /* app.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = app.js; sourceTree = "<group>"; };
 		138B5200C630CA1BBDECBD89 /* HealthKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitService.swift; sourceTree = "<group>"; };
 		17CD184FE3D8B6273C7708A1 /* PhoneWatchSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneWatchSessionManager.swift; sourceTree = "<group>"; };
+		1A698DCFE06EF6EE4972D27A /* DailyRoutineWatchWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = DailyRoutineWatchWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		2189365ED52A585536004293 /* DailyRoutineWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyRoutineWidget.swift; sourceTree = "<group>"; };
 		23CF6F479542799A7E80F4BA /* BridgeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeModels.swift; sourceTree = "<group>"; };
 		257F0F7544BC18F981B9B551 /* WatchQuickActionsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchQuickActionsUITests.swift; sourceTree = "<group>"; };
 		49322339D19B74F64851BBB8 /* WatchContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchContentView.swift; sourceTree = "<group>"; };
@@ -71,6 +97,7 @@
 		6CA6D716AE01116903574E34 /* icon-192.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon-192.png"; sourceTree = "<group>"; };
 		7A96EFF2B195E0DA4B5B9F18 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		801CDE97146E329ACBD3CC9B /* DailyRoutine.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = DailyRoutine.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8096AA8C4DC525F750013EEC /* WidgetSnapshotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshotStore.swift; sourceTree = "<group>"; };
 		84999DD0051D68587AD4C817 /* WebAppView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppView.swift; sourceTree = "<group>"; };
 		A214531B1B57E2408FAEA1CB /* DailyRoutineWatchUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DailyRoutineWatchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B97BBECEFE2DF2727D5E833D /* DailyRoutineWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DailyRoutineWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -81,10 +108,19 @@
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		32D42EF84D324DF71E65FF32 /* Widgets */ = {
+			isa = PBXGroup;
+			children = (
+				2189365ED52A585536004293 /* DailyRoutineWidget.swift */,
+			);
+			path = Widgets;
+			sourceTree = "<group>";
+		};
 		5E27822F7E42F39A121F154B /* Shared */ = {
 			isa = PBXGroup;
 			children = (
 				23CF6F479542799A7E80F4BA /* BridgeModels.swift */,
+				8096AA8C4DC525F750013EEC /* WidgetSnapshotStore.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -109,6 +145,7 @@
 				801CDE97146E329ACBD3CC9B /* DailyRoutine.app */,
 				B97BBECEFE2DF2727D5E833D /* DailyRoutineWatch.app */,
 				A214531B1B57E2408FAEA1CB /* DailyRoutineWatchUITests.xctest */,
+				1A698DCFE06EF6EE4972D27A /* DailyRoutineWatchWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -152,6 +189,7 @@
 				5E27822F7E42F39A121F154B /* Shared */,
 				B1315ABBF92798A7B4910A00 /* watchOS */,
 				A42F6999BB642675A2504103 /* WatchUITests */,
+				32D42EF84D324DF71E65FF32 /* Widgets */,
 				856FBB1759486AC1E93F28DC /* Products */,
 			);
 			sourceTree = "<group>";
@@ -164,10 +202,12 @@
 			buildConfigurationList = 020D9F6E2D53C87DAAD4328D /* Build configuration list for PBXNativeTarget "DailyRoutineWatch" */;
 			buildPhases = (
 				D37514813D7F4534FAB51709 /* Sources */,
+				EB17CA7A722AA9E8D2FFE572 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				32561E34323B4582164E52D8 /* PBXTargetDependency */,
 			);
 			name = DailyRoutineWatch;
 			packageProductDependencies = (
@@ -214,6 +254,23 @@
 			productReference = A214531B1B57E2408FAEA1CB /* DailyRoutineWatchUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		E712BC7C30A186C498BDAA2B /* DailyRoutineWatchWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9ED681E2549B2D6E47BBE234 /* Build configuration list for PBXNativeTarget "DailyRoutineWatchWidgets" */;
+			buildPhases = (
+				20BA7773C9DFC1698E9030A0 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = DailyRoutineWatchWidgets;
+			packageProductDependencies = (
+			);
+			productName = DailyRoutineWatchWidgets;
+			productReference = 1A698DCFE06EF6EE4972D27A /* DailyRoutineWatchWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -224,14 +281,20 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					056055C2D25CBC8EAD01665D = {
+						DevelopmentTeam = UQ7AURZ83A;
 						ProvisioningStyle = Automatic;
 					};
 					51C57D90B94AB7E22771B87D = {
+						DevelopmentTeam = UQ7AURZ83A;
 						ProvisioningStyle = Automatic;
 					};
 					638887474BA3B3E4A229D936 = {
 						ProvisioningStyle = Automatic;
 						TestTargetID = 056055C2D25CBC8EAD01665D;
+					};
+					E712BC7C30A186C498BDAA2B = {
+						DevelopmentTeam = UQ7AURZ83A;
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -251,6 +314,7 @@
 			targets = (
 				51C57D90B94AB7E22771B87D /* DailyRoutine */,
 				056055C2D25CBC8EAD01665D /* DailyRoutineWatch */,
+				E712BC7C30A186C498BDAA2B /* DailyRoutineWatchWidgets */,
 				638887474BA3B3E4A229D936 /* DailyRoutineWatchUITests */,
 			);
 		};
@@ -273,6 +337,16 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		20BA7773C9DFC1698E9030A0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E2A20CF11685E6E3FC7A9358 /* BridgeModels.swift in Sources */,
+				716A1BB63BE760F86E893CE1 /* DailyRoutineWidget.swift in Sources */,
+				0500D84ACCED224BEFA8BB37 /* WidgetSnapshotStore.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		BBF465677B8496EDC82E4FB1 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -283,6 +357,7 @@
 				166786542EC96F1AA0C5919E /* HealthKitService.swift in Sources */,
 				05F62511934122D09C2E3D93 /* PhoneWatchSessionManager.swift in Sources */,
 				27949F733E0D9FAD11666B58 /* WebAppView.swift in Sources */,
+				DF10BEA3D7A6B78BBE419AE8 /* WidgetSnapshotStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -294,6 +369,7 @@
 				D6C211E2362593C25DD65D90 /* DailyRoutineWatchApp.swift in Sources */,
 				DDF7188BFC7F79DB0A7B68A7 /* WatchContentView.swift in Sources */,
 				BED1C32113F663A3E1EB22FE /* WatchSessionManager.swift in Sources */,
+				6231E4C1EC4CBE5BCE6827DE /* WidgetSnapshotStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -313,6 +389,11 @@
 			target = 056055C2D25CBC8EAD01665D /* DailyRoutineWatch */;
 			targetProxy = 923E1C4214C6C63A6F425DC0 /* PBXContainerItemProxy */;
 		};
+		32561E34323B4582164E52D8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E712BC7C30A186C498BDAA2B /* DailyRoutineWatchWidgets */;
+			targetProxy = 4CE9CC2C91451839D909C6C8 /* PBXContainerItemProxy */;
+		};
 		4A69482E1945D7B97335C627 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 056055C2D25CBC8EAD01665D /* DailyRoutineWatch */;
@@ -321,6 +402,25 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		2CD5E87F68421938B63EF681 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Config/DailyRoutineWidgets.entitlements;
+				DEVELOPMENT_TEAM = UQ7AURZ83A;
+				INFOPLIST_FILE = "Config/DailyRoutineWidgets-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.bojangles4x4.DailyRoutine.watchkitapp.widgets;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Debug;
+		};
 		66A5E57EDDFE6F74DC1B99EF /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -356,6 +456,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 2;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -368,6 +469,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.9.2;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -378,10 +480,31 @@
 			};
 			name = Release;
 		};
+		798BBA272003D28FB42131A1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Config/DailyRoutineWidgets.entitlements;
+				DEVELOPMENT_TEAM = UQ7AURZ83A;
+				INFOPLIST_FILE = "Config/DailyRoutineWidgets-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.bojangles4x4.DailyRoutine.watchkitapp.widgets;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Release;
+		};
 		8180FCE99C0984B051542141 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Config/DailyRoutineWatch.entitlements;
+				DEVELOPMENT_TEAM = UQ7AURZ83A;
 				INFOPLIST_FILE = "Config/DailyRoutineWatch-Info.plist";
 				PRODUCT_BUNDLE_IDENTIFIER = com.bojangles4x4.DailyRoutine.watchkitapp;
 				SDKROOT = watchos;
@@ -396,6 +519,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Config/DailyRoutine.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = UQ7AURZ83A;
 				INFOPLIST_FILE = "Config/DailyRoutine-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -411,6 +535,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Config/DailyRoutineWatch.entitlements;
+				DEVELOPMENT_TEAM = UQ7AURZ83A;
 				INFOPLIST_FILE = "Config/DailyRoutineWatch-Info.plist";
 				PRODUCT_BUNDLE_IDENTIFIER = com.bojangles4x4.DailyRoutine.watchkitapp;
 				SDKROOT = watchos;
@@ -425,6 +551,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Config/DailyRoutine.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = UQ7AURZ83A;
 				INFOPLIST_FILE = "Config/DailyRoutine-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -507,6 +634,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 2;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -525,6 +653,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.9.2;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -562,6 +691,15 @@
 			buildConfigurations = (
 				A3D4308FE8783092B927BEDE /* Debug */,
 				9890C21C26CBF6DF2C325975 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		9ED681E2549B2D6E47BBE234 /* Build configuration list for PBXNativeTarget "DailyRoutineWatchWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2CD5E87F68421938B63EF681 /* Debug */,
+				798BBA272003D28FB42131A1 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

@@ -49,5 +49,24 @@ struct WatchRoutineContext: Codable, Sendable {
     let total: Int
     let nextItemName: String?
     let canCompleteNext: Bool?
+    let truthBeforeTasksComplete: Bool?
     let lastActionMessage: String?
+
+    init(
+        dateKey: String,
+        completed: Int,
+        total: Int,
+        nextItemName: String?,
+        canCompleteNext: Bool?,
+        truthBeforeTasksComplete: Bool? = nil,
+        lastActionMessage: String?
+    ) {
+        self.dateKey = dateKey
+        self.completed = completed
+        self.total = total
+        self.nextItemName = nextItemName
+        self.canCompleteNext = canCompleteNext
+        self.truthBeforeTasksComplete = truthBeforeTasksComplete
+        self.lastActionMessage = lastActionMessage
+    }
 }

@@ -33,6 +33,7 @@ Recent Daily Routine work points to a clear native product direction:
 ### Phase 3 — Apple Watch quick actions
 
 - Show today’s completion summary.
+- Require Truth Before Tasks on iPhone before enabling Watch quick actions.
 - Complete the next routine item.
 - Add one water unit.
 - Record a lightweight mood check-in.
@@ -41,7 +42,7 @@ Recent Daily Routine work points to a clear native product direction:
 ### Phase 4 — Native reminders and glanceable surfaces
 
 - Local notifications for “Bring this back on.”
-- Watch complication or Smart Stack widget for today’s progress.
+- Watch complication and Smart Stack widget for today’s progress. *(Foundation implemented; physical-device refresh testing remains.)*
 - Background refresh that respects battery life and privacy.
 
 ## Decisions still needed before App Store submission
