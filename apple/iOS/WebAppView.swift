@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import UIKit
 import WebKit
 
 struct WebAppView: UIViewRepresentable {
@@ -126,6 +127,25 @@ struct WebAppView: UIViewRepresentable {
             )
             pendingWatchEvents.forEach { emit(name: "watch.event", value: $0) }
             pendingWatchEvents.removeAll()
+        }
+
+        func webView(
+            _ webView: WKWebView,
+            decidePolicyFor navigationAction: WKNavigationAction,
+            decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
+        ) {
+            guard
+                navigationAction.navigationType == .linkActivated,
+                let url = navigationAction.request.url,
+                let scheme = url.scheme?.lowercased(),
+                scheme == "http" || scheme == "https"
+            else {
+                decisionHandler(.allow)
+                return
+            }
+
+            UIApplication.shared.open(url)
+            decisionHandler(.cancel)
         }
 
         private func emit<T: Encodable>(name: String, value: T) {

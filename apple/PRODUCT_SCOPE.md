@@ -47,8 +47,8 @@ Recent Daily Routine work points to a clear native product direction:
 
 ## Decisions still needed before App Store submission
 
-- Final app name and bundle identifier.
-- Apple Developer team and App Store ownership.
+- Confirm final app-name availability; the bundle identifier is `com.bojangles4x4.DailyRoutine`.
+- Confirm the activated Apple Developer team and App Store ownership in Xcode.
 - Which Health categories are truly useful after real-device testing.
 - Whether cross-device sync should use CloudKit, an App Group, or remain manual backup only.
-- Privacy policy and App Privacy answers.
+- Confirm the prepared privacy policy and App Privacy answers still match the submitted binary.

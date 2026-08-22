@@ -1,5 +1,5 @@
-const CACHE_NAME = 'daily-routine-v1-9-2-medication-time-warning';
-const ASSETS = ['./','./index.html','./styles.css','./app.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
+const CACHE_NAME = 'daily-routine-v1-9-2-release-readiness';
+const ASSETS = ['./','./index.html','./styles.css','./app.js','./manifest.webmanifest','./icon-192.png','./icon-512.png','./privacy.html','./support.html','./legal.css'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));

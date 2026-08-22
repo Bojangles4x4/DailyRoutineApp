@@ -24,11 +24,14 @@ This is intentionally more than a website wrapper. The native HealthKit and Watc
 - Glanceable Watch dashboard with progress, next routine, and thumb-friendly actions
 - WidgetKit complications for circular, inline, and rectangular layouts, including the Watch Smart Stack
 - Truth Before Tasks synchronization that keeps Watch quick actions and complications locked until the iPhone opening is complete
+- App Store icon catalogs, privacy manifests for App Group user defaults, and bundled privacy/support pages
 - XcodeGen project specification
 
 For safety, Complete next only marks unfinished checkbox routines. Medication logs and linked-app routines must still be completed deliberately on iPhone. All Watch quick actions remain locked until Truth Before Tasks is completed on the iPhone for the local calendar day. If the Watch companion is not installed yet, the iPhone keeps the latest routine context ready and sends it when Watch Connectivity reports the companion is available.
 
 The Watch app writes its latest received routine summary to an App Group shared with the WidgetKit extension. This lets complications show current progress without exposing the full routine database or Health information.
+
+See [APP_STORE_SUBMISSION.md](APP_STORE_SUBMISSION.md) for the prepared listing copy, App Privacy answers, HealthKit disclosure, TestFlight instructions, review notes, and final submission checklist.
 
 ## Prerequisites
 
