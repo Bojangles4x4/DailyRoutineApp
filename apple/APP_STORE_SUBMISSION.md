@@ -105,9 +105,9 @@ Watch actions remain locked until the reviewer completes the Truth Before Tasks 
 - [ ] App record exists for `com.bojangles4x4.DailyRoutine`
 - [ ] Watch and widget identifiers are registered
 - [ ] App Group `group.com.bojangles4x4.DailyRoutine` is assigned to Watch and widget identifiers
-- [ ] Privacy and support URLs are public
+- [x] Privacy and support URLs are public
 - [ ] App Privacy answers match this audited build
-- [ ] Screenshots show real app UI with fictional, non-sensitive example data
+- [x] Screenshots show real app UI with fictional, non-sensitive example data (see [AppStoreAssets](AppStoreAssets/README.md))
 - [ ] Physical iPhone HealthKit authorization test passes
 - [ ] Physical iPhone/Apple Watch sync and complication refresh tests pass
 - [ ] Signed archive validates without warnings
