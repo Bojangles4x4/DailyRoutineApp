@@ -240,6 +240,40 @@
           <button id="saveWeeklyFocusButton" class="primary-button weekly-focus-save" type="button">Save weekly focus</button>
         </section>
 
+        <section class="card accountability-report-card" id="accountabilityReportCard">
+          <div class="section-heading"><div><p class="eyebrow">Accountability</p><h2>Share a progress report</h2></div><span class="privacy-pill">On device</span></div>
+          <p class="muted accountability-intro">Choose what to include, then preview the exact report before sharing it. Nothing is sent automatically.</p>
+
+          <label class="text-field compact accountability-period-field"><span>Report period</span><select id="accountabilityPeriodInput"><option value="week">This week</option><option value="today">Today</option></select></label>
+
+          <fieldset class="accountability-options">
+            <legend>Choose what to include</legend>
+            <label class="toggle-field"><input id="accountabilityRoutineInput" type="checkbox" /><span><b>Routine summary</b><small>Completion, parts of day, Truth Before Tasks, and habit consistency.</small></span></label>
+            <label class="toggle-field"><input id="accountabilityMedicationInput" type="checkbox" /><span><b>Medication status</b><small>Shares only how many scheduled doses were logged.</small></span></label>
+            <label id="accountabilityMedicationTimesField" class="toggle-field accountability-sensitive-option"><input id="accountabilityMedicationTimesInput" type="checkbox" /><span><b>Medication names and times</b><small>Sensitive details. Available only when medication status is included.</small></span></label>
+            <label class="toggle-field"><input id="accountabilityCheckinsInput" type="checkbox" /><span><b>Rating check-ins</b><small>Shares averages for logged scales such as mood, sleep quality, and stress—not written reflections.</small></span></label>
+            <label id="accountabilityHealthField" class="toggle-field accountability-sensitive-option" hidden><input id="accountabilityHealthInput" type="checkbox" /><span><b>Latest Apple Health summary</b><small>Sensitive and off by default. Shares the most recently refreshed steps, sleep, and workout totals.</small></span></label>
+          </fieldset>
+
+          <div class="accountability-reflection-fields">
+            <label class="text-field"><span>What went well? <small>Optional</small></span><textarea id="accountabilityReflectionInput" rows="3" maxlength="500" placeholder="A short reflection you want your accountability partner to see…"></textarea></label>
+            <label class="text-field"><span>Where would support help? <small>Optional</small></span><textarea id="accountabilitySupportInput" rows="3" maxlength="500" placeholder="A habit, decision, or area where encouragement would help…"></textarea></label>
+          </div>
+
+          <div class="accountability-builder-actions">
+            <button id="previewAccountabilityButton" class="primary-button" type="button">Preview report</button>
+          </div>
+
+          <section id="accountabilityPreviewPanel" class="accountability-preview-panel" aria-labelledby="accountabilityPreviewTitle" hidden>
+            <div class="accountability-preview-heading"><div><span class="preview-ready-dot" aria-hidden="true"></span><strong id="accountabilityPreviewTitle">Ready for your review</strong></div><small>Only the text below will be shared.</small></div>
+            <pre id="accountabilityPreviewText" tabindex="0"></pre>
+            <div class="accountability-share-actions">
+              <button id="copyAccountabilityButton" class="secondary-button" type="button">Copy report</button>
+              <button id="shareAccountabilityButton" class="primary-button" type="button">Share report</button>
+            </div>
+          </section>
+        </section>
+
         <section class="card">
           <div class="section-heading"><div><p class="eyebrow">History</p><h2>Recent days</h2></div></div>
           <div id="historyList" class="history-list"></div>
@@ -379,7 +413,7 @@
             <a href="privacy.html">Privacy Policy</a>
             <a href="support.html">Support</a>
           </div>
-          <p class="app-version">Daily Routine <b id="appVersion">v1.9.2</b></p>
+          <p class="app-version">Daily Routine <b id="appVersion">v1.10.0</b></p>
         </section>
 
 

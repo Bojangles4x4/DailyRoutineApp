@@ -1,6 +1,6 @@
 # App Store submission package
 
-This document keeps the first App Store and TestFlight submission consistent with the behavior of Daily Routine 1.9.2 (build 2).
+This document keeps the first App Store and TestFlight submission consistent with the behavior of Daily Routine 1.10.0 (build 3).
 
 ## URLs
 
@@ -39,6 +39,7 @@ Highlights:
 - Flexible sick, travel, vacation, and rest days
 - Apple Watch progress, quick actions, and complications
 - Optional, read-only Apple Health summaries
+- Manual accountability reports with exact previews and category-level privacy controls
 - Local-first storage with manual backup and export
 
 Daily Routine contains no ads, analytics, or account requirement. Your routine content remains on your devices unless you choose to export it.
@@ -49,16 +50,17 @@ Daily Routine is a personal organization tool and does not provide medical advic
 
 `routine,habits,planner,journal,prayer,reflection,checklist,wellness,private,watch`
 
-### Version 1.9.2 release notes
+### Version 1.10.0 release notes
 
 - Begin each day with Truth Before Tasks.
 - Keep primary navigation visible while scrolling.
 - Get a gentle confirmation when logging morning medicine in the evening or evening medicine in the morning.
 - Use Notes & Thoughts, Review & Reflect, and Apple Watch progress from one private routine home.
+- Preview and manually share a daily or weekly accountability report with sensitive categories off by default.
 
 ## App Privacy answers
 
-Select **No, we do not collect data from this app** while the implementation remains as audited for 1.9.2:
+Select **No, we do not collect data from this app** while the implementation remains as audited for 1.10.0:
 
 - No developer-operated server or account system
 - No analytics, advertising, tracking, or third-party SDKs
@@ -66,6 +68,7 @@ Select **No, we do not collect data from this app** while the implementation rem
 - Apple Health data is read only after user authorization, summarized on device, and not transmitted off device
 - Watch routine snapshots remain within the iPhone/Watch apps and their shared App Group
 - Backup and export files leave the app only through an explicit user action
+- Accountability reports remain on device until the user previews and explicitly copies or shares them to a chosen destination
 
 Revisit these answers before submission if networking, cloud sync, crash reporting, analytics, or another SDK is added.
 
@@ -76,6 +79,7 @@ Revisit these answers before submission if networking, cloud sync, crash reporti
 - User benefit: show a small on-device daily summary alongside the user’s routine
 - Not used for advertising, marketing, profiling, or data mining
 - Not stored in iCloud or included in Watch complication data
+- Included in a manual accountability report only after the user enables the separate Health switch and reviews the exact text
 
 ## TestFlight “What to Test”
 
@@ -87,12 +91,13 @@ Please test the first-run flow and verify that existing routine data remains int
 4. Connect Apple Health, approve selected read permissions, and refresh the summary.
 5. Verify iPhone/Watch progress sync and complication updates.
 6. Download a JSON backup and restore it after making a temporary change.
+7. Create daily and weekly accountability reports, verify sensitive switches are off by default, and confirm the copied/shared text exactly matches the preview.
 
 Do not use real sensitive notes or medication details in a public bug report.
 
 ## App Review notes
 
-Daily Routine is local-first and does not require an account. The main experience is bundled for offline use inside a native SwiftUI/WKWebView shell. Native functionality includes optional read-only HealthKit summaries, Watch Connectivity quick actions, a watchOS companion, and WidgetKit complications.
+Daily Routine is local-first and does not require an account. The main experience is bundled for offline use inside a native SwiftUI/WKWebView shell. Native functionality includes optional read-only HealthKit summaries, a user-initiated Share sheet for previewed accountability report text, Watch Connectivity quick actions, a watchOS companion, and WidgetKit complications.
 
 Health access is requested only from Setup after the reviewer taps Connect Health. The app requests read access for steps, sleep, and workouts and does not write HealthKit data.
 

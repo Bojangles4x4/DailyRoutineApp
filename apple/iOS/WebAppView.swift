@@ -112,6 +112,16 @@ struct WebAppView: UIViewRepresentable {
                 }
                 let updated = model.watch.update(context: context)
                 emit(name: "watch.context.updated", value: ["updated": updated, "queued": !updated])
+            case .shareText:
+                guard
+                    let value = payload["value"] as? [String: Any],
+                    let text = value["text"] as? String,
+                    !text.isEmpty
+                else {
+                    emitError("The report was empty and could not be shared.")
+                    return
+                }
+                presentShareSheet(title: value["title"] as? String, text: text)
             }
         }
 
@@ -161,6 +171,35 @@ struct WebAppView: UIViewRepresentable {
 
         private func emitError(_ message: String) {
             emit(name: "native.error", value: ["message": message])
+        }
+
+        private func presentShareSheet(title: String?, text: String) {
+            let controller = UIActivityViewController(activityItems: [text], applicationActivities: nil)
+            if let title, !title.isEmpty {
+                controller.setValue(title, forKey: "subject")
+            }
+            if let popover = controller.popoverPresentationController, let webView {
+                popover.sourceView = webView
+                popover.sourceRect = CGRect(x: webView.bounds.midX, y: webView.bounds.maxY - 1, width: 1, height: 1)
+            }
+            guard let presenter = topViewController(from: webView?.window?.rootViewController) else {
+                emitError("The share options could not be opened.")
+                return
+            }
+            presenter.present(controller, animated: true)
+        }
+
+        private func topViewController(from controller: UIViewController?) -> UIViewController? {
+            if let presented = controller?.presentedViewController {
+                return topViewController(from: presented)
+            }
+            if let navigation = controller as? UINavigationController {
+                return topViewController(from: navigation.visibleViewController)
+            }
+            if let tabs = controller as? UITabBarController {
+                return topViewController(from: tabs.selectedViewController)
+            }
+            return controller
         }
     }
 }
