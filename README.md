@@ -2,8 +2,11 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.8.4 features
+## Version 1.9.2 features
 
+- Truth Before Tasks daily opening before the rest of the routine unlocks
+- Fixed bottom navigation that remains visible while scrolling
+- Gentle confirmation for morning medication logged in the evening or evening medication logged in the morning
 - Right- or left-handed routine control placement, configurable in Setup
 - Larger phone tap targets for checkboxes, rating buttons, and small routine actions
 - Note capture stays within the phone viewport, with stacked and fully inset date fields on iPhone
@@ -64,6 +67,9 @@ Open the GitHub Pages URL in Safari → Share → **Add to Home Screen** → ena
 ## Privacy note
 
 This version has no account system and does not transmit routine, mood, or note data. Data is stored locally on the device/browser. Clearing browser storage can erase it, so use Download backup periodically.
+
+- [Privacy Policy](privacy.html)
+- [Support](support.html)
 
 ## Recommended next phase: private accountability sharing
 

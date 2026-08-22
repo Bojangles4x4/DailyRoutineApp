@@ -11,25 +11,31 @@
 		05F62511934122D09C2E3D93 /* PhoneWatchSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17CD184FE3D8B6273C7708A1 /* PhoneWatchSessionManager.swift */; };
 		166786542EC96F1AA0C5919E /* HealthKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 138B5200C630CA1BBDECBD89 /* HealthKitService.swift */; };
 		1B4A79B5E3D22CC5670A0D69 /* WatchQuickActionsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 257F0F7544BC18F981B9B551 /* WatchQuickActionsUITests.swift */; };
+		1DF54C8BD1F12B189E0AA449 /* privacy.html in Resources */ = {isa = PBXBuildFile; fileRef = 54A52939EF96C0A39ED93B88 /* privacy.html */; };
 		27949F733E0D9FAD11666B58 /* WebAppView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84999DD0051D68587AD4C817 /* WebAppView.swift */; };
 		345A54E8F5834A6C41D8B9BA /* icon-192.png in Resources */ = {isa = PBXBuildFile; fileRef = 6CA6D716AE01116903574E34 /* icon-192.png */; };
 		3C8EFB710A7D9E291A35C98A /* app.js in Resources */ = {isa = PBXBuildFile; fileRef = 10E6F55D19A361D999DC14D5 /* app.js */; };
 		4B8D7EA7155D3CAE8DF8F463 /* styles.css in Resources */ = {isa = PBXBuildFile; fileRef = D1A95175FAC3CC1E05F33E56 /* styles.css */; };
+		4E6EBEE2B91E9754E0961107 /* support.html in Resources */ = {isa = PBXBuildFile; fileRef = 29D48B7899D205C684D78E69 /* support.html */; };
 		591486D40F0612C6EF229E7A /* BridgeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23CF6F479542799A7E80F4BA /* BridgeModels.swift */; };
 		6231E4C1EC4CBE5BCE6827DE /* WidgetSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8096AA8C4DC525F750013EEC /* WidgetSnapshotStore.swift */; };
 		716A1BB63BE760F86E893CE1 /* DailyRoutineWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2189365ED52A585536004293 /* DailyRoutineWidget.swift */; };
 		80D05D187A20118D1DFDDABA /* manifest.webmanifest in Resources */ = {isa = PBXBuildFile; fileRef = EEB6294F12C1A4CEA749044F /* manifest.webmanifest */; };
 		8BEF776BB9C8787C12572ED3 /* icon-512.png in Resources */ = {isa = PBXBuildFile; fileRef = 08074A312C8759C6DAAC1741 /* icon-512.png */; };
+		8F637C761A7C038B19E9FDEB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EC6017F29444BD176EFFAEFB /* Assets.xcassets */; };
 		A574F7F679A3EA0E3F858505 /* BridgeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23CF6F479542799A7E80F4BA /* BridgeModels.swift */; };
 		A6D80EDB06CDBAA44BA621E1 /* DailyRoutineWatchWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 1A698DCFE06EF6EE4972D27A /* DailyRoutineWatchWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		BE7F4621371B2407B8CC40ED /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A96EFF2B195E0DA4B5B9F18 /* AppModel.swift */; };
 		BED1C32113F663A3E1EB22FE /* WatchSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9CD412035E618B429C99C67 /* WatchSessionManager.swift */; };
 		C2F082AB129B354730706633 /* DailyRoutineAppleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A535F5FF0A19279B38B92EE /* DailyRoutineAppleApp.swift */; };
+		C4F7D679B8058B05A75D5F3C /* legal.css in Resources */ = {isa = PBXBuildFile; fileRef = FFB952AA8A52DE0ED5759336 /* legal.css */; };
+		D22BC9E451CE3BE3C9A0F880 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7565018F737AC8FE68939BBB /* Assets.xcassets */; };
 		D6C211E2362593C25DD65D90 /* DailyRoutineWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 566ED5F8606B577FFAB6A93C /* DailyRoutineWatchApp.swift */; };
+		D9583503897ABD71B21BE5D8 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 0AB50D90125AC93C7EB08335 /* PrivacyInfo.xcprivacy */; };
 		DDF7188BFC7F79DB0A7B68A7 /* WatchContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49322339D19B74F64851BBB8 /* WatchContentView.swift */; };
-		DF10BEA3D7A6B78BBE419AE8 /* WidgetSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8096AA8C4DC525F750013EEC /* WidgetSnapshotStore.swift */; };
 		E275C54338CC184B37E7E4E0 /* DailyRoutineWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = B97BBECEFE2DF2727D5E833D /* DailyRoutineWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		E2A20CF11685E6E3FC7A9358 /* BridgeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23CF6F479542799A7E80F4BA /* BridgeModels.swift */; };
+		EA6BF0D94D6CBA96E16CD3F3 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 7227919A0E66411FE2CFB8A3 /* PrivacyInfo.xcprivacy */; };
 		EE185B74056E92A6704B7CBF /* index.html in Resources */ = {isa = PBXBuildFile; fileRef = EF24BE7890341E426ABE06A6 /* index.html */; };
 /* End PBXBuildFile section */
 
@@ -84,6 +90,7 @@
 
 /* Begin PBXFileReference section */
 		08074A312C8759C6DAAC1741 /* icon-512.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon-512.png"; sourceTree = "<group>"; };
+		0AB50D90125AC93C7EB08335 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		10E6F55D19A361D999DC14D5 /* app.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = app.js; sourceTree = "<group>"; };
 		138B5200C630CA1BBDECBD89 /* HealthKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitService.swift; sourceTree = "<group>"; };
 		17CD184FE3D8B6273C7708A1 /* PhoneWatchSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneWatchSessionManager.swift; sourceTree = "<group>"; };
@@ -91,10 +98,14 @@
 		2189365ED52A585536004293 /* DailyRoutineWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyRoutineWidget.swift; sourceTree = "<group>"; };
 		23CF6F479542799A7E80F4BA /* BridgeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeModels.swift; sourceTree = "<group>"; };
 		257F0F7544BC18F981B9B551 /* WatchQuickActionsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchQuickActionsUITests.swift; sourceTree = "<group>"; };
+		29D48B7899D205C684D78E69 /* support.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = support.html; sourceTree = "<group>"; };
 		49322339D19B74F64851BBB8 /* WatchContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchContentView.swift; sourceTree = "<group>"; };
 		4A535F5FF0A19279B38B92EE /* DailyRoutineAppleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyRoutineAppleApp.swift; sourceTree = "<group>"; };
+		54A52939EF96C0A39ED93B88 /* privacy.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = privacy.html; sourceTree = "<group>"; };
 		566ED5F8606B577FFAB6A93C /* DailyRoutineWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyRoutineWatchApp.swift; sourceTree = "<group>"; };
 		6CA6D716AE01116903574E34 /* icon-192.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon-192.png"; sourceTree = "<group>"; };
+		7227919A0E66411FE2CFB8A3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		7565018F737AC8FE68939BBB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7A96EFF2B195E0DA4B5B9F18 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		801CDE97146E329ACBD3CC9B /* DailyRoutine.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = DailyRoutine.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8096AA8C4DC525F750013EEC /* WidgetSnapshotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshotStore.swift; sourceTree = "<group>"; };
@@ -103,8 +114,10 @@
 		B97BBECEFE2DF2727D5E833D /* DailyRoutineWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DailyRoutineWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B9CD412035E618B429C99C67 /* WatchSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSessionManager.swift; sourceTree = "<group>"; };
 		D1A95175FAC3CC1E05F33E56 /* styles.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = styles.css; sourceTree = "<group>"; };
+		EC6017F29444BD176EFFAEFB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		EEB6294F12C1A4CEA749044F /* manifest.webmanifest */ = {isa = PBXFileReference; path = manifest.webmanifest; sourceTree = "<group>"; };
 		EF24BE7890341E426ABE06A6 /* index.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = index.html; sourceTree = "<group>"; };
+		FFB952AA8A52DE0ED5759336 /* legal.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = legal.css; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -112,6 +125,7 @@
 			isa = PBXGroup;
 			children = (
 				2189365ED52A585536004293 /* DailyRoutineWidget.swift */,
+				0AB50D90125AC93C7EB08335 /* PrivacyInfo.xcprivacy */,
 			);
 			path = Widgets;
 			sourceTree = "<group>";
@@ -132,8 +146,11 @@
 				6CA6D716AE01116903574E34 /* icon-192.png */,
 				08074A312C8759C6DAAC1741 /* icon-512.png */,
 				EF24BE7890341E426ABE06A6 /* index.html */,
+				FFB952AA8A52DE0ED5759336 /* legal.css */,
 				EEB6294F12C1A4CEA749044F /* manifest.webmanifest */,
+				54A52939EF96C0A39ED93B88 /* privacy.html */,
 				D1A95175FAC3CC1E05F33E56 /* styles.css */,
+				29D48B7899D205C684D78E69 /* support.html */,
 			);
 			name = DailyRoutineApp;
 			path = ..;
@@ -162,7 +179,9 @@
 		B1315ABBF92798A7B4910A00 /* watchOS */ = {
 			isa = PBXGroup;
 			children = (
+				EC6017F29444BD176EFFAEFB /* Assets.xcassets */,
 				566ED5F8606B577FFAB6A93C /* DailyRoutineWatchApp.swift */,
+				7227919A0E66411FE2CFB8A3 /* PrivacyInfo.xcprivacy */,
 				49322339D19B74F64851BBB8 /* WatchContentView.swift */,
 				B9CD412035E618B429C99C67 /* WatchSessionManager.swift */,
 			);
@@ -173,6 +192,7 @@
 			isa = PBXGroup;
 			children = (
 				7A96EFF2B195E0DA4B5B9F18 /* AppModel.swift */,
+				7565018F737AC8FE68939BBB /* Assets.xcassets */,
 				4A535F5FF0A19279B38B92EE /* DailyRoutineAppleApp.swift */,
 				138B5200C630CA1BBDECBD89 /* HealthKitService.swift */,
 				17CD184FE3D8B6273C7708A1 /* PhoneWatchSessionManager.swift */,
@@ -202,6 +222,7 @@
 			buildConfigurationList = 020D9F6E2D53C87DAAD4328D /* Build configuration list for PBXNativeTarget "DailyRoutineWatch" */;
 			buildPhases = (
 				D37514813D7F4534FAB51709 /* Sources */,
+				971093FE48ED364FA0583498 /* Resources */,
 				EB17CA7A722AA9E8D2FFE572 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
@@ -259,6 +280,7 @@
 			buildConfigurationList = 9ED681E2549B2D6E47BBE234 /* Build configuration list for PBXNativeTarget "DailyRoutineWatchWidgets" */;
 			buildPhases = (
 				20BA7773C9DFC1698E9030A0 /* Sources */,
+				69CBF7EF02215838FEF8A90E /* Resources */,
 			);
 			buildRules = (
 			);
@@ -325,12 +347,33 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D22BC9E451CE3BE3C9A0F880 /* Assets.xcassets in Resources */,
 				3C8EFB710A7D9E291A35C98A /* app.js in Resources */,
 				345A54E8F5834A6C41D8B9BA /* icon-192.png in Resources */,
 				8BEF776BB9C8787C12572ED3 /* icon-512.png in Resources */,
 				EE185B74056E92A6704B7CBF /* index.html in Resources */,
+				C4F7D679B8058B05A75D5F3C /* legal.css in Resources */,
 				80D05D187A20118D1DFDDABA /* manifest.webmanifest in Resources */,
+				1DF54C8BD1F12B189E0AA449 /* privacy.html in Resources */,
 				4B8D7EA7155D3CAE8DF8F463 /* styles.css in Resources */,
+				4E6EBEE2B91E9754E0961107 /* support.html in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		69CBF7EF02215838FEF8A90E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D9583503897ABD71B21BE5D8 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		971093FE48ED364FA0583498 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8F637C761A7C038B19E9FDEB /* Assets.xcassets in Resources */,
+				EA6BF0D94D6CBA96E16CD3F3 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -357,7 +400,6 @@
 				166786542EC96F1AA0C5919E /* HealthKitService.swift in Sources */,
 				05F62511934122D09C2E3D93 /* PhoneWatchSessionManager.swift in Sources */,
 				27949F733E0D9FAD11666B58 /* WebAppView.swift in Sources */,
-				DF10BEA3D7A6B78BBE419AE8 /* WidgetSnapshotStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
