@@ -2,7 +2,7 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.9.2 features
+## Version 1.10.0 features
 
 - Truth Before Tasks daily opening before the rest of the routine unlocks
 - Fixed bottom navigation that remains visible while scrolling
@@ -24,6 +24,10 @@ A mobile-first private routine and mood tracker designed to run as a Progressive
 - Daily completion percentage and 80%+ streak
 - 30-day history
 - CSV progress export
+- Local daily or weekly accountability reports with an exact preview before sharing
+- Separate privacy controls for routine, medication, rating, and Apple Health summaries
+- Optional report-only reflections for wins and areas where support would help
+- Native iPhone Share sheet plus copy and browser sharing fallbacks
 - JSON backup / restore
 - Grace-first daily foundation that keeps identity separate from completion
 - Searchable Notes & Thoughts hub for routine notes, Memory Bank entries, and standalone notes
@@ -71,9 +75,9 @@ This version has no account system and does not transmit routine, mood, or note 
 - [Privacy Policy](privacy.html)
 - [Support](support.html)
 
-## Recommended next phase: private accountability sharing
+## Recommended next phase: private accountability partner access
 
-Add authenticated cloud sync so each app user can authorize one accountability viewer. A good architecture is:
+The current manual report intentionally shares only after the user previews and chooses a destination. A future automatic partner experience can add authenticated cloud delivery so each app user can authorize one accountability viewer. A good architecture is:
 
 - Front end: this GitHub Pages PWA
 - Authentication + database: Supabase

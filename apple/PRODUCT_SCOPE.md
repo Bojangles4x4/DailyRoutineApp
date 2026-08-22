@@ -10,6 +10,7 @@ Recent Daily Routine work points to a clear native product direction:
 - Set technical metadata such as note source automatically and keep it out of the main flow.
 - Preserve Review & Reflect, Memory Bank, prayer, God Moments, medication timing, and flexible-day behavior.
 - Keep the app private and local-first, with intentional backup and export.
+- Share accountability summaries only after an exact preview, with sensitive categories off by default.
 - Treat Apple Watch as a quick-action surface, not a tiny copy of the entire phone app.
 
 ## Recommended delivery phases
@@ -44,6 +45,13 @@ Recent Daily Routine work points to a clear native product direction:
 - Local notifications for “Bring this back on.”
 - Watch complication and Smart Stack widget for today’s progress. *(Foundation implemented; physical-device refresh testing remains.)*
 - Background refresh that respects battery life and privacy.
+
+### Phase 5 — Accountability
+
+- Generate local daily and weekly accountability reports. *(Manual preview, copy, and Share sheet implemented.)*
+- Keep medication details and Apple Health behind separate opt-in controls.
+- Learn which report fields are genuinely useful before adding partner accounts or automatic delivery.
+- If automatic sharing is added later, upload limited report snapshots instead of the full local routine database.
 
 ## Decisions still needed before App Store submission
 

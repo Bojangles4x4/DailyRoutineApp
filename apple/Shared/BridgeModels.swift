@@ -4,6 +4,7 @@ enum NativeBridgeAction: String, Codable {
     case requestHealthAuthorization = "health.authorization.request"
     case requestHealthSummary = "health.summary.request"
     case updateWatchContext = "watch.context.update"
+    case shareText = "share.text"
 }
 
 struct HealthSummary: Codable, Sendable {

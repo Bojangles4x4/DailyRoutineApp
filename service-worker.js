@@ -1,4 +1,4 @@
-const CACHE_NAME = 'daily-routine-v1-9-2-release-readiness';
+const CACHE_NAME = 'daily-routine-v1-10-0-accountability-report';
 const ASSETS = ['./','./index.html','./styles.css','./app.js','./manifest.webmanifest','./icon-192.png','./icon-512.png','./privacy.html','./support.html','./legal.css'];
 
 self.addEventListener('install', event => {

@@ -3,13 +3,21 @@
 
   const STORAGE_KEY = 'dailyRoutineApp.v1';
   const SNAPSHOT_KEY = 'dailyRoutineApp.snapshots.v1';
-  const APP_VERSION = '1.9.2';
+  const APP_VERSION = '1.10.0';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const DEFAULT_BIBLE_APP_URL = 'https://bojangles4x4.github.io/Bible-Reading-Plan/';
   const DEFAULT_SCALE = { min: 0, max: 10, step: 1, lowLabel: 'Low', highLabel: 'Great' };
   const DEFAULT_STATE = {
-    settings: { wakeTime: '06:00', bedTime: '22:30', theme: 'calm', handedness: 'right', backgroundImage: '', badgeEnabled: true, streakThreshold: 80, streakMode: 'forgiving', streakWeekdaysOnly: false, bibleAppUrl: DEFAULT_BIBLE_APP_URL, resurfacingFrequency: 'occasional', lastBackupAt: '' },
+    settings: {
+      wakeTime: '06:00', bedTime: '22:30', theme: 'calm', handedness: 'right', backgroundImage: '', badgeEnabled: true,
+      streakThreshold: 80, streakMode: 'forgiving', streakWeekdaysOnly: false, bibleAppUrl: DEFAULT_BIBLE_APP_URL,
+      resurfacingFrequency: 'occasional', lastBackupAt: '',
+      accountabilityReport: {
+        period: 'week', includeRoutine: true, includeMedication: false, includeMedicationTimes: false,
+        includeCheckins: false, includeHealth: false, reflection: '', support: ''
+      }
+    },
     items: [
       { id: 'morning-prayer', name: 'Prayer', kind: 'routine', section: 'morning', type: 'checkbox', frequency: 'daily', days: [], optional: false, unit: '', target: null },
       { id: 'morning-teeth', name: 'Brush teeth', kind: 'routine', section: 'morning', type: 'checkbox', frequency: 'daily', days: [], optional: false, unit: '', target: null },
@@ -54,6 +62,9 @@
   let integrationChannel = null;
   let reflectionReviewExpanded = false;
   let watchLastActionMessage = '';
+  let latestHealthSummary = null;
+  let accountabilityPreview = '';
+  let accountabilityPreviewSignature = '';
   const processedWatchEventIds = new Set();
   const collapsedSections = new Set();
 
@@ -85,6 +96,7 @@
     appleNativeCard: $('appleNativeCard'), appleStepCount: $('appleStepCount'), appleSleepHours: $('appleSleepHours'), appleWorkoutCount: $('appleWorkoutCount'), appleHealthStatus: $('appleHealthStatus'), connectAppleHealthButton: $('connectAppleHealthButton'), refreshAppleHealthButton: $('refreshAppleHealthButton'), appleWatchStatus: $('appleWatchStatus'),
     linkedActionFields: $('linkedActionFields'), linkedTemplateInput: $('linkedTemplateInput'), linkedCompletionInput: $('linkedCompletionInput'), linkedUrlField: $('linkedUrlField'), linkedUrlInput: $('linkedUrlInput'), linkedInternalField: $('linkedInternalField'), linkedInternalTargetInput: $('linkedInternalTargetInput'), linkedButtonLabelInput: $('linkedButtonLabelInput'), timeWindowFields: $('timeWindowFields'), timeWindowStartInput: $('timeWindowStartInput'), timeWindowEndInput: $('timeWindowEndInput'),
     medicationProgressCard: $('medicationProgressCard'), weeklyReviewCard: $('weeklyReviewCard'), memoryBankCard: $('memoryBankCard'), dataBackupCard: $('dataBackupCard'),
+    accountabilityReportCard: $('accountabilityReportCard'), accountabilityPeriodInput: $('accountabilityPeriodInput'), accountabilityRoutineInput: $('accountabilityRoutineInput'), accountabilityMedicationInput: $('accountabilityMedicationInput'), accountabilityMedicationTimesField: $('accountabilityMedicationTimesField'), accountabilityMedicationTimesInput: $('accountabilityMedicationTimesInput'), accountabilityCheckinsInput: $('accountabilityCheckinsInput'), accountabilityHealthField: $('accountabilityHealthField'), accountabilityHealthInput: $('accountabilityHealthInput'), accountabilityReflectionInput: $('accountabilityReflectionInput'), accountabilitySupportInput: $('accountabilitySupportInput'), previewAccountabilityButton: $('previewAccountabilityButton'), accountabilityPreviewPanel: $('accountabilityPreviewPanel'), accountabilityPreviewText: $('accountabilityPreviewText'), copyAccountabilityButton: $('copyAccountabilityButton'), shareAccountabilityButton: $('shareAccountabilityButton'),
     deleteItemButton: $('deleteItemButton'), closeDialogButton: $('closeDialogButton'), installButton: $('installButton'), toast: $('toast')
   };
 
@@ -94,6 +106,7 @@
     switchView,
     showToast,
     syncWatchContext,
+    buildAccountabilityReport,
     dateKey,
     startOfToday
   };
@@ -310,6 +323,24 @@
     if (!Array.isArray(state.notes)) { state.notes = []; changed = true; }
     state.notes = state.notes.map(normalizeNote).filter(note => note.text);
     if (!state.weeklyReviews || typeof state.weeklyReviews !== 'object') { state.weeklyReviews = {}; changed = true; }
+    const accountabilityDefaults = DEFAULT_STATE.settings.accountabilityReport;
+    const storedAccountability = state.settings.accountabilityReport;
+    if (!storedAccountability || typeof storedAccountability !== 'object') changed = true;
+    state.settings.accountabilityReport = { ...accountabilityDefaults, ...(storedAccountability && typeof storedAccountability === 'object' ? storedAccountability : {}) };
+    if (!['today', 'week'].includes(state.settings.accountabilityReport.period)) {
+      state.settings.accountabilityReport.period = accountabilityDefaults.period;
+      changed = true;
+    }
+    ['includeRoutine', 'includeMedication', 'includeMedicationTimes', 'includeCheckins', 'includeHealth'].forEach(key => {
+      const normalized = Boolean(state.settings.accountabilityReport[key]);
+      if (state.settings.accountabilityReport[key] !== normalized) changed = true;
+      state.settings.accountabilityReport[key] = normalized;
+    });
+    ['reflection', 'support'].forEach(key => {
+      const normalized = String(state.settings.accountabilityReport[key] || '').slice(0, 500);
+      if (state.settings.accountabilityReport[key] !== normalized) changed = true;
+      state.settings.accountabilityReport[key] = normalized;
+    });
     state.items.forEach((item, index) => {
       const normalized = normalizeItem(item, index);
       Object.assign(item, normalized);
@@ -491,6 +522,27 @@
 
   function bindProgressControls() {
     els.saveWeeklyFocusButton.addEventListener('click', saveWeeklyFocus);
+    const invalidateAccountabilityPreview = () => {
+      accountabilityPreview = '';
+      accountabilityPreviewSignature = '';
+      els.accountabilityPreviewPanel.hidden = true;
+      els.accountabilityPreviewText.textContent = '';
+    };
+    const updateAccountabilityOptions = () => {
+      saveAccountabilitySettings();
+      invalidateAccountabilityPreview();
+      renderAccountabilityReport();
+    };
+    [els.accountabilityPeriodInput, els.accountabilityRoutineInput, els.accountabilityMedicationInput, els.accountabilityMedicationTimesInput, els.accountabilityCheckinsInput, els.accountabilityHealthInput]
+      .forEach(input => input.addEventListener('change', updateAccountabilityOptions));
+    const saveAccountabilityDraft = debounce(saveAccountabilitySettings, 350);
+    [els.accountabilityReflectionInput, els.accountabilitySupportInput].forEach(input => input.addEventListener('input', () => {
+      invalidateAccountabilityPreview();
+      saveAccountabilityDraft();
+    }));
+    els.previewAccountabilityButton.addEventListener('click', previewAccountabilityReport);
+    els.copyAccountabilityButton.addEventListener('click', copyAccountabilityReport);
+    els.shareAccountabilityButton.addEventListener('click', shareAccountabilityReport);
     els.rangeSelector.querySelectorAll('.range-button').forEach(button => button.addEventListener('click', () => {
       analyticsRange = Number(button.dataset.range) || 7;
       els.rangeSelector.querySelectorAll('.range-button').forEach(candidate => candidate.classList.toggle('active', candidate === button));
@@ -554,6 +606,7 @@
     const reveal = () => {
       if (!bridge()?.postMessage) return;
       els.appleNativeCard.hidden = false;
+      els.accountabilityHealthField.hidden = false;
     };
 
     reveal();
@@ -578,10 +631,21 @@
         sendNativeBridgeMessage('health.summary.request');
       } else if (detail.name === 'health.summary') {
         const value = detail.value || {};
+        latestHealthSummary = {
+          date: value.date || new Date().toISOString(),
+          stepCount: Math.max(0, Number(value.stepCount) || 0),
+          sleepHours: Math.max(0, Number(value.sleepHours) || 0),
+          workoutCount: Math.max(0, Math.round(Number(value.workoutCount) || 0))
+        };
         els.appleStepCount.textContent = Math.round(Number(value.stepCount) || 0).toLocaleString();
         els.appleSleepHours.textContent = `${(Number(value.sleepHours) || 0).toFixed(1)}h`;
         els.appleWorkoutCount.textContent = String(Math.round(Number(value.workoutCount) || 0));
         els.appleHealthStatus.textContent = 'Summary refreshed from Apple Health on this device.';
+        if (state.settings.accountabilityReport?.includeHealth) {
+          accountabilityPreview = '';
+          accountabilityPreviewSignature = '';
+          renderAccountabilityReport();
+        }
       } else if (detail.name === 'watch.event') {
         handleWatchEvent(detail.value || {});
       } else if (detail.name === 'watch.context.updated') {
@@ -1295,6 +1359,7 @@
     renderMedicationTiming();
     renderPatternInsights();
     renderWeeklyReview();
+    renderAccountabilityReport();
     renderRecentHistory();
   }
 
@@ -2333,6 +2398,257 @@
     ];
     els.weeklyReviewSummary.innerHTML = cards.map(([label,value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('');
     els.weeklyFocusInput.value = state.weeklyReviews?.[nextWeekKey()]?.focus || '';
+  }
+
+  function accountabilitySettings() {
+    return state.settings.accountabilityReport || DEFAULT_STATE.settings.accountabilityReport;
+  }
+
+  function saveAccountabilitySettings() {
+    const includeMedication = els.accountabilityMedicationInput.checked;
+    state.settings.accountabilityReport = {
+      period: els.accountabilityPeriodInput.value === 'today' ? 'today' : 'week',
+      includeRoutine: els.accountabilityRoutineInput.checked,
+      includeMedication,
+      includeMedicationTimes: includeMedication && els.accountabilityMedicationTimesInput.checked,
+      includeCheckins: els.accountabilityCheckinsInput.checked,
+      includeHealth: els.accountabilityHealthInput.checked,
+      reflection: els.accountabilityReflectionInput.value.slice(0, 500),
+      support: els.accountabilitySupportInput.value.slice(0, 500)
+    };
+    saveState();
+  }
+
+  function renderAccountabilityReport() {
+    if (accountabilityPreview && accountabilityPreviewSignature !== accountabilityDataSignature()) {
+      accountabilityPreview = '';
+      accountabilityPreviewSignature = '';
+    }
+    const settings = accountabilitySettings();
+    els.accountabilityPeriodInput.value = settings.period;
+    els.accountabilityRoutineInput.checked = settings.includeRoutine;
+    els.accountabilityMedicationInput.checked = settings.includeMedication;
+    els.accountabilityMedicationTimesInput.checked = settings.includeMedication && settings.includeMedicationTimes;
+    els.accountabilityMedicationTimesInput.disabled = !settings.includeMedication;
+    els.accountabilityMedicationTimesField.classList.toggle('disabled', !settings.includeMedication);
+    els.accountabilityCheckinsInput.checked = settings.includeCheckins;
+    els.accountabilityHealthInput.checked = settings.includeHealth;
+    els.accountabilityReflectionInput.value = settings.reflection;
+    els.accountabilitySupportInput.value = settings.support;
+    els.accountabilityPreviewPanel.hidden = !accountabilityPreview;
+    els.accountabilityPreviewText.textContent = accountabilityPreview;
+  }
+
+  function accountabilityDataSignature() {
+    return JSON.stringify({
+      days: state.days,
+      items: state.items,
+      truthCompletions: state.settings.truthBeforeTasks?.completions || {},
+      health: latestHealthSummary
+    });
+  }
+
+  function accountabilityReportDates(period) {
+    const today = startOfToday();
+    const firstUse = fromDateKey(state.settings.firstUseDate || dateKey(today));
+    if (period === 'today') return dateKey(today) >= dateKey(firstUse) ? [today] : [];
+    return Array.from({ length: 7 }, (_, index) => shiftDate(startOfCurrentWeek(), index))
+      .filter(date => dateKey(date) <= dateKey(today) && dateKey(date) >= dateKey(firstUse));
+  }
+
+  function accountabilityPeriodLabel(dates, period) {
+    if (!dates.length) return period === 'today' ? 'Today' : 'This week';
+    const full = date => new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
+    if (period === 'today' || dates.length === 1) return full(dates[0]);
+    return `${full(dates[0])} – ${full(dates[dates.length - 1])}`;
+  }
+
+  function reportSectionStats(dates) {
+    return ['morning', 'day', 'evening'].map(section => {
+      let completed = 0, total = 0;
+      dates.forEach(date => {
+        if (dayIsExcused(date)) return;
+        const day = state.days[dateKey(date)] || { entries: {} };
+        scoredItemsForDate(date).filter(item => item.section === section && !item.optional).forEach(item => {
+          total += 1;
+          if (entryMeetsTarget(item, day.entries?.[item.id])) completed += 1;
+        });
+      });
+      return { section, completed, total, percent: total ? Math.round(completed / total * 100) : null };
+    }).filter(metric => metric.total > 0);
+  }
+
+  function routineAccountabilityLines(dates) {
+    const lines = ['ROUTINE'];
+    const aggregate = aggregateCompletion(dates);
+    if (aggregate.percent === null) {
+      lines.push('No scored routine data is available for this period.');
+      return lines;
+    }
+    lines.push(`Required routines: ${aggregate.completed}/${aggregate.total} completed (${aggregate.percent}%).`);
+    if (dates.length > 1) lines.push(`Strong days: ${aggregate.days80}/${aggregate.scoredDays} scored days reached 80% or more.`);
+
+    const truthCompletions = state.settings.truthBeforeTasks?.completions || {};
+    const truthCount = dates.filter(date => Boolean(truthCompletions[dateKey(date)])).length;
+    lines.push(`Truth Before Tasks: ${truthCount}/${dates.length} day${dates.length === 1 ? '' : 's'}.`);
+
+    const sections = reportSectionStats(dates);
+    if (sections.length) lines.push(`Parts of day: ${sections.map(metric => `${sectionLabels[metric.section][0]} ${metric.percent}%`).join(' · ')}.`);
+
+    if (dates.length > 1) {
+      const daily = dates.map(date => {
+        const completion = completionForDate(date);
+        const label = new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(date);
+        return `${label} ${completion.excused ? 'excused' : `${completion.percent}%`}`;
+      });
+      lines.push(`Daily completion: ${daily.join(' · ')}.`);
+    }
+
+    const habits = habitMetrics(dates);
+    if (habits.length) {
+      const strongest = [...habits].sort((a, b) => b.percent - a.percent || b.successes - a.successes)[0];
+      const needsAttention = [...habits].sort((a, b) => a.percent - b.percent || a.successes - b.successes)[0];
+      if (strongest.percent === needsAttention.percent) {
+        lines.push(`Habit consistency: tracked habits are currently tied at ${strongest.percent}%.`);
+      } else {
+        lines.push(`Most consistent: ${strongest.item.name} (${strongest.successes}/${strongest.opportunities}).`);
+        lines.push(`Needs attention: ${needsAttention.item.name} (${needsAttention.successes}/${needsAttention.opportunities}).`);
+      }
+    }
+    return lines;
+  }
+
+  function medicationAccountabilityLines(dates, includeTimes) {
+    const records = [];
+    dates.forEach(date => {
+      if (dayIsExcused(date)) return;
+      const day = state.days[dateKey(date)] || { entries: {}, skippedItems: {} };
+      scheduledItemsForDate(date).filter(item => item.type === 'medication' && !day.skippedItems?.[item.id]).forEach(item => {
+        const value = day.entries?.[item.id];
+        records.push({ date, item, value, taken: entryIsLogged(item, value), time: medicationTime(value) });
+      });
+    });
+
+    const lines = ['MEDICATION'];
+    if (!records.length) {
+      lines.push('No medication routines were scheduled for this period.');
+      return lines;
+    }
+    const taken = records.filter(record => record.taken).length;
+    lines.push(`Scheduled doses logged: ${taken}/${records.length} (${Math.round(taken / records.length * 100)}%).`);
+    const sections = ['morning', 'day', 'evening'].map(section => {
+      const matches = records.filter(record => record.item.section === section);
+      return matches.length ? `${sectionLabels[section][0]} ${matches.filter(record => record.taken).length}/${matches.length}` : '';
+    }).filter(Boolean);
+    if (sections.length) lines.push(`By part of day: ${sections.join(' · ')}.`);
+
+    if (includeTimes) {
+      lines.push('Names and timing:');
+      records.forEach(record => {
+        const dateLabel = new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' }).format(record.date);
+        const status = record.taken ? `taken${record.time ? ` at ${formatTime(record.time)}` : ' (time not logged)'}` : 'not logged';
+        lines.push(`- ${dateLabel} — ${record.item.name}: ${status}`);
+      });
+    }
+    return lines;
+  }
+
+  function checkinAccountabilityLines(dates) {
+    const metrics = state.items.filter(item => item.kind === 'checkin' && item.type === 'scale').map(item => {
+      const values = scaleSeries(item, dates);
+      return { item, values, avg: average(values), scale: normalizeScale(item.scale) };
+    }).filter(metric => metric.values.length);
+    const lines = ['RATING CHECK-INS'];
+    if (!metrics.length) {
+      lines.push('No rating check-ins were logged for this period.');
+      return lines;
+    }
+    metrics.forEach(metric => lines.push(`${metric.item.name}: ${metric.avg.toFixed(1)} average (${formatNumber(metric.scale.min)}–${formatNumber(metric.scale.max)}, ${metric.values.length} logged).`));
+    return lines;
+  }
+
+  function healthAccountabilityLines() {
+    const lines = ['APPLE HEALTH'];
+    if (!latestHealthSummary) {
+      lines.push('No refreshed Health summary is available.');
+      return lines;
+    }
+    const refreshed = new Date(latestHealthSummary.date);
+    const timestamp = Number.isNaN(refreshed.getTime()) ? 'most recent refresh' : refreshed.toLocaleString();
+    lines.push(`Latest on-device summary (${timestamp}):`);
+    lines.push(`Steps: ${Math.round(latestHealthSummary.stepCount).toLocaleString()} · Sleep: ${latestHealthSummary.sleepHours.toFixed(1)} hours · Workouts: ${latestHealthSummary.workoutCount}.`);
+    return lines;
+  }
+
+  function buildAccountabilityReport(options = accountabilitySettings()) {
+    const settings = { ...DEFAULT_STATE.settings.accountabilityReport, ...options };
+    const dates = accountabilityReportDates(settings.period);
+    const lines = ['Daily Routine Accountability Report', accountabilityPeriodLabel(dates, settings.period)];
+    if (settings.includeRoutine) lines.push('', ...routineAccountabilityLines(dates));
+    if (settings.includeMedication) lines.push('', ...medicationAccountabilityLines(dates, settings.includeMedicationTimes));
+    if (settings.includeCheckins) lines.push('', ...checkinAccountabilityLines(dates));
+    if (settings.includeHealth) lines.push('', ...healthAccountabilityLines());
+    if (String(settings.reflection || '').trim()) lines.push('', 'WHAT WENT WELL', String(settings.reflection).trim());
+    if (String(settings.support || '').trim()) lines.push('', 'WHERE SUPPORT WOULD HELP', String(settings.support).trim());
+    lines.push('', 'Shared manually from Daily Routine.');
+    return lines.join('\n');
+  }
+
+  function previewAccountabilityReport() {
+    saveAccountabilitySettings();
+    const settings = accountabilitySettings();
+    const hasContent = settings.includeRoutine || settings.includeMedication || settings.includeCheckins || settings.includeHealth || settings.reflection.trim() || settings.support.trim();
+    if (!hasContent) {
+      showToast('Choose something to include first');
+      return;
+    }
+    accountabilityPreview = buildAccountabilityReport(settings);
+    accountabilityPreviewSignature = accountabilityDataSignature();
+    renderAccountabilityReport();
+    els.accountabilityPreviewPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  async function writeTextToClipboard(text) {
+    if (navigator.clipboard?.writeText) {
+      try { await navigator.clipboard.writeText(text); return true; } catch { /* Try the on-page fallback below. */ }
+    }
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    const copied = document.execCommand('copy');
+    textarea.remove();
+    return copied;
+  }
+
+  async function copyAccountabilityReport() {
+    if (!accountabilityPreview) return;
+    try {
+      const copied = await writeTextToClipboard(accountabilityPreview);
+      showToast(copied ? 'Accountability report copied' : 'Could not copy report');
+    } catch { showToast('Could not copy report'); }
+  }
+
+  async function shareAccountabilityReport() {
+    if (!accountabilityPreview) return;
+    const title = 'Daily Routine Accountability Report';
+    if (sendNativeBridgeMessage('share.text', { title, text: accountabilityPreview })) {
+      showToast('Opening share options…');
+      return;
+    }
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text: accountabilityPreview });
+        return;
+      } catch (error) {
+        if (error?.name === 'AbortError') return;
+      }
+    }
+    const copied = await writeTextToClipboard(accountabilityPreview);
+    showToast(copied ? 'Sharing is unavailable, so the report was copied' : 'Sharing is unavailable on this device');
   }
 
   function renderOnThisDay() {
