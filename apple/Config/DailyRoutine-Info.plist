@@ -20,8 +20,12 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Daily Routine can read the health categories you choose to help summarize steps, sleep, and workouts alongside your routine.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Daily Routine uses HealthKit only to read the health categories you choose; it does not add or modify health data.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

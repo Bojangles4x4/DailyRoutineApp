@@ -9,7 +9,7 @@ settings:
     SWIFT_VERSION: "5.0"
     CODE_SIGN_STYLE: Automatic
     MARKETING_VERSION: "1.10.0"
-    CURRENT_PROJECT_VERSION: "3"
+    CURRENT_PROJECT_VERSION: "4"
 schemes:
   DailyRoutine:
     build:
@@ -60,7 +60,9 @@ targets:
         CFBundleDisplayName: Daily Routine
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        ITSAppUsesNonExemptEncryption: false
         NSHealthShareUsageDescription: Daily Routine can read the health categories you choose to help summarize steps, sleep, and workouts alongside your routine.
+        NSHealthUpdateUsageDescription: Daily Routine uses HealthKit only to read the health categories you choose; it does not add or modify health data.
         UILaunchScreen: {}
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
