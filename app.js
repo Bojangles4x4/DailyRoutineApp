@@ -1336,7 +1336,9 @@
     els.statOptional.textContent = `${c.optionalLogged}/${c.optionalTotal}`;
     els.statStreak.textContent = calculateStreak();
     const latestMood = getLatestMood(day); els.statMood.textContent = latestMood === null ? '—' : formatNumber(latestMood);
-    els.heroStatus.textContent = c.excused ? `${dayModeLabel(day.mode)} · this day is excused from routine analytics.` : c.percent === 100 ? 'Day complete. Nicely done.' : c.percent >= Number(state.settings.streakThreshold || 80) ? 'Strong day. Keep closing it out.' : c.percent >= 40 ? 'Good progress. Keep moving.' : 'Start deliberately.';
+    const completionStatus = c.total ? `${c.completed} of ${c.total} required complete.` : 'No required routines scheduled.';
+    const encouragement = c.percent === 100 ? 'Day complete. Nicely done.' : c.percent >= Number(state.settings.streakThreshold || 80) ? 'Strong day. Keep closing it out.' : c.percent >= 40 ? 'Good progress. Keep moving.' : 'Start deliberately.';
+    els.heroStatus.textContent = c.excused ? `${dayModeLabel(day.mode)} · this day is excused from routine analytics.` : `${completionStatus} ${encouragement}`;
     updateAppBadge();
   }
 
@@ -1850,7 +1852,7 @@
   function buildMedicationRow(row, item, value) {
     const taken = entryIsLogged(item, value), time = medicationTime(value), dose = value?.dose ?? item.medicationDose ?? '', note = value?.note ?? '';
     row.classList.toggle('done', taken);
-    row.innerHTML = `<div class="task-main medication-main"><span class="medication-icon" aria-hidden="true">Rx</span><span class="task-name">${escapeHtml(item.name)}<span class="task-meta">${escapeHtml(metaForItem(item))}${taken ? ` · ${time ? `Taken ${formatTime(time)}` : 'Taken · time not logged'}${dose ? ` · ${escapeHtml(dose)}` : ''}` : ''}</span></span></div><div class="medication-actions"></div>`;
+    row.innerHTML = `<div class="task-main medication-main"><span class="medication-icon" aria-hidden="true">Rx</span><span class="task-name">${escapeHtml(item.name)}<span class="task-meta">${escapeHtml(metaForItem(item))}${taken ? ` · ${time ? `Taken ${formatTime(time)}` : 'Taken · time not logged'}${dose ? ` · ${escapeHtml(dose)}` : ''}` : ''}</span></span>${taken ? '<span class="completion-badge">✓ Taken</span>' : ''}</div><div class="medication-actions"></div>`;
     const actions = row.querySelector('.medication-actions');
     if (!taken) {
       actions.innerHTML = `<button class="primary-button medication-now" type="button">Taken now</button><button class="small-button medication-manual" type="button">Add time</button>`;

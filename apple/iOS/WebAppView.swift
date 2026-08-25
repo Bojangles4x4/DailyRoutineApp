@@ -31,7 +31,11 @@ struct WebAppView: UIViewRepresentable {
 
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
+        webView.uiDelegate = context.coordinator
         webView.scrollView.contentInsetAdjustmentBehavior = .never
+        webView.scrollView.alwaysBounceHorizontal = false
+        webView.scrollView.showsHorizontalScrollIndicator = false
+        webView.scrollView.isDirectionalLockEnabled = true
         context.coordinator.webView = webView
         context.coordinator.connectWatchEvents()
 
@@ -46,7 +50,7 @@ struct WebAppView: UIViewRepresentable {
     func updateUIView(_ webView: WKWebView, context: Context) {}
 
     @MainActor
-    final class Coordinator: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
+    final class Coordinator: NSObject, WKScriptMessageHandler, WKNavigationDelegate, WKUIDelegate {
         private let model: AppModel
         private var isWebAppReady = false
         private var pendingWatchEvents: [WatchEvent] = []
@@ -158,6 +162,29 @@ struct WebAppView: UIViewRepresentable {
             decisionHandler(.cancel)
         }
 
+        func webView(
+            _ webView: WKWebView,
+            runJavaScriptAlertPanelWithMessage message: String,
+            initiatedByFrame frame: WKFrameInfo,
+            completionHandler: @escaping () -> Void
+        ) {
+            let alert = UIAlertController(title: "My Daily Rhythms", message: message, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in completionHandler() })
+            present(alert, from: webView, fallback: completionHandler)
+        }
+
+        func webView(
+            _ webView: WKWebView,
+            runJavaScriptConfirmPanelWithMessage message: String,
+            initiatedByFrame frame: WKFrameInfo,
+            completionHandler: @escaping (Bool) -> Void
+        ) {
+            let alert = UIAlertController(title: "Confirm", message: message, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in completionHandler(false) })
+            alert.addAction(UIAlertAction(title: "Continue", style: .default) { _ in completionHandler(true) })
+            present(alert, from: webView) { completionHandler(false) }
+        }
+
         private func emit<T: Encodable>(name: String, value: T) {
             guard
                 let data = try? JSONEncoder.bridge.encode(value),
@@ -171,6 +198,14 @@ struct WebAppView: UIViewRepresentable {
 
         private func emitError(_ message: String) {
             emit(name: "native.error", value: ["message": message])
+        }
+
+        private func present(_ controller: UIViewController, from webView: WKWebView, fallback: () -> Void) {
+            guard let presenter = topViewController(from: webView.window?.rootViewController) else {
+                fallback()
+                return
+            }
+            presenter.present(controller, animated: true)
         }
 
         private func presentShareSheet(title: String?, text: String) {
