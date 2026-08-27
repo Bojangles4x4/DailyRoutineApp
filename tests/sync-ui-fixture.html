@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <link rel="stylesheet" href="../styles.css" />
+  <title>Private sync UI fixture</title>
+</head>
+<body>
+  <main class="app-shell">
+    <div class="main-content">
+      <section class="card private-sync-card" id="privateSyncCard">
+        <div class="section-heading"><div><p class="eyebrow">Private sync</p><h2>Ready for one secure account</h2></div><span class="privacy-pill">Local only</span></div>
+        <p class="muted setup-help">This device now tracks versioned local changes for safe cloud synchronization. Nothing is uploaded until you explicitly connect an account.</p>
+        <div class="private-sync-status">
+          <div><span>Status</span><strong>4 local changes ready for first sync.</strong></div>
+          <div><span>Device</span><strong>This device · A1B2C3D4</strong></div>
+          <div><span>Last cloud sync</span><strong>Not connected</strong></div>
+        </div>
+        <ul class="private-sync-privacy">
+          <li>Apple Health summaries stay on this device.</li>
+          <li>Background photos and local backups are never included.</li>
+          <li>Accountability partner access remains off.</li>
+        </ul>
+        <div class="connection-actions">
+          <button class="secondary-button" type="button">Create safety snapshot</button>
+          <button class="primary-button" type="button" disabled>Connect cloud next</button>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

@@ -15,14 +15,18 @@
     <article class="legal-card">
       <p class="legal-eyebrow">Daily Routine</p>
       <h1>Privacy Policy</h1>
-      <p class="legal-updated">Effective August 22, 2026</p>
+      <p class="legal-updated">Effective August 25, 2026</p>
 
       <div class="legal-summary">
-        <p><strong>Daily Routine is private and local-first.</strong> The app has no advertising, analytics, tracking, or developer-operated account system. Your routines, reflections, notes, medication logs, and backups are not sent to the developer.</p>
+        <p><strong>Daily Routine is private and local-first.</strong> The app has no advertising, analytics, or cross-app tracking. Private sync is optional and begins only after you connect an account.</p>
       </div>
 
       <h2>Information you create</h2>
       <p>Routine entries, check-ins, notes, memories, prayer entries, settings, and other information you enter are stored locally on your device. In the web app, this information is stored in that browser’s local storage. In the native iPhone app, it is stored within the app’s on-device web storage.</p>
+
+      <h2>Optional private sync</h2>
+      <p>If you connect Private sync, the app uses Supabase for email authentication and owner-only cloud storage. Supabase receives your sign-in email address and a synchronized copy of routine definitions, daily entries, notes, memories, weekly reviews, and ordinary app preferences. Database security policies restrict the app to the row belonging to the signed-in account.</p>
+      <p>Apple Health summaries, HealthKit authorization, background photos, downloaded-backup timestamps, local snapshots, and conflict-recovery archives are excluded from the synchronized document. The Supabase project administrator may have technical access needed to operate or troubleshoot the service, but synced information is not used for advertising, analytics, or sale.</p>
 
       <h2>Apple Health</h2>
       <p>In the native iPhone app, Apple Health access is optional and requested only after you choose Connect Health. If you grant permission, Daily Routine reads the categories you approve from:</p>
@@ -40,10 +44,10 @@
       <p>Accountability reports, backups, and CSV exports are created only when you request them. A report stays on your device until you choose Copy or Share, and the app shows the exact report text first. You choose where reports and files are sent or saved. Once copied, shared, or exported, their privacy depends on the destination and service you select.</p>
 
       <h2>External links and hosting</h2>
-      <p>Daily Routine can open websites, Shortcuts, Maps, calls, messages, email, and other links that you configure. Those services have their own privacy practices. When you use the web version, GitHub Pages may process ordinary web request information under GitHub’s privacy terms; Daily Routine does not receive that information or add tracking scripts.</p>
+      <p>Daily Routine can open websites, Shortcuts, Maps, calls, messages, email, and other links that you configure. Those services have their own privacy practices. When you use the web version, GitHub Pages may process ordinary web request information under GitHub’s privacy terms. When you enable Private sync, Supabase processes authentication and database requests under its privacy terms. Daily Routine does not add advertising or analytics scripts.</p>
 
       <h2>Retention and deletion</h2>
-      <p>Your data remains on your device until you delete it, reset the app, clear the browser’s storage, or uninstall the native app. Use <strong>Setup → Backup &amp; export → Reset app data</strong> to remove Daily Routine’s local records. Exported backup files must be deleted separately from wherever you saved them.</p>
+      <p>Your local data remains on your device until you delete it, reset the app, clear the browser’s storage, or uninstall the native app. Use <strong>Setup → Backup &amp; export → Reset app data</strong> to remove local records. Disconnecting Private sync removes the sign-in session from that device but does not by itself delete the cloud copy. Use <strong>Setup → Private sync → Delete cloud copy and disconnect</strong> to remove the synchronized routine document while keeping the local copy on that device. The closed owner account can be removed administratively on request. Exported backup files must be deleted separately from wherever you saved them.</p>
 
       <h2>Changes and questions</h2>
       <p>This policy will be updated if Daily Routine’s data practices change. For help or privacy questions, visit the <a href="support.html">Daily Routine support page</a>.</p>

@@ -19,8 +19,10 @@
 		4E6EBEE2B91E9754E0961107 /* support.html in Resources */ = {isa = PBXBuildFile; fileRef = 29D48B7899D205C684D78E69 /* support.html */; };
 		591486D40F0612C6EF229E7A /* BridgeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23CF6F479542799A7E80F4BA /* BridgeModels.swift */; };
 		6231E4C1EC4CBE5BCE6827DE /* WidgetSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8096AA8C4DC525F750013EEC /* WidgetSnapshotStore.swift */; };
+		6DB5696CC84C1AAFD9DA5E93 /* sync-cloud.js in Resources */ = {isa = PBXBuildFile; fileRef = BCEC7CC90AB78046ACE9E4DE /* sync-cloud.js */; };
 		716A1BB63BE760F86E893CE1 /* DailyRoutineWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2189365ED52A585536004293 /* DailyRoutineWidget.swift */; };
 		80D05D187A20118D1DFDDABA /* manifest.webmanifest in Resources */ = {isa = PBXBuildFile; fileRef = EEB6294F12C1A4CEA749044F /* manifest.webmanifest */; };
+		89F5D29C6CE2D8003158CD63 /* sync-core.js in Resources */ = {isa = PBXBuildFile; fileRef = 3528B0D809DB6811249C806C /* sync-core.js */; };
 		8BEF776BB9C8787C12572ED3 /* icon-512.png in Resources */ = {isa = PBXBuildFile; fileRef = 08074A312C8759C6DAAC1741 /* icon-512.png */; };
 		8F637C761A7C038B19E9FDEB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EC6017F29444BD176EFFAEFB /* Assets.xcassets */; };
 		A574F7F679A3EA0E3F858505 /* BridgeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23CF6F479542799A7E80F4BA /* BridgeModels.swift */; };
@@ -99,6 +101,7 @@
 		23CF6F479542799A7E80F4BA /* BridgeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeModels.swift; sourceTree = "<group>"; };
 		257F0F7544BC18F981B9B551 /* WatchQuickActionsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchQuickActionsUITests.swift; sourceTree = "<group>"; };
 		29D48B7899D205C684D78E69 /* support.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = support.html; sourceTree = "<group>"; };
+		3528B0D809DB6811249C806C /* sync-core.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "sync-core.js"; sourceTree = "<group>"; };
 		49322339D19B74F64851BBB8 /* WatchContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchContentView.swift; sourceTree = "<group>"; };
 		4A535F5FF0A19279B38B92EE /* DailyRoutineAppleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyRoutineAppleApp.swift; sourceTree = "<group>"; };
 		54A52939EF96C0A39ED93B88 /* privacy.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = privacy.html; sourceTree = "<group>"; };
@@ -113,6 +116,7 @@
 		A214531B1B57E2408FAEA1CB /* DailyRoutineWatchUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DailyRoutineWatchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B97BBECEFE2DF2727D5E833D /* DailyRoutineWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DailyRoutineWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B9CD412035E618B429C99C67 /* WatchSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSessionManager.swift; sourceTree = "<group>"; };
+		BCEC7CC90AB78046ACE9E4DE /* sync-cloud.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "sync-cloud.js"; sourceTree = "<group>"; };
 		D1A95175FAC3CC1E05F33E56 /* styles.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = styles.css; sourceTree = "<group>"; };
 		EC6017F29444BD176EFFAEFB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		EEB6294F12C1A4CEA749044F /* manifest.webmanifest */ = {isa = PBXFileReference; path = manifest.webmanifest; sourceTree = "<group>"; };
@@ -151,6 +155,8 @@
 				54A52939EF96C0A39ED93B88 /* privacy.html */,
 				D1A95175FAC3CC1E05F33E56 /* styles.css */,
 				29D48B7899D205C684D78E69 /* support.html */,
+				BCEC7CC90AB78046ACE9E4DE /* sync-cloud.js */,
+				3528B0D809DB6811249C806C /* sync-core.js */,
 			);
 			name = DailyRoutineApp;
 			path = ..;
@@ -357,6 +363,8 @@
 				1DF54C8BD1F12B189E0AA449 /* privacy.html in Resources */,
 				4B8D7EA7155D3CAE8DF8F463 /* styles.css in Resources */,
 				4E6EBEE2B91E9754E0961107 /* support.html in Resources */,
+				6DB5696CC84C1AAFD9DA5E93 /* sync-cloud.js in Resources */,
+				89F5D29C6CE2D8003158CD63 /* sync-core.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

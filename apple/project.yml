@@ -42,6 +42,10 @@ targets:
         buildPhase: resources
       - path: ../app.js
         buildPhase: resources
+      - path: ../sync-core.js
+        buildPhase: resources
+      - path: ../sync-cloud.js
+        buildPhase: resources
       - path: ../manifest.webmanifest
         buildPhase: resources
       - path: ../icon-192.png

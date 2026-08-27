@@ -7,6 +7,9 @@
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const DEFAULT_BIBLE_APP_URL = 'https://bojangles4x4.github.io/Bible-Reading-Plan/';
+  const PRIVATE_SYNC_URL = 'https://shmvxujnlbolgcjwwewe.supabase.co';
+  const PRIVATE_SYNC_PUBLISHABLE_KEY = 'sb_publishable_mEmMzinbOkd2FGpmSqPlmg_S6tUfqzh';
+  const PRIVATE_SYNC_ALLOW_ENROLLMENT = false;
   const DEFAULT_SCALE = { min: 0, max: 10, step: 1, lowLabel: 'Low', highLabel: 'Great' };
   const DEFAULT_STATE = {
     settings: {
@@ -65,6 +68,14 @@
   let latestHealthSummary = null;
   let accountabilityPreview = '';
   let accountabilityPreviewSignature = '';
+  const syncCoordinator = window.DailyRoutineSync?.createCoordinator({ storage: localStorage }) || null;
+  const syncCloud = window.DailyRoutineCloud?.createClient({
+    url: PRIVATE_SYNC_URL,
+    publishableKey: PRIVATE_SYNC_PUBLISHABLE_KEY,
+    storage: localStorage
+  }) || null;
+  let privateSyncSession = null;
+  let privateSyncBusy = false;
   const processedWatchEventIds = new Set();
   const collapsedSections = new Set();
 
@@ -92,6 +103,7 @@
     noteDialog: $('noteDialog'), noteForm: $('noteForm'), noteDialogTitle: $('noteDialogTitle'), closeNoteDialogButton: $('closeNoteDialogButton'), editingNoteId: $('editingNoteId'), noteTextInput: $('noteTextInput'), noteTypeInput: $('noteTypeInput'), noteScriptureField: $('noteScriptureField'), noteScriptureInput: $('noteScriptureInput'), notePrayerStatusField: $('notePrayerStatusField'), notePrayerStatusInput: $('notePrayerStatusInput'), noteReviewAtInput: $('noteReviewAtInput'), noteSnoozeField: $('noteSnoozeField'), noteSnoozedUntilInput: $('noteSnoozedUntilInput'), noteOptionalDetails: $('noteOptionalDetails'), noteSourceInput: $('noteSourceInput'), notePinnedInput: $('notePinnedInput'), noteResurfaceField: $('noteResurfaceField'), noteResurfaceInput: $('noteResurfaceInput'), deleteNoteButton: $('deleteNoteButton'),
     medicationInsights: $('medicationInsights'), weeklyReviewLabel: $('weeklyReviewLabel'), weeklyReviewSummary: $('weeklyReviewSummary'), weeklyFocusInput: $('weeklyFocusInput'), saveWeeklyFocusButton: $('saveWeeklyFocusButton'), memoryDialog: $('memoryDialog'), memoryForm: $('memoryForm'), closeMemoryDialogButton: $('closeMemoryDialogButton'), memoryTextInput: $('memoryTextInput'), memoryCategoryCaptureInput: $('memoryCategoryCaptureInput'), memoryDateTimeInput: $('memoryDateTimeInput'),
     createSnapshotButton: $('createSnapshotButton'), restoreSnapshotButton: $('restoreSnapshotButton'), snapshotStatus: $('snapshotStatus'), backupDownloadStatus: $('backupDownloadStatus'), appVersion: $('appVersion'), resurfacingFrequencyInput: $('resurfacingFrequencyInput'),
+    privateSyncCard: $('privateSyncCard'), privateSyncBadge: $('privateSyncBadge'), privateSyncStatus: $('privateSyncStatus'), privateSyncDevice: $('privateSyncDevice'), privateSyncLastSync: $('privateSyncLastSync'), createSyncSnapshotButton: $('createSyncSnapshotButton'), privateSyncNowButton: $('privateSyncNowButton'), privateSyncSignIn: $('privateSyncSignIn'), privateSyncEmailInput: $('privateSyncEmailInput'), privateSyncPasswordInput: $('privateSyncPasswordInput'), privateSyncSendCodeButton: $('privateSyncSendCodeButton'), privateSyncVerifyButton: $('privateSyncVerifyButton'), privateSyncHelp: $('privateSyncHelp'), privateSyncAccount: $('privateSyncAccount'), privateSyncSignOutButton: $('privateSyncSignOutButton'), privateSyncDeleteCloudButton: $('privateSyncDeleteCloudButton'),
     connectionsCard: $('connectionsCard'), syncConnectionsButton: $('syncConnectionsButton'), bibleConnectionStatus: $('bibleConnectionStatus'), openBibleConnectionButton: $('openBibleConnectionButton'), bibleAppUrlInput: $('bibleAppUrlInput'), saveBibleConnectionButton: $('saveBibleConnectionButton'), testBibleConnectionButton: $('testBibleConnectionButton'), connectionTemplates: $('connectionTemplates'),
     appleNativeCard: $('appleNativeCard'), appleStepCount: $('appleStepCount'), appleSleepHours: $('appleSleepHours'), appleWorkoutCount: $('appleWorkoutCount'), appleHealthStatus: $('appleHealthStatus'), connectAppleHealthButton: $('connectAppleHealthButton'), refreshAppleHealthButton: $('refreshAppleHealthButton'), appleWatchStatus: $('appleWatchStatus'),
     linkedActionFields: $('linkedActionFields'), linkedTemplateInput: $('linkedTemplateInput'), linkedCompletionInput: $('linkedCompletionInput'), linkedUrlField: $('linkedUrlField'), linkedUrlInput: $('linkedUrlInput'), linkedInternalField: $('linkedInternalField'), linkedInternalTargetInput: $('linkedInternalTargetInput'), linkedButtonLabelInput: $('linkedButtonLabelInput'), timeWindowFields: $('timeWindowFields'), timeWindowStartInput: $('timeWindowStartInput'), timeWindowEndInput: $('timeWindowEndInput'),
@@ -107,6 +119,7 @@
     showToast,
     syncWatchContext,
     buildAccountabilityReport,
+    syncStatus: () => syncCoordinator?.status() || null,
     dateKey,
     startOfToday
   };
@@ -115,6 +128,7 @@
 
   function init() {
     ensureFirstUseDate();
+    syncCoordinator?.ensureLocalState(state);
     consumeIntegrationReturn();
     syncLinkedIntegrations(false);
     bindNavigation();
@@ -129,6 +143,7 @@
     renderAll();
     consumeQuickCapture();
     maybeAutoSnapshot();
+    refreshPrivateSyncSession();
     if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(() => {}));
   }
 
@@ -241,8 +256,10 @@
     }
   }
 
-  function saveState() {
+  function saveState({ trackSync = true } = {}) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    if (trackSync) syncCoordinator?.markLocalChange(state);
+    renderPrivateSyncStatus();
     maybeAutoSnapshot();
     syncWatchContext();
   }
@@ -302,7 +319,7 @@
       notes: Array.isArray(latest.state.notes) ? latest.state.notes.map(normalizeNote).filter(note => note.text) : [],
       weeklyReviews: latest.state.weeklyReviews || {}
     };
-    ensureFirstUseDate(); localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); applyPersonalization(); renderAll(); showToast('Snapshot restored');
+    ensureFirstUseDate(); saveState(); applyPersonalization(); renderAll(); showToast('Snapshot restored');
   }
   function startOfToday() { const d = new Date(); d.setHours(12, 0, 0, 0); return d; }
   function dateKey(date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`; }
@@ -582,6 +599,12 @@
     els.importJsonInput.addEventListener('change', importJson);
     els.createSnapshotButton.addEventListener('click', () => createLocalSnapshot('Manual snapshot'));
     els.restoreSnapshotButton.addEventListener('click', restoreLatestSnapshot);
+    els.createSyncSnapshotButton.addEventListener('click', () => createLocalSnapshot('Before private sync setup'));
+    els.privateSyncNowButton.addEventListener('click', handlePrivateSyncPrimaryAction);
+    els.privateSyncSendCodeButton.addEventListener('click', requestPrivateSyncLink);
+    els.privateSyncVerifyButton.addEventListener('click', signInPrivateSync);
+    els.privateSyncSignOutButton.addEventListener('click', disconnectPrivateSync);
+    els.privateSyncDeleteCloudButton.addEventListener('click', deletePrivateSyncCloudCopy);
     els.syncConnectionsButton.addEventListener('click', () => { syncLinkedIntegrations(true); renderAll(); });
     els.saveBibleConnectionButton.addEventListener('click', saveBibleConnection);
     els.testBibleConnectionButton.addEventListener('click', () => openBibleApp(startOfToday()));
@@ -712,7 +735,7 @@
       if (hadPrevious) target.entries[item.id] = previous;
       else delete target.entries[item.id];
       watchLastActionMessage = `${item.name} was undone on iPhone`;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      saveState();
       syncWatchContext();
       renderAll();
     });
@@ -1204,7 +1227,7 @@
   function skipItemToday(item) {
     const key = dateKey(selectedDate), day = ensureDay(key), previous = Boolean(day.skippedItems[item.id]);
     day.skippedItems[item.id] = true;
-    pushUndo(`Skip ${item.name}`, () => { const target = ensureDay(key); if (previous) target.skippedItems[item.id] = true; else delete target.skippedItems[item.id]; localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); renderToday(); renderHistory(); });
+    pushUndo(`Skip ${item.name}`, () => { const target = ensureDay(key); if (previous) target.skippedItems[item.id] = true; else delete target.skippedItems[item.id]; saveState(); renderToday(); renderHistory(); });
     saveState(); renderToday(); renderHistory(); showToast(`${item.name} skipped today`);
   }
 
@@ -1219,7 +1242,7 @@
       if (day.entries[item.id] !== true) { changed.push([item.id, day.entries[item.id]]); day.entries[item.id] = true; }
     });
     if (!changed.length) return;
-    pushUndo('Check all', () => { const target = ensureDay(key); changed.forEach(([id, value]) => value === undefined ? delete target.entries[id] : target.entries[id] = value); localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); renderToday(); renderHistory(); });
+    pushUndo('Check all', () => { const target = ensureDay(key); changed.forEach(([id, value]) => value === undefined ? delete target.entries[id] : target.entries[id] = value); saveState(); renderToday(); renderHistory(); });
     saveState(); renderToday(); renderHistory(); showToast('Checkboxes completed');
   }
 
@@ -1320,7 +1343,7 @@
     const hadPrevious = Object.prototype.hasOwnProperty.call(day.entries, item.id);
     const previous = structuredClone(day.entries[item.id]);
     day.entries[item.id] = value;
-    if (rerender) pushUndo(`Update ${item.name}`, () => { const target = ensureDay(key); if (hadPrevious) target.entries[item.id] = previous; else delete target.entries[item.id]; localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); renderToday(); renderHistory(); });
+    if (rerender) pushUndo(`Update ${item.name}`, () => { const target = ensureDay(key); if (hadPrevious) target.entries[item.id] = previous; else delete target.entries[item.id]; saveState(); renderToday(); renderHistory(); });
     saveState();
     if (rerender) renderToday();
     else renderStats();
@@ -1561,6 +1584,7 @@
     els.appVersion.textContent = `v${APP_VERSION}`;
     els.bibleAppUrlInput.value = state.settings.bibleAppUrl || DEFAULT_BIBLE_APP_URL;
     renderConnections();
+    renderPrivateSyncStatus();
     renderSnapshotStatus();
     renderBackupDownloadStatus();
     els.routineEditor.innerHTML = '';
@@ -1568,6 +1592,206 @@
     renderEditorGroup('routine', els.routineEditor);
     renderEditorGroup('checkin', els.checkinEditor);
     renderMemoryArchive();
+  }
+
+  function renderPrivateSyncStatus() {
+    if (!els.privateSyncCard) return;
+    const status = syncCoordinator?.status();
+    if (!status || !syncCloud) {
+      els.privateSyncStatus.textContent = 'Sync foundation is unavailable in this build.';
+      els.privateSyncDevice.textContent = '—';
+      els.privateSyncLastSync.textContent = 'Not connected';
+      els.privateSyncNowButton.disabled = true;
+      return;
+    }
+    const shortDevice = status.deviceId.replace(/^device-/, '').slice(0, 8).toUpperCase();
+    els.privateSyncDevice.textContent = `This device · ${shortDevice}`;
+    els.privateSyncBadge.textContent = privateSyncSession ? 'Connected' : 'Local only';
+    els.privateSyncStatus.textContent = status.lastError
+      ? `Sync paused: ${status.lastError}`
+      : privateSyncSession
+        ? status.dirty ? `${status.localChangeCount} local change${status.localChangeCount === 1 ? '' : 's'} waiting to sync.` : 'All local changes are synchronized.'
+        : `${Math.max(1, status.localChangeCount)} local change${Math.max(1, status.localChangeCount) === 1 ? '' : 's'} ready for first sync.`;
+    els.privateSyncLastSync.textContent = status.lastSyncedAt ? new Date(status.lastSyncedAt).toLocaleString() : 'Not connected';
+    els.privateSyncNowButton.textContent = privateSyncSession ? (status.dirty ? 'Sync now' : 'Check for updates') : 'Connect private sync';
+    els.privateSyncNowButton.disabled = privateSyncBusy;
+    els.privateSyncSendCodeButton.disabled = privateSyncBusy;
+    els.privateSyncVerifyButton.disabled = privateSyncBusy;
+    els.privateSyncAccount.hidden = !privateSyncSession;
+    els.privateSyncAccount.textContent = privateSyncSession?.user?.email ? `Signed in privately as ${privateSyncSession.user.email}` : '';
+    els.privateSyncSignOutButton.hidden = !privateSyncSession;
+    els.privateSyncDeleteCloudButton.hidden = !privateSyncSession;
+    if (privateSyncSession) els.privateSyncSignIn.hidden = true;
+  }
+
+  function setPrivateSyncBusy(busy) {
+    privateSyncBusy = Boolean(busy);
+    els.privateSyncCard.classList.toggle('is-busy', privateSyncBusy);
+    renderPrivateSyncStatus();
+  }
+
+  async function refreshPrivateSyncSession() {
+    if (!syncCloud) return;
+    try {
+      const redirectedSession = await syncCloud.consumeAuthRedirect();
+      privateSyncSession = redirectedSession || await syncCloud.session();
+      if (redirectedSession) showToast('Private account connected. Open Setup to approve the first sync.');
+    } catch (error) {
+      privateSyncSession = null;
+      syncCoordinator?.recordFailure(error);
+    }
+    renderPrivateSyncStatus();
+  }
+
+  function handlePrivateSyncPrimaryAction() {
+    if (privateSyncSession) {
+      performPrivateSync();
+      return;
+    }
+    els.privateSyncSignIn.hidden = !els.privateSyncSignIn.hidden;
+    if (!els.privateSyncSignIn.hidden) els.privateSyncEmailInput.focus();
+  }
+
+  async function requestPrivateSyncLink() {
+    const email = els.privateSyncEmailInput.value.trim().toLowerCase();
+    if (!email || !els.privateSyncEmailInput.checkValidity()) {
+      showToast('Enter a valid email address');
+      els.privateSyncEmailInput.focus();
+      return;
+    }
+    setPrivateSyncBusy(true);
+    try {
+      const redirectUrl = new URL(window.location.href);
+      redirectUrl.hash = '';
+      await syncCloud.requestEmailLink(email, PRIVATE_SYNC_ALLOW_ENROLLMENT, redirectUrl.toString());
+      els.privateSyncHelp.textContent = 'Check your email and tap the My Daily Rhythms sign-in link. It expires in one hour.';
+      showToast('Private sign-in link sent');
+    } catch (error) {
+      syncCoordinator?.recordFailure(error);
+      showToast(privateSyncErrorMessage(error));
+    } finally {
+      setPrivateSyncBusy(false);
+    }
+  }
+
+  async function signInPrivateSync() {
+    const email = els.privateSyncEmailInput.value.trim().toLowerCase();
+    const password = els.privateSyncPasswordInput.value;
+    if (!email || !els.privateSyncEmailInput.checkValidity() || !password) {
+      showToast('Enter your owner email and saved password');
+      return;
+    }
+    setPrivateSyncBusy(true);
+    try {
+      privateSyncSession = await syncCloud.signInWithPassword(email, password);
+      els.privateSyncPasswordInput.value = '';
+      createLocalSnapshot('Before first cloud sync', true);
+      els.privateSyncSignIn.hidden = true;
+      await performPrivateSync({ keepBusy: true });
+      showToast('Private sync connected');
+    } catch (error) {
+      syncCoordinator?.recordFailure(error);
+      showToast(privateSyncErrorMessage(error));
+    } finally {
+      setPrivateSyncBusy(false);
+    }
+  }
+
+  async function performPrivateSync({ keepBusy = false } = {}) {
+    if (!syncCloud || !syncCoordinator) return;
+    if (!keepBusy) setPrivateSyncBusy(true);
+    try {
+      privateSyncSession = privateSyncSession || await syncCloud.session();
+      if (!privateSyncSession) throw new Error('Sign in before syncing.');
+
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const remote = await syncCloud.fetchRoutine(privateSyncSession);
+        const decision = syncCoordinator.reconcile(state, remote);
+        if (decision.action === 'adopt') {
+          state = window.DailyRoutineSync.applySyncableState(state, decision.state);
+          saveState({ trackSync: false });
+          syncCoordinator.commitRemote(state, decision.remoteRevision, 'supabase', privateSyncSession.user.id);
+          renderAll();
+          return;
+        }
+        if (decision.action === 'none') {
+          syncCoordinator.commitRemote(state, remote?.revision || decision.remoteRevision, 'supabase', privateSyncSession.user.id);
+          renderPrivateSyncStatus();
+          return;
+        }
+        try {
+          const saved = await syncCloud.pushRoutine({
+            session: privateSyncSession,
+            document: decision.state,
+            expectedRevision: decision.expectedRevision,
+            deviceId: syncCoordinator.status().deviceId,
+            schemaVersion: window.DailyRoutineSync.SYNC_SCHEMA_VERSION
+          });
+          state = window.DailyRoutineSync.applySyncableState(state, decision.state);
+          saveState({ trackSync: false });
+          syncCoordinator.commitRemote(state, saved.revision, 'supabase', privateSyncSession.user.id);
+          renderAll();
+          return;
+        } catch (error) {
+          if (error?.code === 'revision_conflict' && attempt === 0) continue;
+          throw error;
+        }
+      }
+      throw new Error('The cloud copy kept changing. Try syncing again.');
+    } catch (error) {
+      syncCoordinator.recordFailure(error);
+      renderPrivateSyncStatus();
+      showToast(privateSyncErrorMessage(error));
+      throw error;
+    } finally {
+      if (!keepBusy) setPrivateSyncBusy(false);
+    }
+  }
+
+  async function disconnectPrivateSync() {
+    if (!confirm('Disconnect private sync on this device? Your local routine data will remain here.')) return;
+    setPrivateSyncBusy(true);
+    try {
+      await syncCloud.signOut();
+      privateSyncSession = null;
+      syncCoordinator?.disconnect();
+      els.privateSyncPasswordInput.value = '';
+      els.privateSyncHelp.textContent = 'New registrations are closed. Only the owner account created during private setup can connect.';
+      showToast('Private sync disconnected on this device');
+    } catch (error) {
+      showToast(privateSyncErrorMessage(error));
+    } finally {
+      setPrivateSyncBusy(false);
+    }
+  }
+
+  async function deletePrivateSyncCloudCopy() {
+    if (!confirm('Delete the synchronized cloud copy and disconnect this account? Your routine data on this device will remain here.')) return;
+    setPrivateSyncBusy(true);
+    try {
+      privateSyncSession = privateSyncSession || await syncCloud.session();
+      if (!privateSyncSession) throw new Error('Sign in before deleting the cloud copy.');
+      await syncCloud.deleteRoutine(privateSyncSession);
+      await syncCloud.signOut();
+      privateSyncSession = null;
+      syncCoordinator?.disconnect();
+      els.privateSyncPasswordInput.value = '';
+      els.privateSyncHelp.textContent = 'New registrations are closed. Only the owner account created during private setup can connect.';
+      renderPrivateSyncStatus();
+      showToast('Cloud copy deleted. Local routine data remains on this device.');
+    } catch (error) {
+      syncCoordinator?.recordFailure(error);
+      showToast(privateSyncErrorMessage(error));
+    } finally {
+      setPrivateSyncBusy(false);
+    }
+  }
+
+  function privateSyncErrorMessage(error) {
+    if (error?.status === 429) return 'Too many sign-in attempts. Wait a few minutes and try again.';
+    if (error?.status === 401 || error?.status === 403) return 'That code or sign-in session is no longer valid.';
+    if (error?.code === 'revision_conflict') return 'Another device changed the cloud copy. Please sync again.';
+    return String(error?.message || 'Private sync could not be completed.').slice(0, 180);
   }
 
   function renderEditorGroup(kind, target) {
@@ -1820,7 +2044,7 @@
   function saveActualTime(field, value) {
     const key = dateKey(selectedDate), day = ensureDay(key), previous = day[field];
     if (value) day[field] = value; else delete day[field];
-    pushUndo('Update actual time', () => { const target = ensureDay(key); if (previous) target[field] = previous; else delete target[field]; localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); renderToday(); renderHistory(); });
+    pushUndo('Update actual time', () => { const target = ensureDay(key); if (previous) target[field] = previous; else delete target[field]; saveState(); renderToday(); renderHistory(); });
     saveState(); renderHistory(); showToast(value ? 'Actual time saved' : 'Actual time cleared');
   }
 
@@ -1882,7 +2106,7 @@
       const [hours, minutes] = time.split(':').map(Number); selected.setHours(hours, minutes, 0, 0);
       day.entries[item.id] = { ...existing, taken: true, time, timestamp: selected.toISOString(), dose: existing.dose ?? item.medicationDose ?? '', note: existing.note ?? '' };
     } else day.entries[item.id] = { ...existing, taken: true, time: '', timestamp: null, dose: existing.dose ?? item.medicationDose ?? '', note: existing.note ?? '' };
-    pushUndo(`Log ${item.name}`, () => { const target = ensureDay(key); if (previous === undefined) delete target.entries[item.id]; else target.entries[item.id] = previous; localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); renderToday(); renderHistory(); });
+    pushUndo(`Log ${item.name}`, () => { const target = ensureDay(key); if (previous === undefined) delete target.entries[item.id]; else target.entries[item.id] = previous; saveState(); renderToday(); renderHistory(); });
     saveState(); if (rerender) renderToday(); else renderStats(); showToast(time ? `Medication logged at ${formatTime(time)}` : 'Medication logged');
     return true;
   }
@@ -1895,7 +2119,7 @@
   function clearMedication(item) {
     const key = dateKey(selectedDate), day = ensureDay(key), previous = structuredClone(day.entries[item.id]);
     delete day.entries[item.id];
-    pushUndo(`Clear ${item.name}`, () => { ensureDay(key).entries[item.id] = previous; localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); renderToday(); renderHistory(); });
+    pushUndo(`Clear ${item.name}`, () => { ensureDay(key).entries[item.id] = previous; saveState(); renderToday(); renderHistory(); });
     saveState(); renderToday(); showToast('Medication log cleared');
   }
 
@@ -2065,7 +2289,7 @@
     state.items.filter(item => item.type === 'linked' && item.linkedTemplate === 'bible').forEach(item => {
       day.entries[item.id] = { completed: completed >= total, progress: completed, completedCount: completed, total, completedAt, nextReference, source: 'return-link', updatedAt: new Date().toISOString() };
     });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    saveState();
     const clean = new URL(location.href); ['integration','date','completed','total','completedAt','next'].forEach(key => clean.searchParams.delete(key));
     history.replaceState({}, '', clean.pathname + clean.search + clean.hash);
   }
@@ -2094,7 +2318,7 @@
         if (JSON.stringify(day.entries[item.id]) !== JSON.stringify(nextValue)) { day.entries[item.id] = nextValue; updates += 1; }
       });
     });
-    if (updates) localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    if (updates) saveState();
     if (showMessage) showToast(integration ? (updates ? 'Connected app progress updated' : 'Connections are up to date') : 'Open the Bible app once to start syncing');
     renderConnections();
     return updates;
@@ -2346,7 +2570,7 @@
   function setDayMode(mode) {
     const key = dateKey(selectedDate), day = ensureDay(key), previous = day.mode || 'normal';
     day.mode = mode;
-    pushUndo('Change day mode', () => { ensureDay(key).mode = previous; localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); renderToday(); renderHistory(); });
+    pushUndo('Change day mode', () => { ensureDay(key).mode = previous; saveState(); renderToday(); renderHistory(); });
     saveState(); renderToday(); renderHistory(); showToast(mode === 'normal' ? 'Normal scoring restored' : `${dayModeLabel(mode)} set as excused`);
   }
 

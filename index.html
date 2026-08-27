@@ -396,9 +396,38 @@
           <div id="memoryArchive" class="memory-archive"></div>
         </section>
 
+        <section class="card private-sync-card" id="privateSyncCard">
+          <div class="section-heading"><div><p class="eyebrow">Private sync</p><h2>One secure account</h2></div><span id="privateSyncBadge" class="privacy-pill">Local only</span></div>
+          <p class="muted setup-help">Sign in to synchronize your routine between the web app and iPhone. Nothing is uploaded until you sign in and approve the first sync.</p>
+          <div class="private-sync-status">
+            <div><span>Status</span><strong id="privateSyncStatus">Preparing this device…</strong></div>
+            <div><span>Device</span><strong id="privateSyncDevice">—</strong></div>
+            <div><span>Last cloud sync</span><strong id="privateSyncLastSync">Not connected</strong></div>
+          </div>
+          <ul class="private-sync-privacy">
+            <li>Apple Health summaries stay on this device.</li>
+            <li>Background photos and local backups are never included.</li>
+            <li>Accountability partner access remains off.</li>
+          </ul>
+          <div id="privateSyncSignIn" class="private-sync-sign-in" hidden>
+            <label class="text-field compact"><span>Email for your private account</span><input id="privateSyncEmailInput" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" /></label>
+            <label class="text-field compact"><span>Password</span><input id="privateSyncPasswordInput" type="password" autocomplete="current-password" placeholder="Your saved private-sync password" /></label>
+            <button id="privateSyncVerifyButton" class="primary-button" type="button">Sign in and sync</button>
+            <button id="privateSyncSendCodeButton" class="text-button" type="button">Email me a sign-in link instead</button>
+            <p id="privateSyncHelp" class="muted micro-copy">New registrations are closed. Only the owner account created during private setup can connect.</p>
+          </div>
+          <p id="privateSyncAccount" class="muted micro-copy" hidden></p>
+          <div class="connection-actions">
+            <button id="createSyncSnapshotButton" class="secondary-button" type="button">Create safety snapshot</button>
+            <button id="privateSyncNowButton" class="primary-button" type="button">Connect private sync</button>
+          </div>
+          <button id="privateSyncSignOutButton" class="text-button private-sync-sign-out" type="button" hidden>Disconnect this account</button>
+          <button id="privateSyncDeleteCloudButton" class="text-button private-sync-delete" type="button" hidden>Delete cloud copy and disconnect</button>
+        </section>
+
         <section class="card" id="dataBackupCard">
           <div class="section-heading"><div><p class="eyebrow">Data</p><h2>Backup & export</h2></div></div>
-          <p class="muted setup-help">Your information is still stored only in this browser on this device. Nothing is automatically uploaded anywhere.</p>
+          <p class="muted setup-help">Your information is stored locally first. If you connect Private sync above, the approved sync copy is also stored in your owner-only account.</p>
           <div class="button-stack">
             <button id="exportCsvButton" class="secondary-button" type="button">Export progress as CSV</button>
             <button id="exportJsonButton" class="secondary-button" type="button">Download backup</button>
@@ -573,6 +602,8 @@
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="sync-core.js" defer></script>
+  <script src="sync-cloud.js" defer></script>
   <script src="app.js" defer></script>
 </body>
 </html>
