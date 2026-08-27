@@ -1,5 +1,5 @@
-const CACHE_NAME = 'daily-routine-v1-10-0-accountability-report';
-const ASSETS = ['./','./index.html','./styles.css','./app.js','./manifest.webmanifest','./icon-192.png','./icon-512.png','./privacy.html','./support.html','./legal.css'];
+const CACHE_NAME = 'daily-routine-v1-10-0-private-sync-owner-delete';
+const ASSETS = ['./','./index.html','./styles.css','./sync-core.js','./sync-cloud.js','./app.js','./manifest.webmanifest','./icon-192.png','./icon-512.png','./privacy.html','./support.html','./legal.css'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));

@@ -43,7 +43,8 @@ A mobile-first private routine and mood tracker designed to run as a Progressive
 - Visible backup age with a gentle monthly reminder
 - Phone-sized note capture with a keyboard-safe scrolling body and always-visible Save button
 - Works offline after first load
-- All data remains in this browser's local storage
+- Local-first storage that remains usable while offline
+- Optional owner-only private sync with direct account sign-in and a web magic-link fallback, device-only privacy exclusions, pending-change tracking, optimistic revisions, and recoverable three-way conflict merging
 
 ## Quick capture links
 
@@ -70,18 +71,28 @@ Open the GitHub Pages URL in Safari → Share → **Add to Home Screen** → ena
 
 ## Privacy note
 
-This version has no account system and does not transmit routine, mood, or note data. Data is stored locally on the device/browser. Clearing browser storage can erase it, so use Download backup periodically.
+Data is stored locally first. If private sync is connected, routine definitions, daily entries, notes, memories, weekly reviews, and ordinary preferences are also stored in the owner's Supabase account row. Apple Health summaries, background photos, local snapshots, downloaded backups, and conflict archives remain device-only. Clearing browser storage can erase the local copy, so use Download backup periodically.
 
 - [Privacy Policy](privacy.html)
 - [Support](support.html)
 
-## Recommended next phase: private accountability partner access
+## Owner-only private sync
 
-The current manual report intentionally shares only after the user previews and chooses a destination. A future automatic partner experience can add authenticated cloud delivery so each app user can authorize one accountability viewer. A good architecture is:
+The current manual report intentionally shares only after the user previews and chooses a destination. Private sync uses:
 
-- Front end: this GitHub Pages PWA
-- Authentication + database: Supabase
-- Row-level security: each user's entries are readable only by that user and specifically approved viewer(s)
-- Optional Google Sheets export: server-side sync to a private sheet for users who prefer spreadsheet review
+- Front end: this GitHub Pages PWA and its bundled iPhone web view
+- Authentication + database: Supabase Auth and Postgres
+- Row-level security: each owner can access only their own routine document
+- Local-first behavior: offline changes remain pending until the server acknowledges a matching revision
+- Privacy boundary: Health summaries, background photos, local backups, and conflict archives remain device-only
+
+Run the sync foundation tests with:
+
+```text
+node tests/sync-core.test.js
+node tests/sync-cloud.test.js
+```
+
+See `docs/PRIVATE_SYNC_FOUNDATION.md` and `supabase/migrations/202608250001_private_sync_foundation.sql` for the design and database policy.
 
 Do not publish personal routine/mood data directly into the GitHub repository or a public Google Sheet.

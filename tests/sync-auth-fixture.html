@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Private sync connection test</title>
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body data-theme="calm">
+  <main class="main-content" style="max-width:520px;margin:0 auto;padding:24px 16px">
+    <section class="card private-sync-card">
+      <div class="section-heading"><div><p class="eyebrow">Private test</p><h2>Connect the owner account</h2></div><span id="badge" class="privacy-pill">Closed</span></div>
+      <p class="muted setup-help">This temporary local screen verifies the closed owner account. It cannot create another account or upload routine data.</p>
+      <div class="private-sync-sign-in">
+        <label class="text-field compact"><span>Owner email</span><input id="email" type="email" autocomplete="email" placeholder="you@example.com" /></label>
+        <label class="text-field compact"><span>Saved password</span><input id="password" type="password" autocomplete="current-password" placeholder="Your saved private-sync password" /></label>
+        <button id="verify" class="primary-button" type="button">Verify owner sign-in</button>
+        <button id="send" class="text-button" type="button">Email me a sign-in link instead</button>
+        <p id="status" class="muted micro-copy" role="status">No routine data will be uploaded during this connection test.</p>
+      </div>
+    </section>
+  </main>
+  <script src="../sync-cloud.js?private-sync-owner-v1"></script>
+  <script>
+    (() => {
+      const client = DailyRoutineCloud.createClient({
+        url: 'https://shmvxujnlbolgcjwwewe.supabase.co',
+        publishableKey: 'sb_publishable_mEmMzinbOkd2FGpmSqPlmg_S6tUfqzh',
+        storage: localStorage
+      });
+      const email = document.getElementById('email');
+      const password = document.getElementById('password');
+      const status = document.getElementById('status');
+      const badge = document.getElementById('badge');
+      client.consumeAuthRedirect().then(session => {
+        if (!session) return;
+        badge.textContent = 'Verified';
+        status.textContent = 'Owner sign-in verified from the email link. No routine data was uploaded.';
+      }).catch(error => { status.textContent = error.message; });
+      document.getElementById('send').addEventListener('click', async () => {
+        if (!email.checkValidity() || !email.value.trim()) { status.textContent = 'Enter the owner email address.'; return; }
+        status.textContent = 'Sending…';
+        try {
+          await client.requestEmailLink(email.value, false, window.location.href.split('#')[0]);
+          status.textContent = 'Sign-in link sent. Open it from your email.';
+        } catch (error) { status.textContent = error.message; }
+      });
+      document.getElementById('verify').addEventListener('click', async () => {
+        status.textContent = 'Verifying…';
+        try {
+          await client.signInWithPassword(email.value, password.value);
+          password.value = '';
+          badge.textContent = 'Verified';
+          status.textContent = 'Owner sign-in verified. No routine data was uploaded.';
+        } catch (error) { status.textContent = error.message; }
+      });
+    })();
+  </script>
+</body>
+</html>
