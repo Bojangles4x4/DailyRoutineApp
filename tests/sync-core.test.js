@@ -53,6 +53,27 @@ test('preserves device-only fields when applying remote state', () => {
   assert.equal(applied.settings.lastBackupAt, current.settings.lastBackupAt);
 });
 
+test('keeps automatic Apple Health entries out of cloud documents', () => {
+  const state = sampleState();
+  state.items.push({ id: 'steps', name: 'Daily steps', type: 'number', healthSource: 'apple-health-steps' });
+  state.days['2026-08-25'].entries.steps = 8421;
+  const safe = syncableState(state);
+  assert.equal(safe.items.find(item => item.id === 'steps').healthSource, 'apple-health-steps');
+  assert.equal(safe.days['2026-08-25'].entries.steps, undefined);
+  assert.equal(safe.days['2026-08-25'].entries.prayer, true);
+});
+
+test('preserves local Apple Health entries when applying a cloud document', () => {
+  const current = sampleState();
+  current.items.push({ id: 'steps', name: 'Daily steps', type: 'number', target: 8000, healthSource: 'apple-health-steps' });
+  current.days['2026-08-25'].entries.steps = 8421;
+  const remote = syncableState(current);
+  remote.settings.theme = 'dusk';
+  const applied = applySyncableState(current, remote);
+  assert.equal(applied.days['2026-08-25'].entries.steps, 8421);
+  assert.equal(applied.settings.theme, 'dusk');
+});
+
 test('merges changes made to different days without conflicts', () => {
   const base = sampleState();
   const local = copy(base);

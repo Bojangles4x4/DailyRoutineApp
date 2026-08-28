@@ -15,6 +15,12 @@ enum HealthKitServiceError: LocalizedError {
 
 @MainActor
 final class HealthKitService {
+    private struct SleepSummary {
+        let hours: Double
+        let start: Date?
+        let end: Date?
+    }
+
     private let store = HKHealthStore()
 
     var isAvailable: Bool {
@@ -55,8 +61,10 @@ final class HealthKitService {
         return try await HealthSummary(
             date: now,
             stepCount: steps,
-            sleepHours: sleep,
-            workoutCount: workouts
+            sleepHours: sleep.hours,
+            workoutCount: workouts,
+            sleepStart: sleep.start,
+            sleepEnd: sleep.end
         )
     }
 
@@ -82,23 +90,54 @@ final class HealthKitService {
         }
     }
 
-    private func fetchRecentSleep(now: Date) async throws -> Double {
+    private func fetchRecentSleep(now: Date) async throws -> SleepSummary {
         guard let sleepType else { throw HealthKitServiceError.missingType }
         let startOfToday = Calendar.current.startOfDay(for: now)
-        let queryStart = Calendar.current.date(byAdding: .hour, value: -12, to: startOfToday) ?? startOfToday
+        let queryStart = Calendar.current.date(byAdding: .hour, value: -24, to: startOfToday) ?? startOfToday
         let predicate = HKQuery.predicateForSamples(withStart: queryStart, end: now)
         let samples: [HKCategorySample] = try await samples(type: sleepType, predicate: predicate)
 
-        let asleepSeconds = samples.reduce(0.0) { total, sample in
-            guard let value = HKCategoryValueSleepAnalysis(rawValue: sample.value) else { return total }
+        let intervals = samples.compactMap { sample -> DateInterval? in
+            guard let value = HKCategoryValueSleepAnalysis(rawValue: sample.value) else { return nil }
             switch value {
             case .asleepUnspecified, .asleepCore, .asleepDeep, .asleepREM:
-                return total + sample.endDate.timeIntervalSince(sample.startDate)
+                return DateInterval(start: sample.startDate, end: sample.endDate)
             default:
-                return total
+                return nil
             }
         }
-        return asleepSeconds / 3_600
+        let merged = mergeOverlapping(intervals)
+        var sessions: [[DateInterval]] = []
+        for interval in merged {
+            if let lastEnd = sessions.last?.last?.end,
+               interval.start.timeIntervalSince(lastEnd) <= 90 * 60 {
+                sessions[sessions.count - 1].append(interval)
+            } else {
+                sessions.append([interval])
+            }
+        }
+        guard let session = sessions.max(by: { left, right in
+            let leftDuration = left.reduce(0.0) { $0 + $1.duration }
+            let rightDuration = right.reduce(0.0) { $0 + $1.duration }
+            if leftDuration == rightDuration { return (left.last?.end ?? .distantPast) < (right.last?.end ?? .distantPast) }
+            return leftDuration < rightDuration
+        }) else { return SleepSummary(hours: 0, start: nil, end: nil) }
+        let seconds = session.reduce(0.0) { $0 + $1.duration }
+        return SleepSummary(hours: seconds / 3_600, start: session.first?.start, end: session.last?.end)
+    }
+
+    private func mergeOverlapping(_ intervals: [DateInterval]) -> [DateInterval] {
+        intervals.sorted { $0.start < $1.start }.reduce(into: []) { merged, next in
+            guard let last = merged.last else {
+                merged.append(next)
+                return
+            }
+            if next.start <= last.end {
+                merged[merged.count - 1] = DateInterval(start: last.start, end: max(last.end, next.end))
+            } else {
+                merged.append(next)
+            }
+        }
     }
 
     private func fetchWorkoutCount(now: Date) async throws -> Int {

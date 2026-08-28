@@ -47,6 +47,14 @@
     safe.settings = isPlainObject(safe.settings) ? safe.settings : {};
     delete safe.settings.backgroundImage;
     delete safe.settings.lastBackupAt;
+    const deviceHealthIds = new Set((Array.isArray(safe.items) ? safe.items : [])
+      .filter(item => String(item?.healthSource || '').startsWith('apple-health-'))
+      .map(item => String(item.id || ''))
+      .filter(Boolean));
+    Object.values(isPlainObject(safe.days) ? safe.days : {}).forEach(day => {
+      if (!isPlainObject(day?.entries)) return;
+      deviceHealthIds.forEach(id => delete day.entries[id]);
+    });
     return safe;
   }
 
@@ -56,6 +64,22 @@
     const localSettings = current?.settings || {};
     next.settings.backgroundImage = String(localSettings.backgroundImage || '');
     next.settings.lastBackupAt = String(localSettings.lastBackupAt || '');
+    const deviceHealthIds = new Set((Array.isArray(next.items) ? next.items : [])
+      .filter(item => String(item?.healthSource || '').startsWith('apple-health-'))
+      .map(item => String(item.id || ''))
+      .filter(Boolean));
+    const localDays = isPlainObject(current?.days) ? current.days : {};
+    next.days = isPlainObject(next.days) ? next.days : {};
+    Object.entries(localDays).forEach(([key, localDay]) => {
+      if (!isPlainObject(localDay?.entries)) return;
+      const preserved = {};
+      deviceHealthIds.forEach(id => {
+        if (Object.prototype.hasOwnProperty.call(localDay.entries, id)) preserved[id] = clone(localDay.entries[id]);
+      });
+      if (!Object.keys(preserved).length) return;
+      next.days[key] = isPlainObject(next.days[key]) ? next.days[key] : { entries: {} };
+      next.days[key].entries = { ...(isPlainObject(next.days[key].entries) ? next.days[key].entries : {}), ...preserved };
+    });
     return next;
   }
 
