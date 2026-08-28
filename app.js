@@ -3,6 +3,7 @@
 
   const STORAGE_KEY = 'dailyRoutineApp.v1';
   const SNAPSHOT_KEY = 'dailyRoutineApp.snapshots.v1';
+  const HEALTH_DEVICE_KEY = 'dailyRoutine.health.device.v1';
   const APP_VERSION = '1.10.0';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
@@ -105,10 +106,12 @@
     createSnapshotButton: $('createSnapshotButton'), restoreSnapshotButton: $('restoreSnapshotButton'), snapshotStatus: $('snapshotStatus'), backupDownloadStatus: $('backupDownloadStatus'), appVersion: $('appVersion'), resurfacingFrequencyInput: $('resurfacingFrequencyInput'),
     privateSyncCard: $('privateSyncCard'), privateSyncBadge: $('privateSyncBadge'), privateSyncStatus: $('privateSyncStatus'), privateSyncDevice: $('privateSyncDevice'), privateSyncLastSync: $('privateSyncLastSync'), createSyncSnapshotButton: $('createSyncSnapshotButton'), privateSyncNowButton: $('privateSyncNowButton'), privateSyncSignIn: $('privateSyncSignIn'), privateSyncEmailInput: $('privateSyncEmailInput'), privateSyncPasswordInput: $('privateSyncPasswordInput'), privateSyncSendCodeButton: $('privateSyncSendCodeButton'), privateSyncVerifyButton: $('privateSyncVerifyButton'), privateSyncHelp: $('privateSyncHelp'), privateSyncAccount: $('privateSyncAccount'), privateSyncSignOutButton: $('privateSyncSignOutButton'), privateSyncDeleteCloudButton: $('privateSyncDeleteCloudButton'),
     connectionsCard: $('connectionsCard'), syncConnectionsButton: $('syncConnectionsButton'), bibleConnectionStatus: $('bibleConnectionStatus'), openBibleConnectionButton: $('openBibleConnectionButton'), bibleAppUrlInput: $('bibleAppUrlInput'), saveBibleConnectionButton: $('saveBibleConnectionButton'), testBibleConnectionButton: $('testBibleConnectionButton'), connectionTemplates: $('connectionTemplates'),
-    appleNativeCard: $('appleNativeCard'), appleStepCount: $('appleStepCount'), appleSleepHours: $('appleSleepHours'), appleWorkoutCount: $('appleWorkoutCount'), appleHealthStatus: $('appleHealthStatus'), connectAppleHealthButton: $('connectAppleHealthButton'), refreshAppleHealthButton: $('refreshAppleHealthButton'), appleWatchStatus: $('appleWatchStatus'),
+    appleNativeCard: $('appleNativeCard'), appleStepCount: $('appleStepCount'), appleSleepHours: $('appleSleepHours'), appleWorkoutCount: $('appleWorkoutCount'), appleHealthStatus: $('appleHealthStatus'), connectAppleHealthButton: $('connectAppleHealthButton'), refreshAppleHealthButton: $('refreshAppleHealthButton'), appleWatchStatus: $('appleWatchStatus'), appleStepsGoalInput: $('appleStepsGoalInput'), saveAppleStepsGoalButton: $('saveAppleStepsGoalButton'),
+    healthSleepSuggestion: $('healthSleepSuggestion'), healthSleepSuggestionText: $('healthSleepSuggestionText'), applyHealthSleepButton: $('applyHealthSleepButton'),
     linkedActionFields: $('linkedActionFields'), linkedTemplateInput: $('linkedTemplateInput'), linkedCompletionInput: $('linkedCompletionInput'), linkedUrlField: $('linkedUrlField'), linkedUrlInput: $('linkedUrlInput'), linkedInternalField: $('linkedInternalField'), linkedInternalTargetInput: $('linkedInternalTargetInput'), linkedButtonLabelInput: $('linkedButtonLabelInput'), timeWindowFields: $('timeWindowFields'), timeWindowStartInput: $('timeWindowStartInput'), timeWindowEndInput: $('timeWindowEndInput'),
     medicationProgressCard: $('medicationProgressCard'), weeklyReviewCard: $('weeklyReviewCard'), memoryBankCard: $('memoryBankCard'), dataBackupCard: $('dataBackupCard'),
     accountabilityReportCard: $('accountabilityReportCard'), accountabilityPeriodInput: $('accountabilityPeriodInput'), accountabilityRoutineInput: $('accountabilityRoutineInput'), accountabilityMedicationInput: $('accountabilityMedicationInput'), accountabilityMedicationTimesField: $('accountabilityMedicationTimesField'), accountabilityMedicationTimesInput: $('accountabilityMedicationTimesInput'), accountabilityCheckinsInput: $('accountabilityCheckinsInput'), accountabilityHealthField: $('accountabilityHealthField'), accountabilityHealthInput: $('accountabilityHealthInput'), accountabilityReflectionInput: $('accountabilityReflectionInput'), accountabilitySupportInput: $('accountabilitySupportInput'), previewAccountabilityButton: $('previewAccountabilityButton'), accountabilityPreviewPanel: $('accountabilityPreviewPanel'), accountabilityPreviewText: $('accountabilityPreviewText'), copyAccountabilityButton: $('copyAccountabilityButton'), shareAccountabilityButton: $('shareAccountabilityButton'),
+    medicationConfirmDialog: $('medicationConfirmDialog'), medicationConfirmMessage: $('medicationConfirmMessage'), medicationConfirmCancel: $('medicationConfirmCancel'), medicationConfirmContinue: $('medicationConfirmContinue'),
     deleteItemButton: $('deleteItemButton'), closeDialogButton: $('closeDialogButton'), installButton: $('installButton'), toast: $('toast')
   };
 
@@ -517,6 +520,7 @@
     els.actualBedInput.addEventListener('change', () => saveActualTime('actualBedTime', els.actualBedInput.value));
     els.wakeNowButton.addEventListener('click', () => { const value = currentTimeValue(); els.actualWakeInput.value = value; saveActualTime('actualWakeTime', value); });
     els.bedNowButton.addEventListener('click', () => { const value = currentTimeValue(); els.actualBedInput.value = value; saveActualTime('actualBedTime', value); });
+    els.applyHealthSleepButton.addEventListener('click', applyHealthSleepSuggestion);
     els.quickMemoryButton.addEventListener('click', () => openMemoryDialog('blessing'));
     els.quickNoteButton.addEventListener('click', () => { switchView('notes'); openNoteDialog(); });
     els.openGodMomentsButton.addEventListener('click', () => { switchView('notes'); els.notesTypeFilter.value = 'god-moment'; renderNotes(); });
@@ -642,6 +646,10 @@
       els.appleHealthStatus.textContent = 'Refreshing your on-device summary…';
       sendNativeBridgeMessage('health.summary.request');
     });
+    els.saveAppleStepsGoalButton.addEventListener('click', saveAppleStepsGoal);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && healthDeviceSettings().connected) sendNativeBridgeMessage('health.summary.request');
+    });
     window.addEventListener('dailyRoutine:native', event => {
       const detail = event.detail || {};
       if (detail.name === 'native.ready') {
@@ -649,7 +657,10 @@
         els.appleHealthStatus.textContent = value.healthAvailable ? 'Apple Health is available and ready to connect.' : 'Apple Health is not available on this device.';
         els.appleWatchStatus.textContent = value.watchReachable ? 'Apple Watch is connected and reachable.' : value.watchInstalled ? 'Open Daily Routine on Apple Watch to enable live quick actions.' : 'Install the Daily Routine Watch companion to begin quick-action testing.';
         syncWatchContext();
+        renderAppleStepsGoal();
+        if (value.healthAvailable && healthDeviceSettings().connected) sendNativeBridgeMessage('health.summary.request');
       } else if (detail.name === 'health.authorization.completed') {
+        saveHealthDeviceSettings({ connected: true });
         els.appleHealthStatus.textContent = 'Health permission choice saved on this iPhone.';
         sendNativeBridgeMessage('health.summary.request');
       } else if (detail.name === 'health.summary') {
@@ -658,12 +669,17 @@
           date: value.date || new Date().toISOString(),
           stepCount: Math.max(0, Number(value.stepCount) || 0),
           sleepHours: Math.max(0, Number(value.sleepHours) || 0),
-          workoutCount: Math.max(0, Math.round(Number(value.workoutCount) || 0))
+          workoutCount: Math.max(0, Math.round(Number(value.workoutCount) || 0)),
+          sleepStart: validDateValue(value.sleepStart),
+          sleepEnd: validDateValue(value.sleepEnd)
         };
+        saveHealthDeviceSettings({ connected: true });
         els.appleStepCount.textContent = Math.round(Number(value.stepCount) || 0).toLocaleString();
         els.appleSleepHours.textContent = `${(Number(value.sleepHours) || 0).toFixed(1)}h`;
         els.appleWorkoutCount.textContent = String(Math.round(Number(value.workoutCount) || 0));
         els.appleHealthStatus.textContent = 'Summary refreshed from Apple Health on this device.';
+        applyLatestHealthSteps();
+        renderHealthSleepSuggestion();
         if (state.settings.accountabilityReport?.includeHealth) {
           accountabilityPreview = '';
           accountabilityPreviewSignature = '';
@@ -677,6 +693,101 @@
         els.appleHealthStatus.textContent = detail.value?.message || 'The native connection could not complete that request.';
       }
     });
+    renderAppleStepsGoal();
+  }
+
+  function healthDeviceSettings() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(HEALTH_DEVICE_KEY) || '{}');
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch { return {}; }
+  }
+
+  function saveHealthDeviceSettings(updates) {
+    localStorage.setItem(HEALTH_DEVICE_KEY, JSON.stringify({ ...healthDeviceSettings(), ...updates }));
+  }
+
+  function healthStepsItem() {
+    return state.items.find(item => item.healthSource === 'apple-health-steps');
+  }
+
+  function renderAppleStepsGoal() {
+    const item = healthStepsItem();
+    els.appleStepsGoalInput.value = String(item?.target || healthDeviceSettings().stepsGoal || 8000);
+    els.saveAppleStepsGoalButton.textContent = item ? 'Update goal' : 'Add to routine';
+  }
+
+  function saveAppleStepsGoal() {
+    const goal = Math.min(100000, Math.max(1, Math.round(Number(els.appleStepsGoalInput.value) || 8000)));
+    let item = healthStepsItem();
+    if (item) {
+      item.target = goal;
+      item.unit = 'steps';
+      item.type = 'number';
+    } else {
+      const maxOrder = Math.max(-1, ...state.items.filter(entry => entry.section === 'day').map(entry => Number(entry.order) || 0));
+      item = {
+        id: 'apple-health-steps', name: 'Daily steps', kind: 'routine', section: 'day', type: 'number', frequency: 'daily', days: [],
+        optional: false, unit: 'steps', target: goal, healthSource: 'apple-health-steps', order: maxOrder + 1, createdDate: dateKey(startOfToday())
+      };
+      state.items.push(item);
+    }
+    saveHealthDeviceSettings({ stepsGoal: goal });
+    applyLatestHealthSteps({ save: false });
+    saveState();
+    renderAll();
+    showToast(`Daily steps goal set to ${goal.toLocaleString()}.`);
+  }
+
+  function applyLatestHealthSteps({ save = true } = {}) {
+    const item = healthStepsItem();
+    if (!item || !latestHealthSummary) return false;
+    const summaryDate = new Date(latestHealthSummary.date);
+    if (Number.isNaN(summaryDate.getTime()) || dateKey(summaryDate) !== dateKey(startOfToday())) return false;
+    const day = ensureDay(dateKey(summaryDate));
+    const nextValue = Math.max(0, Math.round(latestHealthSummary.stepCount));
+    if (day.entries[item.id] === nextValue) return false;
+    day.entries[item.id] = nextValue;
+    if (save) saveState();
+    renderToday();
+    return true;
+  }
+
+  function healthSleepTimes() {
+    const start = latestHealthSummary?.sleepStart ? new Date(latestHealthSummary.sleepStart) : null;
+    const end = latestHealthSummary?.sleepEnd ? new Date(latestHealthSummary.sleepEnd) : null;
+    if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) return null;
+    return { start, end, bedTime: timeValue(start), wakeTime: timeValue(end) };
+  }
+
+  function timeValue(date) {
+    return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  }
+
+  function renderHealthSleepSuggestion() {
+    const suggestion = healthSleepTimes();
+    const isToday = dateKey(selectedDate) === dateKey(startOfToday());
+    els.healthSleepSuggestion.hidden = !suggestion || !isToday;
+    if (!suggestion || !isToday) return;
+    els.healthSleepSuggestionText.textContent = `${formatTime(suggestion.bedTime)} bedtime · ${formatTime(suggestion.wakeTime)} wake time. Review before applying.`;
+  }
+
+  function applyHealthSleepSuggestion() {
+    const suggestion = healthSleepTimes();
+    if (!suggestion) return;
+    const bedDay = ensureDay(dateKey(suggestion.start));
+    const wakeDay = ensureDay(dateKey(suggestion.end));
+    let applied = 0;
+    if (!bedDay.actualBedTime) { bedDay.actualBedTime = suggestion.bedTime; applied += 1; }
+    if (!wakeDay.actualWakeTime) { wakeDay.actualWakeTime = suggestion.wakeTime; applied += 1; }
+    if (!applied) {
+      showToast('Your logged sleep times were kept. Clear them first to apply the Health suggestion.');
+      return;
+    }
+    saveState();
+    renderToday();
+    renderHistory();
+    showToast(applied === 2 ? 'Health sleep times applied.' : 'The empty Health sleep time was applied; your existing time was kept.');
   }
 
   function sendNativeBridgeMessage(action, value) {
@@ -1162,6 +1273,7 @@
     renderOnThisDay();
     renderGodMomentReminder();
     renderBackupReminder();
+    renderHealthSleepSuggestion();
     els.selectedDateButton.textContent = isSameDay(selectedDate, today) ? 'Today' : new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' }).format(selectedDate);
     els.nextDay.disabled = dateKey(selectedDate) >= dateKey(today);
     els.nextDay.style.opacity = els.nextDay.disabled ? '.35' : '1';
@@ -2070,7 +2182,26 @@
 
   function confirmMedicationPeriod(item, time) {
     const warning = medicationPeriodWarning(item, time);
-    return !warning || confirm(warning);
+    if (!warning) return Promise.resolve(true);
+    return new Promise(resolve => {
+      let settled = false;
+      const onCancel = event => {
+        event.preventDefault();
+        finish(false);
+      };
+      const finish = result => {
+        if (settled) return;
+        settled = true;
+        els.medicationConfirmDialog.removeEventListener('cancel', onCancel);
+        if (els.medicationConfirmDialog.open) els.medicationConfirmDialog.close();
+        resolve(result);
+      };
+      els.medicationConfirmMessage.textContent = warning.replace(/\n+/g, ' ');
+      els.medicationConfirmCancel.onclick = () => finish(false);
+      els.medicationConfirmContinue.onclick = () => finish(true);
+      els.medicationConfirmDialog.addEventListener('cancel', onCancel);
+      requestAnimationFrame(() => els.medicationConfirmDialog.showModal());
+    });
   }
 
   function buildMedicationRow(row, item, value) {
@@ -2094,9 +2225,9 @@
 
   function logMedicationNow(item) { saveMedicationTime(item, currentTimeValue(), true); }
 
-  function saveMedicationTime(item, time, rerender = true) {
+  async function saveMedicationTime(item, time, rerender = true) {
     const key = dateKey(selectedDate), day = ensureDay(key), previous = structuredClone(day.entries[item.id]);
-    if (!confirmMedicationPeriod(item, time)) {
+    if (!await confirmMedicationPeriod(item, time)) {
       if (rerender) renderToday();
       showToast('Medication time not changed');
       return false;
@@ -2972,7 +3103,7 @@
             text: String(item?.text || '').trim()
           })).filter(item => item.reference && item.text).slice(0, 3)
         : [];
-      if (!String(theme.name || '').trim() || scriptures.length < 2) return null;
+      if (!String(theme.name || '').trim() || scriptures.length < 1) return null;
       return {
         id: String(theme.id || `theme-${Date.now()}-${Math.random().toString(16).slice(2)}`),
         name: String(theme.name).trim(),
@@ -3213,6 +3344,7 @@
       el('truthThemeForm').reset();
       el('truthThemeIdInput').value = '';
       el('truthThemeSubmitButton').textContent = 'Add theme';
+      el('truthThemeFormTitle').textContent = 'Create your own theme';
       el('truthThemeCancelButton').hidden = true;
     }
 
@@ -3224,9 +3356,9 @@
     }
 
     function parseScriptures(value) {
-      return value.split('\n').map(line => {
+      return value.split('\n').map(line => line.trim()).filter(Boolean).map(line => {
         const divider = line.indexOf('|');
-        if (divider < 0) return null;
+        if (divider < 0) return { reference: 'Biblical truth', text: line };
         return { reference: line.slice(0, divider).trim(), text: line.slice(divider + 1).trim() };
       }).filter(item => item?.reference && item?.text);
     }
@@ -3259,7 +3391,9 @@
           el('truthChristInput').value = theme.christHasDone;
           el('truthScripturesInput').value = scriptureLines(theme);
           el('truthThemeSubmitButton').textContent = 'Save theme';
+          el('truthThemeFormTitle').textContent = 'Edit this theme';
           el('truthThemeCancelButton').hidden = false;
+          el('truthThemeForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
           el('truthThemeNameInput').focus();
         }
         if (deleteId) {
@@ -3278,8 +3412,8 @@
       el('truthThemeForm').addEventListener('submit', event => {
         event.preventDefault();
         const scriptures = parseScriptures(el('truthScripturesInput').value);
-        if (scriptures.length < 2 || scriptures.length > 3) {
-          api.showToast('Add two or three Scripture lines.');
+        if (scriptures.length < 1 || scriptures.length > 3) {
+          api.showToast('Add one to three Scripture or truth lines.');
           return;
         }
         const theme = normalizeTheme({
@@ -3300,6 +3434,11 @@
         renderThemeList();
         resetThemeForm();
         api.showToast(index >= 0 ? 'Theme updated.' : 'Theme added.');
+      });
+      el('createTruthThemeButton').addEventListener('click', () => {
+        resetThemeForm();
+        el('truthThemeForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        el('truthThemeNameInput').focus({ preventScroll: true });
       });
       el('truthThemeCancelButton').addEventListener('click', resetThemeForm);
     }

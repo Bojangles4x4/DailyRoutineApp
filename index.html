@@ -101,6 +101,10 @@
             <label class="actual-time-field"><span>Went to bed</span><div><input id="actualBedInput" type="time" /><button id="bedNowButton" class="small-button" type="button">Now</button></div></label>
           </div>
           <p class="muted micro-copy">These actual times can be compared with medication timing in Progress.</p>
+          <div id="healthSleepSuggestion" class="health-sleep-suggestion" hidden>
+            <div><strong>Apple Health suggestion</strong><span id="healthSleepSuggestionText"></span></div>
+            <button id="applyHealthSleepButton" class="small-button" type="button">Apply times</button>
+          </div>
         </section>
 
         <section class="card capture-card">
@@ -366,6 +370,12 @@
             <button id="connectAppleHealthButton" class="primary-button" type="button">Connect Health</button>
             <button id="refreshAppleHealthButton" class="secondary-button" type="button">Refresh summary</button>
           </div>
+          <div class="health-steps-goal">
+            <div><strong>Automatic steps goal</strong><span>Add steps as a required routine item. It checks itself when Health reaches your goal.</span></div>
+            <label><span class="sr-only">Daily step goal</span><input id="appleStepsGoalInput" type="number" min="1" max="100000" step="500" inputmode="numeric" value="8000" /></label>
+            <button id="saveAppleStepsGoalButton" class="secondary-button" type="button">Add to routine</button>
+          </div>
+          <p class="muted micro-copy">Automatic step values stay on this device and are excluded from Private sync.</p>
           <div class="connection-status-card apple-watch-status">
             <div class="connection-icon">⌚</div>
             <div class="connection-copy"><strong>Apple Watch companion</strong><span id="appleWatchStatus">Ready for quick-action testing after the Watch app is installed.</span></div>
@@ -456,16 +466,18 @@
             <button id="saveTruthCopyButton" class="primary-button" type="button">Save opening words</button>
           </div>
           <div class="truth-bank-heading">
-            <div><p class="eyebrow">Rotating content bank</p><h3>Supporting themes</h3></div>
-            <p class="muted micro-copy">Each day uses one complete theme so the teaching and Scriptures stay coherent.</p>
+            <div><p class="eyebrow">Rotating content bank</p><h3>Your supporting themes</h3></div>
+            <p class="muted micro-copy">Starter themes can be edited or deleted. Create your own below; each day uses one complete theme.</p>
           </div>
+          <button id="createTruthThemeButton" class="secondary-button" type="button">+ Create your own theme</button>
           <div id="truthThemeList" class="truth-theme-list"></div>
           <form id="truthThemeForm" class="truth-theme-form">
+            <div><p class="eyebrow">Personalize it</p><h3 id="truthThemeFormTitle">Create your own theme</h3></div>
             <input id="truthThemeIdInput" type="hidden" />
             <label class="text-field"><span>Theme name</span><input id="truthThemeNameInput" type="text" required /></label>
             <label class="text-field"><span>Who God is</span><textarea id="truthWhoGodInput" rows="3" required></textarea></label>
             <label class="text-field"><span>What Christ has done</span><textarea id="truthChristInput" rows="3" required></textarea></label>
-            <label class="text-field"><span>Scriptures <small>(2–3 lines; Reference | passage)</small></span><textarea id="truthScripturesInput" rows="5" required placeholder="Romans 8:1 | There is therefore now no condemnation..."></textarea></label>
+            <label class="text-field"><span>Scriptures or biblical truths <small>(1–3 lines; “Reference | passage” or plain text)</small></span><textarea id="truthScripturesInput" rows="5" required placeholder="Romans 8:1 | There is therefore now no condemnation..."></textarea></label>
             <div class="form-actions">
               <button id="truthThemeSubmitButton" class="primary-button" type="submit">Add theme</button>
               <button id="truthThemeCancelButton" class="secondary-button" type="button" hidden>Cancel edit</button>
@@ -598,6 +610,14 @@
         <label id="noteResurfaceField" class="toggle-field" hidden><input id="noteResurfaceInput" type="checkbox" checked /><span><b>Show this occasionally</b><small>Allow this God Moment to appear as a gentle reminder of God’s faithfulness.</small></span></label>
       </div>
       <div class="dialog-actions"><button id="deleteNoteButton" class="danger-button" type="button" hidden>Delete</button><button class="primary-button" type="submit">Save note</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="medicationConfirmDialog" class="item-dialog confirmation-dialog">
+    <form method="dialog">
+      <div class="dialog-header"><div><p class="eyebrow">Check the time</p><h2>Medication timing</h2></div></div>
+      <p id="medicationConfirmMessage"></p>
+      <div class="dialog-actions"><button id="medicationConfirmCancel" class="secondary-button" type="button">Cancel</button><button id="medicationConfirmContinue" class="primary-button" type="button">Log anyway</button></div>
     </form>
   </dialog>
 

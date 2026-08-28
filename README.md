@@ -71,7 +71,7 @@ Open the GitHub Pages URL in Safari → Share → **Add to Home Screen** → ena
 
 ## Privacy note
 
-Data is stored locally first. If private sync is connected, routine definitions, daily entries, notes, memories, weekly reviews, and ordinary preferences are also stored in the owner's Supabase account row. Apple Health summaries, background photos, local snapshots, downloaded backups, and conflict archives remain device-only. Clearing browser storage can erase the local copy, so use Download backup periodically.
+Data is stored locally first. If private sync is connected, routine definitions, daily entries, notes, memories, weekly reviews, and ordinary preferences are also stored in the owner's Supabase account row. Apple Health summaries, automatic Health-based step values, background photos, local snapshots, downloaded backups, and conflict archives remain device-only. Sleep suggestions become ordinary routine history only after the user applies them. Clearing browser storage can erase the local copy, so use Download backup periodically.
 
 - [Privacy Policy](privacy.html)
 - [Support](support.html)
