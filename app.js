@@ -4,7 +4,7 @@
   const STORAGE_KEY = 'dailyRoutineApp.v1';
   const SNAPSHOT_KEY = 'dailyRoutineApp.snapshots.v1';
   const HEALTH_DEVICE_KEY = 'dailyRoutine.health.device.v1';
-  const APP_VERSION = '1.10.0';
+  const APP_VERSION = '1.11.0';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const DEFAULT_BIBLE_APP_URL = 'https://bojangles4x4.github.io/Bible-Reading-Plan/';
@@ -766,19 +766,18 @@
 
   function renderHealthSleepSuggestion() {
     const suggestion = healthSleepTimes();
-    const isToday = dateKey(selectedDate) === dateKey(startOfToday());
-    els.healthSleepSuggestion.hidden = !suggestion || !isToday;
-    if (!suggestion || !isToday) return;
-    els.healthSleepSuggestionText.textContent = `${formatTime(suggestion.bedTime)} bedtime · ${formatTime(suggestion.wakeTime)} wake time. Review before applying.`;
+    const matchesWakeDay = suggestion && dateKey(selectedDate) === dateKey(suggestion.end);
+    els.healthSleepSuggestion.hidden = !suggestion || !matchesWakeDay;
+    if (!suggestion || !matchesWakeDay) return;
+    els.healthSleepSuggestionText.textContent = `${formatTime(suggestion.bedTime)} the night before · ${formatTime(suggestion.wakeTime)} wake time. Both will be saved to ${formatShortDate(suggestion.end)}.`;
   }
 
   function applyHealthSleepSuggestion() {
     const suggestion = healthSleepTimes();
     if (!suggestion) return;
-    const bedDay = ensureDay(dateKey(suggestion.start));
     const wakeDay = ensureDay(dateKey(suggestion.end));
     let applied = 0;
-    if (!bedDay.actualBedTime) { bedDay.actualBedTime = suggestion.bedTime; applied += 1; }
+    if (!wakeDay.actualBedTime) { wakeDay.actualBedTime = suggestion.bedTime; applied += 1; }
     if (!wakeDay.actualWakeTime) { wakeDay.actualWakeTime = suggestion.wakeTime; applied += 1; }
     if (!applied) {
       showToast('Your logged sleep times were kept. Clear them first to apply the Health suggestion.');
@@ -814,7 +813,7 @@
       dateKey: dateKey(today),
       completed: completion.completed,
       total: completion.total,
-      nextItemName: truthBeforeTasksComplete ? next?.name || null : 'Complete Truth Before Tasks on iPhone',
+      nextItemName: truthBeforeTasksComplete ? next?.name || null : 'Complete Morning Foundation on iPhone',
       canCompleteNext: truthBeforeTasksComplete && Boolean(next),
       truthBeforeTasksComplete,
       lastActionMessage: watchLastActionMessage || null
@@ -863,7 +862,7 @@
     if (processedWatchEventIds.size > 200) processedWatchEventIds.delete(processedWatchEventIds.values().next().value);
 
     if (document.body.classList.contains('truth-locked')) {
-      watchLastActionMessage = 'Complete Truth Before Tasks on iPhone first';
+      watchLastActionMessage = 'Complete Morning Foundation on iPhone first';
       els.appleWatchStatus.textContent = watchLastActionMessage;
       syncWatchContext();
       showToast(watchLastActionMessage);
@@ -2847,7 +2846,7 @@
 
     const truthCompletions = state.settings.truthBeforeTasks?.completions || {};
     const truthCount = dates.filter(date => Boolean(truthCompletions[dateKey(date)])).length;
-    lines.push(`Truth Before Tasks: ${truthCount}/${dates.length} day${dates.length === 1 ? '' : 's'}.`);
+    lines.push(`Morning foundation: ${truthCount}/${dates.length} day${dates.length === 1 ? '' : 's'} (Truth Before Tasks${state.settings.truthBeforeTasks?.convictions?.items?.length || state.settings.truthBeforeTasks?.convictions?.points?.length ? ' + Convictions Before Circumstances' : ''}).`);
 
     const sections = reportSectionStats(dates);
     if (sections.length) lines.push(`Parts of day: ${sections.map(metric => `${sectionLabels[metric.section][0]} ${metric.percent}%`).join(' · ')}.`);
@@ -3038,7 +3037,9 @@
     const api = window.DailyRoutineApp;
     if (!api) return;
 
-    const MINIMUM_MS = 3 * 60 * 1000;
+    const TRUTH_MINIMUM_MS = 3 * 60 * 1000;
+    const CONVICTION_MINIMUM_MS = 2 * 60 * 1000;
+    const TRUTH_STEP_COUNT = 5;
     const DEFAULTS = {
       personalPlea: 'Taylor, I wrote this while thinking clearly. I may not feel clear or steady every time I read it, but I will trust what the Lord led me to write when I could see these truths clearly. I plead with you now: set everything else aside for these few minutes and meditate on what is true.',
       openingPrayer: 'Father, quiet my heart. Help me receive what is true rather than follow what feels urgent. Fix my eyes on Christ and lead me by Your Word today.',
@@ -3047,6 +3048,91 @@
         'These practices do not make me right with God. They remind me of my need for the Lord and press me to see Christ.',
         'Jesus is my righteousness, my confidence, and my guide.'
       ],
+      convictions: {
+        intro: 'Before I think about today’s circumstances, I will remember the convictions I chose to believe. These truths are based upon the unchanging Word of God.',
+        items: [
+          {
+            id: 'higher-purposes',
+            text: 'I believe that God has higher and better purposes in mind than what my feelings tell me. So I will determine within a sound mind and with wise counsel what I commit myself to.',
+            scripture: ''
+          },
+          {
+            id: 'grace-to-move-forward',
+            text: 'I believe that there is grace to move forward no matter what happens. There is grace for my failures; there is grace for godly sorrow.',
+            scripture: ''
+          },
+          {
+            id: 'grace-to-renew-my-mind',
+            text: 'I believe there is grace to renew my mind with His truth. I believe there is grace to capture thoughts that are antithetical to Jesus’ kingdom and reframe them.',
+            scripture: ''
+          },
+          {
+            id: 'grace-pulls-me-toward-him',
+            text: 'I believe the grace of God pulls me toward Him. It is irresistible. When I see my sin and think that He wants nothing to do with me, when I see my failings and think that He treats me based upon what I do for Him, I look to the cross and believe that His grace is greater. Look to the cross: that plan was always plan A, never changing nor wavering.',
+            scripture: ''
+          },
+          {
+            id: 'grace-to-carry-me',
+            text: 'I believe in God’s grace in Jesus to carry me throughout this day. My day does not determine my destiny. My failings do not determine my future. Jesus promises to carry my burdens. I believe He has already carried the heavy yoke of a perfect life. To be yoked alongside Him now is easy, and His burden is light. Grace makes me run to Him and be yoked alongside Him.',
+            scripture: ''
+          },
+          {
+            id: 'freedom-from-performance',
+            text: 'I believe God’s grace affords me the opportunity to not have weight upon my performance each day, but to just walk with Him and learn His ways as I stumble and He picks me up.',
+            scripture: ''
+          },
+          {
+            id: 'sanctified-over-time',
+            text: 'I believe that we would not know the greatness of God’s grace if we were not sanctified over time. As we “fail forward,” we are met with His grace to continue.',
+            scripture: ''
+          },
+          {
+            id: 'god-works-through-failings',
+            text: 'I believe God has already worked through my failings, not to condemn me, but to bring me closer to Him. He is great and able to do such a thing. He proves experientially that His ways are right.',
+            scripture: ''
+          },
+          {
+            id: 'grace-to-be-present',
+            text: 'I believe God’s grace allows me to be present in every situation, handing over the outcome to Him and seeking to entrust what I do to His Spirit.',
+            scripture: ''
+          },
+          {
+            id: 'not-absent-in-suffering',
+            text: 'I believe that God is not absent in my suffering.',
+            scripture: ''
+          },
+          {
+            id: 'suffering-has-reason',
+            text: 'I believe that God does not bring suffering without reason.',
+            scripture: 'Lamentations 3:23–33 | For if He causes grief, then He will have compassion according to His abundant lovingkindness. For He does not afflict from His heart or grieve the sons of men.'
+          },
+          {
+            id: 'suffering-for-glory-and-good',
+            text: 'I believe that God will use my suffering for His glory and my good.',
+            scripture: ''
+          },
+          {
+            id: 'worship-while-suffering',
+            text: 'I choose to worship while suffering because of God’s promises about suffering.',
+            scripture: ''
+          },
+          {
+            id: 'drawn-to-his-strength',
+            text: 'I believe God is using my suffering to take my eyes off my strength and draw me to His strength.',
+            scripture: '2 Corinthians 1:8–10 | For we do not want you to be unaware, brothers, of our affliction which came to us in Asia, that we were burdened excessively, beyond our strength, so that we despaired even to live. Indeed, we had the sentence of death within ourselves so that we would not have confidence in ourselves, but in God who raises the dead; who rescued us from so great a peril of death, and will rescue us, He on whom we have set our hope. And He will yet rescue us.'
+          },
+          {
+            id: 'do-the-next-thing',
+            text: 'I choose to just do the next thing in faith.',
+            scripture: 'Philippians 3:13–14'
+          },
+          {
+            id: 'because-his-word-says-so',
+            text: 'I believe these things not because of my strength, will, or faith, but because of what His Word tells me.',
+            scripture: ''
+          }
+        ]
+      },
       themes: [
         {
           id: 'steadfast-rule',
@@ -3103,28 +3189,57 @@
             text: String(item?.text || '').trim()
           })).filter(item => item.reference && item.text).slice(0, 3)
         : [];
-      if (!String(theme.name || '').trim() || scriptures.length < 1) return null;
+      const legacyBody = [theme.whoGodIs, theme.christHasDone].map(value => String(value || '').trim()).filter(Boolean).join('\n\n');
+      const body = String(theme.body || legacyBody).trim();
+      if (!String(theme.name || '').trim() || !body || scriptures.length < 1) return null;
       return {
         id: String(theme.id || `theme-${Date.now()}-${Math.random().toString(16).slice(2)}`),
         name: String(theme.name).trim(),
+        body,
         whoGodIs: String(theme.whoGodIs || '').trim(),
         christHasDone: String(theme.christHasDone || '').trim(),
         scriptures
       };
     }
 
+    function normalizeConvictionItem(item, index = 0) {
+      if (typeof item === 'string') item = { text: item, scripture: '' };
+      if (!item || typeof item !== 'object' || !String(item.text || '').trim()) return null;
+      return {
+        id: String(item.id || `conviction-${Date.now()}-${index}-${Math.random().toString(16).slice(2)}`),
+        text: String(item.text).trim(),
+        scripture: String(item.scripture || '').trim()
+      };
+    }
+
     function normalizeConfig() {
       const currentState = api.getState();
       const stored = currentState.settings.truthBeforeTasks || {};
+      const hasStoredConvictions = Boolean(stored.convictions && typeof stored.convictions === 'object');
+      const storedConvictions = hasStoredConvictions ? stored.convictions : {};
+      const previousScaffoldIntro = 'Before I react to today’s circumstances, I will remember the convictions I chose while thinking clearly.';
+      const storedItems = Array.isArray(storedConvictions.items)
+        ? storedConvictions.items
+        : Array.isArray(storedConvictions.points)
+          ? storedConvictions.points.map((text, index) => ({ id: `legacy-conviction-${index + 1}`, text, scripture: '' }))
+          : null;
+      const useSuppliedDefaults = !hasStoredConvictions
+        || (Array.isArray(storedConvictions.points) && storedConvictions.points.length === 0 && storedConvictions.intro === previousScaffoldIntro);
+      const convictionItems = (useSuppliedDefaults ? DEFAULTS.convictions.items : storedItems || [])
+        .map(normalizeConvictionItem).filter(Boolean);
       const result = {
         personalPlea: typeof stored.personalPlea === 'string' && stored.personalPlea.trim() ? stored.personalPlea : DEFAULTS.personalPlea,
         openingPrayer: typeof stored.openingPrayer === 'string' && stored.openingPrayer.trim() ? stored.openingPrayer : DEFAULTS.openingPrayer,
         coreTruths: Array.isArray(stored.coreTruths) && stored.coreTruths.length ? stored.coreTruths.filter(Boolean).map(String) : clone(DEFAULTS.coreTruths),
-        themes: Array.isArray(stored.themes) && stored.themes.length ? stored.themes.map(normalizeTheme).filter(Boolean) : clone(DEFAULTS.themes),
+        convictions: {
+          intro: useSuppliedDefaults ? DEFAULTS.convictions.intro : typeof storedConvictions.intro === 'string' && storedConvictions.intro.trim() ? storedConvictions.intro.trim() : DEFAULTS.convictions.intro,
+          items: convictionItems
+        },
+        themes: Array.isArray(stored.themes) && stored.themes.length ? stored.themes.map(normalizeTheme).filter(Boolean) : DEFAULTS.themes.map(normalizeTheme).filter(Boolean),
         completions: stored.completions && typeof stored.completions === 'object' ? stored.completions : {},
         sessions: stored.sessions && typeof stored.sessions === 'object' ? stored.sessions : {}
       };
-      if (!result.themes.length) result.themes = clone(DEFAULTS.themes);
+      if (!result.themes.length) result.themes = DEFAULTS.themes.map(normalizeTheme).filter(Boolean);
       currentState.settings.truthBeforeTasks = result;
       return result;
     }
@@ -3162,10 +3277,18 @@
       return session;
     }
 
+    function convictionItems() {
+      return config().convictions?.items || [];
+    }
+
+    function totalStepCount() {
+      return TRUTH_STEP_COUNT + convictionItems().length;
+    }
+
     function showTruth() {
       activeDateKey = todayKey();
       const session = getSession(activeDateKey);
-      stepIndex = Math.min(4, Math.max(0, Number(session.currentStep) || 0));
+      stepIndex = Math.min(totalStepCount() - 1, Math.max(0, Number(session.currentStep) || 0));
       document.body.classList.add('truth-locked');
       document.querySelectorAll('.nav-button').forEach(button => {
         button.classList.remove('active');
@@ -3173,12 +3296,11 @@
       });
       document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
       el('truthView').classList.add('active');
-      el('pageTitle').textContent = 'Truth Before Tasks';
       renderStep();
       if (!timer) timer = window.setInterval(tick, 1000);
       api.syncWatchContext();
       el('appMain')?.focus({ preventScroll: true });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: 'auto' });
     }
 
     function unlock() {
@@ -3205,13 +3327,13 @@
       const body = el('truthStepBody');
       body.replaceChildren();
       const steps = [
-        { title: 'A plea from a clear moment', render() { body.append(textNode('p', currentConfig.personalPlea, 'truth-lead')); } },
-        { title: 'Ask the Father for help', render() { body.append(textNode('p', currentConfig.openingPrayer, 'truth-lead')); } },
-        { title: 'Remember who God is', render() { body.append(textNode('p', theme.whoGodIs, 'truth-lead')); } },
+        { phase: 'truth', title: 'A plea from a clear moment', render() { body.append(textNode('p', currentConfig.personalPlea, 'truth-lead')); } },
+        { phase: 'truth', title: 'Ask the Father for help', render() { body.append(textNode('p', currentConfig.openingPrayer, 'truth-lead')); } },
+        { phase: 'truth', title: 'Hold today’s theme', render() { body.append(textNode('p', theme.body, 'truth-lead')); } },
         {
-          title: 'Remember what Christ has done',
+          phase: 'truth',
+          title: 'Remember what remains true',
           render() {
-            body.append(textNode('p', theme.christHasDone, 'truth-lead'));
             const list = document.createElement('ul');
             list.className = 'truth-core-list';
             currentConfig.coreTruths.forEach(truth => list.append(textNode('li', truth)));
@@ -3219,6 +3341,7 @@
           }
         },
         {
+          phase: 'truth',
           title: 'Receive the Word',
           render() {
             theme.scriptures.forEach(scripture => {
@@ -3230,8 +3353,45 @@
           }
         }
       ];
+      convictionItems().forEach((item, index) => {
+        steps.push({
+          phase: 'convictions',
+          title: `Conviction ${index + 1}`,
+          render() {
+            if (index === 0 && currentConfig.convictions.intro) body.append(textNode('p', currentConfig.convictions.intro, 'conviction-intro'));
+            body.append(textNode('p', item.text, 'truth-lead conviction-point'));
+            if (item.scripture) {
+              const divider = item.scripture.indexOf('|');
+              const quote = document.createElement('blockquote');
+              if (divider >= 0) {
+                quote.append(textNode('p', item.scripture.slice(divider + 1).trim()));
+                quote.append(textNode('cite', item.scripture.slice(0, divider).trim()));
+              } else {
+                quote.append(textNode('p', item.scripture));
+              }
+              quote.classList.add('conviction-scripture');
+              body.append(quote);
+            }
+          }
+        });
+      });
       const step = steps[stepIndex];
-      el('truthStepLabel').textContent = `${theme.name} · Step ${stepIndex + 1} of ${steps.length}`;
+      const convictionsPhase = step.phase === 'convictions';
+      if (convictionsPhase && !Number.isFinite(Number(session.convictionsStartedAt))) {
+        session.convictionsStartedAt = Math.max(Date.now(), Number(session.startedAt) + TRUTH_MINIMUM_MS);
+        api.saveState();
+      }
+      el('truthHeroEyebrow').textContent = convictionsPhase ? 'Choose before the day chooses for you' : 'Begin with what is true';
+      el('truthHeroTitle').textContent = convictionsPhase ? 'Convictions Before Circumstances' : 'Truth Before Tasks';
+      el('truthHeroIntro').textContent = convictionsPhase
+        ? 'Now spend a few moments recommitting to the convictions you have held true and will continue to hold true in this day.'
+        : 'Before plans, pressure, or productivity, take a few quiet minutes to remember who God is and what Christ has done.';
+      el('pageTitle').textContent = convictionsPhase ? 'Convictions Before Circumstances' : 'Truth Before Tasks';
+      const phaseStep = convictionsPhase ? stepIndex - TRUTH_STEP_COUNT + 1 : stepIndex + 1;
+      const phaseCount = convictionsPhase ? convictionItems().length : TRUTH_STEP_COUNT;
+      el('truthStepLabel').textContent = convictionsPhase
+        ? `Convictions · ${phaseStep} of ${phaseCount}`
+        : `${theme.name} · Step ${phaseStep} of ${phaseCount}`;
       el('truthStepTitle').textContent = step.title;
       step.render();
       el('truthPreviousButton').disabled = stepIndex === 0;
@@ -3252,16 +3412,24 @@
         return;
       }
       const session = getSession(key);
-      const elapsed = Math.max(0, Date.now() - Number(session.startedAt));
-      const timeProgress = Math.min(1, elapsed / MINIMUM_MS);
-      const visitProgress = new Set(session.visited).size / 5;
+      const hasConvictions = convictionItems().length > 0;
+      const truthElapsed = Math.max(0, Date.now() - Number(session.startedAt));
+      const convictionElapsed = hasConvictions && Number.isFinite(Number(session.convictionsStartedAt))
+        ? Math.max(0, Date.now() - Number(session.convictionsStartedAt))
+        : 0;
+      const requiredTime = TRUTH_MINIMUM_MS + (hasConvictions ? CONVICTION_MINIMUM_MS : 0);
+      const completedTime = Math.min(TRUTH_MINIMUM_MS, truthElapsed) + (hasConvictions ? Math.min(CONVICTION_MINIMUM_MS, convictionElapsed) : 0);
+      const timeProgress = completedTime / requiredTime;
+      const visitProgress = new Set(session.visited).size / totalStepCount();
       el('truthProgressBar').style.width = `${Math.round((timeProgress * .55 + visitProgress * .45) * 100)}%`;
-      const remaining = Math.max(0, MINIMUM_MS - elapsed);
+      const truthRemaining = Math.max(0, TRUTH_MINIMUM_MS - truthElapsed);
+      const convictionRemaining = hasConvictions ? Math.max(0, CONVICTION_MINIMUM_MS - convictionElapsed) : 0;
+      const remaining = truthRemaining + convictionRemaining;
       if (remaining > 60000) el('truthProgressText').textContent = `Take your time. About ${Math.ceil(remaining / 60000)} minutes remain.`;
       else if (remaining > 0) el('truthProgressText').textContent = 'Stay here for a few more quiet moments.';
-      else if (new Set(session.visited).size < 5) el('truthProgressText').textContent = 'Continue through each truth before entering the day.';
+      else if (new Set(session.visited).size < totalStepCount()) el('truthProgressText').textContent = hasConvictions ? 'Continue through each truth and conviction before entering the day.' : 'Continue through each truth before entering the day.';
       else el('truthProgressText').textContent = 'You are ready to enter the day.';
-      el('truthEnterDayButton').disabled = remaining > 0 || new Set(session.visited).size < 5;
+      el('truthEnterDayButton').disabled = remaining > 0 || new Set(session.visited).size < totalStepCount();
     }
 
     function tick() {
@@ -3272,7 +3440,10 @@
     function enterDay() {
       const key = todayKey();
       const session = getSession(key);
-      const ready = Date.now() - Number(session.startedAt) >= MINIMUM_MS && new Set(session.visited).size >= 5;
+      const hasConvictions = convictionItems().length > 0;
+      const truthReady = Date.now() - Number(session.startedAt) >= TRUTH_MINIMUM_MS;
+      const convictionsReady = !hasConvictions || (Number.isFinite(Number(session.convictionsStartedAt)) && Date.now() - Number(session.convictionsStartedAt) >= CONVICTION_MINIMUM_MS);
+      const ready = truthReady && convictionsReady && new Set(session.visited).size >= totalStepCount();
       if (!ready) {
         api.showToast('Remain with the truth a little longer.');
         return;
@@ -3282,7 +3453,7 @@
       api.saveState();
       unlock();
       api.switchView('today');
-      api.showToast('Truth carried into the day.');
+      api.showToast(hasConvictions ? 'Truth and convictions carried into the day.' : 'Truth carried into the day.');
     }
 
     function bindGate() {
@@ -3300,7 +3471,7 @@
         renderStep();
       });
       el('truthContinueButton').addEventListener('click', () => {
-        stepIndex = Math.min(4, stepIndex + 1);
+        stepIndex = Math.min(totalStepCount() - 1, stepIndex + 1);
         config().sessions[todayKey()].currentStep = stepIndex;
         api.saveState();
         renderStep();
@@ -3323,8 +3494,7 @@
         const card = document.createElement('article');
         card.className = 'truth-theme-card';
         card.append(textNode('h4', theme.name));
-        card.append(textNode('p', `Who God is: ${theme.whoGodIs}`));
-        card.append(textNode('p', `What Christ has done: ${theme.christHasDone}`));
+        card.append(textNode('p', theme.body));
         card.append(textNode('p', theme.scriptures.map(item => item.reference).join(' · '), 'muted micro-copy'));
         const actions = document.createElement('div');
         actions.className = 'theme-actions';
@@ -3340,19 +3510,89 @@
       });
     }
 
-    function resetThemeForm() {
+    function resetThemeForm(hide = true) {
       el('truthThemeForm').reset();
       el('truthThemeIdInput').value = '';
       el('truthThemeSubmitButton').textContent = 'Add theme';
       el('truthThemeFormTitle').textContent = 'Create your own theme';
       el('truthThemeCancelButton').hidden = true;
+      el('truthThemeForm').hidden = hide;
+    }
+
+    function refreshConvictionEditorLabels() {
+      [...el('convictionItemList').querySelectorAll('.conviction-editor-item')].forEach((card, index) => {
+        card.querySelector('.conviction-editor-number').textContent = `Conviction ${index + 1}`;
+        const text = card.querySelector('.conviction-text-input').value.trim();
+        card.querySelector('.conviction-editor-preview').textContent = text || 'New conviction';
+      });
+    }
+
+    function appendConvictionEditorItem(item = {}, open = false) {
+      const card = document.createElement('details');
+      card.className = 'conviction-editor-item';
+      card.dataset.convictionId = item.id || `conviction-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      card.open = open;
+
+      const summary = document.createElement('summary');
+      const summaryCopy = document.createElement('span');
+      summaryCopy.append(textNode('strong', '', 'conviction-editor-number'), textNode('span', item.text || 'New conviction', 'conviction-editor-preview'));
+      summary.append(summaryCopy);
+
+      const editor = document.createElement('div');
+      editor.className = 'conviction-editor-body';
+      const textLabel = document.createElement('label');
+      textLabel.className = 'text-field compact';
+      textLabel.append(textNode('span', 'Conviction'));
+      const textInput = document.createElement('textarea');
+      textInput.className = 'conviction-text-input';
+      textInput.rows = 5;
+      textInput.value = item.text || '';
+      textInput.placeholder = 'I believe…';
+      textLabel.append(textInput);
+
+      const scriptureLabel = document.createElement('label');
+      scriptureLabel.className = 'text-field compact';
+      scriptureLabel.append(textNode('span', 'Scripture (optional)'));
+      const scriptureInput = document.createElement('textarea');
+      scriptureInput.className = 'conviction-scripture-input';
+      scriptureInput.rows = 4;
+      scriptureInput.value = item.scripture || '';
+      scriptureInput.placeholder = 'Reference | passage, or a reference by itself';
+      scriptureLabel.append(scriptureInput);
+
+      const remove = textNode('button', 'Remove conviction', 'danger-button remove-conviction-button');
+      remove.type = 'button';
+      editor.append(textLabel, scriptureLabel, remove);
+      card.append(summary, editor);
+      el('convictionItemList').append(card);
+      refreshConvictionEditorLabels();
+      if (open) requestAnimationFrame(() => textInput.focus({ preventScroll: true }));
+    }
+
+    function renderConvictionEditor() {
+      el('convictionItemList').replaceChildren();
+      convictionItems().forEach((item, index) => appendConvictionEditorItem(item, convictionItems().length <= 3 || index === 0));
+    }
+
+    function readConvictionEditor() {
+      const cards = [...el('convictionItemList').querySelectorAll('.conviction-editor-item')];
+      const rawItems = cards.map(card => ({
+        id: card.dataset.convictionId,
+        text: card.querySelector('.conviction-text-input').value.trim(),
+        scripture: card.querySelector('.conviction-scripture-input').value.trim()
+      }));
+      if (rawItems.some(item => !item.text)) return null;
+      return rawItems.map(normalizeConvictionItem).filter(Boolean);
     }
 
     function renderSettings() {
       el('truthPleaInput').value = config().personalPlea;
       el('truthPrayerInput').value = config().openingPrayer;
       el('truthCoreInput').value = config().coreTruths.join('\n');
+      el('convictionIntroInput').value = config().convictions.intro;
+      el('convictionStatus').textContent = convictionItems().length ? `${convictionItems().length} active` : 'Not configured';
       renderThemeList();
+      renderConvictionEditor();
     }
 
     function parseScriptures(value) {
@@ -3387,12 +3627,12 @@
           if (!theme) return;
           el('truthThemeIdInput').value = theme.id;
           el('truthThemeNameInput').value = theme.name;
-          el('truthWhoGodInput').value = theme.whoGodIs;
-          el('truthChristInput').value = theme.christHasDone;
+          el('truthThemeBodyInput').value = theme.body;
           el('truthScripturesInput').value = scriptureLines(theme);
           el('truthThemeSubmitButton').textContent = 'Save theme';
           el('truthThemeFormTitle').textContent = 'Edit this theme';
           el('truthThemeCancelButton').hidden = false;
+          el('truthThemeForm').hidden = false;
           el('truthThemeForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
           el('truthThemeNameInput').focus();
         }
@@ -3419,12 +3659,11 @@
         const theme = normalizeTheme({
           id: el('truthThemeIdInput').value || `theme-${Date.now()}`,
           name: el('truthThemeNameInput').value,
-          whoGodIs: el('truthWhoGodInput').value,
-          christHasDone: el('truthChristInput').value,
+          body: el('truthThemeBodyInput').value,
           scriptures
         });
-        if (!theme || !theme.whoGodIs || !theme.christHasDone) {
-          api.showToast('Complete every theme field.');
+        if (!theme) {
+          api.showToast('Add a title, body, and Scripture.');
           return;
         }
         const index = config().themes.findIndex(item => item.id === theme.id);
@@ -3436,11 +3675,36 @@
         api.showToast(index >= 0 ? 'Theme updated.' : 'Theme added.');
       });
       el('createTruthThemeButton').addEventListener('click', () => {
-        resetThemeForm();
+        resetThemeForm(false);
         el('truthThemeForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
         el('truthThemeNameInput').focus({ preventScroll: true });
       });
       el('truthThemeCancelButton').addEventListener('click', resetThemeForm);
+      el('addConvictionButton').addEventListener('click', () => {
+        appendConvictionEditorItem({}, true);
+        el('convictionItemList').lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+      el('convictionItemList').addEventListener('input', event => {
+        if (event.target.classList.contains('conviction-text-input')) refreshConvictionEditorLabels();
+      });
+      el('convictionItemList').addEventListener('click', event => {
+        const remove = event.target.closest('.remove-conviction-button');
+        if (!remove) return;
+        remove.closest('.conviction-editor-item')?.remove();
+        refreshConvictionEditorLabels();
+      });
+      el('saveConvictionsButton').addEventListener('click', () => {
+        const intro = el('convictionIntroInput').value.trim() || DEFAULTS.convictions.intro;
+        const items = readConvictionEditor();
+        if (!items) {
+          api.showToast('Finish or remove the empty conviction.');
+          return;
+        }
+        config().convictions = { intro, items };
+        api.saveState();
+        renderSettings();
+        api.showToast(items.length ? 'Convictions will join tomorrow’s opening.' : 'Convictions phase is turned off.');
+      });
     }
 
     normalizeConfig();

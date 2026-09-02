@@ -83,7 +83,7 @@ struct DailyRoutineWidgetView: View {
             Image(systemName: "lock.fill")
                 .font(.title3)
                 .widgetAccentable()
-                .accessibilityLabel("Truth Before Tasks is required on iPhone")
+                .accessibilityLabel("Morning Foundation is required on iPhone")
         } else {
             Gauge(value: entry.snapshot.progress) {
                 Image(systemName: "checkmark")
@@ -101,7 +101,7 @@ struct DailyRoutineWidgetView: View {
     @ViewBuilder
     private var inlineView: some View {
         if truthIsLocked {
-            Label("Truth Before Tasks", systemImage: "lock.fill")
+            Label("Morning Foundation", systemImage: "lock.fill")
         } else {
             Label(
                 "\(entry.snapshot.completed)/\(entry.snapshot.total) • \(entry.snapshot.nextItemName ?? "Routine")",
@@ -118,7 +118,7 @@ struct DailyRoutineWidgetView: View {
                     .font(.title2)
                     .widgetAccentable()
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("TRUTH BEFORE TASKS")
+                    Text("MORNING FOUNDATION")
                         .font(.system(size: 10, weight: .bold))
                     Text("Begin on iPhone")
                         .font(.caption2)
@@ -126,7 +126,7 @@ struct DailyRoutineWidgetView: View {
                 }
             }
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Complete Truth Before Tasks on iPhone")
+            .accessibilityLabel("Complete Morning Foundation on iPhone")
         } else {
             HStack(spacing: 9) {
                 Gauge(value: entry.snapshot.progress) {

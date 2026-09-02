@@ -26,9 +26,9 @@
 
       <section id="truthView" class="view truth-view" aria-labelledby="pageTitle">
         <section class="truth-hero">
-          <p class="eyebrow">Begin with what is true</p>
-          <h2>Truth Before Tasks</h2>
-          <p class="truth-intro">Before plans, pressure, or productivity, take a few quiet minutes to remember who God is and what Christ has done.</p>
+          <p id="truthHeroEyebrow" class="eyebrow">Begin with what is true</p>
+          <h2 id="truthHeroTitle">Truth Before Tasks</h2>
+          <p id="truthHeroIntro" class="truth-intro">Before plans, pressure, or productivity, take a few quiet minutes to remember who God is and what Christ has done.</p>
           <div class="truth-progress" aria-label="Opening meditation progress"><span id="truthProgressBar"></span></div>
           <p id="truthProgressText" class="muted truth-progress-text" aria-live="polite"></p>
         </section>
@@ -100,7 +100,7 @@
             <label class="actual-time-field"><span>Woke up</span><div><input id="actualWakeInput" type="time" /><button id="wakeNowButton" class="small-button" type="button">Now</button></div></label>
             <label class="actual-time-field"><span>Went to bed</span><div><input id="actualBedInput" type="time" /><button id="bedNowButton" class="small-button" type="button">Now</button></div></label>
           </div>
-          <p class="muted micro-copy">These actual times can be compared with medication timing in Progress.</p>
+          <p class="muted micro-copy">Sleep is filed under the day you woke up. The bedtime belongs to the night before that morning.</p>
           <div id="healthSleepSuggestion" class="health-sleep-suggestion" hidden>
             <div><strong>Apple Health suggestion</strong><span id="healthSleepSuggestionText"></span></div>
             <button id="applyHealthSleepButton" class="small-button" type="button">Apply times</button>
@@ -252,7 +252,7 @@
 
           <fieldset class="accountability-options">
             <legend>Choose what to include</legend>
-            <label class="toggle-field"><input id="accountabilityRoutineInput" type="checkbox" /><span><b>Routine summary</b><small>Completion, parts of day, Truth Before Tasks, and habit consistency.</small></span></label>
+            <label class="toggle-field"><input id="accountabilityRoutineInput" type="checkbox" /><span><b>Routine summary</b><small>Completion, parts of day, morning foundation, and habit consistency.</small></span></label>
             <label class="toggle-field"><input id="accountabilityMedicationInput" type="checkbox" /><span><b>Medication status</b><small>Shares only how many scheduled doses were logged.</small></span></label>
             <label id="accountabilityMedicationTimesField" class="toggle-field accountability-sensitive-option"><input id="accountabilityMedicationTimesInput" type="checkbox" /><span><b>Medication names and times</b><small>Sensitive details. Available only when medication status is included.</small></span></label>
             <label class="toggle-field"><input id="accountabilityCheckinsInput" type="checkbox" /><span><b>Rating check-ins</b><small>Shares averages for logged scales such as mood, sleep quality, and stress—not written reflections.</small></span></label>
@@ -287,7 +287,7 @@
       <section id="setupView" class="view" aria-labelledby="pageTitle">
         <section class="card">
           <div class="section-heading"><div><p class="eyebrow">Schedule</p><h2>Daily times</h2></div></div>
-          <div class="two-column-fields">
+          <div class="two-column-fields daily-time-fields">
             <label class="text-field compact"><span>Wake-up time</span><input id="wakeTimeInput" type="time" /></label>
             <label class="text-field compact"><span>Bedtime target</span><input id="bedTimeInput" type="time" /></label>
           </div>
@@ -452,13 +452,13 @@
             <a href="privacy.html">Privacy Policy</a>
             <a href="support.html">Support</a>
           </div>
-          <p class="app-version">Daily Routine <b id="appVersion">v1.10.0</b></p>
+          <p class="app-version">Daily Routine <b id="appVersion">v1.11.0</b></p>
         </section>
 
 
         <section class="card truth-settings-card">
           <div class="section-heading"><div><p class="eyebrow">Opening practice</p><h2>Truth Before Tasks</h2></div></div>
-          <p class="muted">Edit the words you will see before the rest of the app unlocks each day. Core identity truths remain daily; one supporting theme rotates from the content bank.</p>
+          <p class="muted">Edit the words you will see before the rest of the app unlocks each day. Core identity truths remain daily; one open-ended theme rotates from your content bank.</p>
           <div class="form-stack truth-copy-fields">
             <label class="text-field"><span>Personal plea</span><textarea id="truthPleaInput" rows="5"></textarea></label>
             <label class="text-field"><span>Opening prayer</span><textarea id="truthPrayerInput" rows="4"></textarea></label>
@@ -467,22 +467,33 @@
           </div>
           <div class="truth-bank-heading">
             <div><p class="eyebrow">Rotating content bank</p><h3>Your supporting themes</h3></div>
-            <p class="muted micro-copy">Starter themes can be edited or deleted. Create your own below; each day uses one complete theme.</p>
+            <p class="muted micro-copy">Starter themes can be edited or deleted. Your themes use your own title, body, and Scripture—there are no required categories or preset names.</p>
           </div>
           <button id="createTruthThemeButton" class="secondary-button" type="button">+ Create your own theme</button>
           <div id="truthThemeList" class="truth-theme-list"></div>
-          <form id="truthThemeForm" class="truth-theme-form">
+          <form id="truthThemeForm" class="truth-theme-form" hidden>
             <div><p class="eyebrow">Personalize it</p><h3 id="truthThemeFormTitle">Create your own theme</h3></div>
             <input id="truthThemeIdInput" type="hidden" />
-            <label class="text-field"><span>Theme name</span><input id="truthThemeNameInput" type="text" required /></label>
-            <label class="text-field"><span>Who God is</span><textarea id="truthWhoGodInput" rows="3" required></textarea></label>
-            <label class="text-field"><span>What Christ has done</span><textarea id="truthChristInput" rows="3" required></textarea></label>
+            <label class="text-field"><span>Theme title</span><input id="truthThemeNameInput" type="text" required placeholder="Give this theme your own name" /></label>
+            <label class="text-field"><span>Theme body</span><textarea id="truthThemeBodyInput" rows="6" required placeholder="Write what you want to remember, consider, or carry into the day."></textarea></label>
             <label class="text-field"><span>Scriptures or biblical truths <small>(1–3 lines; “Reference | passage” or plain text)</small></span><textarea id="truthScripturesInput" rows="5" required placeholder="Romans 8:1 | There is therefore now no condemnation..."></textarea></label>
             <div class="form-actions">
               <button id="truthThemeSubmitButton" class="primary-button" type="submit">Add theme</button>
               <button id="truthThemeCancelButton" class="secondary-button" type="button" hidden>Cancel edit</button>
             </div>
           </form>
+        </section>
+
+        <section class="card conviction-settings-card">
+          <div class="section-heading"><div><p class="eyebrow">Second opening phase</p><h2>Convictions Before Circumstances</h2></div><span id="convictionStatus" class="privacy-pill">Not configured</span></div>
+          <p class="muted">Now spend a few moments recommitting to the convictions you have held true and will continue to hold true in this day.</p>
+          <div class="form-stack conviction-copy-fields">
+            <label class="text-field"><span>Opening words</span><textarea id="convictionIntroInput" rows="4"></textarea></label>
+            <div class="conviction-editor-heading"><div><strong>Your convictions</strong><span>Add an optional Scripture beneath any conviction.</span></div><button id="addConvictionButton" class="secondary-button" type="button">+ Add conviction</button></div>
+            <div id="convictionItemList" class="conviction-item-list"></div>
+            <button id="saveConvictionsButton" class="primary-button" type="button">Save convictions</button>
+          </div>
+          <p class="muted micro-copy">Removing every conviction turns this second phase off and keeps the three-minute Truth Before Tasks opening.</p>
         </section>
 
         <section class="card private-sharing-card">

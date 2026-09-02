@@ -1,6 +1,6 @@
 # App Store submission package
 
-This document keeps the first App Store and TestFlight submission consistent with the behavior of Daily Routine 1.10.0 (build 5).
+This document keeps the TestFlight submission consistent with the behavior of Daily Routine 1.11.0 (build 6).
 
 ## URLs
 
@@ -32,7 +32,7 @@ Use the Apple Watch companion for glanceable progress and a few intentional quic
 Highlights:
 
 - Custom routines and check-ins
-- Truth Before Tasks daily opening
+- Truth Before Tasks daily opening with an optional Convictions Before Circumstances phase
 - Notes, prayers, action items, and God Moments
 - Review & Reflect weekly dashboard
 - Medication timing with morning/evening mismatch warnings
@@ -50,22 +50,23 @@ Daily Routine is a personal organization tool and does not provide medical advic
 
 `routine,habits,planner,journal,prayer,reflection,checklist,wellness,private,watch`
 
-### Version 1.10.0 release notes
+### Version 1.11.0 release notes
 
-- Begin each day with Truth Before Tasks.
+- Begin each day with Truth Before Tasks and, when configured, two more minutes of personal convictions with optional supporting Scripture.
 - Keep primary navigation visible while scrolling.
+- Keep medication and schedule time controls compact and contained on iPhone.
 - Get a gentle confirmation when logging morning medicine in the evening or evening medicine in the morning.
 - Use Notes & Thoughts, Review & Reflect, and Apple Watch progress from one private routine home.
 - Preview and manually share a daily or weekly accountability report with sensitive categories off by default.
-- Optionally add an automatic Apple Health steps goal and review sleep-derived bedtime/wake suggestions before applying them.
-- Create and edit personal Truth Before Tasks themes with simpler Scripture entry.
+- Optionally add an automatic Apple Health steps goal and review sleep-derived bedtime/wake suggestions before applying them to the wake-up day.
+- Create fully open-ended Truth Before Tasks themes using only a title, body, and Scripture.
 - Use owner-only Private sync while Health summaries and automatic step values remain device-only.
 
 ## App Privacy answers
 
 Before a public App Store submission, update the App Privacy questionnaire for the optional Private sync implementation. When Private sync is enabled, the sign-in email address and synchronized user content are transmitted to the owner-only Supabase account row. Disclose the applicable contact-information and user-content categories as linked to the user, not used for tracking, and used only for app functionality.
 
-The following remains true for build 5:
+The following remains true for build 6:
 
 - No analytics, advertising, tracking, or third-party SDKs
 - Routine, reflection, medication, prayer, and note data is local-first and is transmitted only when the owner connects Private sync
@@ -90,12 +91,12 @@ Revisit these answers before submission if networking, cloud sync, crash reporti
 
 Please test the first-run flow and verify that existing routine data remains intact.
 
-1. Complete Truth Before Tasks and confirm the main app and Watch quick actions unlock.
+1. Complete Truth Before Tasks and a configured Convictions Before Circumstances phase, then confirm the main app and Watch quick actions unlock.
 2. Create and complete routine items, notes, and a Review & Reflect session.
 3. Change a medication time between AM and PM and verify the in-app warning works without a crash or overlapping fields.
-4. Create, edit, and delete a personal Truth Before Tasks theme using one to three Scripture or plain-text truth lines.
+4. Create, edit, and delete an open-ended Truth Before Tasks theme using a title, body, and one to three Scripture or plain-text truth lines.
 5. Connect Apple Health, add an 8,000-step routine goal, refresh Health, and verify the item completes automatically at the target.
-6. Review a Health sleep suggestion and confirm Apply times fills only empty bedtime/wake fields.
+6. Review a Health sleep suggestion and confirm Apply times fills only empty bedtime/wake fields on the day the person woke up.
 7. Confirm automatic Health step values do not appear on a second device through Private sync.
 8. Verify iPhone/Watch progress sync and complication updates.
 9. Download a JSON backup and restore it after making a temporary change.
@@ -109,7 +110,7 @@ Daily Routine is local-first; its optional Private sync account is not required 
 
 Health access is requested only from Setup after the reviewer taps Connect Health. The app requests read access for steps, sleep, and workouts and does not write HealthKit data.
 
-Watch actions remain locked until the reviewer completes the Truth Before Tasks opening on iPhone. Medication entries cannot be completed from Watch.
+Watch actions remain locked until the reviewer completes the Morning Foundation opening on iPhone. Medication entries cannot be completed from Watch.
 
 ## Final submission checklist
 

@@ -102,7 +102,7 @@ struct WatchContentView: View {
                 Text(
                     truthBeforeTasksComplete
                         ? session.context?.nextItemName.map { "Next: \($0)" } ?? "Today’s routine is complete"
-                        : "Begin with Truth Before Tasks on iPhone"
+                        : "Begin with Morning Foundation on iPhone"
                 )
                     .font(.caption2)
                     .foregroundStyle(.secondary)
@@ -126,7 +126,7 @@ struct WatchContentView: View {
                 .font(.title2)
                 .foregroundStyle(.yellow)
                 .accessibilityHidden(true)
-            Text("Complete Truth Before Tasks on iPhone")
+            Text("Complete Morning Foundation on iPhone")
                 .font(.headline)
                 .multilineTextAlignment(.center)
             Text("Quick actions will unlock as soon as today’s opening is complete.")
