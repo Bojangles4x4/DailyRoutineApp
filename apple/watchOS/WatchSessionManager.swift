@@ -38,7 +38,7 @@ final class WatchSessionManager: NSObject, ObservableObject {
             dateKey: "2026-08-21",
             completed: 4,
             total: 9,
-            nextItemName: truthComplete ? "Morning walk" : "Complete Truth Before Tasks on iPhone",
+            nextItemName: truthComplete ? "Morning walk" : "Complete Morning Foundation on iPhone",
             canCompleteNext: truthComplete,
             truthBeforeTasksComplete: truthComplete,
             lastActionMessage: nil
