@@ -18,7 +18,8 @@ function localDateKey(date = new Date()) {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.addInitScript(() => {
-    window.DailyRoutineNative = { postMessage() {} };
+    window.__dailyRoutineNativeMessages = [];
+    window.DailyRoutineNative = { postMessage(message) { window.__dailyRoutineNativeMessages.push(message); } };
   });
 
   await page.goto(baseURL, { waitUntil: 'networkidle' });
@@ -35,6 +36,12 @@ function localDateKey(date = new Date()) {
   await page.reload({ waitUntil: 'networkidle' });
 
   await page.locator('[data-view="setup"]').click();
+  assert.ok(await page.locator('#appleWatchQuickActionInput option').count() > 1);
+  await page.locator('#appleWatchQuickActionInput').selectOption('routine:morning-meds');
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('dailyRoutineApp.v1')).settings.watchQuickAction), 'routine:morning-meds');
+  const watchContext = await page.evaluate(() => [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'watch.context.update')?.value);
+  assert.ok(watchContext.items.some(item => item.id === 'morning-meds' && item.action === 'takeMedication'));
+  assert.equal(watchContext.customAction.itemId, 'morning-meds');
   await page.locator('#createTruthThemeButton').click();
   assert.equal(await page.locator('#truthThemeForm').isVisible(), true);
   assert.equal(await page.locator('#truthWhoGodInput').count(), 0);
@@ -68,7 +75,7 @@ function localDateKey(date = new Date()) {
     assert.equal(Math.round(rect.height), 44);
   });
   if (process.env.DAILY_ROUTINE_SCREENSHOT_DIR) {
-    await page.screenshot({ path: `${process.env.DAILY_ROUTINE_SCREENSHOT_DIR}/daily-routine-build6-setup.png` });
+    await page.screenshot({ path: `${process.env.DAILY_ROUTINE_SCREENSHOT_DIR}/daily-routine-build7-setup.png` });
   }
 
   await page.evaluate(key => {
@@ -84,7 +91,7 @@ function localDateKey(date = new Date()) {
   assert.match(await page.locator('#truthStepBody').textContent(), /Proverbs 16:9/);
   assert.equal(await page.locator('#truthEnterDayButton').isDisabled(), true);
   if (process.env.DAILY_ROUTINE_SCREENSHOT_DIR) {
-    await page.screenshot({ path: `${process.env.DAILY_ROUTINE_SCREENSHOT_DIR}/daily-routine-build6-convictions.png` });
+    await page.screenshot({ path: `${process.env.DAILY_ROUTINE_SCREENSHOT_DIR}/daily-routine-build7-convictions.png` });
   }
 
   await page.evaluate(key => {
@@ -96,6 +103,19 @@ function localDateKey(date = new Date()) {
     localStorage.setItem('dailyRoutineApp.v1', JSON.stringify(state));
   }, today);
   await page.reload({ waitUntil: 'networkidle' });
+
+  await page.evaluate(() => {
+    window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'watch.event', value: { id: 'watch-toggle-1', action: 'toggleRoutine', itemId: 'day-movement' } } }));
+    window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'watch.event', value: { id: 'watch-note-1', action: 'captureNote', text: 'Pray for wisdom', noteType: 'prayer' } } }));
+  });
+  const watchUpdates = await page.evaluate(key => {
+    const state = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
+    return { movement: state.days[key].entries['day-movement'], note: state.notes.at(-1) };
+  }, today);
+  assert.equal(watchUpdates.movement, true);
+  assert.equal(watchUpdates.note.text, 'Pray for wisdom');
+  assert.equal(watchUpdates.note.type, 'prayer');
+  assert.equal(watchUpdates.note.source, 'Apple Watch');
 
   const medicationLayout = await page.locator('.medication-detail-grid').first().evaluate(node => {
     const bounds = node.closest('.task-row').getBoundingClientRect();

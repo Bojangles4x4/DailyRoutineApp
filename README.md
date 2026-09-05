@@ -2,10 +2,13 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.11.0 features
+## Version 1.12.0 features
 
 - Truth Before Tasks daily opening before the rest of the routine unlocks
 - Optional two-minute Convictions Before Circumstances phase with editable convictions and optional Scripture for each one
+- Apple Watch routine list for completing or reopening the exact checkbox or medication item you choose
+- Customizable bottom Watch shortcut, with Water +1 as the default
+- Apple Watch dictation capture for general notes, prayers, and action items
 - Open-ended Truth Before Tasks themes with a title, body, and Scripture instead of required content categories
 - Fixed bottom navigation that remains visible while scrolling
 - Compact, phone-safe medication and schedule time controls

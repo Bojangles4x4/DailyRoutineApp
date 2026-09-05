@@ -13,38 +13,35 @@ final class WatchQuickActionsUITests: XCTestCase {
 
         let lock = app.descendants(matching: .any)["truthBeforeTasksLock"]
         XCTAssertTrue(lock.waitForExistence(timeout: 10))
-        XCTAssertFalse(app.buttons["Complete next"].exists)
-        XCTAssertFalse(app.buttons["Water +1"].exists)
-        XCTAssertFalse(app.buttons["Save mood 5"].exists)
+        XCTAssertFalse(app.descendants(matching: .any)["customWatchAction"].exists)
+        XCTAssertFalse(app.descendants(matching: .any)["captureWatchNote"].exists)
+        XCTAssertFalse(app.buttons["routine-morning-teeth"].exists)
     }
 
-    func testCompleteNextQuickAction() {
+    func testExactRoutineItemCanBeCompleted() {
         let app = launchApp(truthComplete: true)
 
-        let completeNext = app.buttons["Complete next"]
-        XCTAssertTrue(completeNext.waitForExistence(timeout: 10))
-        XCTAssertTrue(completeNext.isEnabled)
-        completeNext.tap()
+        let routine = app.buttons["routine-morning-teeth"]
+        XCTAssertTrue(routine.waitForExistence(timeout: 10))
+        XCTAssertTrue(routine.isEnabled)
+        routine.tap()
     }
 
-    func testWaterQuickAction() {
+    func testCustomBottomAction() {
         let app = launchApp(truthComplete: true)
 
-        let addWater = app.buttons["Water +1"]
-        XCTAssertTrue(addWater.waitForExistence(timeout: 10))
-        XCTAssertTrue(addWater.isEnabled)
-        addWater.tap()
+        let customAction = app.descendants(matching: .any)["customWatchAction"]
+        XCTAssertTrue(customAction.waitForExistence(timeout: 10))
+        XCTAssertTrue(customAction.isEnabled)
+        customAction.tap()
     }
 
-    func testMoodQuickAction() {
+    func testCaptureOpensNoteComposer() {
         let app = launchApp(truthComplete: true)
 
-        let saveMood = app.buttons["Save mood 5"]
-        if !saveMood.waitForExistence(timeout: 2) {
-            app.swipeUp()
-        }
-        XCTAssertTrue(saveMood.waitForExistence(timeout: 10))
-        XCTAssertTrue(saveMood.isEnabled)
-        saveMood.tap()
+        let capture = app.descendants(matching: .any)["captureWatchNote"]
+        XCTAssertTrue(capture.waitForExistence(timeout: 10))
+        capture.tap()
+        XCTAssertTrue(app.textFields["watchCaptureText"].waitForExistence(timeout: 10))
     }
 }

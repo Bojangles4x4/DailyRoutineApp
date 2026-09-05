@@ -4,7 +4,7 @@
   const STORAGE_KEY = 'dailyRoutineApp.v1';
   const SNAPSHOT_KEY = 'dailyRoutineApp.snapshots.v1';
   const HEALTH_DEVICE_KEY = 'dailyRoutine.health.device.v1';
-  const APP_VERSION = '1.11.0';
+  const APP_VERSION = '1.12.0';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const DEFAULT_BIBLE_APP_URL = 'https://bojangles4x4.github.io/Bible-Reading-Plan/';
@@ -17,6 +17,7 @@
       wakeTime: '06:00', bedTime: '22:30', theme: 'calm', handedness: 'right', backgroundImage: '', badgeEnabled: true,
       streakThreshold: 80, streakMode: 'forgiving', streakWeekdaysOnly: false, bibleAppUrl: DEFAULT_BIBLE_APP_URL,
       resurfacingFrequency: 'occasional', lastBackupAt: '',
+      watchQuickAction: 'water',
       accountabilityReport: {
         period: 'week', includeRoutine: true, includeMedication: false, includeMedicationTimes: false,
         includeCheckins: false, includeHealth: false, reflection: '', support: ''
@@ -106,7 +107,7 @@
     createSnapshotButton: $('createSnapshotButton'), restoreSnapshotButton: $('restoreSnapshotButton'), snapshotStatus: $('snapshotStatus'), backupDownloadStatus: $('backupDownloadStatus'), appVersion: $('appVersion'), resurfacingFrequencyInput: $('resurfacingFrequencyInput'),
     privateSyncCard: $('privateSyncCard'), privateSyncBadge: $('privateSyncBadge'), privateSyncStatus: $('privateSyncStatus'), privateSyncDevice: $('privateSyncDevice'), privateSyncLastSync: $('privateSyncLastSync'), createSyncSnapshotButton: $('createSyncSnapshotButton'), privateSyncNowButton: $('privateSyncNowButton'), privateSyncSignIn: $('privateSyncSignIn'), privateSyncEmailInput: $('privateSyncEmailInput'), privateSyncPasswordInput: $('privateSyncPasswordInput'), privateSyncSendCodeButton: $('privateSyncSendCodeButton'), privateSyncVerifyButton: $('privateSyncVerifyButton'), privateSyncHelp: $('privateSyncHelp'), privateSyncAccount: $('privateSyncAccount'), privateSyncSignOutButton: $('privateSyncSignOutButton'), privateSyncDeleteCloudButton: $('privateSyncDeleteCloudButton'),
     connectionsCard: $('connectionsCard'), syncConnectionsButton: $('syncConnectionsButton'), bibleConnectionStatus: $('bibleConnectionStatus'), openBibleConnectionButton: $('openBibleConnectionButton'), bibleAppUrlInput: $('bibleAppUrlInput'), saveBibleConnectionButton: $('saveBibleConnectionButton'), testBibleConnectionButton: $('testBibleConnectionButton'), connectionTemplates: $('connectionTemplates'),
-    appleNativeCard: $('appleNativeCard'), appleStepCount: $('appleStepCount'), appleSleepHours: $('appleSleepHours'), appleWorkoutCount: $('appleWorkoutCount'), appleHealthStatus: $('appleHealthStatus'), connectAppleHealthButton: $('connectAppleHealthButton'), refreshAppleHealthButton: $('refreshAppleHealthButton'), appleWatchStatus: $('appleWatchStatus'), appleStepsGoalInput: $('appleStepsGoalInput'), saveAppleStepsGoalButton: $('saveAppleStepsGoalButton'),
+    appleNativeCard: $('appleNativeCard'), appleStepCount: $('appleStepCount'), appleSleepHours: $('appleSleepHours'), appleWorkoutCount: $('appleWorkoutCount'), appleHealthStatus: $('appleHealthStatus'), connectAppleHealthButton: $('connectAppleHealthButton'), refreshAppleHealthButton: $('refreshAppleHealthButton'), appleWatchStatus: $('appleWatchStatus'), appleStepsGoalInput: $('appleStepsGoalInput'), saveAppleStepsGoalButton: $('saveAppleStepsGoalButton'), appleWatchQuickActionInput: $('appleWatchQuickActionInput'),
     healthSleepSuggestion: $('healthSleepSuggestion'), healthSleepSuggestionText: $('healthSleepSuggestionText'), applyHealthSleepButton: $('applyHealthSleepButton'),
     linkedActionFields: $('linkedActionFields'), linkedTemplateInput: $('linkedTemplateInput'), linkedCompletionInput: $('linkedCompletionInput'), linkedUrlField: $('linkedUrlField'), linkedUrlInput: $('linkedUrlInput'), linkedInternalField: $('linkedInternalField'), linkedInternalTargetInput: $('linkedInternalTargetInput'), linkedButtonLabelInput: $('linkedButtonLabelInput'), timeWindowFields: $('timeWindowFields'), timeWindowStartInput: $('timeWindowStartInput'), timeWindowEndInput: $('timeWindowEndInput'),
     medicationProgressCard: $('medicationProgressCard'), weeklyReviewCard: $('weeklyReviewCard'), memoryBankCard: $('memoryBankCard'), dataBackupCard: $('dataBackupCard'),
@@ -647,6 +648,11 @@
       sendNativeBridgeMessage('health.summary.request');
     });
     els.saveAppleStepsGoalButton.addEventListener('click', saveAppleStepsGoal);
+    els.appleWatchQuickActionInput.addEventListener('change', () => {
+      state.settings.watchQuickAction = els.appleWatchQuickActionInput.value || 'water';
+      saveState();
+      showToast('Apple Watch shortcut updated');
+    });
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible' && healthDeviceSettings().connected) sendNativeBridgeMessage('health.summary.request');
     });
@@ -715,6 +721,20 @@
     const item = healthStepsItem();
     els.appleStepsGoalInput.value = String(item?.target || healthDeviceSettings().stepsGoal || 8000);
     els.saveAppleStepsGoalButton.textContent = item ? 'Update goal' : 'Add to routine';
+  }
+
+  function renderAppleWatchQuickAction() {
+    if (!els.appleWatchQuickActionInput) return;
+    const items = state.items
+      .filter(item => item.kind === 'routine' && ['checkbox', 'medication'].includes(item.type))
+      .sort((a, b) => ({ morning: 0, day: 1, evening: 2 }[a.section] ?? 9) - ({ morning: 0, day: 1, evening: 2 }[b.section] ?? 9) || (a.order ?? 0) - (b.order ?? 0));
+    els.appleWatchQuickActionInput.innerHTML = [
+      '<option value="water">Water +1</option>',
+      ...items.map(item => `<option value="routine:${escapeHtml(item.id)}">${escapeHtml(item.name)} · ${escapeHtml(sectionLabels[item.section]?.[0] || 'Routine')}</option>`)
+    ].join('');
+    const configured = String(state.settings.watchQuickAction || 'water');
+    const valid = configured === 'water' || items.some(item => configured === `routine:${item.id}`);
+    els.appleWatchQuickActionInput.value = valid ? configured : 'water';
   }
 
   function saveAppleStepsGoal() {
@@ -803,11 +823,36 @@
       .sort((a, b) => (sectionOrder[a.section] ?? 9) - (sectionOrder[b.section] ?? 9) || (a.order ?? 0) - (b.order ?? 0));
   }
 
+  function watchRoutineItems(date, day) {
+    const sectionOrder = { morning: 0, day: 1, evening: 2 };
+    return scheduledItemsForDate(date)
+      .filter(item => item.kind === 'routine' && ['checkbox', 'medication'].includes(item.type) && !day.skippedItems?.[item.id])
+      .sort((a, b) => (sectionOrder[a.section] ?? 9) - (sectionOrder[b.section] ?? 9) || (a.order ?? 0) - (b.order ?? 0));
+  }
+
+  function watchCustomAction(date, day) {
+    const configured = String(state.settings.watchQuickAction || 'water');
+    if (configured.startsWith('routine:')) {
+      const itemId = configured.slice('routine:'.length);
+      const item = watchRoutineItems(date, day).find(candidate => candidate.id === itemId);
+      if (item) {
+        return {
+          title: item.name,
+          action: item.type === 'medication' ? 'takeMedication' : 'toggleRoutine',
+          itemId: item.id,
+          value: null
+        };
+      }
+    }
+    return { title: 'Water +1', action: 'addWater', itemId: null, value: 1 };
+  }
+
   function watchRoutineContext() {
     const today = startOfToday();
     const day = state.days[dateKey(today)] || { entries: {}, skippedItems: {} };
     const completion = completionForDate(today);
     const next = watchActionableItems(today, day)[0];
+    const watchItems = watchRoutineItems(today, day);
     const truthBeforeTasksComplete = !document.body.classList.contains('truth-locked');
     return {
       dateKey: dateKey(today),
@@ -816,7 +861,15 @@
       nextItemName: truthBeforeTasksComplete ? next?.name || null : 'Complete Morning Foundation on iPhone',
       canCompleteNext: truthBeforeTasksComplete && Boolean(next),
       truthBeforeTasksComplete,
-      lastActionMessage: watchLastActionMessage || null
+      lastActionMessage: watchLastActionMessage || null,
+      items: watchItems.map(item => ({
+        id: item.id,
+        name: item.name,
+        section: item.section,
+        completed: entryMeetsTarget(item, day.entries?.[item.id]),
+        action: item.type === 'medication' ? 'takeMedication' : 'toggleRoutine'
+      })),
+      customAction: watchCustomAction(today, day)
     };
   }
 
@@ -855,6 +908,37 @@
     showToast(message);
   }
 
+  function clearWatchEntry(item, message) {
+    const key = dateKey(startOfToday());
+    const day = ensureDay(key);
+    const previous = structuredClone(day.entries[item.id]);
+    delete day.entries[item.id];
+    watchLastActionMessage = message;
+    pushUndo(message, () => {
+      ensureDay(key).entries[item.id] = previous;
+      watchLastActionMessage = `${item.name} was restored on iPhone`;
+      saveState();
+      renderAll();
+    });
+    saveState();
+    renderAll();
+    els.appleWatchStatus.textContent = message;
+    showToast(message);
+  }
+
+  function saveWatchCapture(event) {
+    const text = String(event.text || '').trim();
+    if (!text) return;
+    const noteType = ['general', 'prayer', 'action'].includes(event.noteType) ? event.noteType : 'general';
+    const note = normalizeNote({ text, type: noteType, source: 'Apple Watch' });
+    state.notes.push(note);
+    watchLastActionMessage = `${noteTypeLabels[noteType]} saved from Apple Watch`;
+    saveState();
+    renderAll();
+    els.appleWatchStatus.textContent = watchLastActionMessage;
+    showToast(watchLastActionMessage);
+  }
+
   function handleWatchEvent(event) {
     const eventId = String(event.id || '');
     if (!eventId || processedWatchEventIds.has(eventId)) return;
@@ -873,6 +957,37 @@
     const day = ensureDay(dateKey(today));
     const scheduled = scheduledItemsForDate(today).filter(item => !day.skippedItems?.[item.id]);
     let item;
+
+    if (event.action === 'captureNote') {
+      saveWatchCapture(event);
+      return;
+    }
+
+    if (event.action === 'toggleRoutine') {
+      item = scheduled.find(candidate => candidate.id === event.itemId && candidate.kind === 'routine' && candidate.type === 'checkbox');
+      if (!item) return;
+      if (entryMeetsTarget(item, day.entries?.[item.id])) clearWatchEntry(item, `${item.name} reopened from Apple Watch`);
+      else saveWatchEntry(item, true, `${item.name} completed from Apple Watch`);
+      return;
+    }
+
+    if (event.action === 'takeMedication') {
+      item = scheduled.find(candidate => candidate.id === event.itemId && candidate.kind === 'routine' && candidate.type === 'medication');
+      if (!item) return;
+      if (entryMeetsTarget(item, day.entries?.[item.id])) {
+        clearWatchEntry(item, `${item.name} reopened from Apple Watch`);
+      } else {
+        const time = currentTimeValue();
+        saveWatchEntry(item, {
+          taken: true,
+          time,
+          timestamp: new Date().toISOString(),
+          dose: item.medicationDose || '',
+          note: ''
+        }, `${item.name} logged at ${formatTime(time)} from Apple Watch`);
+      }
+      return;
+    }
 
     if (event.action === 'completeNext') {
       item = watchActionableItems(today, day)[0];
@@ -1694,6 +1809,7 @@
     els.resurfacingFrequencyInput.value = ['occasional', 'weekly', 'never'].includes(state.settings.resurfacingFrequency) ? state.settings.resurfacingFrequency : 'occasional';
     els.appVersion.textContent = `v${APP_VERSION}`;
     els.bibleAppUrlInput.value = state.settings.bibleAppUrl || DEFAULT_BIBLE_APP_URL;
+    renderAppleWatchQuickAction();
     renderConnections();
     renderPrivateSyncStatus();
     renderSnapshotStatus();

@@ -1,6 +1,6 @@
 # App Store submission package
 
-This document keeps the TestFlight submission consistent with the behavior of Daily Routine 1.11.0 (build 6).
+This document keeps the TestFlight submission consistent with the behavior of Daily Routine 1.12.0 (build 7).
 
 ## URLs
 
@@ -50,8 +50,11 @@ Daily Routine is a personal organization tool and does not provide medical advic
 
 `routine,habits,planner,journal,prayer,reflection,checklist,wellness,private,watch`
 
-### Version 1.11.0 release notes
+### Version 1.12.0 release notes
 
+- Choose the exact checkbox or medication routine to complete or reopen from Apple Watch instead of relying on a guessed next action. Medication entries receive the same AM/PM safeguard on Watch.
+- Customize the left bottom Watch shortcut from iPhone Setup, with Water +1 as the default.
+- Dictate a general note, prayer, or action item from Apple Watch and find it in Notes with Apple Watch as its source.
 - Begin each day with Truth Before Tasks and, when configured, two more minutes of personal convictions with optional supporting Scripture.
 - Keep primary navigation visible while scrolling.
 - Keep medication and schedule time controls compact and contained on iPhone.
@@ -66,7 +69,7 @@ Daily Routine is a personal organization tool and does not provide medical advic
 
 Before a public App Store submission, update the App Privacy questionnaire for the optional Private sync implementation. When Private sync is enabled, the sign-in email address and synchronized user content are transmitted to the owner-only Supabase account row. Disclose the applicable contact-information and user-content categories as linked to the user, not used for tracking, and used only for app functionality.
 
-The following remains true for build 6:
+The following remains true for build 7:
 
 - No analytics, advertising, tracking, or third-party SDKs
 - Routine, reflection, medication, prayer, and note data is local-first and is transmitted only when the owner connects Private sync
@@ -98,7 +101,7 @@ Please test the first-run flow and verify that existing routine data remains int
 5. Connect Apple Health, add an 8,000-step routine goal, refresh Health, and verify the item completes automatically at the target.
 6. Review a Health sleep suggestion and confirm Apply times fills only empty bedtime/wake fields on the day the person woke up.
 7. Confirm automatic Health step values do not appear on a second device through Private sync.
-8. Verify iPhone/Watch progress sync and complication updates.
+8. Verify iPhone/Watch progress sync and complication updates. Tap a specific routine, reopen it, change the bottom shortcut in iPhone Setup, and dictate each Capture type.
 9. Download a JSON backup and restore it after making a temporary change.
 10. Create daily and weekly accountability reports, verify sensitive switches are off by default, and confirm the copied/shared text exactly matches the preview.
 
@@ -110,7 +113,7 @@ Daily Routine is local-first; its optional Private sync account is not required 
 
 Health access is requested only from Setup after the reviewer taps Connect Health. The app requests read access for steps, sleep, and workouts and does not write HealthKit data.
 
-Watch actions remain locked until the reviewer completes the Morning Foundation opening on iPhone. Medication entries cannot be completed from Watch.
+Watch actions remain locked until the reviewer completes the Morning Foundation opening on iPhone. A medication routine tapped on Watch records the current time; tapping the completed row again reopens it.
 
 ## Final submission checklist
 

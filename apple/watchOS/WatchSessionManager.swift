@@ -41,7 +41,15 @@ final class WatchSessionManager: NSObject, ObservableObject {
             nextItemName: truthComplete ? "Morning walk" : "Complete Morning Foundation on iPhone",
             canCompleteNext: truthComplete,
             truthBeforeTasksComplete: truthComplete,
-            lastActionMessage: nil
+            lastActionMessage: nil,
+            items: truthComplete ? [
+                WatchRoutineItem(id: "morning-prayer", name: "Prayer", section: "morning", completed: true, action: .toggleRoutine),
+                WatchRoutineItem(id: "morning-teeth", name: "Brush teeth", section: "morning", completed: false, action: .toggleRoutine),
+                WatchRoutineItem(id: "morning-meds", name: "Take morning medicine", section: "morning", completed: false, action: .takeMedication),
+                WatchRoutineItem(id: "day-movement", name: "Movement / exercise", section: "day", completed: false, action: .toggleRoutine),
+                WatchRoutineItem(id: "evening-prepare", name: "Prepare for tomorrow", section: "evening", completed: false, action: .toggleRoutine)
+            ] : [],
+            customAction: WatchCustomAction(title: "Water +1", action: .addWater, itemId: nil, value: 1)
         )
     }
 #endif

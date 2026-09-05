@@ -20,6 +20,9 @@ enum WatchQuickAction: String, Codable, CaseIterable, Identifiable, Sendable {
     case completeNext
     case addWater
     case recordMood
+    case toggleRoutine
+    case takeMedication
+    case captureNote
 
     var id: String { rawValue }
 
@@ -28,20 +31,50 @@ enum WatchQuickAction: String, Codable, CaseIterable, Identifiable, Sendable {
         case .completeNext: "Complete next"
         case .addWater: "Water +1"
         case .recordMood: "Mood check-in"
+        case .toggleRoutine: "Update routine"
+        case .takeMedication: "Medication taken"
+        case .captureNote: "Capture"
         }
     }
+}
+
+struct WatchRoutineItem: Codable, Identifiable, Sendable, Hashable {
+    let id: String
+    let name: String
+    let section: String
+    let completed: Bool
+    let action: WatchQuickAction
+}
+
+struct WatchCustomAction: Codable, Sendable, Hashable {
+    let title: String
+    let action: WatchQuickAction
+    let itemId: String?
+    let value: Double?
 }
 
 struct WatchEvent: Codable, Sendable {
     let id: UUID
     let action: WatchQuickAction
     let value: Double?
+    let itemId: String?
+    let text: String?
+    let noteType: String?
     let createdAt: Date
 
-    init(action: WatchQuickAction, value: Double? = nil) {
+    init(
+        action: WatchQuickAction,
+        value: Double? = nil,
+        itemId: String? = nil,
+        text: String? = nil,
+        noteType: String? = nil
+    ) {
         self.id = UUID()
         self.action = action
         self.value = value
+        self.itemId = itemId
+        self.text = text
+        self.noteType = noteType
         self.createdAt = Date()
     }
 }
@@ -54,6 +87,8 @@ struct WatchRoutineContext: Codable, Sendable {
     let canCompleteNext: Bool?
     let truthBeforeTasksComplete: Bool?
     let lastActionMessage: String?
+    let items: [WatchRoutineItem]?
+    let customAction: WatchCustomAction?
 
     init(
         dateKey: String,
@@ -62,7 +97,9 @@ struct WatchRoutineContext: Codable, Sendable {
         nextItemName: String?,
         canCompleteNext: Bool?,
         truthBeforeTasksComplete: Bool? = nil,
-        lastActionMessage: String?
+        lastActionMessage: String?,
+        items: [WatchRoutineItem]? = nil,
+        customAction: WatchCustomAction? = nil
     ) {
         self.dateKey = dateKey
         self.completed = completed
@@ -71,5 +108,7 @@ struct WatchRoutineContext: Codable, Sendable {
         self.canCompleteNext = canCompleteNext
         self.truthBeforeTasksComplete = truthBeforeTasksComplete
         self.lastActionMessage = lastActionMessage
+        self.items = items
+        self.customAction = customAction
     }
 }

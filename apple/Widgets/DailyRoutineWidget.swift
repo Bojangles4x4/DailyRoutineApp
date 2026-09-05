@@ -53,7 +53,7 @@ struct DailyRoutineProgressWidget: Widget {
                 }
         }
         .configurationDisplayName("Today’s Routine")
-        .description("See today’s progress and the next routine at a glance.")
+        .description("See today’s progress and open your routine list at a glance.")
         .supportedFamilies([.accessoryCircular, .accessoryRectangular, .accessoryInline])
     }
 }
@@ -104,7 +104,7 @@ struct DailyRoutineWidgetView: View {
             Label("Morning Foundation", systemImage: "lock.fill")
         } else {
             Label(
-                "\(entry.snapshot.completed)/\(entry.snapshot.total) • \(entry.snapshot.nextItemName ?? "Routine")",
+                "\(entry.snapshot.completed)/\(entry.snapshot.total) • Routine list",
                 systemImage: "checkmark.circle"
             )
         }
@@ -146,7 +146,7 @@ struct DailyRoutineWidgetView: View {
                     Text("\(entry.snapshot.completed) of \(entry.snapshot.total) complete")
                         .font(.caption)
                         .fontWeight(.semibold)
-                    Text(entry.snapshot.nextItemName.map { "Next: \($0)" } ?? "Open Daily Routine")
+                    Text("Open routine list")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -157,8 +157,10 @@ struct DailyRoutineWidgetView: View {
     }
 }
 
+#if targetEnvironment(simulator)
 #Preview(as: .accessoryRectangular) {
     DailyRoutineProgressWidget()
 } timeline: {
     RoutineTimelineEntry(date: .now, snapshot: .preview)
 }
+#endif

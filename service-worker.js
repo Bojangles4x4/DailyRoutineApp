@@ -1,4 +1,4 @@
-const CACHE_NAME = 'daily-routine-v1-11-0-build-6-feedback-convictions';
+const CACHE_NAME = 'daily-routine-v1-12-0-build-7-watch-routine-list';
 const ASSETS = ['./','./index.html','./styles.css','./sync-core.js','./sync-cloud.js','./app.js','./manifest.webmanifest','./icon-192.png','./icon-512.png','./privacy.html','./support.html','./legal.css'];
 
 self.addEventListener('install', event => {
