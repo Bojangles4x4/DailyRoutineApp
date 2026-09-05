@@ -48,9 +48,13 @@ struct WatchContentView: View {
                 }
             }
             .padding(.horizontal, 7)
-            .padding(.top, 8)
+            .padding(.top, 7)
             .padding(.bottom, 4)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            // watchOS reserves the full clock band even though the clock only
+            // occupies its trailing edge. Use the open leading side for our
+            // compact summary, while keeping the clock's area clear.
+            .ignoresSafeArea(.container, edges: .top)
         }
         .sheet(isPresented: $isCapturing) {
             WatchCaptureView { text, noteType in
@@ -77,18 +81,19 @@ struct WatchContentView: View {
                     .foregroundStyle(.yellow)
                 Text("Today")
                     .font(.system(size: 11, weight: .bold))
-                Spacer(minLength: 1)
                 Text("\(Int((progress * 100).rounded()))%")
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
                     .foregroundStyle(.mint)
-                Text("\(session.context?.completed ?? 0) of \(session.context?.total ?? 0)")
+                Text("\(session.context?.completed ?? 0)/\(session.context?.total ?? 0)")
                     .font(.system(size: 8, weight: .medium))
                     .foregroundStyle(.secondary)
                 Circle()
                     .fill(session.isReachable ? Color.green : Color.orange)
                     .frame(width: 5, height: 5)
                     .accessibilityLabel(session.isReachable ? "Live" : "Will sync")
+                Spacer(minLength: 42)
             }
+            .padding(.leading, 9)
             GeometryReader { proxy in
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color.teal.opacity(0.4))
@@ -97,11 +102,12 @@ struct WatchContentView: View {
                         .frame(width: proxy.size.width * progress)
                 }
             }
-                .frame(height: 4)
-                .accessibilityLabel("Routine progress")
-                .accessibilityValue("\(session.context?.completed ?? 0) of \(session.context?.total ?? 0) complete")
+            .frame(height: 4)
+            .padding(.leading, 3)
+            .padding(.trailing, 42)
+            .accessibilityLabel("Routine progress")
+            .accessibilityValue("\(session.context?.completed ?? 0) of \(session.context?.total ?? 0) complete")
         }
-        .padding(.horizontal, 3)
     }
 
     private var routineList: some View {

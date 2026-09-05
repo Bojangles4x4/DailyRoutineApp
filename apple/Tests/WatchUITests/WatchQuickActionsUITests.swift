@@ -27,6 +27,17 @@ final class WatchQuickActionsUITests: XCTestCase {
         routine.tap()
     }
 
+    func testFiveRoutineChoicesFitAboveActionBar() {
+        let app = launchApp(truthComplete: true)
+
+        let firstRoutine = app.buttons["routine-morning-prayer"]
+        let fifthRoutine = app.buttons["routine-evening-prepare"]
+        XCTAssertTrue(firstRoutine.waitForExistence(timeout: 10))
+        XCTAssertTrue(fifthRoutine.waitForExistence(timeout: 10))
+        XCTAssertTrue(firstRoutine.isHittable)
+        XCTAssertTrue(fifthRoutine.isHittable)
+    }
+
     func testCustomBottomAction() {
         let app = launchApp(truthComplete: true)
 
