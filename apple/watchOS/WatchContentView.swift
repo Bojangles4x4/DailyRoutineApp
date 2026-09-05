@@ -36,7 +36,7 @@ struct WatchContentView: View {
             )
             .ignoresSafeArea()
 
-            VStack(spacing: 5) {
+            VStack(spacing: 4) {
                 summaryHeader
 
                 if truthBeforeTasksComplete {
@@ -47,13 +47,13 @@ struct WatchContentView: View {
                     Spacer(minLength: 0)
                 }
             }
-            .padding(.horizontal, 7)
-            .padding(.top, 7)
-            .padding(.bottom, 4)
+            .padding(.horizontal, 6)
+            .padding(.top, 8)
+            .padding(.bottom, 3)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            // watchOS reserves the full clock band even though the clock only
-            // occupies its trailing edge. Use the open leading side for our
-            // compact summary, while keeping the clock's area clear.
+            // watchOS owns the clock and does not expose a public way for apps
+            // to hide it. Use the open leading side for the summary and end
+            // the progress bar before the clock instead of underneath it.
             .ignoresSafeArea(.container, edges: .top)
         }
         .sheet(isPresented: $isCapturing) {
@@ -74,7 +74,7 @@ struct WatchContentView: View {
     }
 
     private var summaryHeader: some View {
-        VStack(spacing: 2) {
+        VStack(spacing: 6) {
             HStack(alignment: .center, spacing: 4) {
                 Image(systemName: "sun.max.fill")
                     .font(.caption2)
@@ -93,7 +93,7 @@ struct WatchContentView: View {
                     .accessibilityLabel(session.isReachable ? "Live" : "Will sync")
                 Spacer(minLength: 42)
             }
-            .padding(.leading, 9)
+            .padding(.leading, 8)
             GeometryReader { proxy in
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color.teal.opacity(0.4))
@@ -103,8 +103,8 @@ struct WatchContentView: View {
                 }
             }
             .frame(height: 4)
-            .padding(.leading, 3)
-            .padding(.trailing, 42)
+            .padding(.leading, 2)
+            .padding(.trailing, 48)
             .accessibilityLabel("Routine progress")
             .accessibilityValue("\(session.context?.completed ?? 0) of \(session.context?.total ?? 0) complete")
         }
@@ -112,7 +112,7 @@ struct WatchContentView: View {
 
     private var routineList: some View {
         ScrollView {
-            LazyVStack(spacing: 4) {
+            LazyVStack(spacing: 5) {
                 if routineItems.isEmpty {
                     Text("No Watch-ready routines today")
                         .font(.caption2)
@@ -142,34 +142,33 @@ struct WatchContentView: View {
         Button {
             performRoutineAction(item)
         } label: {
-            HStack(spacing: 8) {
+            HStack(spacing: 9) {
                 Image(systemName: item.completed ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(item.completed ? Color.mint : Color.secondary)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 17, weight: .semibold))
                 VStack(alignment: .leading, spacing: 1) {
                     Text(item.name)
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(size: 12, weight: .semibold))
                         .lineLimit(1)
                 }
                 Spacer(minLength: 2)
                 Text(sectionTitle(item.section))
-                    .font(.system(size: 7, weight: .medium))
+                    .font(.system(size: 8, weight: .medium))
                     .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(.white.opacity(item.completed ? 0.06 : 0.1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .frame(minHeight: 38)
+            .padding(.horizontal, 9)
+            .background(.white.opacity(item.completed ? 0.06 : 0.1), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
         }
         .buttonStyle(.plain)
-        .controlSize(.mini)
         .accessibilityIdentifier("routine-\(item.id)")
         .accessibilityLabel(item.completed ? "\(item.name), completed" : item.name)
         .accessibilityHint(item.completed ? "Tap to reopen" : "Tap to complete")
     }
 
     private var actionBar: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 5) {
             compactAction(
                 title: customAction.title,
                 systemImage: customActionIcon,
@@ -197,17 +196,17 @@ struct WatchContentView: View {
         identifier: String,
         action: @escaping () -> Void
     ) -> some View {
-        HStack(spacing: 5) {
+        HStack(spacing: 4) {
             Image(systemName: systemImage)
             Text(title)
                 .lineLimit(1)
         }
-        .font(.system(size: 10, weight: .bold))
+        .font(.system(size: 9, weight: .bold))
         .foregroundStyle(.white)
         .frame(maxWidth: .infinity)
-        .frame(height: 34)
-        .background(color.opacity(0.88), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-        .contentShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+        .frame(height: 26)
+        .background(color.opacity(0.88), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .onTapGesture(perform: action)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(title)

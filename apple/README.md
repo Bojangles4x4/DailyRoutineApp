@@ -23,7 +23,7 @@ This is intentionally more than a website wrapper. The native HealthKit and Watc
 - Configurable bottom Watch shortcut, with Water +1 as the default
 - Dictated Watch capture for general notes, prayers, and action items
 - Watch delivery feedback and refreshed completion totals
-- Glanceable Watch dashboard with a clock-band progress summary, a roomier scrollable routine list, and fixed bottom actions
+- Glanceable Watch dashboard with a roomier progress header, larger routine tap targets, and compact fixed bottom actions
 - WidgetKit complications for circular, inline, and rectangular layouts, including the Watch Smart Stack
 - Morning Foundation synchronization that keeps Watch quick actions and complications locked until Truth Before Tasks and any configured convictions are complete on iPhone
 - App Store icon catalogs, privacy manifests for App Group user defaults, and bundled privacy/support pages

@@ -1,6 +1,6 @@
 # App Store submission package
 
-This document keeps the TestFlight submission consistent with the behavior of Daily Routine 1.12.0 (build 8).
+This document keeps the TestFlight submission consistent with the behavior of Daily Routine 1.12.0 (build 9).
 
 ## URLs
 
@@ -52,7 +52,7 @@ Daily Routine is a personal organization tool and does not provide medical advic
 
 ### Version 1.12.0 release notes
 
-- Use more of the Apple Watch display: the compact progress summary now shares the open side of the clock band, leaving more room for routine choices.
+- Use more of the Apple Watch display: the progress summary now stays clear of the system clock, routine choices have larger finger-friendly targets, and the bottom actions take less room.
 - Choose the exact checkbox or medication routine to complete or reopen from Apple Watch instead of relying on a guessed next action. Medication entries receive the same AM/PM safeguard on Watch.
 - Customize the left bottom Watch shortcut from iPhone Setup, with Water +1 as the default.
 - Dictate a general note, prayer, or action item from Apple Watch and find it in Notes with Apple Watch as its source.
@@ -70,7 +70,7 @@ Daily Routine is a personal organization tool and does not provide medical advic
 
 Before a public App Store submission, update the App Privacy questionnaire for the optional Private sync implementation. When Private sync is enabled, the sign-in email address and synchronized user content are transmitted to the owner-only Supabase account row. Disclose the applicable contact-information and user-content categories as linked to the user, not used for tracking, and used only for app functionality.
 
-The following remains true for build 8:
+The following remains true for build 9:
 
 - No analytics, advertising, tracking, or third-party SDKs
 - Routine, reflection, medication, prayer, and note data is local-first and is transmitted only when the owner connects Private sync
