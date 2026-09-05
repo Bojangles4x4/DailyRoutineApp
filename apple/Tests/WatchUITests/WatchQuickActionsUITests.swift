@@ -32,6 +32,7 @@ final class WatchQuickActionsUITests: XCTestCase {
 
         let firstRoutine = app.buttons["routine-morning-prayer"]
         let fourthRoutine = app.buttons["routine-day-movement"]
+        let fifthRoutine = app.buttons["routine-evening-prepare"]
         let customAction = app.descendants(matching: .any)["customWatchAction"]
         XCTAssertTrue(firstRoutine.waitForExistence(timeout: 10))
         XCTAssertTrue(fourthRoutine.waitForExistence(timeout: 10))
@@ -40,6 +41,10 @@ final class WatchQuickActionsUITests: XCTestCase {
         XCTAssertTrue(fourthRoutine.isHittable)
         XCTAssertGreaterThanOrEqual(firstRoutine.frame.height, 38)
         XCTAssertLessThanOrEqual(customAction.frame.height, 28)
+        XCTAssertLessThanOrEqual(app.frame.maxY - customAction.frame.maxY, 6)
+        XCTAssertTrue(fifthRoutine.waitForExistence(timeout: 10))
+        app.swipeUp()
+        XCTAssertTrue(fifthRoutine.isHittable)
     }
 
     func testCustomBottomAction() {

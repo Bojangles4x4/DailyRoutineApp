@@ -49,12 +49,12 @@ struct WatchContentView: View {
             }
             .padding(.horizontal, 6)
             .padding(.top, 8)
-            .padding(.bottom, 3)
+            .padding(.bottom, 4)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             // watchOS owns the clock and does not expose a public way for apps
             // to hide it. Use the open leading side for the summary and end
             // the progress bar before the clock instead of underneath it.
-            .ignoresSafeArea(.container, edges: .top)
+            .ignoresSafeArea(.container, edges: [.top, .bottom])
         }
         .sheet(isPresented: $isCapturing) {
             WatchCaptureView { text, noteType in
@@ -136,6 +136,7 @@ struct WatchContentView: View {
         }
         .scrollIndicators(.hidden)
         .frame(maxHeight: .infinity)
+        .clipped()
     }
 
     private func routineButton(_ item: WatchRoutineItem) -> some View {
