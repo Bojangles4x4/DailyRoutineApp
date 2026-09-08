@@ -26,7 +26,7 @@
 
       <h2>Optional private sync</h2>
       <p>If you connect Private sync, the app uses Supabase for email authentication and owner-only cloud storage. Supabase receives your sign-in email address and a synchronized copy of routine definitions, daily entries, notes, memories, weekly reviews, and ordinary app preferences. Database security policies restrict the app to the row belonging to the signed-in account.</p>
-      <p>Apple Health summaries, HealthKit authorization, automatic Health-based step values, background photos, downloaded-backup timestamps, local snapshots, and conflict-recovery archives are excluded from the synchronized document. The Supabase project administrator may have technical access needed to operate or troubleshoot the service, but synced information is not used for advertising, analytics, or sale.</p>
+      <p>Apple Health summaries, HealthKit authorization, automatic Health-based step values, Earned Access baselines and progress, background photos, downloaded-backup timestamps, local snapshots, and conflict-recovery archives are excluded from the synchronized document. The Supabase project administrator may have technical access needed to operate or troubleshoot the service, but synced information is not used for advertising, analytics, or sale.</p>
 
       <h2>Apple Health</h2>
       <p>In the native iPhone app, Apple Health access is optional and requested only after you choose Connect Health. If you grant permission, Daily Routine reads the categories you approve from:</p>
@@ -35,7 +35,7 @@
         <li>Sleep analysis</li>
         <li>Workouts</li>
       </ul>
-      <p>The resulting summary is displayed on your device. If you add the automatic steps routine item, its daily value is filled from Health on that device and excluded from Private sync. Sleep-derived bedtime and wake-time suggestions do not change routine history unless you choose Apply times; applied times become ordinary routine history and may be included in Private sync. Daily Routine does not write to HealthKit, use health information for advertising or analytics, send it to the developer, or include it in Watch complications. You can deliberately include the latest summary in a manual accountability report; it is off by default, shown in the report preview, and shared only to the destination you choose.</p>
+      <p>The resulting summary is displayed on your device. If you add the automatic steps routine item, its daily value is filled from Health on that device and excluded from Private sync. Earned Access can record the step count when you start a round, calculate only the additional steps walked, and hold the earned-time status on that device; this information is not synchronized or shared automatically. Sleep-derived bedtime and wake-time suggestions do not change routine history unless you choose Apply times; applied times become ordinary routine history and may be included in Private sync. Daily Routine does not write to HealthKit, use health information for advertising or analytics, send it to the developer, or include it in Watch complications. You can deliberately include the latest summary in a manual accountability report; it is off by default, shown in the report preview, and shared only to the destination you choose.</p>
 
       <h2>Apple Watch</h2>
       <p>The iPhone and Apple Watch apps exchange today’s routine progress and user-initiated quick actions through Apple’s Watch Connectivity framework. The Watch app and its complication store only a small on-device routine snapshot in an App Group shared by those Daily Routine components. They do not receive Apple Health data.</p>
@@ -52,7 +52,7 @@
       <h2>Changes and questions</h2>
       <p>This policy will be updated if Daily Routine’s data practices change. For help or privacy questions, visit the <a href="support.html">Daily Routine support page</a>.</p>
 
-      <p class="legal-footer">Daily Routine 1.10.0 · No data is sold and no cross-app tracking is performed.</p>
+      <p class="legal-footer">Daily Routine 1.13.0 · No data is sold and no cross-app tracking is performed.</p>
     </article>
   </main>
 </body>

@@ -15,7 +15,7 @@ This is intentionally more than a website wrapper. The native HealthKit and Watc
 ## Current foundation
 
 - Native iPhone and watchOS source structure
-- Read-only HealthKit authorization, daily summary service, reviewable sleep-time suggestions, and an optional automatic steps-goal routine item
+- Read-only HealthKit authorization, daily summary service, reviewable sleep-time suggestions, an optional automatic steps-goal routine item, and device-only Earned Access rounds based on additional steps
 - JavaScript-to-native message bridge
 - iPhone-to-Watch current-context sync
 - Watch-to-iPhone queued quick actions
@@ -28,6 +28,8 @@ This is intentionally more than a website wrapper. The native HealthKit and Watc
 - Morning Foundation synchronization that keeps Watch quick actions and complications locked until Truth Before Tasks and any configured convictions are complete on iPhone
 - App Store icon catalogs, privacy manifests for App Group user defaults, and bundled privacy/support pages
 - XcodeGen project specification
+
+Build 11 tracks Earned Access rounds and earned minutes inside Daily Routine. It is designed to complement an existing Screen Time limit: the person starts a round when the limit is reached, and the app records that moment's HealthKit step count as the baseline. Automatic shielding or extension of another app is not enabled in this build; that requires Apple's Family Controls entitlement plus a later Managed Settings and Device Activity implementation.
 
 Tapping a checkbox or medication row updates that exact routine; tapping a completed row reopens it. Medication taps record the current time, with an AM/PM confirmation on Watch when the time does not match the routine section. Linked-app routines remain on iPhone. All Watch actions remain locked until the Morning Foundation is completed on the iPhone for the local calendar day. If personal convictions are configured, they are part of that foundation. If the Watch companion is not installed yet, the iPhone keeps the latest routine context ready and sends it when Watch Connectivity reports the companion is available.
 
@@ -52,7 +54,7 @@ Project generation applies an Xcode 26 compatibility adjustment so the modern wa
 - The first version reads only steps, sleep, and workouts.
 - It does not write medication, mood, prayer, or routine data to HealthKit.
 - Health information stays on the person’s devices and is not used for advertising or analytics.
-- Automatic Health-based step values are excluded from Private sync. Sleep suggestions become routine history only after the person applies them.
+- Automatic Health-based step values and Earned Access baselines, progress, and earned-time state are excluded from Private sync. Sleep suggestions become routine history only after the person applies them.
 - Daily Routine data remains local-first until a separate sync design is explicitly approved.
 
 ## Apple references

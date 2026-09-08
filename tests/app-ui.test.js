@@ -42,6 +42,43 @@ function localDateKey(date = new Date()) {
   const watchContext = await page.evaluate(() => [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'watch.context.update')?.value);
   assert.ok(watchContext.items.some(item => item.id === 'morning-meds' && item.action === 'takeMedication'));
   assert.equal(watchContext.customAction.itemId, 'morning-meds');
+
+  await page.evaluate(() => {
+    window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'health.summary', value: { date: new Date().toISOString(), stepCount: 4820, sleepHours: 0, workoutCount: 0 } } }));
+  });
+  await page.locator('#earnedAccessLabelInput').fill('Reddit');
+  await page.locator('#earnedAccessStepsInput').fill('1000');
+  await page.locator('#earnedAccessMinutesInput').fill('20');
+  await page.locator('#earnedAccessModeInput').selectOption('fixed');
+  await page.locator('#startEarnedAccessButton').click();
+  assert.equal((await page.locator('#earnedAccessStatus').textContent()).trim(), 'Reddit paused');
+  assert.match(await page.locator('#earnedAccessDetail').textContent(), /0 \/ 1,000/);
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('dailyRoutine.earnedAccess.device.v1')).active.baselineSteps), 4820);
+
+  await page.evaluate(() => {
+    window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'health.summary', value: { date: new Date().toISOString(), stepCount: 5320, sleepHours: 0, workoutCount: 0 } } }));
+  });
+  assert.match(await page.locator('#earnedAccessDetail').textContent(), /500 \/ 1,000/);
+  await page.evaluate(() => {
+    window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'health.summary', value: { date: new Date().toISOString(), stepCount: 5820, sleepHours: 0, workoutCount: 0 } } }));
+  });
+  assert.equal((await page.locator('#earnedAccessStatus').textContent()).trim(), '20 minutes earned');
+  assert.equal((await page.locator('#earnedAccessBadge').textContent()).trim(), 'Access earned');
+  const earnedAccessData = await page.evaluate(key => {
+    const device = JSON.parse(localStorage.getItem('dailyRoutine.earnedAccess.device.v1'));
+    const syncedState = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
+    return { rounds: device.roundsByDate[key], active: device.active, syncedSettings: syncedState.settings };
+  }, today);
+  assert.equal(earnedAccessData.rounds, 1);
+  assert.equal(earnedAccessData.active, null);
+  assert.equal(Object.hasOwn(earnedAccessData.syncedSettings, 'earnedAccess'), false);
+
+  const earnedAccessLayout = await page.locator('#earnedAccessCard').evaluate(node => {
+    const rect = node.getBoundingClientRect();
+    return { left: rect.left, right: rect.right, viewport: innerWidth };
+  });
+  assert.ok(earnedAccessLayout.left >= 0);
+  assert.ok(earnedAccessLayout.right <= earnedAccessLayout.viewport);
   await page.locator('#createTruthThemeButton').click();
   assert.equal(await page.locator('#truthThemeForm').isVisible(), true);
   assert.equal(await page.locator('#truthWhoGodInput').count(), 0);
@@ -75,7 +112,7 @@ function localDateKey(date = new Date()) {
     assert.equal(Math.round(rect.height), 44);
   });
   if (process.env.DAILY_ROUTINE_SCREENSHOT_DIR) {
-    await page.screenshot({ path: `${process.env.DAILY_ROUTINE_SCREENSHOT_DIR}/daily-routine-build7-setup.png` });
+    await page.screenshot({ path: `${process.env.DAILY_ROUTINE_SCREENSHOT_DIR}/daily-routine-build11-setup.png`, fullPage: true });
   }
 
   await page.evaluate(key => {
@@ -91,7 +128,7 @@ function localDateKey(date = new Date()) {
   assert.match(await page.locator('#truthStepBody').textContent(), /Proverbs 16:9/);
   assert.equal(await page.locator('#truthEnterDayButton').isDisabled(), true);
   if (process.env.DAILY_ROUTINE_SCREENSHOT_DIR) {
-    await page.screenshot({ path: `${process.env.DAILY_ROUTINE_SCREENSHOT_DIR}/daily-routine-build7-convictions.png` });
+    await page.screenshot({ path: `${process.env.DAILY_ROUTINE_SCREENSHOT_DIR}/daily-routine-build11-convictions.png` });
   }
 
   await page.evaluate(key => {

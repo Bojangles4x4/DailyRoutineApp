@@ -376,6 +376,28 @@
             <button id="saveAppleStepsGoalButton" class="secondary-button" type="button">Add to routine</button>
           </div>
           <p class="muted micro-copy">Automatic step values stay on this device and are excluded from Private sync.</p>
+          <div class="earned-access-card" id="earnedAccessCard">
+            <div class="earned-access-heading">
+              <div><strong>Earned Access</strong><span>Use additional steps after a limit—not your total for the day—to earn more time.</span></div>
+              <span id="earnedAccessBadge" class="privacy-pill">Ready</span>
+            </div>
+            <div class="earned-access-fields">
+              <label class="text-field compact"><span>App or activity</span><input id="earnedAccessLabelInput" type="text" maxlength="40" value="Social media" placeholder="Reddit" /></label>
+              <label class="text-field compact"><span>Steps per round</span><input id="earnedAccessStepsInput" type="number" min="100" max="20000" step="50" inputmode="numeric" value="1000" /></label>
+              <label class="text-field compact"><span>Minutes earned</span><input id="earnedAccessMinutesInput" type="number" min="1" max="120" step="5" inputmode="numeric" value="20" /></label>
+              <label class="text-field compact"><span>Step pattern</span><select id="earnedAccessModeInput"><option value="fixed">Same goal each round</option><option value="escalating">Escalate 750 → 1,000 → 1,500</option></select></label>
+            </div>
+            <div class="earned-access-progress" aria-live="polite">
+              <div><strong id="earnedAccessStatus">Ready for your next limit</strong><span id="earnedAccessDetail">Start a round when your Screen Time limit pauses the selected app.</span></div>
+              <div class="earned-access-progress-track" role="progressbar" aria-label="Earned Access step progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="earnedAccessProgressBar"></span></div>
+            </div>
+            <div class="connection-actions earned-access-actions">
+              <button id="startEarnedAccessButton" class="primary-button" type="button">Start step round</button>
+              <button id="checkEarnedAccessButton" class="secondary-button" type="button">Check progress</button>
+              <button id="cancelEarnedAccessButton" class="text-button" type="button" hidden>Cancel round</button>
+            </div>
+            <p class="muted micro-copy">Use this with your current iPhone Screen Time limit. Build 11 tracks the step challenge and earned time on this device; automatic app shielding requires Apple’s separate Family Controls approval.</p>
+          </div>
           <div class="connection-status-card apple-watch-status">
             <div class="connection-icon">⌚</div>
             <div class="connection-copy"><strong>Apple Watch companion</strong><span id="appleWatchStatus">Ready for quick-action testing after the Watch app is installed.</span></div>
@@ -456,7 +478,7 @@
             <a href="privacy.html">Privacy Policy</a>
             <a href="support.html">Support</a>
           </div>
-          <p class="app-version">Daily Routine <b id="appVersion">v1.12.0</b></p>
+          <p class="app-version">Daily Routine <b id="appVersion">v1.13.0</b></p>
         </section>
 
 

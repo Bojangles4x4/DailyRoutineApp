@@ -4,7 +4,8 @@
   const STORAGE_KEY = 'dailyRoutineApp.v1';
   const SNAPSHOT_KEY = 'dailyRoutineApp.snapshots.v1';
   const HEALTH_DEVICE_KEY = 'dailyRoutine.health.device.v1';
-  const APP_VERSION = '1.12.0';
+  const EARNED_ACCESS_DEVICE_KEY = 'dailyRoutine.earnedAccess.device.v1';
+  const APP_VERSION = '1.13.0';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const DEFAULT_BIBLE_APP_URL = 'https://bojangles4x4.github.io/Bible-Reading-Plan/';
@@ -68,6 +69,8 @@
   let reflectionReviewExpanded = false;
   let watchLastActionMessage = '';
   let latestHealthSummary = null;
+  let pendingEarnedAccessStart = false;
+  let earnedAccessExpiryTimer = null;
   let accountabilityPreview = '';
   let accountabilityPreviewSignature = '';
   const syncCoordinator = window.DailyRoutineSync?.createCoordinator({ storage: localStorage }) || null;
@@ -108,6 +111,7 @@
     privateSyncCard: $('privateSyncCard'), privateSyncBadge: $('privateSyncBadge'), privateSyncStatus: $('privateSyncStatus'), privateSyncDevice: $('privateSyncDevice'), privateSyncLastSync: $('privateSyncLastSync'), createSyncSnapshotButton: $('createSyncSnapshotButton'), privateSyncNowButton: $('privateSyncNowButton'), privateSyncSignIn: $('privateSyncSignIn'), privateSyncEmailInput: $('privateSyncEmailInput'), privateSyncPasswordInput: $('privateSyncPasswordInput'), privateSyncSendCodeButton: $('privateSyncSendCodeButton'), privateSyncVerifyButton: $('privateSyncVerifyButton'), privateSyncHelp: $('privateSyncHelp'), privateSyncAccount: $('privateSyncAccount'), privateSyncSignOutButton: $('privateSyncSignOutButton'), privateSyncDeleteCloudButton: $('privateSyncDeleteCloudButton'),
     connectionsCard: $('connectionsCard'), syncConnectionsButton: $('syncConnectionsButton'), bibleConnectionStatus: $('bibleConnectionStatus'), openBibleConnectionButton: $('openBibleConnectionButton'), bibleAppUrlInput: $('bibleAppUrlInput'), saveBibleConnectionButton: $('saveBibleConnectionButton'), testBibleConnectionButton: $('testBibleConnectionButton'), connectionTemplates: $('connectionTemplates'),
     appleNativeCard: $('appleNativeCard'), appleStepCount: $('appleStepCount'), appleSleepHours: $('appleSleepHours'), appleWorkoutCount: $('appleWorkoutCount'), appleHealthStatus: $('appleHealthStatus'), connectAppleHealthButton: $('connectAppleHealthButton'), refreshAppleHealthButton: $('refreshAppleHealthButton'), appleWatchStatus: $('appleWatchStatus'), appleStepsGoalInput: $('appleStepsGoalInput'), saveAppleStepsGoalButton: $('saveAppleStepsGoalButton'), appleWatchQuickActionInput: $('appleWatchQuickActionInput'),
+    earnedAccessCard: $('earnedAccessCard'), earnedAccessBadge: $('earnedAccessBadge'), earnedAccessLabelInput: $('earnedAccessLabelInput'), earnedAccessStepsInput: $('earnedAccessStepsInput'), earnedAccessMinutesInput: $('earnedAccessMinutesInput'), earnedAccessModeInput: $('earnedAccessModeInput'), earnedAccessStatus: $('earnedAccessStatus'), earnedAccessDetail: $('earnedAccessDetail'), earnedAccessProgressBar: $('earnedAccessProgressBar'), startEarnedAccessButton: $('startEarnedAccessButton'), checkEarnedAccessButton: $('checkEarnedAccessButton'), cancelEarnedAccessButton: $('cancelEarnedAccessButton'),
     healthSleepSuggestion: $('healthSleepSuggestion'), healthSleepSuggestionText: $('healthSleepSuggestionText'), applyHealthSleepButton: $('applyHealthSleepButton'),
     linkedActionFields: $('linkedActionFields'), linkedTemplateInput: $('linkedTemplateInput'), linkedCompletionInput: $('linkedCompletionInput'), linkedUrlField: $('linkedUrlField'), linkedUrlInput: $('linkedUrlInput'), linkedInternalField: $('linkedInternalField'), linkedInternalTargetInput: $('linkedInternalTargetInput'), linkedButtonLabelInput: $('linkedButtonLabelInput'), timeWindowFields: $('timeWindowFields'), timeWindowStartInput: $('timeWindowStartInput'), timeWindowEndInput: $('timeWindowEndInput'),
     medicationProgressCard: $('medicationProgressCard'), weeklyReviewCard: $('weeklyReviewCard'), memoryBankCard: $('memoryBankCard'), dataBackupCard: $('dataBackupCard'),
@@ -648,6 +652,13 @@
       sendNativeBridgeMessage('health.summary.request');
     });
     els.saveAppleStepsGoalButton.addEventListener('click', saveAppleStepsGoal);
+    [els.earnedAccessLabelInput, els.earnedAccessStepsInput, els.earnedAccessMinutesInput, els.earnedAccessModeInput].forEach(input => input.addEventListener('change', () => {
+      saveEarnedAccessFormSettings();
+      renderEarnedAccess();
+    }));
+    els.startEarnedAccessButton.addEventListener('click', startEarnedAccessRound);
+    els.checkEarnedAccessButton.addEventListener('click', checkEarnedAccessProgress);
+    els.cancelEarnedAccessButton.addEventListener('click', cancelEarnedAccessRound);
     els.appleWatchQuickActionInput.addEventListener('change', () => {
       state.settings.watchQuickAction = els.appleWatchQuickActionInput.value || 'water';
       saveState();
@@ -664,6 +675,7 @@
         els.appleWatchStatus.textContent = value.watchReachable ? 'Apple Watch is connected and reachable.' : value.watchInstalled ? 'Open Daily Routine on Apple Watch to enable live quick actions.' : 'Install the Daily Routine Watch companion to begin quick-action testing.';
         syncWatchContext();
         renderAppleStepsGoal();
+        renderEarnedAccess();
         if (value.healthAvailable && healthDeviceSettings().connected) sendNativeBridgeMessage('health.summary.request');
       } else if (detail.name === 'health.authorization.completed') {
         saveHealthDeviceSettings({ connected: true });
@@ -685,6 +697,7 @@
         els.appleWorkoutCount.textContent = String(Math.round(Number(value.workoutCount) || 0));
         els.appleHealthStatus.textContent = 'Summary refreshed from Apple Health on this device.';
         applyLatestHealthSteps();
+        updateEarnedAccessFromHealth();
         renderHealthSleepSuggestion();
         if (state.settings.accountabilityReport?.includeHealth) {
           accountabilityPreview = '';
@@ -700,6 +713,7 @@
       }
     });
     renderAppleStepsGoal();
+    renderEarnedAccess();
   }
 
   function healthDeviceSettings() {
@@ -711,6 +725,189 @@
 
   function saveHealthDeviceSettings(updates) {
     localStorage.setItem(HEALTH_DEVICE_KEY, JSON.stringify({ ...healthDeviceSettings(), ...updates }));
+  }
+
+  function earnedAccessDeviceSettings() {
+    const defaults = {
+      label: 'Social media', stepGoal: 1000, rewardMinutes: 20, mode: 'fixed',
+      active: null, earnedUntil: '', lastCompleted: null, roundsByDate: {}
+    };
+    try {
+      const parsed = JSON.parse(localStorage.getItem(EARNED_ACCESS_DEVICE_KEY) || '{}');
+      const next = parsed && typeof parsed === 'object' ? { ...defaults, ...parsed } : defaults;
+      next.label = String(next.label || defaults.label).trim().slice(0, 40) || defaults.label;
+      next.stepGoal = Math.min(20000, Math.max(100, Math.round(Number(next.stepGoal) || defaults.stepGoal)));
+      next.rewardMinutes = Math.min(120, Math.max(1, Math.round(Number(next.rewardMinutes) || defaults.rewardMinutes)));
+      next.mode = next.mode === 'escalating' ? 'escalating' : 'fixed';
+      next.roundsByDate = next.roundsByDate && typeof next.roundsByDate === 'object' ? next.roundsByDate : {};
+      if (!next.active || typeof next.active !== 'object') next.active = null;
+      if (!next.lastCompleted || typeof next.lastCompleted !== 'object') next.lastCompleted = null;
+      return next;
+    } catch { return defaults; }
+  }
+
+  function saveEarnedAccessDeviceSettings(updates) {
+    const next = { ...earnedAccessDeviceSettings(), ...updates };
+    localStorage.setItem(EARNED_ACCESS_DEVICE_KEY, JSON.stringify(next));
+    return next;
+  }
+
+  function saveEarnedAccessFormSettings() {
+    return saveEarnedAccessDeviceSettings({
+      label: String(els.earnedAccessLabelInput.value || 'Social media').trim().slice(0, 40) || 'Social media',
+      stepGoal: Math.min(20000, Math.max(100, Math.round(Number(els.earnedAccessStepsInput.value) || 1000))),
+      rewardMinutes: Math.min(120, Math.max(1, Math.round(Number(els.earnedAccessMinutesInput.value) || 20))),
+      mode: els.earnedAccessModeInput.value === 'escalating' ? 'escalating' : 'fixed'
+    });
+  }
+
+  function earnedAccessRequirement(settings = earnedAccessDeviceSettings()) {
+    if (settings.mode !== 'escalating') return settings.stepGoal;
+    const completedToday = Math.max(0, Math.round(Number(settings.roundsByDate[dateKey(startOfToday())]) || 0));
+    return [750, 1000, 1500][Math.min(completedToday, 2)];
+  }
+
+  function latestHealthStepsToday() {
+    if (!latestHealthSummary?.date) return null;
+    const summaryDate = new Date(latestHealthSummary.date);
+    if (Number.isNaN(summaryDate.getTime()) || dateKey(summaryDate) !== dateKey(startOfToday())) return null;
+    return Math.max(0, Math.round(Number(latestHealthSummary.stepCount) || 0));
+  }
+
+  function startEarnedAccessRound() {
+    const settings = saveEarnedAccessFormSettings();
+    const earnedUntil = new Date(settings.earnedUntil || '').getTime();
+    if (settings.active) {
+      showToast('A step round is already in progress.');
+      return;
+    }
+    if (!Number.isNaN(earnedUntil) && earnedUntil > Date.now()) {
+      showToast('Finish the time you already earned before starting another round.');
+      return;
+    }
+    const steps = latestHealthStepsToday();
+    if (steps === null) {
+      pendingEarnedAccessStart = true;
+      renderEarnedAccess();
+      sendNativeBridgeMessage(healthDeviceSettings().connected ? 'health.summary.request' : 'health.authorization.request');
+      return;
+    }
+    const active = {
+      dateKey: dateKey(startOfToday()),
+      startedAt: new Date().toISOString(),
+      baselineSteps: steps,
+      requiredSteps: earnedAccessRequirement(settings),
+      rewardMinutes: settings.rewardMinutes,
+      label: settings.label
+    };
+    saveEarnedAccessDeviceSettings({ active, earnedUntil: '' });
+    renderEarnedAccess();
+    showToast(`${active.label} step round started at ${steps.toLocaleString()} steps.`);
+  }
+
+  function checkEarnedAccessProgress() {
+    els.earnedAccessStatus.textContent = 'Checking Apple Health…';
+    els.earnedAccessDetail.textContent = 'Comparing your current steps with the round’s starting point.';
+    sendNativeBridgeMessage('health.summary.request');
+  }
+
+  function cancelEarnedAccessRound() {
+    pendingEarnedAccessStart = false;
+    saveEarnedAccessDeviceSettings({ active: null });
+    renderEarnedAccess();
+    showToast('Earned Access round canceled.');
+  }
+
+  function updateEarnedAccessFromHealth() {
+    if (pendingEarnedAccessStart) {
+      pendingEarnedAccessStart = false;
+      startEarnedAccessRound();
+      return;
+    }
+    const settings = earnedAccessDeviceSettings();
+    const active = settings.active;
+    const steps = latestHealthStepsToday();
+    if (!active || steps === null || active.dateKey !== dateKey(startOfToday())) {
+      renderEarnedAccess();
+      return;
+    }
+    const gained = Math.max(0, steps - Math.max(0, Number(active.baselineSteps) || 0));
+    const required = Math.max(1, Number(active.requiredSteps) || earnedAccessRequirement(settings));
+    if (gained < required) {
+      renderEarnedAccess();
+      return;
+    }
+    const today = dateKey(startOfToday());
+    const roundsByDate = { ...settings.roundsByDate, [today]: Math.max(0, Number(settings.roundsByDate[today]) || 0) + 1 };
+    const completedAt = new Date();
+    const rewardMinutes = Math.max(1, Number(active.rewardMinutes) || settings.rewardMinutes);
+    const earnedUntil = new Date(completedAt.getTime() + rewardMinutes * 60 * 1000).toISOString();
+    saveEarnedAccessDeviceSettings({
+      active: null,
+      earnedUntil,
+      roundsByDate,
+      lastCompleted: { ...active, completedAt: completedAt.toISOString(), completedSteps: steps, gainedSteps: gained }
+    });
+    renderEarnedAccess();
+    showToast(`${rewardMinutes} minutes earned.`);
+  }
+
+  function renderEarnedAccess() {
+    if (!els.earnedAccessCard) return;
+    if (earnedAccessExpiryTimer) {
+      window.clearTimeout(earnedAccessExpiryTimer);
+      earnedAccessExpiryTimer = null;
+    }
+    let settings = earnedAccessDeviceSettings();
+    const today = dateKey(startOfToday());
+    if (settings.active?.dateKey && settings.active.dateKey !== today) {
+      settings = saveEarnedAccessDeviceSettings({ active: null });
+    }
+    const earnedTime = new Date(settings.earnedUntil || '').getTime();
+    if (!Number.isNaN(earnedTime) && earnedTime <= Date.now() && settings.earnedUntil) {
+      settings = saveEarnedAccessDeviceSettings({ earnedUntil: '' });
+    }
+    const editing = document.activeElement;
+    if (editing !== els.earnedAccessLabelInput) els.earnedAccessLabelInput.value = settings.label;
+    if (editing !== els.earnedAccessStepsInput) els.earnedAccessStepsInput.value = String(settings.stepGoal);
+    if (editing !== els.earnedAccessMinutesInput) els.earnedAccessMinutesInput.value = String(settings.rewardMinutes);
+    if (editing !== els.earnedAccessModeInput) els.earnedAccessModeInput.value = settings.mode;
+
+    const active = settings.active;
+    const accessIsEarned = !Number.isNaN(new Date(settings.earnedUntil || '').getTime()) && new Date(settings.earnedUntil).getTime() > Date.now();
+    let percent = 0;
+    if (pendingEarnedAccessStart) {
+      els.earnedAccessBadge.textContent = 'Health check';
+      els.earnedAccessStatus.textContent = healthDeviceSettings().connected ? 'Refreshing Apple Health…' : 'Connect Apple Health…';
+      els.earnedAccessDetail.textContent = 'The round will begin as soon as the current step total arrives.';
+    } else if (active) {
+      const steps = latestHealthStepsToday() ?? Math.max(0, Number(active.baselineSteps) || 0);
+      const gained = Math.max(0, steps - Math.max(0, Number(active.baselineSteps) || 0));
+      const required = Math.max(1, Number(active.requiredSteps) || 1000);
+      const remaining = Math.max(0, required - gained);
+      percent = Math.min(100, Math.round((gained / required) * 100));
+      els.earnedAccessBadge.textContent = 'Walking';
+      els.earnedAccessStatus.textContent = `${active.label || settings.label} paused`;
+      els.earnedAccessDetail.textContent = `Walk ${remaining.toLocaleString()} more steps to earn ${active.rewardMinutes || settings.rewardMinutes} minutes. Progress: ${gained.toLocaleString()} / ${required.toLocaleString()}.`;
+    } else if (accessIsEarned) {
+      percent = 100;
+      const completed = settings.lastCompleted;
+      const minutes = Math.max(1, Number(completed?.rewardMinutes) || settings.rewardMinutes);
+      els.earnedAccessBadge.textContent = 'Access earned';
+      els.earnedAccessStatus.textContent = `${minutes} minutes earned`;
+      els.earnedAccessDetail.textContent = `${completed?.label || settings.label} time is earned until ${new Date(settings.earnedUntil).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.`;
+      earnedAccessExpiryTimer = window.setTimeout(renderEarnedAccess, Math.min(Math.max(250, earnedTime - Date.now() + 250), 2147483647));
+    } else {
+      const required = earnedAccessRequirement(settings);
+      els.earnedAccessBadge.textContent = 'Ready';
+      els.earnedAccessStatus.textContent = `Ready for ${settings.label}`;
+      els.earnedAccessDetail.textContent = `Next round: walk ${required.toLocaleString()} additional steps to earn ${settings.rewardMinutes} minutes.`;
+    }
+    els.earnedAccessProgressBar.style.width = `${percent}%`;
+    els.earnedAccessProgressBar.parentElement.setAttribute('aria-valuenow', String(percent));
+    els.startEarnedAccessButton.disabled = pendingEarnedAccessStart || Boolean(active) || accessIsEarned;
+    els.startEarnedAccessButton.textContent = pendingEarnedAccessStart ? 'Starting round…' : active ? 'Round in progress' : accessIsEarned ? 'Time earned' : `Start ${earnedAccessRequirement(settings).toLocaleString()}-step round`;
+    els.cancelEarnedAccessButton.hidden = !active && !pendingEarnedAccessStart;
   }
 
   function healthStepsItem() {

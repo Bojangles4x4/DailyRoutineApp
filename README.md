@@ -2,13 +2,15 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.12.0 features
+## Version 1.13.0 features
 
 - Truth Before Tasks daily opening before the rest of the routine unlocks
 - Optional two-minute Convictions Before Circumstances phase with editable convictions and optional Scripture for each one
 - Apple Watch routine list for completing or reopening the exact checkbox or medication item you choose
 - Customizable bottom Watch shortcut, with Water +1 as the default
 - Apple Watch dictation capture for general notes, prayers, and action items
+- Native Earned Access rounds that record the current Apple Health step count, count only additional steps, and show when extra app time has been earned
+- Fixed 1,000-step rounds or an optional 750 → 1,000 → 1,500 escalating pattern, with configurable labels and reward minutes
 - Open-ended Truth Before Tasks themes with a title, body, and Scripture instead of required content categories
 - Fixed bottom navigation that remains visible while scrolling
 - Compact, phone-safe medication and schedule time controls
@@ -78,7 +80,7 @@ Open the GitHub Pages URL in Safari → Share → **Add to Home Screen** → ena
 
 ## Privacy note
 
-Data is stored locally first. If private sync is connected, routine definitions, daily entries, notes, memories, weekly reviews, and ordinary preferences are also stored in the owner's Supabase account row. Apple Health summaries, automatic Health-based step values, background photos, local snapshots, downloaded backups, and conflict archives remain device-only. Sleep suggestions become ordinary routine history only after the user applies them. Clearing browser storage can erase the local copy, so use Download backup periodically.
+Data is stored locally first. If private sync is connected, routine definitions, daily entries, notes, memories, weekly reviews, and ordinary preferences are also stored in the owner's Supabase account row. Apple Health summaries, automatic Health-based step values, Earned Access baselines and progress, background photos, local snapshots, downloaded backups, and conflict archives remain device-only. Sleep suggestions become ordinary routine history only after the user applies them. Clearing browser storage can erase the local copy, so use Download backup periodically.
 
 - [Privacy Policy](privacy.html)
 - [Support](support.html)
