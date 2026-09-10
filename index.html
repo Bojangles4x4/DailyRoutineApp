@@ -19,7 +19,6 @@
         <span class="topbar-mark" aria-hidden="true">☀</span>
         <div>
           <h1 id="pageTitle">Daily Routine</h1>
-          <p id="pageContext">Today</p>
         </div>
       </div>
       <button class="icon-button" id="installButton" type="button" hidden aria-label="Install app">＋</button>
@@ -100,13 +99,13 @@
         <section class="card actual-time-card">
           <div class="section-heading"><div><p class="eyebrow">Timing</p><h2>Actual sleep times</h2></div><span class="section-progress">for this day</span></div>
           <div class="actual-time-grid compact-time-grid">
-            <label class="actual-time-field compact-time-field"><span>Woke up</span><div><input id="actualWakeInput" type="time" /><button id="wakeNowButton" class="small-button" type="button">Now</button></div></label>
-            <label class="actual-time-field compact-time-field"><span>Went to bed</span><div><input id="actualBedInput" type="time" /><button id="bedNowButton" class="small-button" type="button">Now</button></div></label>
+            <div class="actual-time-field compact-time-field"><label for="actualWakeInput">Woke up</label><div><input id="actualWakeInput" type="time" /><button id="wakeNowButton" class="small-button" type="button">Now</button></div></div>
+            <div class="actual-time-field compact-time-field"><label for="actualBedInput">Went to bed</label><div><input id="actualBedInput" type="time" /><button id="bedNowButton" class="small-button" type="button">Now</button></div></div>
           </div>
-          <p class="muted micro-copy">Sleep is filed under the day you woke up. The bedtime belongs to the night before that morning.</p>
+          <p class="muted micro-copy">Each time belongs to the date it happened. Last night’s bedtime is on yesterday’s page; this morning’s wake time is here. Enter times manually whenever Health has no recording.</p>
           <div id="healthSleepSuggestion" class="health-sleep-suggestion" hidden>
             <div><strong>Apple Health suggestion</strong><span id="healthSleepSuggestionText"></span></div>
-            <button id="applyHealthSleepButton" class="small-button" type="button">Apply times</button>
+            <button id="applyHealthSleepButton" class="small-button" type="button">Review times</button>
           </div>
         </section>
 
@@ -306,7 +305,7 @@
         <div id="setupCategoryBar" class="setup-category-bar" hidden><button id="setupBackButton" class="small-button" type="button">‹ Setup</button><strong id="setupCategoryTitle">Routine & schedule</strong></div>
 
         <section class="card setup-section-card schedule-settings-card" data-setup-category="routine">
-          <div class="section-heading"><div><p class="eyebrow">Schedule</p><h2>Daily anchors</h2></div><span class="section-progress">Tap a time to change it</span></div>
+          <div class="section-heading"><div><p class="eyebrow">Schedule</p><h2>Daily anchors</h2></div><span class="section-progress">Tap to edit</span></div>
           <div class="daily-anchor-list">
             <label class="daily-anchor-row"><span class="daily-anchor-icon" aria-hidden="true">☀</span><span class="daily-anchor-copy"><b>Wake-up target</b><small>Starts your morning routine</small></span><input id="wakeTimeInput" type="time" aria-label="Wake-up target" /></label>
             <label class="daily-anchor-row"><span class="daily-anchor-icon bedtime" aria-hidden="true">☾</span><span class="daily-anchor-copy"><b>Bedtime target</b><small>Closes your daily routine</small></span><input id="bedTimeInput" type="time" aria-label="Bedtime target" /></label>
@@ -333,6 +332,13 @@
             <button id="clearBackgroundButton" class="secondary-button" type="button">Remove photo</button>
           </div>
           <p class="muted setup-help">A background photo stays only on this device. It is compressed before being saved.</p>
+        </section>
+
+        <section id="truthRemindersCard" class="card" data-setup-category="faith">
+          <div class="section-heading"><div><p class="eyebrow">Throughout the day</p><h2>Truth reminders</h2></div></div>
+          <p class="muted setup-help">Keep a library of words and pictures to return to. Choose your entries or shuffle them, with reminders every 30 minutes from 8 AM to 8 PM by default.</p>
+          <button id="openTruthRemindersButton" class="secondary-button" type="button">Manage iPhone reminders</button>
+          <p id="truthRemindersAvailability" class="muted micro-copy">Notification scheduling is available in the iPhone app. Your reminder library stays on that iPhone.</p>
         </section>
 
         <section class="card handedness-card" data-setup-category="appearance">
@@ -401,6 +407,7 @@
           </div>
           <p class="muted micro-copy">Automatic step values stay on this device and are excluded from Private sync.</p>
           <div class="earned-access-card" id="earnedAccessCard">
+            <p class="earned-access-disclosure"><strong>Manual reward tracker · app blocking is off</strong><span>Amazon and your other apps stay accessible. This tracks your goal and a countdown; it cannot lock apps or measure time spent in them yet.</span></p>
             <div class="earned-access-heading">
               <div><strong>Earned Access</strong><span>Complete selected routines or walk additional steps to earn focused app time.</span></div>
               <span id="earnedAccessBadge" class="privacy-pill">Ready</span>
@@ -425,7 +432,7 @@
             </div>
             <div class="earned-movement-heading"><strong>Optional movement round</strong><span>Earn an additional allowance from new steps after you start the round.</span></div>
             <div class="earned-access-progress" aria-live="polite">
-              <div><strong id="earnedAccessStatus">Ready for your next limit</strong><span id="earnedAccessDetail">Start a round when your Screen Time limit pauses the selected app.</span></div>
+              <div><strong id="earnedAccessStatus">Ready for a step goal</strong><span id="earnedAccessDetail">Start a round to track additional steps toward your reward.</span></div>
               <div class="earned-access-progress-track" role="progressbar" aria-label="Earned Access step progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="earnedAccessProgressBar"></span></div>
             </div>
             <div class="connection-actions earned-access-actions">
@@ -433,7 +440,7 @@
               <button id="checkEarnedAccessButton" class="secondary-button" type="button">Check progress</button>
               <button id="cancelEarnedAccessButton" class="text-button" type="button" hidden>Cancel round</button>
             </div>
-            <p class="muted micro-copy">Build 12 tracks task and movement rewards on this device. Automatic app selection, usage accounting, and shielding require Apple’s separate Family Controls approval.</p>
+            <p class="muted micro-copy">Automatic restrictions will need Apple’s Screen Time permission and app selection. For now, any app limits must be managed separately in iPhone Settings.</p>
           </div>
           <div class="connection-status-card apple-watch-status">
             <div class="connection-icon">⌚</div>
@@ -515,7 +522,7 @@
             <a href="privacy.html">Privacy Policy</a>
             <a href="support.html">Support</a>
           </div>
-          <p class="app-version">Daily Routine <b id="appVersion">v1.14.0</b></p>
+          <p class="app-version">Daily Routine <b id="appVersion">v1.15.0</b></p>
         </section>
 
 
@@ -573,6 +580,22 @@
       <button class="nav-button" data-view="setup" type="button"><span>⚙</span><b>Setup</b></button>
     </nav>
   </div>
+
+  <dialog id="healthSleepDialog" class="item-dialog">
+    <form id="healthSleepForm">
+      <div class="dialog-header"><h2>Confirm sleep times</h2><button id="closeHealthSleepButton" class="icon-button" type="button" aria-label="Close sleep review">×</button></div>
+      <p class="muted">Check the dates and times suggested by Apple Health. Only the entries you select below will be saved.</p>
+      <label class="toggle-field"><input id="confirmHealthBedInput" type="checkbox" checked /><span><b>Save bedtime</b><small id="healthBedExisting"></small></span></label>
+      <label class="text-field compact"><span>Bedtime date</span><input id="healthBedDateInput" type="date" required /></label>
+      <label class="text-field compact"><span>Bedtime</span><input id="healthBedTimeInput" type="time" required /></label>
+      <label class="toggle-field"><input id="confirmHealthWakeInput" type="checkbox" checked /><span><b>Save wake time</b><small id="healthWakeExisting"></small></span></label>
+      <label class="text-field compact"><span>Wake date</span><input id="healthWakeDateInput" type="date" required /></label>
+      <label class="text-field compact"><span>Wake time</span><input id="healthWakeTimeInput" type="time" required /></label>
+      <label id="repairHealthBedField" class="toggle-field" hidden><input id="repairHealthBedInput" type="checkbox" /><span><b>Remove the matching bedtime from the wake date</b><small>A matching time was saved there by an earlier version. Select this only if it belongs to the prior night.</small></span></label>
+      <p id="healthSleepReviewStatus" class="muted" aria-live="polite"></p>
+      <div class="dialog-actions"><button class="primary-button" type="submit">Confirm selected times</button></div>
+    </form>
+  </dialog>
 
   <dialog id="itemDialog" class="item-dialog">
     <form id="itemForm" method="dialog">

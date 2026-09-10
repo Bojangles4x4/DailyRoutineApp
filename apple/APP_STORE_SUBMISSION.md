@@ -1,6 +1,6 @@
 # App Store submission package
 
-This document keeps the TestFlight submission consistent with the behavior of Daily Routine 1.14.0 (build 12).
+This document keeps the TestFlight submission consistent with the behavior of Daily Routine 1.15.0 (build 13).
 
 ## URLs
 
@@ -51,8 +51,13 @@ Daily Routine is a personal organization tool and does not provide medical advic
 
 `routine,habits,planner,journal,prayer,reflection,checklist,wellness,private,watch`
 
-### Version 1.14.0 release notes
+### Version 1.15.0 release notes
 
+- Create an on-device library of truth reminders using text or pictures, then select entries or shuffle the library on a daily schedule.
+- Review Apple Health sleep suggestions before saving bedtime to the date it occurred and wake time to the following morning.
+- Keep actual-time fields and their Now buttons separated on iPhone.
+- Use a single compact Daily Routine header without a repeated Setup label.
+- See clearly that Earned Access currently tracks goals and reward countdowns without changing access to other apps.
 - Navigate with a compact Daily Routine header and a focused Setup page organized by category.
 - Use smaller wake, bedtime, schedule, and sleep-time controls that leave more room for the information that matters.
 - Earn separate morning and later app-time allowances after completing selected routines, with an optional step-based allowance too.
@@ -71,7 +76,7 @@ Daily Routine is a personal organization tool and does not provide medical advic
 - Get a gentle confirmation when logging morning medicine in the evening or evening medicine in the morning.
 - Use Notes & Thoughts, Review & Reflect, and Apple Watch progress from one private routine home.
 - Preview and manually share a daily or weekly accountability report with sensitive categories off by default.
-- Optionally add an automatic Apple Health steps goal and review sleep-derived bedtime/wake suggestions before applying them to the wake-up day.
+- Optionally add an automatic Apple Health steps goal and review sleep-derived bedtime and wake suggestions with separate calendar dates.
 - Create fully open-ended Truth Before Tasks themes using only a title, body, and Scripture.
 - Use owner-only Private sync while Health summaries and automatic step values remain device-only.
 
@@ -79,7 +84,7 @@ Daily Routine is a personal organization tool and does not provide medical advic
 
 Before a public App Store submission, update the App Privacy questionnaire for the optional Private sync implementation. When Private sync is enabled, the sign-in email address and synchronized user content are transmitted to the owner-only Supabase account row. Disclose the applicable contact-information and user-content categories as linked to the user, not used for tracking, and used only for app functionality.
 
-The following remains true for build 12:
+The following remains true for build 13:
 
 - No analytics, advertising, tracking, or third-party SDKs
 - Routine, reflection, medication, prayer, and note data is local-first and is transmitted only when the owner connects Private sync
@@ -88,6 +93,7 @@ The following remains true for build 12:
 - Watch routine snapshots remain within the iPhone/Watch apps and their shared App Group
 - Backup and export files leave the app only through an explicit user action
 - Accountability reports remain on device until the user previews and explicitly copies or shares them to a chosen destination
+- Truth-reminder text and pictures stay in the native app’s private local storage and are used only for local notifications
 
 Revisit these answers before submission if networking, cloud sync, crash reporting, analytics, or another SDK is added.
 
@@ -99,7 +105,7 @@ Revisit these answers before submission if networking, cloud sync, crash reporti
 - Not used for advertising, marketing, profiling, or data mining
 - Not stored in iCloud or included in Watch complication data
 - Included in a manual accountability report only after the user enables the separate Health switch and reviews the exact text
-- Automatic Health-based step values and Earned Access state are excluded from Private sync; sleep suggestions enter routine history only after the user chooses Apply times
+- Automatic Health-based step values and Earned Access state are excluded from Private sync; sleep suggestions enter routine history only after the user confirms selected times and dates
 
 ## TestFlight “What to Test”
 
@@ -111,21 +117,22 @@ Please test the first-run flow and verify that existing routine data remains int
 4. Create, edit, and delete an open-ended Truth Before Tasks theme using a title, body, and one to three Scripture or plain-text truth lines.
 5. Connect Apple Health, add an 8,000-step routine goal, refresh Health, and verify the item completes automatically at the target.
 6. In Setup → Health & Watch, select morning and later routine requirements and verify each allowance becomes available only after every selected task is complete. Also start an optional movement round and confirm progress begins at zero rather than using the day's total steps.
-7. Review a Health sleep suggestion and confirm Apply times fills only empty bedtime/wake fields on the day the person woke up.
+7. Review a Health sleep suggestion and confirm bedtime is saved to the date it occurred while wake time is saved to the following morning. Confirm existing entries are not selected for replacement automatically.
 8. Confirm automatic Health step values and Earned Access progress do not appear on a second device through Private sync.
 9. Verify iPhone/Watch progress sync and complication updates. Tap a specific routine, reopen it, change the bottom shortcut in iPhone Setup, and dictate each Capture type.
 10. Download a JSON backup and restore it after making a temporary change.
-11. Create daily and weekly accountability reports, verify sensitive switches are off by default, and confirm the copied/shared text exactly matches the preview.
+11. In Setup → Faith foundation → Truth reminders, add text and a picture, choose selected entries and shuffle mode in separate tests, and verify the configured local notifications appear.
+12. Create daily and weekly accountability reports, verify sensitive switches are off by default, and confirm the copied/shared text exactly matches the preview.
 
 Do not use real sensitive notes or medication details in a public bug report.
 
 ## App Review notes
 
-Daily Routine is local-first; its optional Private sync account is not required for the main routine experience. The main experience is bundled for offline use inside a native SwiftUI/WKWebView shell. Native functionality includes optional read-only HealthKit summaries and routine assistance, a user-initiated Share sheet for previewed accountability report text, Watch Connectivity quick actions, a watchOS companion, and WidgetKit complications.
+Daily Routine is local-first; its optional Private sync account is not required for the main routine experience. The main experience is bundled for offline use inside a native SwiftUI/WKWebView shell. Native functionality includes optional read-only HealthKit summaries and routine assistance, local truth reminders chosen and scheduled by the user, a user-initiated Share sheet for previewed accountability report text, Watch Connectivity quick actions, a watchOS companion, and WidgetKit complications.
 
 Health access is requested only from Setup after the reviewer taps Connect Health. The app requests read access for steps, sleep, and workouts and does not write HealthKit data.
 
-Earned Access is an on-device routine-and-step reward tracker that complements separately configured Screen Time limits. Build 12 does not automatically select, block, unblock, measure usage in, or extend access to another app because the app does not yet have Apple's Family Controls entitlement.
+Earned Access is an on-device routine-and-step reward tracker that complements separately configured Screen Time limits. Build 13 explicitly identifies this as a manual tracker. It does not automatically select, block, unblock, measure usage in, or extend access to another app because the app does not yet have Apple's Family Controls entitlement.
 
 Watch actions remain locked until the reviewer completes the Morning Foundation opening on iPhone. A medication routine tapped on Watch records the current time; tapping the completed row again reopens it.
 

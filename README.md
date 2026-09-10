@@ -2,9 +2,13 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.14.0 features
+## Version 1.15.0 features
 
-- A compact, consistent Daily Routine header with a contextual screen subtitle
+- One clean Daily Routine header without a repeated screen subtitle
+- A native truth-reminder library for text and pictures, with selected or shuffled notifications and a configurable daily schedule
+- Reviewable Apple Health sleep suggestions that save bedtime to the date it occurred and wake time to the following morning
+- Phone-safe actual-time fields that keep the time and Now button from overlapping
+- Clear Earned Access language identifying the current feature as a manual reward tracker while Screen Time enforcement awaits Apple approval
 - A calmer Setup landing page organized into Routine, Appearance, Faith, Health, and Data sections
 - Compact wake, bedtime, schedule, and sleep-time controls that preserve phone space
 - Morning and later Earned Access stages based on selected routine completion, with separate configurable rewards
@@ -21,7 +25,7 @@ A mobile-first private routine and mood tracker designed to run as a Progressive
 - Open-ended Truth Before Tasks themes with a title, body, and Scripture instead of required content categories
 - Fixed bottom navigation that remains visible while scrolling
 - Compact, phone-safe medication and schedule time controls
-- Health sleep suggestions stored together on the day the person woke up
+- Health sleep suggestions confirmed with separate bedtime and wake dates
 - Gentle confirmation for morning medication logged in the evening or evening medication logged in the morning
 - Right- or left-handed routine control placement, configurable in Setup
 - Larger phone tap targets for checkboxes, rating buttons, and small routine actions

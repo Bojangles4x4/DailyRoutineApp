@@ -1,4 +1,4 @@
-const CACHE_NAME = 'daily-routine-v1-14-0-build-12-clean-routines';
+const CACHE_NAME = 'daily-routine-v1-15-0-build-13-feedback-fixes';
 const ASSETS = ['./','./index.html','./styles.css','./sync-core.js','./sync-cloud.js','./app.js','./manifest.webmanifest','./icon-192.png','./icon-512.png','./privacy.html','./support.html','./legal.css'];
 
 self.addEventListener('install', event => {

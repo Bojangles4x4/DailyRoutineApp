@@ -37,7 +37,7 @@ function localDateKey(date = new Date()) {
 
   await page.locator('[data-view="setup"]').click();
   assert.equal((await page.locator('#pageTitle').textContent()).trim(), 'Daily Routine');
-  assert.equal((await page.locator('#pageContext').textContent()).trim(), 'Setup');
+  assert.equal(await page.locator('#pageContext').count(), 0);
   assert.equal(await page.locator('#setupOverview').isVisible(), true);
   await page.locator('[data-setup-target="health"]').click();
   assert.ok(await page.locator('#appleWatchQuickActionInput option').count() > 1);
@@ -56,7 +56,8 @@ function localDateKey(date = new Date()) {
   await page.locator('#earnedAccessMinutesInput').fill('20');
   await page.locator('#earnedAccessModeInput').selectOption('fixed');
   await page.locator('#startEarnedAccessButton').click();
-  assert.equal((await page.locator('#earnedAccessStatus').textContent()).trim(), 'Reddit paused');
+  assert.equal((await page.locator('#earnedAccessStatus').textContent()).trim(), 'Reddit step goal');
+  assert.match(await page.locator('.earned-access-disclosure').textContent(), /app blocking is off/);
   assert.match(await page.locator('#earnedAccessDetail').textContent(), /0 \/ 1,000/);
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('dailyRoutine.earnedAccess.device.v1')).active.baselineSteps), 4820);
 
@@ -68,7 +69,7 @@ function localDateKey(date = new Date()) {
     window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'health.summary', value: { date: new Date().toISOString(), stepCount: 5820, sleepHours: 0, workoutCount: 0 } } }));
   });
   assert.equal((await page.locator('#earnedAccessStatus').textContent()).trim(), '20 minutes earned');
-  assert.equal((await page.locator('#earnedAccessBadge').textContent()).trim(), 'Access earned');
+  assert.equal((await page.locator('#earnedAccessBadge').textContent()).trim(), 'Reward earned');
   const earnedAccessData = await page.evaluate(key => {
     const device = JSON.parse(localStorage.getItem('dailyRoutine.earnedAccess.device.v1'));
     const syncedState = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
@@ -86,6 +87,8 @@ function localDateKey(date = new Date()) {
   assert.ok(earnedAccessLayout.right <= earnedAccessLayout.viewport);
   await page.locator('#setupBackButton').click();
   await page.locator('[data-setup-target="faith"]').click();
+  await page.locator('#openTruthRemindersButton').click();
+  assert.equal(await page.evaluate(() => window.__dailyRoutineNativeMessages.at(-1).action), 'truth.reminders.open');
   assert.match(await page.locator('#truthCoreInput').inputValue(), /Faithfulness, not infallibility/);
   assert.match(await page.locator('#truthCoreInput').inputValue(), /I do not need to agonize over every choice/);
   await page.locator('#createTruthThemeButton').click();
@@ -124,7 +127,7 @@ function localDateKey(date = new Date()) {
   });
   if (process.env.DAILY_ROUTINE_SCREENSHOT_DIR) {
     await page.evaluate(() => window.scrollTo(0, 0));
-    await page.screenshot({ path: `${process.env.DAILY_ROUTINE_SCREENSHOT_DIR}/daily-routine-build12-setup.png` });
+    await page.screenshot({ path: `${process.env.DAILY_ROUTINE_SCREENSHOT_DIR}/daily-routine-build13-setup.png` });
   }
 
   await page.evaluate(key => {
@@ -137,12 +140,12 @@ function localDateKey(date = new Date()) {
   for (let index = 0; index < 5; index += 1) await page.locator('#truthContinueButton').click();
   assert.equal(await page.locator('#truthHeroTitle').textContent(), 'Convictions Before Circumstances');
   assert.equal((await page.locator('#pageTitle').textContent()).trim(), 'Daily Routine');
-  assert.equal((await page.locator('#pageContext').textContent()).trim(), 'Morning foundation');
+  assert.equal(await page.locator('#pageContext').count(), 0);
   assert.match(await page.locator('#truthStepBody').textContent(), /Choose faithfulness over urgency/);
   assert.match(await page.locator('#truthStepBody').textContent(), /Proverbs 16:9/);
   assert.equal(await page.locator('#truthEnterDayButton').isDisabled(), true);
   if (process.env.DAILY_ROUTINE_SCREENSHOT_DIR) {
-    await page.screenshot({ path: `${process.env.DAILY_ROUTINE_SCREENSHOT_DIR}/daily-routine-build12-convictions.png` });
+    await page.screenshot({ path: `${process.env.DAILY_ROUTINE_SCREENSHOT_DIR}/daily-routine-build13-convictions.png` });
   }
 
   await page.evaluate(key => {
@@ -209,14 +212,39 @@ function localDateKey(date = new Date()) {
     window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'health.summary', value: { date: new Date().toISOString(), stepCount: 0, sleepHours: 7.8, workoutCount: 0, sleepStart: start, sleepEnd: end } } }));
   }, { start: sleepStart.toISOString(), end: sleepEnd.toISOString() });
   await page.locator('#applyHealthSleepButton').click();
+  assert.equal(await page.locator('#healthSleepDialog').isVisible(), true);
+  assert.equal(await page.locator('#healthBedDateInput').inputValue(), localDateKey(sleepStart));
+  assert.equal(await page.locator('#healthWakeDateInput').inputValue(), localDateKey(sleepEnd));
+  assert.equal(await page.locator('#actualWakeInput').inputValue(), '');
+  await page.locator('#healthSleepForm button[type="submit"]').click();
   const sleepDays = await page.evaluate(({ wakeKey, priorKey }) => {
     const state = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
     return { wake: state.days[wakeKey], prior: state.days[priorKey] };
   }, { wakeKey: localDateKey(sleepEnd), priorKey: localDateKey(sleepStart) });
   assert.equal(sleepDays.wake.actualWakeTime, '06:45');
-  assert.equal(sleepDays.wake.actualBedTime, '22:55');
-  assert.equal(sleepDays.prior?.actualBedTime, undefined);
+  assert.equal(sleepDays.wake.actualBedTime, undefined);
+  assert.equal(sleepDays.prior?.actualBedTime, '22:55');
   assert.doesNotMatch(await page.locator('.actual-time-card .micro-copy').textContent(), /medication/i);
+
+  // A second review preserves existing times unless the person explicitly chooses replacement.
+  await page.locator('#applyHealthSleepButton').click();
+  assert.equal(await page.locator('#confirmHealthBedInput').isChecked(), false);
+  assert.equal(await page.locator('#confirmHealthWakeInput').isChecked(), false);
+  await page.locator('#healthSleepForm button[type="submit"]').click();
+  assert.match(await page.locator('#healthSleepReviewStatus').textContent(), /Select at least one/);
+  await page.locator('#closeHealthSleepButton').click();
+
+  // Actual sleep fields remain separate from Now at phone widths, including 12-hour text.
+  for (const width of [320, 390, 440]) {
+    await page.setViewportSize({ width, height: 844 });
+    const timeRows = await page.locator('.actual-time-field').evaluateAll(rows => rows.map(row => {
+      const input = row.querySelector('input').getBoundingClientRect();
+      const button = row.querySelector('button').getBoundingClientRect();
+      return { right: input.right, buttonLeft: button.left, buttonRight: button.right, viewport: innerWidth };
+    }));
+    timeRows.forEach(row => { assert.ok(row.right + 8 <= row.buttonLeft); assert.ok(row.buttonRight <= row.viewport); });
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
 
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   const navPosition = await page.locator('.bottom-nav').evaluate(node => {
