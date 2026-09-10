@@ -1,6 +1,6 @@
 # App Store submission package
 
-This document keeps the TestFlight submission consistent with the behavior of Daily Routine 1.15.0 (build 13).
+This document records the planned TestFlight submission behavior for Daily Routine 1.16.0 (build 14). Family Controls distribution remains blocked until Apple assigns the required entitlement.
 
 ## URLs
 
@@ -51,13 +51,14 @@ Daily Routine is a personal organization tool and does not provide medical advic
 
 `routine,habits,planner,journal,prayer,reflection,checklist,wellness,private,watch`
 
-### Version 1.15.0 release notes
+### Version 1.16.0 draft release notes
 
+- Privately choose apps, categories, or websites through Apple's Screen Time picker and verify a real on-device shield in the development build.
 - Create an on-device library of truth reminders using text or pictures, then select entries or shuffle the library on a daily schedule.
 - Review Apple Health sleep suggestions before saving bedtime to the date it occurred and wake time to the following morning.
 - Keep actual-time fields and their Now buttons separated on iPhone.
 - Use a single compact Daily Routine header without a repeated Setup label.
-- See clearly that Earned Access currently tracks goals and reward countdowns without changing access to other apps.
+- Keep the existing Earned Access tracker separate while the physical-device shield test and automatic timed relocking are completed.
 - Navigate with a compact Daily Routine header and a focused Setup page organized by category.
 - Use smaller wake, bedtime, schedule, and sleep-time controls that leave more room for the information that matters.
 - Earn separate morning and later app-time allowances after completing selected routines, with an optional step-based allowance too.
@@ -84,12 +85,13 @@ Daily Routine is a personal organization tool and does not provide medical advic
 
 Before a public App Store submission, update the App Privacy questionnaire for the optional Private sync implementation. When Private sync is enabled, the sign-in email address and synchronized user content are transmitted to the owner-only Supabase account row. Disclose the applicable contact-information and user-content categories as linked to the user, not used for tracking, and used only for app functionality.
 
-The following remains true for build 13:
+The following remains true for the planned build 14:
 
 - No analytics, advertising, tracking, or third-party SDKs
 - Routine, reflection, medication, prayer, and note data is local-first and is transmitted only when the owner connects Private sync
 - Apple Health data is read only after user authorization, summarized on device, and not transmitted off device
 - Earned Access baselines, progress, and earned-time state remain on the device and are excluded from Private sync
+- Family Controls authorization, opaque selection tokens, and Managed Settings shield state remain on the device and are excluded from Private sync
 - Watch routine snapshots remain within the iPhone/Watch apps and their shared App Group
 - Backup and export files leave the app only through an explicit user action
 - Accountability reports remain on device until the user previews and explicitly copies or shares them to a chosen destination
@@ -132,7 +134,7 @@ Daily Routine is local-first; its optional Private sync account is not required 
 
 Health access is requested only from Setup after the reviewer taps Connect Health. The app requests read access for steps, sleep, and workouts and does not write HealthKit data.
 
-Earned Access is an on-device routine-and-step reward tracker that complements separately configured Screen Time limits. Build 13 explicitly identifies this as a manual tracker. It does not automatically select, block, unblock, measure usage in, or extend access to another app because the app does not yet have Apple's Family Controls entitlement.
+Earned Access includes a development-only Family Controls test with individual authorization, Apple's private app and website picker, and explicit controls to apply and remove a Managed Settings shield. Daily Routine stores only Apple's opaque selection tokens and does not receive selected app names or browsing history. The routine and step tracker is not yet connected to automatic shielding or timed relocking. Do not upload build 14 until Apple assigns the Family Controls distribution entitlement to every participating target and the final behavior passes physical-device testing.
 
 Watch actions remain locked until the reviewer completes the Morning Foundation opening on iPhone. A medication routine tapped on Watch records the current time; tapping the completed row again reopens it.
 

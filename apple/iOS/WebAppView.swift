@@ -87,6 +87,10 @@ struct WebAppView: UIViewRepresentable {
             }
 
             switch action {
+            case .openEarnedAccessControls:
+                guard let webView else { return }
+                let controller = UIHostingController(rootView: EarnedAccessControlView(store: model.earnedAccess))
+                present(controller, from: webView) { }
             case .openTruthReminders:
                 guard let webView else { return }
                 let controller = UIHostingController(rootView: TruthReminderView(store: model.reminders))
@@ -139,6 +143,7 @@ struct WebAppView: UIViewRepresentable {
                 name: "native.ready",
                 value: [
                     "healthAvailable": model.health.isAvailable,
+                    "earnedAccessAvailable": true,
                     "watchReachable": model.watch.isReachable,
                     "watchInstalled": model.watch.isWatchAppInstalled
                 ]

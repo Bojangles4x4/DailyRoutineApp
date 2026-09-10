@@ -57,7 +57,9 @@ function localDateKey(date = new Date()) {
   await page.locator('#earnedAccessModeInput').selectOption('fixed');
   await page.locator('#startEarnedAccessButton').click();
   assert.equal((await page.locator('#earnedAccessStatus').textContent()).trim(), 'Reddit step goal');
-  assert.match(await page.locator('.earned-access-disclosure').textContent(), /app blocking is off/);
+  assert.match(await page.locator('.earned-access-disclosure').textContent(), /Screen Time blocking/);
+  await page.locator('#openEarnedAccessControlsButton').click();
+  assert.equal(await page.evaluate(() => window.__dailyRoutineNativeMessages.at(-1).action), 'earned.access.controls.open');
   assert.match(await page.locator('#earnedAccessDetail').textContent(), /0 \/ 1,000/);
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('dailyRoutine.earnedAccess.device.v1')).active.baselineSteps), 4820);
 

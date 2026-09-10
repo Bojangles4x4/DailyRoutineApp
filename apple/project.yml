@@ -8,8 +8,8 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
     CODE_SIGN_STYLE: Automatic
-    MARKETING_VERSION: "1.15.0"
-    CURRENT_PROJECT_VERSION: "13"
+    MARKETING_VERSION: "1.16.0"
+    CURRENT_PROJECT_VERSION: "14"
 schemes:
   DailyRoutine:
     build:
@@ -73,6 +73,7 @@ targets:
     entitlements:
       path: Config/DailyRoutine.entitlements
       properties:
+        com.apple.developer.family-controls: true
         com.apple.developer.healthkit: true
     settings:
       base:

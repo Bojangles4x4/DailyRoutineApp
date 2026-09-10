@@ -407,13 +407,17 @@
           </div>
           <p class="muted micro-copy">Automatic step values stay on this device and are excluded from Private sync.</p>
           <div class="earned-access-card" id="earnedAccessCard">
-            <p class="earned-access-disclosure"><strong>Manual reward tracker · app blocking is off</strong><span>Amazon and your other apps stay accessible. This tracks your goal and a countdown; it cannot lock apps or measure time spent in them yet.</span></p>
+            <div class="earned-access-disclosure">
+              <strong>Screen Time blocking · local test</strong>
+              <span id="earnedAccessNativeStatus">Authorize Screen Time and privately choose an app to test Apple’s real blocking screen.</span>
+              <button id="openEarnedAccessControlsButton" class="secondary-button" type="button">Choose & test app blocking</button>
+            </div>
             <div class="earned-access-heading">
               <div><strong>Earned Access</strong><span>Complete selected routines or walk additional steps to earn focused app time.</span></div>
               <span id="earnedAccessBadge" class="privacy-pill">Ready</span>
             </div>
             <div class="earned-access-fields">
-              <label class="text-field compact earned-access-app-field"><span>Apps or activities</span><input id="earnedAccessLabelInput" type="text" maxlength="80" value="Amazon, Reddit, Instagram" placeholder="Amazon, Reddit, Instagram" /><small class="field-help">Choose multiple apps after Family Controls approval; names are used for tracking until then.</small></label>
+              <label class="text-field compact earned-access-app-field"><span>Reward label</span><input id="earnedAccessLabelInput" type="text" maxlength="80" value="Selected apps" placeholder="Selected apps" /><small class="field-help">The actual apps are selected privately in Apple’s Screen Time picker above.</small></label>
               <label class="text-field compact"><span>Steps per round</span><input id="earnedAccessStepsInput" type="number" min="100" max="20000" step="50" inputmode="numeric" value="1000" /></label>
               <label class="text-field compact"><span>Minutes earned</span><input id="earnedAccessMinutesInput" type="number" min="1" max="120" step="5" inputmode="numeric" value="20" /></label>
               <label class="text-field compact"><span>Step pattern</span><select id="earnedAccessModeInput"><option value="fixed">Same goal each round</option><option value="escalating">Escalate 750 → 1,000 → 1,500</option></select></label>
@@ -440,7 +444,7 @@
               <button id="checkEarnedAccessButton" class="secondary-button" type="button">Check progress</button>
               <button id="cancelEarnedAccessButton" class="text-button" type="button" hidden>Cancel round</button>
             </div>
-            <p class="muted micro-copy">Automatic restrictions will need Apple’s Screen Time permission and app selection. For now, any app limits must be managed separately in iPhone Settings.</p>
+            <p class="muted micro-copy">This local development test can apply and remove a real shield. Connecting it to completed routines and automatic timed relocking is the next implementation stage.</p>
           </div>
           <div class="connection-status-card apple-watch-status">
             <div class="connection-icon">⌚</div>
@@ -522,7 +526,7 @@
             <a href="privacy.html">Privacy Policy</a>
             <a href="support.html">Support</a>
           </div>
-          <p class="app-version">Daily Routine <b id="appVersion">v1.15.0</b></p>
+          <p class="app-version">Daily Routine <b id="appVersion">v1.16.0</b></p>
         </section>
 
 
