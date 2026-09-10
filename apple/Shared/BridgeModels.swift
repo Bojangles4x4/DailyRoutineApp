@@ -14,6 +14,7 @@ struct HealthSummary: Codable, Sendable {
     let workoutCount: Int
     let sleepStart: Date?
     let sleepEnd: Date?
+    let sourceNames: [String]
 }
 
 enum WatchQuickAction: String, Codable, CaseIterable, Identifiable, Sendable {

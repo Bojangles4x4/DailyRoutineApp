@@ -36,6 +36,10 @@ function localDateKey(date = new Date()) {
   await page.reload({ waitUntil: 'networkidle' });
 
   await page.locator('[data-view="setup"]').click();
+  assert.equal((await page.locator('#pageTitle').textContent()).trim(), 'Daily Routine');
+  assert.equal((await page.locator('#pageContext').textContent()).trim(), 'Setup');
+  assert.equal(await page.locator('#setupOverview').isVisible(), true);
+  await page.locator('[data-setup-target="health"]').click();
   assert.ok(await page.locator('#appleWatchQuickActionInput option').count() > 1);
   await page.locator('#appleWatchQuickActionInput').selectOption('routine:morning-meds');
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('dailyRoutineApp.v1')).settings.watchQuickAction), 'routine:morning-meds');
@@ -44,8 +48,9 @@ function localDateKey(date = new Date()) {
   assert.equal(watchContext.customAction.itemId, 'morning-meds');
 
   await page.evaluate(() => {
-    window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'health.summary', value: { date: new Date().toISOString(), stepCount: 4820, sleepHours: 0, workoutCount: 0 } } }));
+    window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'health.summary', value: { date: new Date().toISOString(), stepCount: 4820, sleepHours: 0, workoutCount: 0, sourceNames: ['Garmin Connect', 'Apple Watch'] } } }));
   });
+  assert.match(await page.locator('#healthSourceDetail').textContent(), /Garmin Connect/);
   await page.locator('#earnedAccessLabelInput').fill('Reddit');
   await page.locator('#earnedAccessStepsInput').fill('1000');
   await page.locator('#earnedAccessMinutesInput').fill('20');
@@ -79,6 +84,10 @@ function localDateKey(date = new Date()) {
   });
   assert.ok(earnedAccessLayout.left >= 0);
   assert.ok(earnedAccessLayout.right <= earnedAccessLayout.viewport);
+  await page.locator('#setupBackButton').click();
+  await page.locator('[data-setup-target="faith"]').click();
+  assert.match(await page.locator('#truthCoreInput').inputValue(), /Faithfulness, not infallibility/);
+  assert.match(await page.locator('#truthCoreInput').inputValue(), /I do not need to agonize over every choice/);
   await page.locator('#createTruthThemeButton').click();
   assert.equal(await page.locator('#truthThemeForm').isVisible(), true);
   assert.equal(await page.locator('#truthWhoGodInput').count(), 0);
@@ -101,7 +110,9 @@ function localDateKey(date = new Date()) {
   await page.locator('#saveConvictionsButton').click();
   assert.equal((await page.locator('#convictionStatus').textContent()).trim(), '2 active');
 
-  const setupTimeLayout = await page.locator('.daily-time-fields').evaluate(node => {
+  await page.locator('#setupBackButton').click();
+  await page.locator('[data-setup-target="routine"]').click();
+  const setupTimeLayout = await page.locator('.daily-anchor-list').evaluate(node => {
     const card = node.closest('.card').getBoundingClientRect();
     const inputs = [...node.querySelectorAll('input')].map(input => input.getBoundingClientRect());
     return { cardLeft: card.left, cardRight: card.right, inputs: inputs.map(rect => ({ left: rect.left, right: rect.right, height: rect.height })) };
@@ -109,10 +120,11 @@ function localDateKey(date = new Date()) {
   setupTimeLayout.inputs.forEach(rect => {
     assert.ok(rect.left >= setupTimeLayout.cardLeft);
     assert.ok(rect.right <= setupTimeLayout.cardRight);
-    assert.equal(Math.round(rect.height), 44);
+    assert.equal(Math.round(rect.height), 38);
   });
   if (process.env.DAILY_ROUTINE_SCREENSHOT_DIR) {
-    await page.screenshot({ path: `${process.env.DAILY_ROUTINE_SCREENSHOT_DIR}/daily-routine-build11-setup.png`, fullPage: true });
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: `${process.env.DAILY_ROUTINE_SCREENSHOT_DIR}/daily-routine-build12-setup.png` });
   }
 
   await page.evaluate(key => {
@@ -124,11 +136,13 @@ function localDateKey(date = new Date()) {
   await page.reload({ waitUntil: 'networkidle' });
   for (let index = 0; index < 5; index += 1) await page.locator('#truthContinueButton').click();
   assert.equal(await page.locator('#truthHeroTitle').textContent(), 'Convictions Before Circumstances');
+  assert.equal((await page.locator('#pageTitle').textContent()).trim(), 'Daily Routine');
+  assert.equal((await page.locator('#pageContext').textContent()).trim(), 'Morning foundation');
   assert.match(await page.locator('#truthStepBody').textContent(), /Choose faithfulness over urgency/);
   assert.match(await page.locator('#truthStepBody').textContent(), /Proverbs 16:9/);
   assert.equal(await page.locator('#truthEnterDayButton').isDisabled(), true);
   if (process.env.DAILY_ROUTINE_SCREENSHOT_DIR) {
-    await page.screenshot({ path: `${process.env.DAILY_ROUTINE_SCREENSHOT_DIR}/daily-routine-build11-convictions.png` });
+    await page.screenshot({ path: `${process.env.DAILY_ROUTINE_SCREENSHOT_DIR}/daily-routine-build12-convictions.png` });
   }
 
   await page.evaluate(key => {
@@ -140,6 +154,25 @@ function localDateKey(date = new Date()) {
     localStorage.setItem('dailyRoutineApp.v1', JSON.stringify(state));
   }, today);
   await page.reload({ waitUntil: 'networkidle' });
+
+  await page.locator('[data-view="setup"]').click();
+  await page.evaluate(key => {
+    const state = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
+    state.days[key].entries['morning-prayer'] = true;
+    state.days[key].entries['morning-teeth'] = true;
+    localStorage.setItem('dailyRoutineApp.v1', JSON.stringify(state));
+    localStorage.removeItem('dailyRoutine.earnedAccess.device.v1');
+  }, today);
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.locator('[data-view="setup"]').click();
+  await page.locator('[data-setup-target="health"]').click();
+  assert.equal((await page.locator('#earnedAccessMorningStatus').textContent()).trim(), 'All selected tasks complete');
+  assert.equal(await page.locator('#startEarnedAccessMorningButton').isDisabled(), false);
+  await page.locator('#startEarnedAccessMorningButton').click();
+  const stagedAccess = await page.evaluate(key => JSON.parse(localStorage.getItem('dailyRoutine.earnedAccess.device.v1')).stageClaimsByDate[key], today);
+  assert.ok(stagedAccess.morning);
+  assert.equal((await page.locator('#earnedAccessMorningStatus').textContent()).includes('Available until'), true);
+  await page.locator('[data-view="today"]').click();
 
   await page.evaluate(() => {
     window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'watch.event', value: { id: 'watch-toggle-1', action: 'toggleRoutine', itemId: 'day-movement' } } }));

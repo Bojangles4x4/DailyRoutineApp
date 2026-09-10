@@ -57,6 +57,7 @@ final class HealthKitService {
         async let steps = fetchSteps(now: now)
         async let sleep = fetchRecentSleep(now: now)
         async let workouts = fetchWorkoutCount(now: now)
+        async let sources = fetchSourceNames(now: now)
 
         return try await HealthSummary(
             date: now,
@@ -64,7 +65,8 @@ final class HealthKitService {
             sleepHours: sleep.hours,
             workoutCount: workouts,
             sleepStart: sleep.start,
-            sleepEnd: sleep.end
+            sleepEnd: sleep.end,
+            sourceNames: sources
         )
     }
 
@@ -145,6 +147,25 @@ final class HealthKitService {
         let predicate = HKQuery.predicateForSamples(withStart: start, end: now)
         let workouts: [HKWorkout] = try await samples(type: .workoutType(), predicate: predicate)
         return workouts.count
+    }
+
+    private func fetchSourceNames(now: Date) async throws -> [String] {
+        let start = Calendar.current.date(byAdding: .hour, value: -36, to: now) ?? Calendar.current.startOfDay(for: now)
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: now)
+        var names = Set<String>()
+
+        if let stepType {
+            let stepSamples: [HKQuantitySample] = try await samples(type: stepType, predicate: predicate)
+            stepSamples.forEach { names.insert($0.sourceRevision.source.name) }
+        }
+        if let sleepType {
+            let sleepSamples: [HKCategorySample] = try await samples(type: sleepType, predicate: predicate)
+            sleepSamples.forEach { names.insert($0.sourceRevision.source.name) }
+        }
+        let workouts: [HKWorkout] = try await samples(type: .workoutType(), predicate: predicate)
+        workouts.forEach { names.insert($0.sourceRevision.source.name) }
+
+        return names.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }.sorted()
     }
 
     private func samples<T: HKSample>(type: HKSampleType, predicate: NSPredicate) async throws -> [T] {

@@ -15,9 +15,12 @@
   <div class="background-overlay" aria-hidden="true"></div>
   <div class="app-shell">
     <header class="topbar">
-      <div>
-        <p class="eyebrow" id="todayEyebrow">Daily Routine</p>
-        <h1 id="pageTitle">Today</h1>
+      <div class="topbar-brand">
+        <span class="topbar-mark" aria-hidden="true">☀</span>
+        <div>
+          <h1 id="pageTitle">Daily Routine</h1>
+          <p id="pageContext">Today</p>
+        </div>
       </div>
       <button class="icon-button" id="installButton" type="button" hidden aria-label="Install app">＋</button>
     </header>
@@ -96,9 +99,9 @@
 
         <section class="card actual-time-card">
           <div class="section-heading"><div><p class="eyebrow">Timing</p><h2>Actual sleep times</h2></div><span class="section-progress">for this day</span></div>
-          <div class="actual-time-grid">
-            <label class="actual-time-field"><span>Woke up</span><div><input id="actualWakeInput" type="time" /><button id="wakeNowButton" class="small-button" type="button">Now</button></div></label>
-            <label class="actual-time-field"><span>Went to bed</span><div><input id="actualBedInput" type="time" /><button id="bedNowButton" class="small-button" type="button">Now</button></div></label>
+          <div class="actual-time-grid compact-time-grid">
+            <label class="actual-time-field compact-time-field"><span>Woke up</span><div><input id="actualWakeInput" type="time" /><button id="wakeNowButton" class="small-button" type="button">Now</button></div></label>
+            <label class="actual-time-field compact-time-field"><span>Went to bed</span><div><input id="actualBedInput" type="time" /><button id="bedNowButton" class="small-button" type="button">Now</button></div></label>
           </div>
           <p class="muted micro-copy">Sleep is filed under the day you woke up. The bedtime belongs to the night before that morning.</p>
           <div id="healthSleepSuggestion" class="health-sleep-suggestion" hidden>
@@ -285,16 +288,33 @@
       </section>
 
       <section id="setupView" class="view" aria-labelledby="pageTitle">
-        <section class="card">
-          <div class="section-heading"><div><p class="eyebrow">Schedule</p><h2>Daily times</h2></div></div>
-          <div class="two-column-fields daily-time-fields">
-            <label class="text-field compact"><span>Wake-up time</span><input id="wakeTimeInput" type="time" /></label>
-            <label class="text-field compact"><span>Bedtime target</span><input id="bedTimeInput" type="time" /></label>
+        <section id="setupOverview" class="setup-overview" aria-label="Setup categories">
+          <header class="setup-overview-heading"><div><p class="eyebrow">Setup</p><h2>Everything in its place</h2></div><span>All saved</span></header>
+          <p class="muted setup-overview-intro">Choose a section instead of searching through one long settings screen.</p>
+          <div class="setup-group"><p>Your day</p><div class="setup-category-list">
+            <button type="button" data-setup-target="routine"><span class="setup-category-icon">◷</span><span><b>Routine & schedule</b><small id="setupScheduleSummary">Wake 6:00 AM · Bed 10:30 PM</small></span><i>›</i></button>
+            <button type="button" data-setup-target="appearance"><span class="setup-category-icon">✦</span><span><b>Appearance & accessibility</b><small id="setupAppearanceSummary">Calm theme · Right-handed controls</small></span><i>›</i></button>
+          </div></div>
+          <div class="setup-group"><p>Foundation & connections</p><div class="setup-category-list">
+            <button type="button" data-setup-target="faith"><span class="setup-category-icon warm">☼</span><span><b>Faith foundation</b><small id="setupFaithSummary">Truth Before Tasks · Convictions</small></span><i>›</i></button>
+            <button type="button" data-setup-target="health"><span class="setup-category-icon">♡</span><span><b>Health, Watch & connections</b><small id="setupHealthSummary">Apple Health, Watch, and linked actions</small></span><i>›</i></button>
+          </div></div>
+          <div class="setup-group"><p>Account</p><div class="setup-category-list">
+            <button type="button" data-setup-target="data"><span class="setup-category-icon">✓</span><span><b>Data, sync & privacy</b><small id="setupDataSummary">Private sync, backups, and sharing</small></span><i>›</i></button>
+          </div></div>
+        </section>
+        <div id="setupCategoryBar" class="setup-category-bar" hidden><button id="setupBackButton" class="small-button" type="button">‹ Setup</button><strong id="setupCategoryTitle">Routine & schedule</strong></div>
+
+        <section class="card setup-section-card schedule-settings-card" data-setup-category="routine">
+          <div class="section-heading"><div><p class="eyebrow">Schedule</p><h2>Daily anchors</h2></div><span class="section-progress">Tap a time to change it</span></div>
+          <div class="daily-anchor-list">
+            <label class="daily-anchor-row"><span class="daily-anchor-icon" aria-hidden="true">☀</span><span class="daily-anchor-copy"><b>Wake-up target</b><small>Starts your morning routine</small></span><input id="wakeTimeInput" type="time" aria-label="Wake-up target" /></label>
+            <label class="daily-anchor-row"><span class="daily-anchor-icon bedtime" aria-hidden="true">☾</span><span class="daily-anchor-copy"><b>Bedtime target</b><small>Closes your daily routine</small></span><input id="bedTimeInput" type="time" aria-label="Bedtime target" /></label>
           </div>
           <label class="toggle-field schedule-toggle"><input id="badgeEnabledInput" type="checkbox" /><span><b>Home Screen progress badge</b><small>When supported by your installed web app, show the number of required items still remaining today.</small></span></label>
         </section>
 
-        <section class="card">
+        <section class="card" data-setup-category="routine">
           <div class="section-heading"><div><p class="eyebrow">Streaks</p><h2>Make streaks fit real life</h2></div></div>
           <div class="two-column-fields">
             <label class="text-field compact"><span>Completion needed</span><div class="percent-input"><input id="streakThresholdInput" type="number" min="1" max="100" step="1" /><b>%</b></div></label>
@@ -303,7 +323,7 @@
           <label class="toggle-field schedule-toggle"><input id="streakWeekdaysOnlyInput" type="checkbox" /><span><b>Weekdays-only streak</b><small>Saturday and Sunday are ignored when calculating the streak.</small></span></label>
         </section>
 
-        <section class="card">
+        <section class="card" data-setup-category="appearance">
           <div class="section-heading"><div><p class="eyebrow">Personalize</p><h2>Make it yours</h2></div></div>
           <label class="text-field compact"><span>Theme</span><select id="themeInput">
             <option value="calm">Calm</option><option value="sunrise">Sunrise</option><option value="dusk">Dusk</option><option value="minimal">Minimal</option><option value="midnight">Midnight</option>
@@ -315,7 +335,7 @@
           <p class="muted setup-help">A background photo stays only on this device. It is compressed before being saved.</p>
         </section>
 
-        <section class="card handedness-card">
+        <section class="card handedness-card" data-setup-category="appearance">
           <div class="section-heading"><div><p class="eyebrow">Accessibility</p><h2>One-handed controls</h2></div></div>
           <label class="text-field compact"><span>Preferred hand</span><select id="handednessInput">
             <option value="right">Right-handed · checks on right</option>
@@ -325,13 +345,13 @@
           <p class="muted setup-help">Keeps checks and bulk-complete controls near your thumb, while moving Skip to the opposite side to prevent accidental taps. Date arrows stay standard.</p>
         </section>
 
-        <section class="card">
+        <section class="card" data-setup-category="appearance">
           <div class="section-heading"><div><p class="eyebrow">Gentle reminders</p><h2>God Moment resurfacing</h2></div></div>
           <label class="text-field compact"><span>How often?</span><select id="resurfacingFrequencyInput"><option value="occasional">Occasionally</option><option value="weekly">Once a week</option><option value="never">Never</option></select></label>
           <p class="muted setup-help">Only God Moments individually marked for resurfacing can appear on Today.</p>
         </section>
 
-        <section class="card connections-card" id="connectionsCard">
+        <section class="card connections-card" id="connectionsCard" data-setup-category="health">
           <div class="section-heading"><div><p class="eyebrow">Connections</p><h2>Apps & smart actions</h2></div><button id="syncConnectionsButton" class="small-button" type="button">Sync now</button></div>
           <p class="muted setup-help">Link routine items to the Bible plan, websites, iPhone Shortcuts, calls, texts, email, Maps, or another part of this app.</p>
           <div class="connection-status-card">
@@ -357,7 +377,7 @@
           </div>
         </section>
 
-        <section class="card apple-native-card" id="appleNativeCard" hidden>
+        <section class="card apple-native-card" id="appleNativeCard" data-setup-category="health" hidden>
           <div class="section-heading"><div><p class="eyebrow">Apple integration</p><h2>Health & Watch</h2></div><span class="native-badge">Native app</span></div>
           <p class="muted setup-help">Connect only the health categories you choose. Daily Routine reads a small summary and never silently changes your routine.</p>
           <div class="apple-health-grid">
@@ -366,6 +386,10 @@
             <div><strong id="appleWorkoutCount">—</strong><span>Workouts</span></div>
           </div>
           <p id="appleHealthStatus" class="muted setup-help">Health access has not been requested.</p>
+          <div id="healthSourceSummary" class="health-source-summary" hidden>
+            <div><strong>Health data sources</strong><span id="healthSourceDetail">Apple Health</span></div>
+            <span class="privacy-pill">Through Health</span>
+          </div>
           <div class="connection-actions">
             <button id="connectAppleHealthButton" class="primary-button" type="button">Connect Health</button>
             <button id="refreshAppleHealthButton" class="secondary-button" type="button">Refresh summary</button>
@@ -378,15 +402,28 @@
           <p class="muted micro-copy">Automatic step values stay on this device and are excluded from Private sync.</p>
           <div class="earned-access-card" id="earnedAccessCard">
             <div class="earned-access-heading">
-              <div><strong>Earned Access</strong><span>Use additional steps after a limit—not your total for the day—to earn more time.</span></div>
+              <div><strong>Earned Access</strong><span>Complete selected routines or walk additional steps to earn focused app time.</span></div>
               <span id="earnedAccessBadge" class="privacy-pill">Ready</span>
             </div>
             <div class="earned-access-fields">
-              <label class="text-field compact"><span>App or activity</span><input id="earnedAccessLabelInput" type="text" maxlength="40" value="Social media" placeholder="Reddit" /></label>
+              <label class="text-field compact earned-access-app-field"><span>Apps or activities</span><input id="earnedAccessLabelInput" type="text" maxlength="80" value="Amazon, Reddit, Instagram" placeholder="Amazon, Reddit, Instagram" /><small class="field-help">Choose multiple apps after Family Controls approval; names are used for tracking until then.</small></label>
               <label class="text-field compact"><span>Steps per round</span><input id="earnedAccessStepsInput" type="number" min="100" max="20000" step="50" inputmode="numeric" value="1000" /></label>
               <label class="text-field compact"><span>Minutes earned</span><input id="earnedAccessMinutesInput" type="number" min="1" max="120" step="5" inputmode="numeric" value="20" /></label>
               <label class="text-field compact"><span>Step pattern</span><select id="earnedAccessModeInput"><option value="fixed">Same goal each round</option><option value="escalating">Escalate 750 → 1,000 → 1,500</option></select></label>
             </div>
+            <div class="earned-access-stages">
+              <div class="earned-stage" data-stage="morning">
+                <div class="earned-stage-heading"><div><strong>Morning access</strong><span>Complete every selected morning task</span></div><label><span>Reward</span><input id="earnedAccessMorningMinutesInput" type="number" min="1" max="120" step="5" inputmode="numeric" value="20" /></label></div>
+                <div id="earnedAccessMorningTasks" class="earned-task-options" aria-label="Morning access requirements"></div>
+                <div class="earned-stage-status"><span id="earnedAccessMorningStatus">Choose morning tasks</span><button id="startEarnedAccessMorningButton" class="small-button" type="button" disabled>Start 20 minutes</button></div>
+              </div>
+              <div class="earned-stage" data-stage="later">
+                <div class="earned-stage-heading"><div><strong>Later access</strong><span>Earn another allowance after afternoon or evening tasks</span></div><label><span>Reward</span><input id="earnedAccessLaterMinutesInput" type="number" min="1" max="120" step="5" inputmode="numeric" value="20" /></label></div>
+                <div id="earnedAccessLaterTasks" class="earned-task-options" aria-label="Later access requirements"></div>
+                <div class="earned-stage-status"><span id="earnedAccessLaterStatus">Choose later tasks</span><button id="startEarnedAccessLaterButton" class="small-button" type="button" disabled>Start 20 minutes</button></div>
+              </div>
+            </div>
+            <div class="earned-movement-heading"><strong>Optional movement round</strong><span>Earn an additional allowance from new steps after you start the round.</span></div>
             <div class="earned-access-progress" aria-live="polite">
               <div><strong id="earnedAccessStatus">Ready for your next limit</strong><span id="earnedAccessDetail">Start a round when your Screen Time limit pauses the selected app.</span></div>
               <div class="earned-access-progress-track" role="progressbar" aria-label="Earned Access step progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="earnedAccessProgressBar"></span></div>
@@ -396,7 +433,7 @@
               <button id="checkEarnedAccessButton" class="secondary-button" type="button">Check progress</button>
               <button id="cancelEarnedAccessButton" class="text-button" type="button" hidden>Cancel round</button>
             </div>
-            <p class="muted micro-copy">Use this with your current iPhone Screen Time limit. Build 11 tracks the step challenge and earned time on this device; automatic app shielding requires Apple’s separate Family Controls approval.</p>
+            <p class="muted micro-copy">Build 12 tracks task and movement rewards on this device. Automatic app selection, usage accounting, and shielding require Apple’s separate Family Controls approval.</p>
           </div>
           <div class="connection-status-card apple-watch-status">
             <div class="connection-icon">⌚</div>
@@ -408,19 +445,19 @@
           </div>
         </section>
 
-        <section class="card">
+        <section class="card" data-setup-category="routine">
           <div class="section-heading"><div><p class="eyebrow">Daily routine</p><h2>Routine items</h2></div><button id="addItemButton" class="primary-button" type="button">+ Add</button></div>
           <p class="muted setup-help">Habits and measurable goals. Required items affect the daily completion score.</p>
           <div id="routineEditor" class="routine-editor"></div>
         </section>
 
-        <section class="card">
+        <section class="card" data-setup-category="routine">
           <div class="section-heading"><div><p class="eyebrow">Reflection</p><h2>Check-ins & prompts</h2></div><button id="addCheckinButton" class="primary-button" type="button">+ Add</button></div>
           <p class="muted setup-help">Build your own mood, sleep, stress, focus, gratitude, or reflection questions and place them in Morning, Day, or Evening.</p>
           <div id="checkinEditor" class="routine-editor"></div>
         </section>
 
-        <section class="card" id="memoryBankCard">
+        <section class="card" id="memoryBankCard" data-setup-category="routine">
           <div class="section-heading"><div><p class="eyebrow">Remember</p><h2>Memory bank</h2></div><button id="addMemoryButton" class="primary-button" type="button">+ Add</button></div>
           <p class="muted setup-help">Save blessings, gratitude, prayers, thoughts, quotes, and memories. A Memory reflection routine can randomly bring them back during your day.</p>
           <div class="memory-bank-stats"><strong id="memoryCount">0</strong><span>saved</span><button id="exportMemoriesButton" class="small-button" type="button">Export CSV</button></div>
@@ -432,7 +469,7 @@
           <div id="memoryArchive" class="memory-archive"></div>
         </section>
 
-        <section class="card private-sync-card" id="privateSyncCard">
+        <section class="card private-sync-card" id="privateSyncCard" data-setup-category="data">
           <div class="section-heading"><div><p class="eyebrow">Private sync</p><h2>One secure account</h2></div><span id="privateSyncBadge" class="privacy-pill">Local only</span></div>
           <p class="muted setup-help">Sign in to synchronize your routine between the web app and iPhone. Nothing is uploaded until you sign in and approve the first sync.</p>
           <div class="private-sync-status">
@@ -461,7 +498,7 @@
           <button id="privateSyncDeleteCloudButton" class="text-button private-sync-delete" type="button" hidden>Delete cloud copy and disconnect</button>
         </section>
 
-        <section class="card" id="dataBackupCard">
+        <section class="card" id="dataBackupCard" data-setup-category="data">
           <div class="section-heading"><div><p class="eyebrow">Data</p><h2>Backup & export</h2></div></div>
           <p class="muted setup-help">Your information is stored locally first. If you connect Private sync above, the approved sync copy is also stored in your owner-only account.</p>
           <div class="button-stack">
@@ -478,11 +515,11 @@
             <a href="privacy.html">Privacy Policy</a>
             <a href="support.html">Support</a>
           </div>
-          <p class="app-version">Daily Routine <b id="appVersion">v1.13.0</b></p>
+          <p class="app-version">Daily Routine <b id="appVersion">v1.14.0</b></p>
         </section>
 
 
-        <section class="card truth-settings-card">
+        <section class="card truth-settings-card" data-setup-category="faith">
           <div class="section-heading"><div><p class="eyebrow">Opening practice</p><h2>Truth Before Tasks</h2></div></div>
           <p class="muted">Edit the words you will see before the rest of the app unlocks each day. Core identity truths remain daily; one open-ended theme rotates from your content bank.</p>
           <div class="form-stack truth-copy-fields">
@@ -510,7 +547,7 @@
           </form>
         </section>
 
-        <section class="card conviction-settings-card">
+        <section class="card conviction-settings-card" data-setup-category="faith">
           <div class="section-heading"><div><p class="eyebrow">Second opening phase</p><h2>Convictions Before Circumstances</h2></div><span id="convictionStatus" class="privacy-pill">Not configured</span></div>
           <p class="muted">Now spend a few moments recommitting to the convictions you have held true and will continue to hold true in this day.</p>
           <div class="form-stack conviction-copy-fields">
@@ -522,7 +559,7 @@
           <p class="muted micro-copy">Removing every conviction turns this second phase off and keeps the three-minute Truth Before Tasks opening.</p>
         </section>
 
-        <section class="card private-sharing-card">
+        <section class="card private-sharing-card" data-setup-category="data">
           <div class="section-heading"><div><p class="eyebrow">Next phase</p><h2>Private accountability</h2></div></div>
           <p>Once the daily experience is where we want it, the next step is secure accounts and permission-based sharing with one approved accountability person.</p>
         </section>
@@ -593,8 +630,8 @@
       <div id="timeWindowFields" class="builder-subcard">
         <strong class="builder-note-title">Time window (optional)</strong>
         <div class="two-column-fields">
-          <label class="text-field compact"><span>Start</span><input id="timeWindowStartInput" type="time" /></label>
-          <label class="text-field compact"><span>End</span><input id="timeWindowEndInput" type="time" /></label>
+          <label class="text-field compact compact-time-field"><span>Start</span><input id="timeWindowStartInput" type="time" /></label>
+          <label class="text-field compact compact-time-field"><span>End</span><input id="timeWindowEndInput" type="time" /></label>
         </div>
         <p class="muted setup-help">Today can show Upcoming, Due now, or Late based on the window you set.</p>
       </div>
@@ -644,7 +681,7 @@
             <label class="text-field compact"><span>Where this note came from</span><select id="noteSourceInput"><option value="Daily Routine">Daily Routine</option><option value="Apple Watch">Apple Watch</option><option value="Pushcut">Pushcut</option><option value="Shortcut">Shortcut</option><option value="Apple Notes">Apple Notes</option><option value="Answered prayer">Answered prayer</option><option value="Imported Thought Inbox">Imported Thought Inbox</option></select><small class="field-help">Set automatically for notes captured or imported through connected tools.</small></label>
           </div>
         </details>
-        <label id="noteResurfaceField" class="toggle-field" hidden><input id="noteResurfaceInput" type="checkbox" checked /><span><b>Show this occasionally</b><small>Allow this God Moment to appear as a gentle reminder of God’s faithfulness.</small></span></label>
+          <label id="noteResurfaceField" class="toggle-field" hidden><input id="noteResurfaceInput" type="checkbox" checked /><span><b>Show this occasionally</b><small>Allow this God Moment to appear as a gentle reminder of God’s faithfulness.</small></span></label>
       </div>
       <div class="dialog-actions"><button id="deleteNoteButton" class="danger-button" type="button" hidden>Delete</button><button class="primary-button" type="submit">Save note</button></div>
     </form>

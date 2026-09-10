@@ -2,8 +2,15 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.13.0 features
+## Version 1.14.0 features
 
+- A compact, consistent Daily Routine header with a contextual screen subtitle
+- A calmer Setup landing page organized into Routine, Appearance, Faith, Health, and Data sections
+- Compact wake, bedtime, schedule, and sleep-time controls that preserve phone space
+- Morning and later Earned Access stages based on selected routine completion, with separate configurable rewards
+- Named multi-app reward groups, while automatic app selection and enforcement remain pending Apple Family Controls approval
+- Apple Health source labels that can surface Apple Watch, Garmin Connect, and other apps contributing Health samples
+- A Truth Before Tasks reminder to choose faithfulness over infallibility, trust over certainty, and the Lord over being right
 - Truth Before Tasks daily opening before the rest of the routine unlocks
 - Optional two-minute Convictions Before Circumstances phase with editable convictions and optional Scripture for each one
 - Apple Watch routine list for completing or reopening the exact checkbox or medication item you choose
