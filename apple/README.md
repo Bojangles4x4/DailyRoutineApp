@@ -15,7 +15,7 @@ This is intentionally more than a website wrapper. The native HealthKit and Watc
 ## Current foundation
 
 - Native iPhone and watchOS source structure
-- Read-only HealthKit authorization, daily summary service, reviewable sleep-time suggestions, an optional automatic steps-goal routine item, and device-only Earned Access rounds based on additional steps
+- Read-only HealthKit authorization, daily summary service with contributing source names, reviewable sleep-time suggestions, an optional automatic steps-goal routine item, and device-only Earned Access rounds
 - JavaScript-to-native message bridge
 - iPhone-to-Watch current-context sync
 - Watch-to-iPhone queued quick actions
@@ -29,7 +29,7 @@ This is intentionally more than a website wrapper. The native HealthKit and Watc
 - App Store icon catalogs, privacy manifests for App Group user defaults, and bundled privacy/support pages
 - XcodeGen project specification
 
-Build 11 tracks Earned Access rounds and earned minutes inside Daily Routine. It is designed to complement an existing Screen Time limit: the person starts a round when the limit is reached, and the app records that moment's HealthKit step count as the baseline. Automatic shielding or extension of another app is not enabled in this build; that requires Apple's Family Controls entitlement plus a later Managed Settings and Device Activity implementation.
+Build 12 adds separate morning and later Earned Access stages based on selected routine completion, while retaining optional movement rounds that count only steps taken after the round starts. A reward group can name several apps, but automatic app selection, usage accounting, shielding, or extension is not enabled; those require Apple's Family Controls entitlement plus a later Managed Settings and Device Activity implementation.
 
 Tapping a checkbox or medication row updates that exact routine; tapping a completed row reopens it. Medication taps record the current time, with an AM/PM confirmation on Watch when the time does not match the routine section. Linked-app routines remain on iPhone. All Watch actions remain locked until the Morning Foundation is completed on the iPhone for the local calendar day. If personal convictions are configured, they are part of that foundation. If the Watch companion is not installed yet, the iPhone keeps the latest routine context ready and sends it when Watch Connectivity reports the companion is available.
 

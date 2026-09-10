@@ -5,7 +5,7 @@
   const SNAPSHOT_KEY = 'dailyRoutineApp.snapshots.v1';
   const HEALTH_DEVICE_KEY = 'dailyRoutine.health.device.v1';
   const EARNED_ACCESS_DEVICE_KEY = 'dailyRoutine.earnedAccess.device.v1';
-  const APP_VERSION = '1.13.0';
+  const APP_VERSION = '1.14.0';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const DEFAULT_BIBLE_APP_URL = 'https://bojangles4x4.github.io/Bible-Reading-Plan/';
@@ -71,6 +71,7 @@
   let latestHealthSummary = null;
   let pendingEarnedAccessStart = false;
   let earnedAccessExpiryTimer = null;
+  let activeSetupCategory = '';
   let accountabilityPreview = '';
   let accountabilityPreviewSignature = '';
   const syncCoordinator = window.DailyRoutineSync?.createCoordinator({ storage: localStorage }) || null;
@@ -86,12 +87,13 @@
 
   const $ = id => document.getElementById(id);
   const els = {
-    pageTitle: $('pageTitle'), todayEyebrow: $('todayEyebrow'), heroGreeting: $('heroGreeting'), heroDate: $('heroDate'), heroStatus: $('heroStatus'),
+    pageTitle: $('pageTitle'), pageContext: $('pageContext'), heroGreeting: $('heroGreeting'), heroDate: $('heroDate'), heroStatus: $('heroStatus'),
     wakeTimeDisplay: $('wakeTimeDisplay'), bedTimeDisplay: $('bedTimeDisplay'), progressRing: $('progressRing'), progressPercent: $('progressPercent'),
     selectedDateButton: $('selectedDateButton'), datePickerInput: $('datePickerInput'), prevDay: $('prevDay'), nextDay: $('nextDay'), routineSections: $('routineSections'), dayModeInput: $('dayModeInput'), undoButton: $('undoButton'), weekFocusBanner: $('weekFocusBanner'), onThisDayMemory: $('onThisDayMemory'),
     statCompleted: $('statCompleted'), statOptional: $('statOptional'), statStreak: $('statStreak'), statMood: $('statMood'), copySummaryButton: $('copySummaryButton'),
     historyList: $('historyList'), rangeSelector: $('rangeSelector'), progressOverall: $('progressOverall'), progress80Days: $('progress80Days'), progressTrackedDays: $('progressTrackedDays'),
     progressRangeNote: $('progressRangeNote'), weekSummary: $('weekSummary'), weekOverall: $('weekOverall'), sectionBreakdown: $('sectionBreakdown'), strongHabits: $('strongHabits'), weakHabits: $('weakHabits'), trendList: $('trendList'), patternInsights: $('patternInsights'),
+    setupView: $('setupView'), setupOverview: $('setupOverview'), setupCategoryBar: $('setupCategoryBar'), setupCategoryTitle: $('setupCategoryTitle'), setupBackButton: $('setupBackButton'), setupScheduleSummary: $('setupScheduleSummary'), setupAppearanceSummary: $('setupAppearanceSummary'), setupFaithSummary: $('setupFaithSummary'), setupHealthSummary: $('setupHealthSummary'), setupDataSummary: $('setupDataSummary'),
     wakeTimeInput: $('wakeTimeInput'), bedTimeInput: $('bedTimeInput'), streakThresholdInput: $('streakThresholdInput'), streakModeInput: $('streakModeInput'), streakWeekdaysOnlyInput: $('streakWeekdaysOnlyInput'), themeInput: $('themeInput'), handednessInput: $('handednessInput'), backgroundImageInput: $('backgroundImageInput'), clearBackgroundButton: $('clearBackgroundButton'),
     routineEditor: $('routineEditor'), checkinEditor: $('checkinEditor'), addItemButton: $('addItemButton'), addCheckinButton: $('addCheckinButton'),
     exportCsvButton: $('exportCsvButton'), exportJsonButton: $('exportJsonButton'), importJsonInput: $('importJsonInput'), resetDataButton: $('resetDataButton'),
@@ -110,8 +112,8 @@
     createSnapshotButton: $('createSnapshotButton'), restoreSnapshotButton: $('restoreSnapshotButton'), snapshotStatus: $('snapshotStatus'), backupDownloadStatus: $('backupDownloadStatus'), appVersion: $('appVersion'), resurfacingFrequencyInput: $('resurfacingFrequencyInput'),
     privateSyncCard: $('privateSyncCard'), privateSyncBadge: $('privateSyncBadge'), privateSyncStatus: $('privateSyncStatus'), privateSyncDevice: $('privateSyncDevice'), privateSyncLastSync: $('privateSyncLastSync'), createSyncSnapshotButton: $('createSyncSnapshotButton'), privateSyncNowButton: $('privateSyncNowButton'), privateSyncSignIn: $('privateSyncSignIn'), privateSyncEmailInput: $('privateSyncEmailInput'), privateSyncPasswordInput: $('privateSyncPasswordInput'), privateSyncSendCodeButton: $('privateSyncSendCodeButton'), privateSyncVerifyButton: $('privateSyncVerifyButton'), privateSyncHelp: $('privateSyncHelp'), privateSyncAccount: $('privateSyncAccount'), privateSyncSignOutButton: $('privateSyncSignOutButton'), privateSyncDeleteCloudButton: $('privateSyncDeleteCloudButton'),
     connectionsCard: $('connectionsCard'), syncConnectionsButton: $('syncConnectionsButton'), bibleConnectionStatus: $('bibleConnectionStatus'), openBibleConnectionButton: $('openBibleConnectionButton'), bibleAppUrlInput: $('bibleAppUrlInput'), saveBibleConnectionButton: $('saveBibleConnectionButton'), testBibleConnectionButton: $('testBibleConnectionButton'), connectionTemplates: $('connectionTemplates'),
-    appleNativeCard: $('appleNativeCard'), appleStepCount: $('appleStepCount'), appleSleepHours: $('appleSleepHours'), appleWorkoutCount: $('appleWorkoutCount'), appleHealthStatus: $('appleHealthStatus'), connectAppleHealthButton: $('connectAppleHealthButton'), refreshAppleHealthButton: $('refreshAppleHealthButton'), appleWatchStatus: $('appleWatchStatus'), appleStepsGoalInput: $('appleStepsGoalInput'), saveAppleStepsGoalButton: $('saveAppleStepsGoalButton'), appleWatchQuickActionInput: $('appleWatchQuickActionInput'),
-    earnedAccessCard: $('earnedAccessCard'), earnedAccessBadge: $('earnedAccessBadge'), earnedAccessLabelInput: $('earnedAccessLabelInput'), earnedAccessStepsInput: $('earnedAccessStepsInput'), earnedAccessMinutesInput: $('earnedAccessMinutesInput'), earnedAccessModeInput: $('earnedAccessModeInput'), earnedAccessStatus: $('earnedAccessStatus'), earnedAccessDetail: $('earnedAccessDetail'), earnedAccessProgressBar: $('earnedAccessProgressBar'), startEarnedAccessButton: $('startEarnedAccessButton'), checkEarnedAccessButton: $('checkEarnedAccessButton'), cancelEarnedAccessButton: $('cancelEarnedAccessButton'),
+    appleNativeCard: $('appleNativeCard'), appleStepCount: $('appleStepCount'), appleSleepHours: $('appleSleepHours'), appleWorkoutCount: $('appleWorkoutCount'), appleHealthStatus: $('appleHealthStatus'), healthSourceSummary: $('healthSourceSummary'), healthSourceDetail: $('healthSourceDetail'), connectAppleHealthButton: $('connectAppleHealthButton'), refreshAppleHealthButton: $('refreshAppleHealthButton'), appleWatchStatus: $('appleWatchStatus'), appleStepsGoalInput: $('appleStepsGoalInput'), saveAppleStepsGoalButton: $('saveAppleStepsGoalButton'), appleWatchQuickActionInput: $('appleWatchQuickActionInput'),
+    earnedAccessCard: $('earnedAccessCard'), earnedAccessBadge: $('earnedAccessBadge'), earnedAccessLabelInput: $('earnedAccessLabelInput'), earnedAccessStepsInput: $('earnedAccessStepsInput'), earnedAccessMinutesInput: $('earnedAccessMinutesInput'), earnedAccessModeInput: $('earnedAccessModeInput'), earnedAccessStatus: $('earnedAccessStatus'), earnedAccessDetail: $('earnedAccessDetail'), earnedAccessProgressBar: $('earnedAccessProgressBar'), startEarnedAccessButton: $('startEarnedAccessButton'), checkEarnedAccessButton: $('checkEarnedAccessButton'), cancelEarnedAccessButton: $('cancelEarnedAccessButton'), earnedAccessMorningMinutesInput: $('earnedAccessMorningMinutesInput'), earnedAccessLaterMinutesInput: $('earnedAccessLaterMinutesInput'), earnedAccessMorningTasks: $('earnedAccessMorningTasks'), earnedAccessLaterTasks: $('earnedAccessLaterTasks'), earnedAccessMorningStatus: $('earnedAccessMorningStatus'), earnedAccessLaterStatus: $('earnedAccessLaterStatus'), startEarnedAccessMorningButton: $('startEarnedAccessMorningButton'), startEarnedAccessLaterButton: $('startEarnedAccessLaterButton'),
     healthSleepSuggestion: $('healthSleepSuggestion'), healthSleepSuggestionText: $('healthSleepSuggestionText'), applyHealthSleepButton: $('applyHealthSleepButton'),
     linkedActionFields: $('linkedActionFields'), linkedTemplateInput: $('linkedTemplateInput'), linkedCompletionInput: $('linkedCompletionInput'), linkedUrlField: $('linkedUrlField'), linkedUrlInput: $('linkedUrlInput'), linkedInternalField: $('linkedInternalField'), linkedInternalTargetInput: $('linkedInternalTargetInput'), linkedButtonLabelInput: $('linkedButtonLabelInput'), timeWindowFields: $('timeWindowFields'), timeWindowStartInput: $('timeWindowStartInput'), timeWindowEndInput: $('timeWindowEndInput'),
     medicationProgressCard: $('medicationProgressCard'), weeklyReviewCard: $('weeklyReviewCard'), memoryBankCard: $('memoryBankCard'), dataBackupCard: $('dataBackupCard'),
@@ -505,7 +507,8 @@
     document.querySelectorAll('.nav-button').forEach(button => button.classList.toggle('active', button.dataset.view === view));
     document.querySelectorAll('.view').forEach(node => node.classList.remove('active'));
     $(`${view}View`).classList.add('active');
-    els.pageTitle.textContent = ({ today: 'Today', notes: 'Notes', history: 'Progress', setup: 'Setup' })[view] || 'Daily Routine';
+    els.pageContext.textContent = ({ today: 'Today', notes: 'Notes & Thoughts', history: 'Progress', setup: 'Setup' })[view] || 'Today';
+    if (view === 'setup') activeSetupCategory = '';
     if (view === 'notes') renderNotes();
     if (view === 'history') renderHistory();
     if (view === 'setup') renderSetup();
@@ -529,7 +532,7 @@
     els.quickMemoryButton.addEventListener('click', () => openMemoryDialog('blessing'));
     els.quickNoteButton.addEventListener('click', () => { switchView('notes'); openNoteDialog(); });
     els.openGodMomentsButton.addEventListener('click', () => { switchView('notes'); els.notesTypeFilter.value = 'god-moment'; renderNotes(); });
-    els.openBackupButton.addEventListener('click', () => { switchView('setup'); els.dataBackupCard?.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+    els.openBackupButton.addEventListener('click', () => { switchView('setup'); openSetupCategory('data'); els.dataBackupCard?.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
   }
 
   function bindNotesControls() {
@@ -577,6 +580,8 @@
   }
 
   function bindSetupControls() {
+    els.setupOverview.querySelectorAll('[data-setup-target]').forEach(button => button.addEventListener('click', () => openSetupCategory(button.dataset.setupTarget)));
+    els.setupBackButton.addEventListener('click', () => openSetupCategory(''));
     els.wakeTimeInput.addEventListener('change', () => { state.settings.wakeTime = els.wakeTimeInput.value || '06:00'; saveState(); renderToday(); });
     els.bedTimeInput.addEventListener('change', () => { state.settings.bedTime = els.bedTimeInput.value || '22:30'; saveState(); renderToday(); });
     els.badgeEnabledInput.addEventListener('change', () => { state.settings.badgeEnabled = els.badgeEnabledInput.checked; saveState(); updateAppBadge(); });
@@ -652,10 +657,16 @@
       sendNativeBridgeMessage('health.summary.request');
     });
     els.saveAppleStepsGoalButton.addEventListener('click', saveAppleStepsGoal);
-    [els.earnedAccessLabelInput, els.earnedAccessStepsInput, els.earnedAccessMinutesInput, els.earnedAccessModeInput].forEach(input => input.addEventListener('change', () => {
+    [els.earnedAccessLabelInput, els.earnedAccessStepsInput, els.earnedAccessMinutesInput, els.earnedAccessModeInput, els.earnedAccessMorningMinutesInput, els.earnedAccessLaterMinutesInput].forEach(input => input.addEventListener('change', () => {
       saveEarnedAccessFormSettings();
       renderEarnedAccess();
     }));
+    [els.earnedAccessMorningTasks, els.earnedAccessLaterTasks].forEach(container => container.addEventListener('change', () => {
+      saveEarnedAccessTaskSettings();
+      renderEarnedAccess();
+    }));
+    els.startEarnedAccessMorningButton.addEventListener('click', () => startEarnedAccessStage('morning'));
+    els.startEarnedAccessLaterButton.addEventListener('click', () => startEarnedAccessStage('later'));
     els.startEarnedAccessButton.addEventListener('click', startEarnedAccessRound);
     els.checkEarnedAccessButton.addEventListener('click', checkEarnedAccessProgress);
     els.cancelEarnedAccessButton.addEventListener('click', cancelEarnedAccessRound);
@@ -689,13 +700,15 @@
           sleepHours: Math.max(0, Number(value.sleepHours) || 0),
           workoutCount: Math.max(0, Math.round(Number(value.workoutCount) || 0)),
           sleepStart: validDateValue(value.sleepStart),
-          sleepEnd: validDateValue(value.sleepEnd)
+          sleepEnd: validDateValue(value.sleepEnd),
+          sourceNames: Array.isArray(value.sourceNames) ? value.sourceNames.map(String).filter(Boolean).slice(0, 8) : []
         };
         saveHealthDeviceSettings({ connected: true });
         els.appleStepCount.textContent = Math.round(Number(value.stepCount) || 0).toLocaleString();
         els.appleSleepHours.textContent = `${(Number(value.sleepHours) || 0).toFixed(1)}h`;
         els.appleWorkoutCount.textContent = String(Math.round(Number(value.workoutCount) || 0));
         els.appleHealthStatus.textContent = 'Summary refreshed from Apple Health on this device.';
+        renderHealthSources();
         applyLatestHealthSteps();
         updateEarnedAccessFromHealth();
         renderHealthSleepSuggestion();
@@ -727,19 +740,42 @@
     localStorage.setItem(HEALTH_DEVICE_KEY, JSON.stringify({ ...healthDeviceSettings(), ...updates }));
   }
 
+  function renderHealthSources() {
+    if (!els.healthSourceSummary || !els.healthSourceDetail) return;
+    const sources = [...new Set((latestHealthSummary?.sourceNames || []).map(value => String(value).trim()).filter(Boolean))];
+    els.healthSourceSummary.hidden = false;
+    els.healthSourceDetail.textContent = sources.length
+      ? sources.join(', ')
+      : 'Apple Health is connected; contributing apps and devices will appear after they sync data.';
+  }
+
+  function defaultEarnedAccessTasks(section) {
+    const sections = section === 'morning' ? ['morning'] : ['day', 'evening'];
+    return state.items
+      .filter(item => item.kind === 'routine' && sections.includes(item.section) && ['checkbox', 'medication', 'linked', 'number', 'time'].includes(item.type))
+      .slice(0, section === 'morning' ? 3 : 2)
+      .map(item => item.id);
+  }
+
   function earnedAccessDeviceSettings() {
     const defaults = {
-      label: 'Social media', stepGoal: 1000, rewardMinutes: 20, mode: 'fixed',
-      active: null, earnedUntil: '', lastCompleted: null, roundsByDate: {}
+      label: 'Amazon, Reddit, Instagram', stepGoal: 1000, rewardMinutes: 20, mode: 'fixed',
+      morningMinutes: 20, laterMinutes: 20, morningTaskIds: defaultEarnedAccessTasks('morning'), laterTaskIds: defaultEarnedAccessTasks('later'),
+      active: null, earnedUntil: '', lastCompleted: null, roundsByDate: {}, stageClaimsByDate: {}
     };
     try {
       const parsed = JSON.parse(localStorage.getItem(EARNED_ACCESS_DEVICE_KEY) || '{}');
       const next = parsed && typeof parsed === 'object' ? { ...defaults, ...parsed } : defaults;
-      next.label = String(next.label || defaults.label).trim().slice(0, 40) || defaults.label;
+      next.label = String(next.label || defaults.label).trim().slice(0, 80) || defaults.label;
       next.stepGoal = Math.min(20000, Math.max(100, Math.round(Number(next.stepGoal) || defaults.stepGoal)));
       next.rewardMinutes = Math.min(120, Math.max(1, Math.round(Number(next.rewardMinutes) || defaults.rewardMinutes)));
+      next.morningMinutes = Math.min(120, Math.max(1, Math.round(Number(next.morningMinutes) || defaults.morningMinutes)));
+      next.laterMinutes = Math.min(120, Math.max(1, Math.round(Number(next.laterMinutes) || defaults.laterMinutes)));
       next.mode = next.mode === 'escalating' ? 'escalating' : 'fixed';
+      next.morningTaskIds = Array.isArray(next.morningTaskIds) ? next.morningTaskIds.map(String) : defaults.morningTaskIds;
+      next.laterTaskIds = Array.isArray(next.laterTaskIds) ? next.laterTaskIds.map(String) : defaults.laterTaskIds;
       next.roundsByDate = next.roundsByDate && typeof next.roundsByDate === 'object' ? next.roundsByDate : {};
+      next.stageClaimsByDate = next.stageClaimsByDate && typeof next.stageClaimsByDate === 'object' ? next.stageClaimsByDate : {};
       if (!next.active || typeof next.active !== 'object') next.active = null;
       if (!next.lastCompleted || typeof next.lastCompleted !== 'object') next.lastCompleted = null;
       return next;
@@ -754,11 +790,36 @@
 
   function saveEarnedAccessFormSettings() {
     return saveEarnedAccessDeviceSettings({
-      label: String(els.earnedAccessLabelInput.value || 'Social media').trim().slice(0, 40) || 'Social media',
+      label: String(els.earnedAccessLabelInput.value || 'Amazon, Reddit, Instagram').trim().slice(0, 80) || 'Amazon, Reddit, Instagram',
       stepGoal: Math.min(20000, Math.max(100, Math.round(Number(els.earnedAccessStepsInput.value) || 1000))),
       rewardMinutes: Math.min(120, Math.max(1, Math.round(Number(els.earnedAccessMinutesInput.value) || 20))),
+      morningMinutes: Math.min(120, Math.max(1, Math.round(Number(els.earnedAccessMorningMinutesInput.value) || 20))),
+      laterMinutes: Math.min(120, Math.max(1, Math.round(Number(els.earnedAccessLaterMinutesInput.value) || 20))),
       mode: els.earnedAccessModeInput.value === 'escalating' ? 'escalating' : 'fixed'
     });
+  }
+
+  function selectedEarnedTaskIds(container) {
+    return [...container.querySelectorAll('input[type="checkbox"]:checked')].map(input => input.value);
+  }
+
+  function saveEarnedAccessTaskSettings() {
+    return saveEarnedAccessDeviceSettings({
+      morningTaskIds: selectedEarnedTaskIds(els.earnedAccessMorningTasks),
+      laterTaskIds: selectedEarnedTaskIds(els.earnedAccessLaterTasks)
+    });
+  }
+
+  function earnedStageItems(stage, settings = earnedAccessDeviceSettings()) {
+    const ids = stage === 'morning' ? settings.morningTaskIds : settings.laterTaskIds;
+    return ids.map(id => state.items.find(item => item.id === id)).filter(Boolean);
+  }
+
+  function earnedStageState(stage, settings = earnedAccessDeviceSettings()) {
+    const items = earnedStageItems(stage, settings);
+    const day = state.days[dateKey(startOfToday())] || { entries: {} };
+    const completed = items.filter(item => entryMeetsTarget(item, day.entries?.[item.id])).length;
+    return { items, completed, eligible: items.length > 0 && completed === items.length };
   }
 
   function earnedAccessRequirement(settings = earnedAccessDeviceSettings()) {
@@ -772,6 +833,75 @@
     const summaryDate = new Date(latestHealthSummary.date);
     if (Number.isNaN(summaryDate.getTime()) || dateKey(summaryDate) !== dateKey(startOfToday())) return null;
     return Math.max(0, Math.round(Number(latestHealthSummary.stepCount) || 0));
+  }
+
+  function earnedTaskCandidates(stage) {
+    const sections = stage === 'morning' ? ['morning'] : ['day', 'evening'];
+    return state.items.filter(item => item.kind === 'routine' && sections.includes(item.section) && ['checkbox', 'medication', 'linked', 'number', 'time'].includes(item.type));
+  }
+
+  function renderEarnedTaskOptions(container, stage, selectedIds) {
+    const candidates = earnedTaskCandidates(stage);
+    container.innerHTML = candidates.length ? candidates.map(item => {
+      const checked = selectedIds.includes(item.id) ? ' checked' : '';
+      const section = item.section === 'day' ? 'Afternoon' : `${item.section[0].toUpperCase()}${item.section.slice(1)}`;
+      return `<label class="earned-task-option"><input type="checkbox" value="${escapeHtml(item.id)}"${checked} /><span>${escapeHtml(item.name)}</span><small>${section}</small></label>`;
+    }).join('') : '<span class="earned-stage-empty">Add routine items first.</span>';
+  }
+
+  function startEarnedAccessStage(stage) {
+    const settings = saveEarnedAccessFormSettings();
+    const current = earnedStageState(stage, settings);
+    const today = dateKey(startOfToday());
+    const claims = settings.stageClaimsByDate[today] || {};
+    const currentEarnedUntil = new Date(settings.earnedUntil || '').getTime();
+    if (!current.eligible) {
+      showToast(`Complete the selected ${stage === 'morning' ? 'morning' : 'later'} tasks first.`);
+      return;
+    }
+    if (claims[stage]) {
+      showToast('That allowance has already been used today.');
+      return;
+    }
+    if (settings.active || (!Number.isNaN(currentEarnedUntil) && currentEarnedUntil > Date.now())) {
+      showToast('Finish the current allowance or step round first.');
+      return;
+    }
+    const rewardMinutes = stage === 'morning' ? settings.morningMinutes : settings.laterMinutes;
+    const completedAt = new Date();
+    const earnedUntil = new Date(completedAt.getTime() + rewardMinutes * 60 * 1000).toISOString();
+    const stageClaimsByDate = { ...settings.stageClaimsByDate, [today]: { ...claims, [stage]: completedAt.toISOString() } };
+    saveEarnedAccessDeviceSettings({
+      earnedUntil,
+      stageClaimsByDate,
+      lastCompleted: { stage, label: settings.label, rewardMinutes, completedAt: completedAt.toISOString() }
+    });
+    renderEarnedAccess();
+    showToast(`${rewardMinutes} minutes earned from ${stage} tasks.`);
+  }
+
+  function renderEarnedAccessStages(settings, accessIsEarned) {
+    const today = dateKey(startOfToday());
+    const claims = settings.stageClaimsByDate[today] || {};
+    const activeStage = accessIsEarned ? settings.lastCompleted?.stage : '';
+    const stages = [
+      { key: 'morning', container: els.earnedAccessMorningTasks, status: els.earnedAccessMorningStatus, button: els.startEarnedAccessMorningButton, minutes: settings.morningMinutes, selected: settings.morningTaskIds },
+      { key: 'later', container: els.earnedAccessLaterTasks, status: els.earnedAccessLaterStatus, button: els.startEarnedAccessLaterButton, minutes: settings.laterMinutes, selected: settings.laterTaskIds }
+    ];
+    stages.forEach(stage => {
+      renderEarnedTaskOptions(stage.container, stage.key, stage.selected);
+      const progress = earnedStageState(stage.key, settings);
+      const claimed = Boolean(claims[stage.key]);
+      stage.button.textContent = `Start ${stage.minutes} minutes`;
+      stage.button.disabled = !progress.eligible || claimed || Boolean(settings.active) || accessIsEarned;
+      if (!progress.items.length) stage.status.textContent = 'Choose at least one task';
+      else if (accessIsEarned && activeStage === stage.key) stage.status.textContent = `Available until ${new Date(settings.earnedUntil).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
+      else if (claimed) stage.status.textContent = 'Allowance used today';
+      else if (progress.eligible && accessIsEarned) stage.status.textContent = 'Ready after current allowance';
+      else if (progress.eligible && settings.active) stage.status.textContent = 'Ready after the step round';
+      else if (progress.eligible) stage.status.textContent = 'All selected tasks complete';
+      else stage.status.textContent = `${progress.completed} of ${progress.items.length} selected tasks complete`;
+    });
   }
 
   function startEarnedAccessRound() {
@@ -872,9 +1002,12 @@
     if (editing !== els.earnedAccessStepsInput) els.earnedAccessStepsInput.value = String(settings.stepGoal);
     if (editing !== els.earnedAccessMinutesInput) els.earnedAccessMinutesInput.value = String(settings.rewardMinutes);
     if (editing !== els.earnedAccessModeInput) els.earnedAccessModeInput.value = settings.mode;
+    if (editing !== els.earnedAccessMorningMinutesInput) els.earnedAccessMorningMinutesInput.value = String(settings.morningMinutes);
+    if (editing !== els.earnedAccessLaterMinutesInput) els.earnedAccessLaterMinutesInput.value = String(settings.laterMinutes);
 
     const active = settings.active;
     const accessIsEarned = !Number.isNaN(new Date(settings.earnedUntil || '').getTime()) && new Date(settings.earnedUntil).getTime() > Date.now();
+    renderEarnedAccessStages(settings, accessIsEarned);
     let percent = 0;
     if (pendingEarnedAccessStart) {
       els.earnedAccessBadge.textContent = 'Health check';
@@ -2006,6 +2139,7 @@
     els.resurfacingFrequencyInput.value = ['occasional', 'weekly', 'never'].includes(state.settings.resurfacingFrequency) ? state.settings.resurfacingFrequency : 'occasional';
     els.appVersion.textContent = `v${APP_VERSION}`;
     els.bibleAppUrlInput.value = state.settings.bibleAppUrl || DEFAULT_BIBLE_APP_URL;
+    renderSetupNavigation();
     renderAppleWatchQuickAction();
     renderConnections();
     renderPrivateSyncStatus();
@@ -2016,6 +2150,29 @@
     renderEditorGroup('routine', els.routineEditor);
     renderEditorGroup('checkin', els.checkinEditor);
     renderMemoryArchive();
+  }
+
+  function openSetupCategory(category) {
+    activeSetupCategory = ['routine', 'appearance', 'faith', 'health', 'data'].includes(category) ? category : '';
+    renderSetupNavigation();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function renderSetupNavigation() {
+    const titles = { routine: 'Routine & schedule', appearance: 'Appearance & accessibility', faith: 'Faith foundation', health: 'Health, Watch & connections', data: 'Data, sync & privacy' };
+    if (activeSetupCategory) els.setupView.dataset.category = activeSetupCategory;
+    else delete els.setupView.dataset.category;
+    els.setupOverview.hidden = Boolean(activeSetupCategory);
+    els.setupCategoryBar.hidden = !activeSetupCategory;
+    els.setupCategoryTitle.textContent = titles[activeSetupCategory] || 'Setup';
+    els.pageContext.textContent = activeSetupCategory ? `Setup · ${titles[activeSetupCategory]}` : 'Setup';
+    els.setupScheduleSummary.textContent = `Wake ${formatTime(state.settings.wakeTime)} · Bed ${formatTime(state.settings.bedTime)} · ${state.items.filter(item => item.kind === 'routine').length} items`;
+    els.setupAppearanceSummary.textContent = `${(state.settings.theme || 'calm').replace(/^./, value => value.toUpperCase())} theme · ${state.settings.handedness === 'left' ? 'Left' : 'Right'}-handed controls`;
+    const convictionCount = state.settings.truthBeforeTasks?.convictions?.items?.length || state.settings.truthBeforeTasks?.convictions?.points?.length || 0;
+    els.setupFaithSummary.textContent = `Truth Before Tasks · ${convictionCount} conviction${convictionCount === 1 ? '' : 's'}`;
+    const sources = latestHealthSummary?.sourceNames || [];
+    els.setupHealthSummary.textContent = sources.length ? `Apple Health · ${sources.slice(0, 2).join(', ')}` : 'Apple Health, Watch, and linked actions';
+    els.setupDataSummary.textContent = privateSyncSession ? 'Private sync connected · Backups & sharing' : 'Local first · Private sync, backups, and sharing';
   }
 
   function renderPrivateSyncStatus() {
@@ -3353,13 +3510,15 @@
     const TRUTH_MINIMUM_MS = 3 * 60 * 1000;
     const CONVICTION_MINIMUM_MS = 2 * 60 * 1000;
     const TRUTH_STEP_COUNT = 5;
+    const RIGHTNESS_REMINDER = 'Faithfulness, not infallibility. Trust, not certainty. The Lord, not being right. I do not need to agonize over every choice; the sovereign Lord is able to guide and keep me.';
     const DEFAULTS = {
       personalPlea: 'Taylor, I wrote this while thinking clearly. I may not feel clear or steady every time I read it, but I will trust what the Lord led me to write when I could see these truths clearly. I plead with you now: set everything else aside for these few minutes and meditate on what is true.',
       openingPrayer: 'Father, quiet my heart. Help me receive what is true rather than follow what feels urgent. Fix my eyes on Christ and lead me by Your Word today.',
       coreTruths: [
         'I am 100% called, welcomed, purchased, adopted, and loved because of Jesus.',
         'These practices do not make me right with God. They remind me of my need for the Lord and press me to see Christ.',
-        'Jesus is my righteousness, my confidence, and my guide.'
+        'Jesus is my righteousness, my confidence, and my guide.',
+        RIGHTNESS_REMINDER
       ],
       convictions: {
         intro: 'Before I think about today’s circumstances, I will remember the convictions I chose to believe. These truths are based upon the unchanging Word of God.',
@@ -3540,10 +3699,12 @@
         || (Array.isArray(storedConvictions.points) && storedConvictions.points.length === 0 && storedConvictions.intro === previousScaffoldIntro);
       const convictionItems = (useSuppliedDefaults ? DEFAULTS.convictions.items : storedItems || [])
         .map(normalizeConvictionItem).filter(Boolean);
+      const coreTruths = Array.isArray(stored.coreTruths) && stored.coreTruths.length ? stored.coreTruths.filter(Boolean).map(String) : clone(DEFAULTS.coreTruths);
+      if (!coreTruths.some(truth => truth.includes('Faithfulness, not infallibility'))) coreTruths.push(RIGHTNESS_REMINDER);
       const result = {
         personalPlea: typeof stored.personalPlea === 'string' && stored.personalPlea.trim() ? stored.personalPlea : DEFAULTS.personalPlea,
         openingPrayer: typeof stored.openingPrayer === 'string' && stored.openingPrayer.trim() ? stored.openingPrayer : DEFAULTS.openingPrayer,
-        coreTruths: Array.isArray(stored.coreTruths) && stored.coreTruths.length ? stored.coreTruths.filter(Boolean).map(String) : clone(DEFAULTS.coreTruths),
+        coreTruths,
         convictions: {
           intro: useSuppliedDefaults ? DEFAULTS.convictions.intro : typeof storedConvictions.intro === 'string' && storedConvictions.intro.trim() ? storedConvictions.intro.trim() : DEFAULTS.convictions.intro,
           items: convictionItems
@@ -3699,7 +3860,7 @@
       el('truthHeroIntro').textContent = convictionsPhase
         ? 'Now spend a few moments recommitting to the convictions you have held true and will continue to hold true in this day.'
         : 'Before plans, pressure, or productivity, take a few quiet minutes to remember who God is and what Christ has done.';
-      el('pageTitle').textContent = convictionsPhase ? 'Convictions Before Circumstances' : 'Truth Before Tasks';
+      el('pageContext').textContent = 'Morning foundation';
       const phaseStep = convictionsPhase ? stepIndex - TRUTH_STEP_COUNT + 1 : stepIndex + 1;
       const phaseCount = convictionsPhase ? convictionItems().length : TRUTH_STEP_COUNT;
       el('truthStepLabel').textContent = convictionsPhase
