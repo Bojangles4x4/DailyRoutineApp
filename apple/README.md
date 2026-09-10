@@ -29,7 +29,7 @@ This is intentionally more than a website wrapper. The native HealthKit and Watc
 - App Store icon catalogs, privacy manifests for App Group user defaults, and bundled privacy/support pages
 - XcodeGen project specification
 
-Build 12 adds separate morning and later Earned Access stages based on selected routine completion, while retaining optional movement rounds that count only steps taken after the round starts. A reward group can name several apps, but automatic app selection, usage accounting, shielding, or extension is not enabled; those require Apple's Family Controls entitlement plus a later Managed Settings and Device Activity implementation.
+Build 13 adds native, on-device truth reminders with text or pictures, selectable or shuffled entries, and a configurable daily schedule. It also separates Apple Health bedtime and wake-time confirmation by calendar date and identifies Earned Access clearly as a manual reward tracker. Automatic app selection, usage accounting, shielding, or extension is not enabled; those require Apple's Family Controls entitlement plus a later Managed Settings and Device Activity implementation.
 
 Tapping a checkbox or medication row updates that exact routine; tapping a completed row reopens it. Medication taps record the current time, with an AM/PM confirmation on Watch when the time does not match the routine section. Linked-app routines remain on iPhone. All Watch actions remain locked until the Morning Foundation is completed on the iPhone for the local calendar day. If personal convictions are configured, they are part of that foundation. If the Watch companion is not installed yet, the iPhone keeps the latest routine context ready and sends it when Watch Connectivity reports the companion is available.
 

@@ -87,6 +87,10 @@ struct WebAppView: UIViewRepresentable {
             }
 
             switch action {
+            case .openTruthReminders:
+                guard let webView else { return }
+                let controller = UIHostingController(rootView: TruthReminderView(store: model.reminders))
+                present(controller, from: webView) { }
             case .requestHealthAuthorization:
                 Task {
                     do {

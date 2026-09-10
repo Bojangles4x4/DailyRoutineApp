@@ -5,7 +5,7 @@
   const SNAPSHOT_KEY = 'dailyRoutineApp.snapshots.v1';
   const HEALTH_DEVICE_KEY = 'dailyRoutine.health.device.v1';
   const EARNED_ACCESS_DEVICE_KEY = 'dailyRoutine.earnedAccess.device.v1';
-  const APP_VERSION = '1.14.0';
+  const APP_VERSION = '1.15.0';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const DEFAULT_BIBLE_APP_URL = 'https://bojangles4x4.github.io/Bible-Reading-Plan/';
@@ -87,7 +87,7 @@
 
   const $ = id => document.getElementById(id);
   const els = {
-    pageTitle: $('pageTitle'), pageContext: $('pageContext'), heroGreeting: $('heroGreeting'), heroDate: $('heroDate'), heroStatus: $('heroStatus'),
+    pageTitle: $('pageTitle'), heroGreeting: $('heroGreeting'), heroDate: $('heroDate'), heroStatus: $('heroStatus'),
     wakeTimeDisplay: $('wakeTimeDisplay'), bedTimeDisplay: $('bedTimeDisplay'), progressRing: $('progressRing'), progressPercent: $('progressPercent'),
     selectedDateButton: $('selectedDateButton'), datePickerInput: $('datePickerInput'), prevDay: $('prevDay'), nextDay: $('nextDay'), routineSections: $('routineSections'), dayModeInput: $('dayModeInput'), undoButton: $('undoButton'), weekFocusBanner: $('weekFocusBanner'), onThisDayMemory: $('onThisDayMemory'),
     statCompleted: $('statCompleted'), statOptional: $('statOptional'), statStreak: $('statStreak'), statMood: $('statMood'), copySummaryButton: $('copySummaryButton'),
@@ -507,7 +507,6 @@
     document.querySelectorAll('.nav-button').forEach(button => button.classList.toggle('active', button.dataset.view === view));
     document.querySelectorAll('.view').forEach(node => node.classList.remove('active'));
     $(`${view}View`).classList.add('active');
-    els.pageContext.textContent = ({ today: 'Today', notes: 'Notes & Thoughts', history: 'Progress', setup: 'Setup' })[view] || 'Today';
     if (view === 'setup') activeSetupCategory = '';
     if (view === 'notes') renderNotes();
     if (view === 'history') renderHistory();
@@ -529,6 +528,9 @@
     els.wakeNowButton.addEventListener('click', () => { const value = currentTimeValue(); els.actualWakeInput.value = value; saveActualTime('actualWakeTime', value); });
     els.bedNowButton.addEventListener('click', () => { const value = currentTimeValue(); els.actualBedInput.value = value; saveActualTime('actualBedTime', value); });
     els.applyHealthSleepButton.addEventListener('click', applyHealthSleepSuggestion);
+    $('closeHealthSleepButton').addEventListener('click', () => $('healthSleepDialog').close());
+    $('healthSleepForm').addEventListener('submit', confirmHealthSleepSuggestion);
+    ['healthBedDateInput', 'healthWakeDateInput'].forEach(id => $(id).addEventListener('change', renderSleepReviewExisting));
     els.quickMemoryButton.addEventListener('click', () => openMemoryDialog('blessing'));
     els.quickNoteButton.addEventListener('click', () => { switchView('notes'); openNoteDialog(); });
     els.openGodMomentsButton.addEventListener('click', () => { switchView('notes'); els.notesTypeFilter.value = 'god-moment'; renderNotes(); });
@@ -640,10 +642,13 @@
 
   function bindNativeAppleBridge() {
     const bridge = () => window.DailyRoutineNative;
+    $('openTruthRemindersButton').disabled = !bridge()?.postMessage;
+    $('openTruthRemindersButton').addEventListener('click', () => sendNativeBridgeMessage('truth.reminders.open'));
     const reveal = () => {
       if (!bridge()?.postMessage) return;
       els.appleNativeCard.hidden = false;
       els.accountabilityHealthField.hidden = false;
+      $('openTruthRemindersButton').disabled = false;
     };
 
     reveal();
@@ -1020,15 +1025,15 @@
       const remaining = Math.max(0, required - gained);
       percent = Math.min(100, Math.round((gained / required) * 100));
       els.earnedAccessBadge.textContent = 'Walking';
-      els.earnedAccessStatus.textContent = `${active.label || settings.label} paused`;
+      els.earnedAccessStatus.textContent = `${active.label || settings.label} step goal`;
       els.earnedAccessDetail.textContent = `Walk ${remaining.toLocaleString()} more steps to earn ${active.rewardMinutes || settings.rewardMinutes} minutes. Progress: ${gained.toLocaleString()} / ${required.toLocaleString()}.`;
     } else if (accessIsEarned) {
       percent = 100;
       const completed = settings.lastCompleted;
       const minutes = Math.max(1, Number(completed?.rewardMinutes) || settings.rewardMinutes);
-      els.earnedAccessBadge.textContent = 'Access earned';
+      els.earnedAccessBadge.textContent = 'Reward earned';
       els.earnedAccessStatus.textContent = `${minutes} minutes earned`;
-      els.earnedAccessDetail.textContent = `${completed?.label || settings.label} time is earned until ${new Date(settings.earnedUntil).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.`;
+      els.earnedAccessDetail.textContent = `Your ${completed?.label || settings.label} reward countdown ends at ${new Date(settings.earnedUntil).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}. App access is unchanged.`;
       earnedAccessExpiryTimer = window.setTimeout(renderEarnedAccess, Math.min(Math.max(250, earnedTime - Date.now() + 250), 2147483647));
     } else {
       const required = earnedAccessRequirement(settings);
@@ -1116,27 +1121,62 @@
 
   function renderHealthSleepSuggestion() {
     const suggestion = healthSleepTimes();
-    const matchesWakeDay = suggestion && dateKey(selectedDate) === dateKey(suggestion.end);
-    els.healthSleepSuggestion.hidden = !suggestion || !matchesWakeDay;
-    if (!suggestion || !matchesWakeDay) return;
-    els.healthSleepSuggestionText.textContent = `${formatTime(suggestion.bedTime)} the night before · ${formatTime(suggestion.wakeTime)} wake time. Both will be saved to ${formatShortDate(suggestion.end)}.`;
+    const matchesDay = suggestion && [dateKey(suggestion.start), dateKey(suggestion.end)].includes(dateKey(selectedDate));
+    els.healthSleepSuggestion.hidden = !suggestion || !matchesDay;
+    if (!suggestion || !matchesDay) return;
+    els.healthSleepSuggestionText.textContent = `Bed: ${formatShortDate(suggestion.start)} at ${formatTime(suggestion.bedTime)}. Wake: ${formatShortDate(suggestion.end)} at ${formatTime(suggestion.wakeTime)}. Review before saving.`;
   }
 
   function applyHealthSleepSuggestion() {
     const suggestion = healthSleepTimes();
     if (!suggestion) return;
-    const wakeDay = ensureDay(dateKey(suggestion.end));
-    let applied = 0;
-    if (!wakeDay.actualBedTime) { wakeDay.actualBedTime = suggestion.bedTime; applied += 1; }
-    if (!wakeDay.actualWakeTime) { wakeDay.actualWakeTime = suggestion.wakeTime; applied += 1; }
-    if (!applied) {
-      showToast('Your logged sleep times were kept. Clear them first to apply the Health suggestion.');
+    $('healthBedDateInput').value = dateKey(suggestion.start);
+    $('healthBedTimeInput').value = suggestion.bedTime;
+    $('healthWakeDateInput').value = dateKey(suggestion.end);
+    $('healthWakeTimeInput').value = suggestion.wakeTime;
+    $('repairHealthBedInput').checked = false;
+    $('healthSleepReviewStatus').textContent = '';
+    renderSleepReviewExisting();
+    $('healthSleepDialog').showModal();
+  }
+
+  function renderSleepReviewExisting() {
+    const bedKey = $('healthBedDateInput').value, wakeKey = $('healthWakeDateInput').value;
+    const bed = state.days[bedKey]?.actualBedTime, wake = state.days[wakeKey]?.actualWakeTime;
+    $('healthBedExisting').textContent = bed ? `Already logged: ${formatTime(bed)}. Select to replace after checking.` : 'No bedtime logged on this date.';
+    $('healthWakeExisting').textContent = wake ? `Already logged: ${formatTime(wake)}. Select to replace after checking.` : 'No wake time logged on this date.';
+    $('confirmHealthBedInput').checked = !bed;
+    $('confirmHealthWakeInput').checked = !wake;
+    const suggestion = healthSleepTimes();
+    $('repairHealthBedField').hidden = !suggestion || bedKey === wakeKey || state.days[wakeKey]?.actualBedTime !== suggestion.bedTime;
+    $('repairHealthBedInput').checked = false;
+  }
+
+  function confirmHealthSleepSuggestion(event) {
+    event.preventDefault();
+    const bedKey = $('healthBedDateInput').value, wakeKey = $('healthWakeDateInput').value;
+    const bedTime = $('healthBedTimeInput').value, wakeTime = $('healthWakeTimeInput').value;
+    const start = new Date(`${bedKey}T${bedTime}`), end = new Date(`${wakeKey}T${wakeTime}`);
+    if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end <= start) {
+      $('healthSleepReviewStatus').textContent = 'Wake time must be after bedtime. Check both dates.';
       return;
     }
+    const saveBed = $('confirmHealthBedInput').checked, saveWake = $('confirmHealthWakeInput').checked;
+    if (!saveBed && !saveWake) { $('healthSleepReviewStatus').textContent = 'Select at least one time to save, or close to keep your entries.'; return; }
+    const keys = [...new Set([bedKey, wakeKey])];
+    const previous = keys.map(key => ({ key, day: state.days[key] ? structuredClone(state.days[key]) : null }));
+    const repair = saveBed && bedKey !== wakeKey && !$('repairHealthBedField').hidden && $('repairHealthBedInput').checked;
+    if (saveBed) ensureDay(bedKey).actualBedTime = bedTime;
+    if (saveWake) ensureDay(wakeKey).actualWakeTime = wakeTime;
+    if (repair && state.days[wakeKey]?.actualBedTime === healthSleepTimes()?.bedTime) delete state.days[wakeKey].actualBedTime;
+    pushUndo('Confirm Health sleep times', () => {
+      previous.forEach(({ key, day }) => { if (day) state.days[key] = day; else delete state.days[key]; });
+      saveState(); renderToday(); renderHistory();
+    });
     saveState();
-    renderToday();
-    renderHistory();
-    showToast(applied === 2 ? 'Health sleep times applied.' : 'The empty Health sleep time was applied; your existing time was kept.');
+    $('healthSleepDialog').close();
+    renderToday(); renderHistory();
+    showToast('Confirmed times saved to their calendar dates.');
   }
 
   function sendNativeBridgeMessage(action, value) {
@@ -2165,7 +2205,6 @@
     els.setupOverview.hidden = Boolean(activeSetupCategory);
     els.setupCategoryBar.hidden = !activeSetupCategory;
     els.setupCategoryTitle.textContent = titles[activeSetupCategory] || 'Setup';
-    els.pageContext.textContent = activeSetupCategory ? `Setup · ${titles[activeSetupCategory]}` : 'Setup';
     els.setupScheduleSummary.textContent = `Wake ${formatTime(state.settings.wakeTime)} · Bed ${formatTime(state.settings.bedTime)} · ${state.items.filter(item => item.kind === 'routine').length} items`;
     els.setupAppearanceSummary.textContent = `${(state.settings.theme || 'calm').replace(/^./, value => value.toUpperCase())} theme · ${state.settings.handedness === 'left' ? 'Left' : 'Right'}-handed controls`;
     const convictionCount = state.settings.truthBeforeTasks?.convictions?.items?.length || state.settings.truthBeforeTasks?.convictions?.points?.length || 0;
@@ -3860,7 +3899,6 @@
       el('truthHeroIntro').textContent = convictionsPhase
         ? 'Now spend a few moments recommitting to the convictions you have held true and will continue to hold true in this day.'
         : 'Before plans, pressure, or productivity, take a few quiet minutes to remember who God is and what Christ has done.';
-      el('pageContext').textContent = 'Morning foundation';
       const phaseStep = convictionsPhase ? stepIndex - TRUTH_STEP_COUNT + 1 : stepIndex + 1;
       const phaseCount = convictionsPhase ? convictionItems().length : TRUTH_STEP_COUNT;
       el('truthStepLabel').textContent = convictionsPhase
