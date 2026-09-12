@@ -87,8 +87,8 @@ function localDateKey(date = new Date()) {
   assert.equal((await page.locator('#earnedAccessStatus').textContent()).trim(), '15 minutes available');
   assert.equal((await page.locator('#earnedAccessBadge').textContent()).trim(), 'Reward earned');
   const nativeAllowance = await page.evaluate(() => [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'earned.access.allow'));
-  assert.ok(nativeAllowance?.value?.until);
-  assert.ok(new Date(nativeAllowance.value.until).getTime() > Date.now());
+  assert.equal(nativeAllowance?.value?.minutes, 15);
+  assert.match(nativeAllowance?.value?.redemptionId, /^allowance-/);
   const earnedAccessData = await page.evaluate(key => {
     const device = JSON.parse(localStorage.getItem('dailyRoutine.earnedAccess.device.v1'));
     const syncedState = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
@@ -159,6 +159,7 @@ function localDateKey(date = new Date()) {
     localStorage.setItem('dailyRoutineApp.v1', JSON.stringify(state));
   }, today);
   await page.reload({ waitUntil: 'networkidle' });
+  assert.equal(await page.evaluate(() => [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action.startsWith('morning.foundation'))?.action), 'morning.foundation.lock');
   for (let index = 0; index < 5; index += 1) await page.locator('#truthContinueButton').click();
   assert.equal(await page.locator('#truthHeroTitle').textContent(), 'Convictions Before Circumstances');
   assert.equal((await page.locator('#pageTitle').textContent()).trim(), 'Daily Routine');
@@ -179,6 +180,7 @@ function localDateKey(date = new Date()) {
     localStorage.setItem('dailyRoutineApp.v1', JSON.stringify(state));
   }, today);
   await page.reload({ waitUntil: 'networkidle' });
+  assert.equal(await page.evaluate(() => [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action.startsWith('morning.foundation'))?.action), 'morning.foundation.complete');
 
   await page.locator('[data-view="setup"]').click();
   await page.evaluate(key => {

@@ -10,6 +10,8 @@ enum NativeBridgeAction: String, Codable {
     case lockEarnedAccess = "earned.access.lock"
     case allowEarnedAccess = "earned.access.allow"
     case requestEarnedAccessStatus = "earned.access.status.request"
+    case lockMorningFoundation = "morning.foundation.lock"
+    case completeMorningFoundation = "morning.foundation.complete"
 }
 
 struct HealthSummary: Codable, Sendable {

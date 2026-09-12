@@ -6,7 +6,7 @@ A mobile-first private routine and mood tracker designed to run as a Progressive
 
 - An automatic daily Earned Access bank: selected completed routines add five-minute credits without a separate claim
 - A configurable daily app-time ceiling, set to 60 minutes by default
-- Reliable 15-minute allowance redemptions from smaller banked rewards while actual-use monitoring is developed
+- Reliable 15-minute allowance redemptions that count only actual foreground use in selected apps
 - The governing Truth Before Tasks reminder: “Not for righteousness. Because of righteousness.”
 
 - A development-only Family Controls prototype with Apple’s private app and website picker

@@ -96,13 +96,28 @@ struct WebAppView: UIViewRepresentable {
             case .allowEarnedAccess:
                 guard
                     let value = payload["value"] as? [String: Any],
-                    let rawUntil = value["until"] as? String,
-                    let until = parseBridgeDate(rawUntil)
+                    let minutes = value["minutes"] as? NSNumber,
+                    let redemptionID = value["redemptionId"] as? String,
+                    !redemptionID.isEmpty
                 else {
-                    emitError("The Earned Access allowance time was not valid.")
+                    emitError("The Earned Access usage allowance was not valid.")
                     return
                 }
-                model.earnedAccess.allowAccess(until: until)
+                model.earnedAccess.allowAccess(minutes: minutes.intValue, redemptionID: redemptionID)
+                emit(name: "earned.access.status", value: model.earnedAccess.bridgeStatus)
+            case .lockMorningFoundation, .completeMorningFoundation:
+                guard
+                    let value = payload["value"] as? [String: Any],
+                    let dateKey = value["dateKey"] as? String,
+                    !dateKey.isEmpty
+                else {
+                    emitError("The Morning Foundation date was not valid.")
+                    return
+                }
+                model.earnedAccess.updateMorningFoundation(
+                    dateKey: dateKey,
+                    completed: action == .completeMorningFoundation
+                )
                 emit(name: "earned.access.status", value: model.earnedAccess.bridgeStatus)
             case .openEarnedAccessControls:
                 guard let webView else { return }
@@ -234,12 +249,6 @@ struct WebAppView: UIViewRepresentable {
 
         private func emitError(_ message: String) {
             emit(name: "native.error", value: ["message": message])
-        }
-
-        private func parseBridgeDate(_ value: String) -> Date? {
-            let fractional = ISO8601DateFormatter()
-            fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-            return fractional.date(from: value) ?? ISO8601DateFormatter().date(from: value)
         }
 
         private func present(_ controller: UIViewController, from webView: WKWebView, fallback: () -> Void) {

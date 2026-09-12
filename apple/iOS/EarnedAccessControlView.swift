@@ -6,6 +6,7 @@ struct EarnedAccessControlView: View {
     var onDone: () -> Void = {}
     @Environment(\.dismiss) private var dismiss
     @State private var showingPicker = false
+    @State private var showingEssentialPicker = false
 
     var body: some View {
         NavigationStack {
@@ -35,9 +36,9 @@ struct EarnedAccessControlView: View {
                     Button("Save selection") { store.saveSelection() }
                         .disabled(!store.isAuthorized || !store.hasSelection)
                 } header: {
-                    Text("Private selection")
+                    Text("Earned apps")
                 } footer: {
-                    Text("For the first test, choose one nonessential app. You can change the selection at any time.")
+                    Text("Choose the social, retail, or other nonessential apps that should use your earned time bank.")
                 }
 
                 Section {
@@ -53,10 +54,32 @@ struct EarnedAccessControlView: View {
                 } header: {
                     Text("Protection")
                 } footer: {
-                    Text("When protection is on, selected apps remain shielded until Daily Routine grants an earned allowance. Turn protection off here if you need to remove every Earned Access restriction immediately.")
+                    Text("When protection is on, selected apps remain shielded until Daily Routine grants an allowance. Only actual foreground use counts against it.")
+                }
+
+                Section {
+                    LabeledContent("Always-available apps", value: String(store.essentialApplicationCount))
+                    LabeledContent("Always-available websites", value: String(store.essentialWebsiteCount))
+                    Button("Choose essential apps") { showingEssentialPicker = true }
+                        .disabled(!store.isAuthorized)
+                    Button("Save essential selection") { store.saveEssentialSelection() }
+                        .disabled(!store.isAuthorized || !store.hasEssentialSelection)
+                    if store.morningGateEnabled {
+                        Button("Turn off morning gate") { store.disableMorningGate() }
+                    } else {
+                        Button("Turn on morning Truth gate") {
+                            store.saveEssentialSelection()
+                            store.enableMorningGate()
+                        }
+                        .disabled(!store.isAuthorized || !store.hasEssentialSelection)
+                    }
+                } header: {
+                    Text("Before Truth Before Tasks")
+                } footer: {
+                    Text("The morning gate shields nearly every app until today’s opening is complete. Daily Routine stays available automatically. Choose individual essentials such as Messages and navigation before turning it on.")
                 }
             }
-            .navigationTitle("Earned Access test")
+            .navigationTitle("Earned Access")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -68,10 +91,15 @@ struct EarnedAccessControlView: View {
                 }
             }
             .familyActivityPicker(isPresented: $showingPicker, selection: $store.selection)
+            .familyActivityPicker(isPresented: $showingEssentialPicker, selection: $store.essentialSelection)
             .onChange(of: showingPicker) { _, isShowing in
                 if !isShowing { store.saveSelection() }
             }
+            .onChange(of: showingEssentialPicker) { _, isShowing in
+                if !isShowing { store.saveEssentialSelection() }
+            }
             .onAppear { store.refresh() }
+            .interactiveDismissDisabled()
         }
     }
 

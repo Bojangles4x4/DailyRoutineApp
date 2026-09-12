@@ -70,9 +70,9 @@
   let watchLastActionMessage = '';
   let latestHealthSummary = null;
   let pendingEarnedAccessStart = false;
-  let earnedAccessExpiryTimer = null;
   let lastEarnedAccessNativeDirective = '';
-  let earnedAccessNativeState = { available: false, protectionEnabled: false, shielding: false, unlockedUntil: '' };
+  let lastMorningFoundationDirective = '';
+  let earnedAccessNativeState = { available: false, protectionEnabled: false, shielding: false, allowanceActive: false, allowanceMinutes: 0, allowanceRedemptionID: '', lastConsumedRedemptionID: '', morningGateEnabled: false };
   let activeSetupCategory = '';
   let accountabilityPreview = '';
   let accountabilityPreviewSignature = '';
@@ -130,6 +130,7 @@
     switchView,
     showToast,
     syncWatchContext,
+    syncMorningFoundation,
     buildAccountabilityReport,
     syncStatus: () => syncCoordinator?.status() || null,
     dateKey,
@@ -649,6 +650,7 @@
     els.openEarnedAccessControlsButton.disabled = !bridge()?.postMessage;
     els.openEarnedAccessControlsButton.addEventListener('click', () => {
       lastEarnedAccessNativeDirective = '';
+      lastMorningFoundationDirective = '';
       sendNativeBridgeMessage('earned.access.controls.open');
     });
     const reveal = () => {
@@ -687,9 +689,14 @@
       saveState();
       showToast('Apple Watch shortcut updated');
     });
+    const refreshNativeState = () => {
+      sendNativeBridgeMessage('earned.access.status.request');
+      if (healthDeviceSettings().connected) sendNativeBridgeMessage('health.summary.request');
+    };
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible' && healthDeviceSettings().connected) sendNativeBridgeMessage('health.summary.request');
+      if (document.visibilityState === 'visible') refreshNativeState();
     });
+    window.addEventListener('focus', refreshNativeState);
     window.addEventListener('dailyRoutine:native', event => {
       const detail = event.detail || {};
       if (detail.name === 'native.ready') {
@@ -746,9 +753,18 @@
           available: true,
           protectionEnabled: value.protectionEnabled === true || value.protectionEnabled === 'true',
           shielding: value.shielding === true || value.shielding === 'true',
-          unlockedUntil: String(value.unlockedUntil || '')
+          allowanceActive: value.allowanceActive === true || value.allowanceActive === 'true',
+          allowanceMinutes: Math.max(0, Number(value.allowanceMinutes) || 0),
+          allowanceRedemptionID: String(value.allowanceRedemptionID || ''),
+          lastConsumedRedemptionID: String(value.lastConsumedRedemptionID || ''),
+          morningGateEnabled: value.morningGateEnabled === true || value.morningGateEnabled === 'true'
         };
+        const settings = earnedAccessDeviceSettings();
+        if (settings.activeAllowance?.id && earnedAccessNativeState.lastConsumedRedemptionID === settings.activeAllowance.id) {
+          saveEarnedAccessDeviceSettings({ activeAllowance: null });
+        }
         els.earnedAccessNativeStatus.textContent = value.message || 'Earned Access status updated.';
+        syncMorningFoundation(!document.body.classList.contains('truth-locked'));
         renderEarnedAccess();
       } else if (detail.name === 'native.error') {
         const message = detail.value?.message || 'The native connection could not complete that request.';
@@ -758,6 +774,7 @@
     });
     renderAppleStepsGoal();
     renderEarnedAccess();
+    sendNativeBridgeMessage('earned.access.status.request');
   }
 
   function healthDeviceSettings() {
@@ -792,7 +809,7 @@
     const defaults = {
       label: 'Selected apps', stepGoal: 1000, rewardMinutes: 10, taskRewardMinutes: 5, dailyLimitMinutes: 60, mode: 'fixed',
       morningTaskIds: defaultEarnedAccessTasks('morning'), laterTaskIds: defaultEarnedAccessTasks('later'),
-      active: null, earnedUntil: '', lastCompleted: null, roundsByDate: {}, stageClaimsByDate: {},
+      active: null, activeAllowance: null, earnedUntil: '', lastCompleted: null, roundsByDate: {}, stageClaimsByDate: {},
       bankByDate: {}, earnedByDate: {}, taskCreditsByDate: {}, redemptionsByDate: {}
     };
     try {
@@ -813,6 +830,13 @@
       next.taskCreditsByDate = next.taskCreditsByDate && typeof next.taskCreditsByDate === 'object' ? next.taskCreditsByDate : {};
       next.redemptionsByDate = next.redemptionsByDate && typeof next.redemptionsByDate === 'object' ? next.redemptionsByDate : {};
       if (!next.active || typeof next.active !== 'object') next.active = null;
+      if (!next.activeAllowance || typeof next.activeAllowance !== 'object') {
+        const legacyEnd = new Date(next.earnedUntil || '').getTime();
+        next.activeAllowance = !Number.isNaN(legacyEnd) && legacyEnd > Date.now()
+          ? { id: `legacy-${Math.round(legacyEnd)}`, minutes: Math.max(15, Number(next.lastCompleted?.rewardMinutes) || 15), startedAt: new Date().toISOString() }
+          : null;
+      }
+      next.earnedUntil = '';
       if (!next.lastCompleted || typeof next.lastCompleted !== 'object') next.lastCompleted = null;
       return next;
     } catch { return defaults; }
@@ -929,8 +953,7 @@
     const settings = creditCompletedEarnedTasks(saveEarnedAccessFormSettings());
     const today = dateKey(startOfToday());
     const bank = Math.max(0, Number(settings.bankByDate[today]) || 0);
-    const currentEarnedUntil = new Date(settings.earnedUntil || '').getTime();
-    if (settings.active || (!Number.isNaN(currentEarnedUntil) && currentEarnedUntil > Date.now())) {
+    if (settings.active || settings.activeAllowance) {
       showToast('Finish the current allowance or step round first.');
       return;
     }
@@ -940,12 +963,12 @@
     }
     const rewardMinutes = 15;
     const startedAt = new Date();
-    const earnedUntil = new Date(startedAt.getTime() + rewardMinutes * 60 * 1000).toISOString();
+    const redemptionID = `allowance-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const redemptions = Array.isArray(settings.redemptionsByDate[today]) ? settings.redemptionsByDate[today] : [];
     const next = saveEarnedAccessDeviceSettings({
-      earnedUntil,
+      activeAllowance: { id: redemptionID, minutes: rewardMinutes, startedAt: startedAt.toISOString() },
       bankByDate: { ...settings.bankByDate, [today]: bank - rewardMinutes },
-      redemptionsByDate: { ...settings.redemptionsByDate, [today]: [...redemptions, { minutes: rewardMinutes, startedAt: startedAt.toISOString(), endsAt: earnedUntil }] },
+      redemptionsByDate: { ...settings.redemptionsByDate, [today]: [...redemptions, { id: redemptionID, minutes: rewardMinutes, startedAt: startedAt.toISOString() }] },
       lastCompleted: { source: 'bank', label: settings.label, rewardMinutes, completedAt: startedAt.toISOString() }
     });
     syncNativeEarnedAccess(next, true);
@@ -971,12 +994,11 @@
 
   function startEarnedAccessRound() {
     const settings = saveEarnedAccessFormSettings();
-    const earnedUntil = new Date(settings.earnedUntil || '').getTime();
     if (settings.active) {
       showToast('A step round is already in progress.');
       return;
     }
-    if (!Number.isNaN(earnedUntil) && earnedUntil > Date.now()) {
+    if (settings.activeAllowance) {
       showToast('Finish the time you already earned before starting another round.');
       return;
     }
@@ -995,8 +1017,8 @@
       rewardMinutes: settings.rewardMinutes,
       label: settings.label
     };
-    saveEarnedAccessDeviceSettings({ active, earnedUntil: '' });
-    syncNativeEarnedAccess({ ...settings, active, earnedUntil: '' }, false);
+    saveEarnedAccessDeviceSettings({ active });
+    syncNativeEarnedAccess({ ...settings, active }, false);
     renderEarnedAccess();
     showToast(`${active.label} step round started at ${steps.toLocaleString()} steps.`);
   }
@@ -1050,18 +1072,10 @@
 
   function renderEarnedAccess() {
     if (!els.earnedAccessCard) return;
-    if (earnedAccessExpiryTimer) {
-      window.clearTimeout(earnedAccessExpiryTimer);
-      earnedAccessExpiryTimer = null;
-    }
     let settings = creditCompletedEarnedTasks(earnedAccessDeviceSettings());
     const today = dateKey(startOfToday());
     if (settings.active?.dateKey && settings.active.dateKey !== today) {
       settings = saveEarnedAccessDeviceSettings({ active: null });
-    }
-    const earnedTime = new Date(settings.earnedUntil || '').getTime();
-    if (!Number.isNaN(earnedTime) && earnedTime <= Date.now() && settings.earnedUntil) {
-      settings = saveEarnedAccessDeviceSettings({ earnedUntil: '' });
     }
     const editing = document.activeElement;
     if (editing !== els.earnedAccessLabelInput) els.earnedAccessLabelInput.value = settings.label;
@@ -1072,7 +1086,7 @@
     if (editing !== els.earnedAccessModeInput) els.earnedAccessModeInput.value = settings.mode;
 
     const active = settings.active;
-    const accessIsEarned = !Number.isNaN(new Date(settings.earnedUntil || '').getTime()) && new Date(settings.earnedUntil).getTime() > Date.now();
+    const accessIsEarned = Boolean(settings.activeAllowance);
     const bankMinutes = Math.max(0, Number(settings.bankByDate[today]) || 0);
     const earnedToday = Math.max(0, Number(settings.earnedByDate[today]) || 0);
     syncNativeEarnedAccess(settings, accessIsEarned);
@@ -1104,9 +1118,8 @@
       els.earnedAccessBadge.textContent = 'Reward earned';
       els.earnedAccessStatus.textContent = `${minutes} minutes available`;
       els.earnedAccessDetail.textContent = earnedAccessNativeState.protectionEnabled
-        ? `Your selected apps are available until ${new Date(settings.earnedUntil).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}, then they will lock again.`
-        : `Your ${completed?.label || settings.label} reward countdown ends at ${new Date(settings.earnedUntil).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}. Turn on protection above to enforce app blocking.`;
-      earnedAccessExpiryTimer = window.setTimeout(renderEarnedAccess, Math.min(Math.max(250, earnedTime - Date.now() + 250), 2147483647));
+        ? `Use the selected apps when you choose. Only foreground use counts; they will lock after ${minutes} minutes of actual use.`
+        : `Your ${completed?.label || settings.label} allowance is ready. Turn on protection above to enforce actual-use counting.`;
     } else {
       const required = earnedAccessRequirement(settings);
       els.earnedAccessBadge.textContent = 'Ready';
@@ -1122,11 +1135,19 @@
 
   function syncNativeEarnedAccess(settings, accessIsEarned) {
     if (!window.DailyRoutineNative?.postMessage) return;
-    const directive = accessIsEarned && settings.earnedUntil ? `allow:${settings.earnedUntil}` : 'lock';
+    const directive = accessIsEarned && settings.activeAllowance?.id ? `allow:${settings.activeAllowance.id}` : 'lock';
     if (directive === lastEarnedAccessNativeDirective) return;
     lastEarnedAccessNativeDirective = directive;
-    if (accessIsEarned) sendNativeBridgeMessage('earned.access.allow', { until: settings.earnedUntil });
+    if (accessIsEarned) sendNativeBridgeMessage('earned.access.allow', { minutes: settings.activeAllowance.minutes, redemptionId: settings.activeAllowance.id });
     else sendNativeBridgeMessage('earned.access.lock');
+  }
+
+  function syncMorningFoundation(completed, key = dateKey(startOfToday())) {
+    if (!window.DailyRoutineNative?.postMessage) return false;
+    const directive = `${completed ? 'complete' : 'lock'}:${key}`;
+    if (directive === lastMorningFoundationDirective) return false;
+    lastMorningFoundationDirective = directive;
+    return sendNativeBridgeMessage(completed ? 'morning.foundation.complete' : 'morning.foundation.lock', { dateKey: key });
   }
 
   function healthStepsItem() {
@@ -3885,6 +3906,7 @@
 
     function showTruth() {
       activeDateKey = todayKey();
+      api.syncMorningFoundation(false, activeDateKey);
       const session = getSession(activeDateKey);
       stepIndex = Math.min(totalStepCount() - 1, Math.max(0, Number(session.currentStep) || 0));
       document.body.classList.add('truth-locked');
@@ -4048,6 +4070,7 @@
       config().completions[key] = new Date().toISOString();
       delete config().sessions[key];
       api.saveState();
+      api.syncMorningFoundation(true, key);
       unlock();
       api.switchView('today');
       api.showToast(hasConvictions ? 'Enter the day from grace, carrying truth and conviction.' : 'Enter the day from grace, carrying what is true.');
@@ -4308,8 +4331,10 @@
     bindGate();
     bindSettings();
     renderSettings();
-    if (isComplete()) unlock();
-    else showTruth();
+    if (isComplete()) {
+      unlock();
+      api.syncMorningFoundation(true, todayKey());
+    } else showTruth();
     window.setInterval(() => {
       const key = todayKey();
       if (!isComplete(key) && (!document.body.classList.contains('truth-locked') || key !== activeDateKey)) showTruth();
