@@ -413,11 +413,11 @@
               <button id="openEarnedAccessControlsButton" class="secondary-button" type="button">Choose & test app blocking</button>
             </div>
             <div class="earned-access-heading">
-              <div><strong>Earned Access</strong><span>Complete selected routines or walk additional steps to earn focused app time.</span></div>
+              <div><strong>Earned Access</strong><span>Complete selected routines or walk additional steps to add time to one shared bank for your selected earned apps.</span></div>
               <span id="earnedAccessBadge" class="privacy-pill">Ready</span>
             </div>
             <div class="earned-access-fields">
-              <label class="text-field compact earned-access-app-field"><span>Reward label</span><input id="earnedAccessLabelInput" type="text" maxlength="80" value="Selected apps" placeholder="Selected apps" /><small class="field-help">The actual apps are selected privately in Apple’s Screen Time picker above.</small></label>
+              <label class="text-field compact earned-access-app-field"><span>App group name (optional)</span><input id="earnedAccessLabelInput" type="text" maxlength="80" value="Selected apps" placeholder="For example: Social &amp; Shopping" /><small class="field-help">This only names the group. Choose the apps privately in Apple’s Screen Time picker above.</small></label>
               <label class="text-field compact"><span>Minutes per task</span><input id="earnedAccessTaskMinutesInput" type="number" min="1" max="15" step="1" inputmode="numeric" value="5" /></label>
               <label class="text-field compact"><span>Daily limit</span><input id="earnedAccessDailyLimitInput" type="number" min="15" max="120" step="5" inputmode="numeric" value="60" /></label>
               <label class="text-field compact"><span>Steps per round</span><input id="earnedAccessStepsInput" type="number" min="100" max="20000" step="50" inputmode="numeric" value="1000" /></label>
@@ -450,7 +450,7 @@
               <button id="checkEarnedAccessButton" class="secondary-button" type="button">Check progress</button>
               <button id="cancelEarnedAccessButton" class="text-button" type="button" hidden>Cancel round</button>
             </div>
-            <p class="muted micro-copy">Task rewards are credited automatically and held in today’s bank. A 15-minute withdrawal remains available until selected apps use all 15 foreground minutes.</p>
+            <p class="muted micro-copy">Today’s bank applies only to the apps chosen under Earned apps. They share the bank: foreground time in any selected app reduces the same 15-minute allowance.</p>
           </div>
           <div class="connection-status-card apple-watch-status">
             <div class="connection-icon">⌚</div>

@@ -38,7 +38,7 @@ struct EarnedAccessControlView: View {
                 } header: {
                     Text("Earned apps")
                 } footer: {
-                    Text("Choose the social, retail, or other nonessential apps that should use your earned time bank.")
+                    Text("Choose the social, retail, or other nonessential apps that should use your earned time bank. All selected apps share one bank, and their combined foreground use spends the allowance.")
                 }
 
                 Section {
