@@ -75,6 +75,8 @@ targets:
       properties:
         com.apple.developer.family-controls: true
         com.apple.developer.healthkit: true
+        com.apple.security.application-groups:
+          - group.com.bojangles4x4.DailyRoutine
     settings:
       base:
         DEVELOPMENT_TEAM: UQ7AURZ83A
@@ -84,6 +86,35 @@ targets:
     dependencies:
       - target: DailyRoutineWatch
         embed: true
+      - target: DailyRoutineActivityMonitor
+        embed: true
+  DailyRoutineActivityMonitor:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: ActivityMonitor
+      - path: iOS/EarnedAccessShared.swift
+    info:
+      path: Config/DailyRoutineActivityMonitor-Info.plist
+      properties:
+        CFBundleDisplayName: Earned Access Monitor
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.deviceactivity.monitor-extension
+          NSExtensionPrincipalClass: "$(PRODUCT_MODULE_NAME).DeviceActivityMonitorExtension"
+    entitlements:
+      path: Config/DailyRoutineActivityMonitor.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups:
+          - group.com.bojangles4x4.DailyRoutine
+    settings:
+      base:
+        APPLICATION_EXTENSION_API_ONLY: true
+        DEVELOPMENT_TEAM: UQ7AURZ83A
+        PRODUCT_BUNDLE_IDENTIFIER: com.bojangles4x4.DailyRoutine.activitymonitor
+        SKIP_INSTALL: true
   DailyRoutineWatch:
     type: application
     platform: watchOS

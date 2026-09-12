@@ -419,17 +419,17 @@
             <div class="earned-access-fields">
               <label class="text-field compact earned-access-app-field"><span>Reward label</span><input id="earnedAccessLabelInput" type="text" maxlength="80" value="Selected apps" placeholder="Selected apps" /><small class="field-help">The actual apps are selected privately in Apple’s Screen Time picker above.</small></label>
               <label class="text-field compact"><span>Steps per round</span><input id="earnedAccessStepsInput" type="number" min="100" max="20000" step="50" inputmode="numeric" value="1000" /></label>
-              <label class="text-field compact"><span>Minutes earned</span><input id="earnedAccessMinutesInput" type="number" min="1" max="120" step="5" inputmode="numeric" value="20" /></label>
+              <label class="text-field compact"><span>Minutes earned</span><input id="earnedAccessMinutesInput" type="number" min="15" max="120" step="5" inputmode="numeric" value="20" /></label>
               <label class="text-field compact"><span>Step pattern</span><select id="earnedAccessModeInput"><option value="fixed">Same goal each round</option><option value="escalating">Escalate 750 → 1,000 → 1,500</option></select></label>
             </div>
             <div class="earned-access-stages">
               <div class="earned-stage" data-stage="morning">
-                <div class="earned-stage-heading"><div><strong>Morning access</strong><span>Complete every selected morning task</span></div><label><span>Reward</span><input id="earnedAccessMorningMinutesInput" type="number" min="1" max="120" step="5" inputmode="numeric" value="20" /></label></div>
+                <div class="earned-stage-heading"><div><strong>Morning access</strong><span>Complete every selected morning task</span></div><label><span>Reward</span><input id="earnedAccessMorningMinutesInput" type="number" min="15" max="120" step="5" inputmode="numeric" value="20" /></label></div>
                 <div id="earnedAccessMorningTasks" class="earned-task-options" aria-label="Morning access requirements"></div>
                 <div class="earned-stage-status"><span id="earnedAccessMorningStatus">Choose morning tasks</span><button id="startEarnedAccessMorningButton" class="small-button" type="button" disabled>Start 20 minutes</button></div>
               </div>
               <div class="earned-stage" data-stage="later">
-                <div class="earned-stage-heading"><div><strong>Later access</strong><span>Earn another allowance after afternoon or evening tasks</span></div><label><span>Reward</span><input id="earnedAccessLaterMinutesInput" type="number" min="1" max="120" step="5" inputmode="numeric" value="20" /></label></div>
+                <div class="earned-stage-heading"><div><strong>Later access</strong><span>Earn another allowance after afternoon or evening tasks</span></div><label><span>Reward</span><input id="earnedAccessLaterMinutesInput" type="number" min="15" max="120" step="5" inputmode="numeric" value="20" /></label></div>
                 <div id="earnedAccessLaterTasks" class="earned-task-options" aria-label="Later access requirements"></div>
                 <div class="earned-stage-status"><span id="earnedAccessLaterStatus">Choose later tasks</span><button id="startEarnedAccessLaterButton" class="small-button" type="button" disabled>Start 20 minutes</button></div>
               </div>

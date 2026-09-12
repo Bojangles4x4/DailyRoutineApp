@@ -87,9 +87,32 @@ struct WebAppView: UIViewRepresentable {
             }
 
             switch action {
+            case .requestEarnedAccessStatus:
+                model.earnedAccess.refresh()
+                emit(name: "earned.access.status", value: model.earnedAccess.bridgeStatus)
+            case .lockEarnedAccess:
+                model.earnedAccess.lockIfEnabled()
+                emit(name: "earned.access.status", value: model.earnedAccess.bridgeStatus)
+            case .allowEarnedAccess:
+                guard
+                    let value = payload["value"] as? [String: Any],
+                    let rawUntil = value["until"] as? String,
+                    let until = parseBridgeDate(rawUntil)
+                else {
+                    emitError("The Earned Access allowance time was not valid.")
+                    return
+                }
+                model.earnedAccess.allowAccess(until: until)
+                emit(name: "earned.access.status", value: model.earnedAccess.bridgeStatus)
             case .openEarnedAccessControls:
                 guard let webView else { return }
-                let controller = UIHostingController(rootView: EarnedAccessControlView(store: model.earnedAccess))
+                let controller = UIHostingController(
+                    rootView: EarnedAccessControlView(store: model.earnedAccess) { [weak self] in
+                        guard let self else { return }
+                        self.model.earnedAccess.refresh()
+                        self.emit(name: "earned.access.status", value: self.model.earnedAccess.bridgeStatus)
+                    }
+                )
                 present(controller, from: webView) { }
             case .openTruthReminders:
                 guard let webView else { return }
@@ -139,17 +162,21 @@ struct WebAppView: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             isWebAppReady = true
+            model.earnedAccess.refresh()
             emit(
                 name: "native.ready",
                 value: [
                     "healthAvailable": model.health.isAvailable,
                     "earnedAccessAvailable": true,
+                    "earnedAccessProtectionEnabled": model.earnedAccess.protectionEnabled,
+                    "earnedAccessShielding": model.earnedAccess.isShielding,
                     "watchReachable": model.watch.isReachable,
                     "watchInstalled": model.watch.isWatchAppInstalled
                 ]
             )
             pendingWatchEvents.forEach { emit(name: "watch.event", value: $0) }
             pendingWatchEvents.removeAll()
+            emit(name: "earned.access.status", value: model.earnedAccess.bridgeStatus)
         }
 
         func webView(
@@ -207,6 +234,12 @@ struct WebAppView: UIViewRepresentable {
 
         private func emitError(_ message: String) {
             emit(name: "native.error", value: ["message": message])
+        }
+
+        private func parseBridgeDate(_ value: String) -> Date? {
+            let fractional = ISO8601DateFormatter()
+            fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            return fractional.date(from: value) ?? ISO8601DateFormatter().date(from: value)
         }
 
         private func present(_ controller: UIViewController, from webView: WKWebView, fallback: () -> Void) {

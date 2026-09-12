@@ -7,6 +7,9 @@ enum NativeBridgeAction: String, Codable {
     case shareText = "share.text"
     case openTruthReminders = "truth.reminders.open"
     case openEarnedAccessControls = "earned.access.controls.open"
+    case lockEarnedAccess = "earned.access.lock"
+    case allowEarnedAccess = "earned.access.allow"
+    case requestEarnedAccessStatus = "earned.access.status.request"
 }
 
 struct HealthSummary: Codable, Sendable {

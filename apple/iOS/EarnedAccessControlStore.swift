@@ -1,3 +1,4 @@
+import DeviceActivity
 import FamilyControls
 import Foundation
 import ManagedSettings
@@ -7,11 +8,13 @@ final class EarnedAccessControlStore: ObservableObject {
     @Published var selection = FamilyActivitySelection()
     @Published private(set) var authorizationStatus = AuthorizationCenter.shared.authorizationStatus
     @Published private(set) var isShielding = false
+    @Published private(set) var protectionEnabled = false
+    @Published private(set) var unlockedUntil: Date?
     @Published private(set) var status = "Allow Screen Time access, then choose apps to begin the local test."
 
     private let authorizationCenter = AuthorizationCenter.shared
-    private let managedStore = ManagedSettingsStore(named: ManagedSettingsStore.Name("dailyRoutine.earnedAccess"))
-    private let shieldingKey = "dailyRoutine.earnedAccess.shielding.v1"
+    private let managedStore = ManagedSettingsStore(named: EarnedAccessShared.storeName)
+    private let activityCenter = DeviceActivityCenter()
 
     private var folder: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -21,11 +24,23 @@ final class EarnedAccessControlStore: ObservableObject {
     private var selectionURL: URL { folder.appendingPathComponent("selection.json") }
 
     init() {
-        if let data = try? Data(contentsOf: selectionURL),
+        selection = EarnedAccessShared.loadSelection()
+        if selection.applicationTokens.isEmpty,
+           selection.categoryTokens.isEmpty,
+           selection.webDomainTokens.isEmpty,
+           let data = try? Data(contentsOf: selectionURL),
            let saved = try? JSONDecoder().decode(FamilyActivitySelection.self, from: data) {
             selection = saved
+            try? EarnedAccessShared.saveSelection(saved)
         }
-        isShielding = UserDefaults.standard.bool(forKey: shieldingKey)
+        protectionEnabled = EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.protectionKey)
+        isShielding = EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.shieldingKey)
+        unlockedUntil = EarnedAccessShared.defaults.object(forKey: EarnedAccessShared.unlockedUntilKey) as? Date
+        if protectionEnabled, let unlockedUntil, unlockedUntil <= Date() {
+            EarnedAccessShared.applyShield(selection: selection, to: managedStore)
+            self.unlockedUntil = nil
+            isShielding = true
+        }
         refreshStatus()
     }
 
@@ -54,56 +69,111 @@ final class EarnedAccessControlStore: ObservableObject {
 
     func saveSelection() {
         do {
-            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-            try JSONEncoder().encode(selection).write(to: selectionURL, options: .atomic)
-            if isShielding { applyShield() }
+            try EarnedAccessShared.saveSelection(selection)
+            if protectionEnabled && isShielding { lockIfEnabled() }
             else { refreshStatus(success: selectionSummary(prefix: "Selection saved")) }
         } catch {
             status = "The app selection could not be saved: \(error.localizedDescription)"
         }
     }
 
-    func applyShield() {
+    func enableProtection() {
+        protectionEnabled = true
+        EarnedAccessShared.defaults.set(true, forKey: EarnedAccessShared.protectionKey)
+        lockIfEnabled()
+    }
+
+    func lockIfEnabled() {
         authorizationStatus = authorizationCenter.authorizationStatus
         guard isAuthorized else {
-            managedStore.clearAllSettings()
+            EarnedAccessShared.clearShield(from: managedStore)
             isShielding = false
-            UserDefaults.standard.set(false, forKey: shieldingKey)
-            status = "Allow Screen Time access before testing the block."
+            status = "Allow Screen Time access before enabling Earned Access."
             return
         }
         guard hasSelection else {
-            managedStore.clearAllSettings()
+            EarnedAccessShared.clearShield(from: managedStore)
             isShielding = false
-            UserDefaults.standard.set(false, forKey: shieldingKey)
             status = "Choose at least one app, category, or website first."
             return
         }
+        guard protectionEnabled else {
+            status = "Earned Access protection is off. Enable it before starting a requirement."
+            return
+        }
 
-        managedStore.shield.applications = selection.applicationTokens.isEmpty ? nil : selection.applicationTokens
-        managedStore.shield.webDomains = selection.webDomainTokens.isEmpty ? nil : selection.webDomainTokens
-        managedStore.shield.applicationCategories = selection.categoryTokens.isEmpty
-            ? nil
-            : .specific(selection.categoryTokens)
+        activityCenter.stopMonitoring([EarnedAccessShared.activityName])
+        EarnedAccessShared.applyShield(selection: selection, to: managedStore)
         isShielding = true
-        UserDefaults.standard.set(true, forKey: shieldingKey)
-        status = "Test lock is active. Open one of the selected apps to confirm Apple shows the blocking screen."
+        unlockedUntil = nil
+        status = "Earned Access is locked. Complete a requirement to open the selected apps."
     }
 
-    func clearShield() {
-        managedStore.clearAllSettings()
+    func allowAccess(until end: Date) {
+        refresh()
+        guard protectionEnabled, isAuthorized, hasSelection else {
+            status = "Enable Earned Access and choose apps before starting an allowance."
+            return
+        }
+        guard end > Date() else { lockIfEnabled(); return }
+
+        do {
+            activityCenter.stopMonitoring([EarnedAccessShared.activityName])
+            let calendar = Calendar.current
+            let components: Set<Calendar.Component> = [.era, .year, .month, .day, .hour, .minute, .second]
+            let schedule = DeviceActivitySchedule(
+                intervalStart: calendar.dateComponents(components, from: Date()),
+                intervalEnd: calendar.dateComponents(components, from: end),
+                repeats: false
+            )
+            try activityCenter.startMonitoring(EarnedAccessShared.activityName, during: schedule)
+            EarnedAccessShared.clearShield(from: managedStore)
+            EarnedAccessShared.defaults.set(end, forKey: EarnedAccessShared.unlockedUntilKey)
+            isShielding = false
+            unlockedUntil = end
+            status = "Access is open until \(end.formatted(date: .omitted, time: .shortened)). It will lock again automatically."
+        } catch {
+            lockIfEnabled()
+            status = "The timed allowance could not start: \(error.localizedDescription)"
+        }
+    }
+
+    func disableProtection() {
+        activityCenter.stopMonitoring([EarnedAccessShared.activityName])
+        EarnedAccessShared.clearShield(from: managedStore)
+        protectionEnabled = false
         isShielding = false
-        UserDefaults.standard.set(false, forKey: shieldingKey)
-        status = "Test lock removed. Your selected apps should open normally."
+        unlockedUntil = nil
+        EarnedAccessShared.defaults.set(false, forKey: EarnedAccessShared.protectionKey)
+        EarnedAccessShared.defaults.removeObject(forKey: EarnedAccessShared.unlockedUntilKey)
+        status = "Earned Access protection is off. Your selected apps should open normally."
     }
 
     func refresh() {
         authorizationStatus = authorizationCenter.authorizationStatus
-        if !isAuthorized && isShielding {
-            clearShield()
-        } else {
-            refreshStatus()
+        protectionEnabled = EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.protectionKey)
+        isShielding = EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.shieldingKey)
+        unlockedUntil = EarnedAccessShared.defaults.object(forKey: EarnedAccessShared.unlockedUntilKey) as? Date
+        if !isAuthorized && protectionEnabled {
+            disableProtection()
+            return
         }
+        if protectionEnabled, let unlockedUntil, unlockedUntil <= Date() {
+            lockIfEnabled()
+            return
+        }
+        refreshStatus()
+    }
+
+    var bridgeStatus: [String: String] {
+        [
+            "authorized": isAuthorized ? "true" : "false",
+            "hasSelection": hasSelection ? "true" : "false",
+            "protectionEnabled": protectionEnabled ? "true" : "false",
+            "shielding": isShielding ? "true" : "false",
+            "unlockedUntil": unlockedUntil?.ISO8601Format() ?? "",
+            "message": status
+        ]
     }
 
     private func selectionSummary(prefix: String) -> String {
@@ -114,10 +184,12 @@ final class EarnedAccessControlStore: ObservableObject {
     private func refreshStatus(success: String? = nil) {
         if let success { status = success; return }
         if isAuthorized {
-            if isShielding {
-                status = "Test lock is active for \(selectedApplicationCount + selectedCategoryCount + selectedWebsiteCount) selection(s)."
+            if protectionEnabled, let unlockedUntil, unlockedUntil > Date() {
+                status = "Access is open until \(unlockedUntil.formatted(date: .omitted, time: .shortened))."
+            } else if protectionEnabled && isShielding {
+                status = "Earned Access is locked for \(selectedApplicationCount + selectedCategoryCount + selectedWebsiteCount) selection(s)."
             } else if hasSelection {
-                status = selectionSummary(prefix: "Ready to test")
+                status = selectionSummary(prefix: "Ready to enable")
             } else {
                 status = "Screen Time access is authorized. Choose apps for the local test."
             }

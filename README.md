@@ -5,13 +5,14 @@ A mobile-first private routine and mood tracker designed to run as a Progressive
 ## Version 1.16.0 development features
 
 - A development-only Family Controls prototype with Apple’s private app and website picker
-- Real Managed Settings shielding with explicit Apply test lock and Remove test lock controls
+- Real Managed Settings shielding connected to routine and step-based Earned Access allowances
+- Automatic on-device relocking when an earned allowance ends
 - On-device storage of opaque Apple selection tokens; selected app names and browsing history are not exposed to Daily Routine
 - One clean Daily Routine header without a repeated screen subtitle
 - A native truth-reminder library for text and pictures, with selected or shuffled notifications and a configurable daily schedule
 - Reviewable Apple Health sleep suggestions that save bedtime to the date it occurred and wake time to the following morning
 - Phone-safe actual-time fields that keep the time and Now button from overlapping
-- A separate manual reward tracker that will be connected to the native shield after the physical-device test and Apple distribution approval
+- A physical-device-tested reward flow that locks selected apps, grants a timed allowance, and restores the shield automatically
 - A calmer Setup landing page organized into Routine, Appearance, Faith, Health, and Data sections
 - Compact wake, bedtime, schedule, and sleep-time controls that preserve phone space
 - Morning and later Earned Access stages based on selected routine completion, with separate configurable rewards

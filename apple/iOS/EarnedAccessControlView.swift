@@ -3,6 +3,7 @@ import SwiftUI
 
 struct EarnedAccessControlView: View {
     @ObservedObject var store: EarnedAccessControlStore
+    var onDone: () -> Void = {}
     @Environment(\.dismiss) private var dismiss
     @State private var showingPicker = false
 
@@ -40,25 +41,31 @@ struct EarnedAccessControlView: View {
                 }
 
                 Section {
-                    if store.isShielding {
-                        Button("Remove test lock") { store.clearShield() }
+                    if store.protectionEnabled {
+                        Button("Turn off Earned Access protection") { store.disableProtection() }
                     } else {
-                        Button("Apply test lock") {
+                        Button("Turn on Earned Access protection") {
                             store.saveSelection()
-                            store.applyShield()
+                            store.enableProtection()
                         }
                         .disabled(!store.isAuthorized || !store.hasSelection)
                     }
                 } header: {
-                    Text("Local lock test")
+                    Text("Protection")
                 } footer: {
-                    Text("Apply the lock, leave Daily Routine, and open a selected app. Apple should replace it with a Screen Time shield. Return here to remove the lock. Routine-based and timed unlocking comes after this device test succeeds.")
+                    Text("When protection is on, selected apps remain shielded until Daily Routine grants an earned allowance. Turn protection off here if you need to remove every Earned Access restriction immediately.")
                 }
             }
             .navigationTitle("Earned Access test")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        store.refresh()
+                        onDone()
+                        dismiss()
+                    }
+                }
             }
             .familyActivityPicker(isPresented: $showingPicker, selection: $store.selection)
             .onChange(of: showingPicker) { _, isShowing in
