@@ -5,7 +5,7 @@
   const SNAPSHOT_KEY = 'dailyRoutineApp.snapshots.v1';
   const HEALTH_DEVICE_KEY = 'dailyRoutine.health.device.v1';
   const EARNED_ACCESS_DEVICE_KEY = 'dailyRoutine.earnedAccess.device.v1';
-  const APP_VERSION = '1.16.0';
+  const APP_VERSION = '1.17.0';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const DEFAULT_BIBLE_APP_URL = 'https://bojangles4x4.github.io/Bible-Reading-Plan/';
@@ -115,7 +115,7 @@
     privateSyncCard: $('privateSyncCard'), privateSyncBadge: $('privateSyncBadge'), privateSyncStatus: $('privateSyncStatus'), privateSyncDevice: $('privateSyncDevice'), privateSyncLastSync: $('privateSyncLastSync'), createSyncSnapshotButton: $('createSyncSnapshotButton'), privateSyncNowButton: $('privateSyncNowButton'), privateSyncSignIn: $('privateSyncSignIn'), privateSyncEmailInput: $('privateSyncEmailInput'), privateSyncPasswordInput: $('privateSyncPasswordInput'), privateSyncSendCodeButton: $('privateSyncSendCodeButton'), privateSyncVerifyButton: $('privateSyncVerifyButton'), privateSyncHelp: $('privateSyncHelp'), privateSyncAccount: $('privateSyncAccount'), privateSyncSignOutButton: $('privateSyncSignOutButton'), privateSyncDeleteCloudButton: $('privateSyncDeleteCloudButton'),
     connectionsCard: $('connectionsCard'), syncConnectionsButton: $('syncConnectionsButton'), bibleConnectionStatus: $('bibleConnectionStatus'), openBibleConnectionButton: $('openBibleConnectionButton'), bibleAppUrlInput: $('bibleAppUrlInput'), saveBibleConnectionButton: $('saveBibleConnectionButton'), testBibleConnectionButton: $('testBibleConnectionButton'), connectionTemplates: $('connectionTemplates'),
     appleNativeCard: $('appleNativeCard'), appleStepCount: $('appleStepCount'), appleSleepHours: $('appleSleepHours'), appleWorkoutCount: $('appleWorkoutCount'), appleHealthStatus: $('appleHealthStatus'), healthSourceSummary: $('healthSourceSummary'), healthSourceDetail: $('healthSourceDetail'), connectAppleHealthButton: $('connectAppleHealthButton'), refreshAppleHealthButton: $('refreshAppleHealthButton'), appleWatchStatus: $('appleWatchStatus'), appleStepsGoalInput: $('appleStepsGoalInput'), saveAppleStepsGoalButton: $('saveAppleStepsGoalButton'), appleWatchQuickActionInput: $('appleWatchQuickActionInput'),
-    earnedAccessCard: $('earnedAccessCard'), earnedAccessBadge: $('earnedAccessBadge'), earnedAccessNativeStatus: $('earnedAccessNativeStatus'), openEarnedAccessControlsButton: $('openEarnedAccessControlsButton'), earnedAccessLabelInput: $('earnedAccessLabelInput'), earnedAccessStepsInput: $('earnedAccessStepsInput'), earnedAccessMinutesInput: $('earnedAccessMinutesInput'), earnedAccessModeInput: $('earnedAccessModeInput'), earnedAccessStatus: $('earnedAccessStatus'), earnedAccessDetail: $('earnedAccessDetail'), earnedAccessProgressBar: $('earnedAccessProgressBar'), startEarnedAccessButton: $('startEarnedAccessButton'), checkEarnedAccessButton: $('checkEarnedAccessButton'), cancelEarnedAccessButton: $('cancelEarnedAccessButton'), earnedAccessMorningMinutesInput: $('earnedAccessMorningMinutesInput'), earnedAccessLaterMinutesInput: $('earnedAccessLaterMinutesInput'), earnedAccessMorningTasks: $('earnedAccessMorningTasks'), earnedAccessLaterTasks: $('earnedAccessLaterTasks'), earnedAccessMorningStatus: $('earnedAccessMorningStatus'), earnedAccessLaterStatus: $('earnedAccessLaterStatus'), startEarnedAccessMorningButton: $('startEarnedAccessMorningButton'), startEarnedAccessLaterButton: $('startEarnedAccessLaterButton'),
+    earnedAccessCard: $('earnedAccessCard'), earnedAccessBadge: $('earnedAccessBadge'), earnedAccessNativeStatus: $('earnedAccessNativeStatus'), openEarnedAccessControlsButton: $('openEarnedAccessControlsButton'), earnedAccessLabelInput: $('earnedAccessLabelInput'), earnedAccessTaskMinutesInput: $('earnedAccessTaskMinutesInput'), earnedAccessDailyLimitInput: $('earnedAccessDailyLimitInput'), earnedAccessStepsInput: $('earnedAccessStepsInput'), earnedAccessMinutesInput: $('earnedAccessMinutesInput'), earnedAccessModeInput: $('earnedAccessModeInput'), earnedAccessBankStatus: $('earnedAccessBankStatus'), earnedAccessBankDetail: $('earnedAccessBankDetail'), useEarnedAccessButton: $('useEarnedAccessButton'), earnedAccessStatus: $('earnedAccessStatus'), earnedAccessDetail: $('earnedAccessDetail'), earnedAccessProgressBar: $('earnedAccessProgressBar'), startEarnedAccessButton: $('startEarnedAccessButton'), checkEarnedAccessButton: $('checkEarnedAccessButton'), cancelEarnedAccessButton: $('cancelEarnedAccessButton'), earnedAccessMorningTasks: $('earnedAccessMorningTasks'), earnedAccessLaterTasks: $('earnedAccessLaterTasks'), earnedAccessMorningStatus: $('earnedAccessMorningStatus'), earnedAccessLaterStatus: $('earnedAccessLaterStatus'),
     healthSleepSuggestion: $('healthSleepSuggestion'), healthSleepSuggestionText: $('healthSleepSuggestionText'), applyHealthSleepButton: $('applyHealthSleepButton'),
     linkedActionFields: $('linkedActionFields'), linkedTemplateInput: $('linkedTemplateInput'), linkedCompletionInput: $('linkedCompletionInput'), linkedUrlField: $('linkedUrlField'), linkedUrlInput: $('linkedUrlInput'), linkedInternalField: $('linkedInternalField'), linkedInternalTargetInput: $('linkedInternalTargetInput'), linkedButtonLabelInput: $('linkedButtonLabelInput'), timeWindowFields: $('timeWindowFields'), timeWindowStartInput: $('timeWindowStartInput'), timeWindowEndInput: $('timeWindowEndInput'),
     medicationProgressCard: $('medicationProgressCard'), weeklyReviewCard: $('weeklyReviewCard'), memoryBankCard: $('memoryBankCard'), dataBackupCard: $('dataBackupCard'),
@@ -670,7 +670,7 @@
       sendNativeBridgeMessage('health.summary.request');
     });
     els.saveAppleStepsGoalButton.addEventListener('click', saveAppleStepsGoal);
-    [els.earnedAccessLabelInput, els.earnedAccessStepsInput, els.earnedAccessMinutesInput, els.earnedAccessModeInput, els.earnedAccessMorningMinutesInput, els.earnedAccessLaterMinutesInput].forEach(input => input.addEventListener('change', () => {
+    [els.earnedAccessLabelInput, els.earnedAccessTaskMinutesInput, els.earnedAccessDailyLimitInput, els.earnedAccessStepsInput, els.earnedAccessMinutesInput, els.earnedAccessModeInput].forEach(input => input.addEventListener('change', () => {
       saveEarnedAccessFormSettings();
       renderEarnedAccess();
     }));
@@ -678,8 +678,7 @@
       saveEarnedAccessTaskSettings();
       renderEarnedAccess();
     }));
-    els.startEarnedAccessMorningButton.addEventListener('click', () => startEarnedAccessStage('morning'));
-    els.startEarnedAccessLaterButton.addEventListener('click', () => startEarnedAccessStage('later'));
+    els.useEarnedAccessButton.addEventListener('click', redeemEarnedAccessBank);
     els.startEarnedAccessButton.addEventListener('click', startEarnedAccessRound);
     els.checkEarnedAccessButton.addEventListener('click', checkEarnedAccessProgress);
     els.cancelEarnedAccessButton.addEventListener('click', cancelEarnedAccessRound);
@@ -791,23 +790,28 @@
 
   function earnedAccessDeviceSettings() {
     const defaults = {
-      label: 'Selected apps', stepGoal: 1000, rewardMinutes: 20, mode: 'fixed',
-      morningMinutes: 20, laterMinutes: 20, morningTaskIds: defaultEarnedAccessTasks('morning'), laterTaskIds: defaultEarnedAccessTasks('later'),
-      active: null, earnedUntil: '', lastCompleted: null, roundsByDate: {}, stageClaimsByDate: {}
+      label: 'Selected apps', stepGoal: 1000, rewardMinutes: 10, taskRewardMinutes: 5, dailyLimitMinutes: 60, mode: 'fixed',
+      morningTaskIds: defaultEarnedAccessTasks('morning'), laterTaskIds: defaultEarnedAccessTasks('later'),
+      active: null, earnedUntil: '', lastCompleted: null, roundsByDate: {}, stageClaimsByDate: {},
+      bankByDate: {}, earnedByDate: {}, taskCreditsByDate: {}, redemptionsByDate: {}
     };
     try {
       const parsed = JSON.parse(localStorage.getItem(EARNED_ACCESS_DEVICE_KEY) || '{}');
       const next = parsed && typeof parsed === 'object' ? { ...defaults, ...parsed } : defaults;
       next.label = String(next.label || defaults.label).trim().slice(0, 80) || defaults.label;
       next.stepGoal = Math.min(20000, Math.max(100, Math.round(Number(next.stepGoal) || defaults.stepGoal)));
-      next.rewardMinutes = Math.min(120, Math.max(15, Math.round(Number(next.rewardMinutes) || defaults.rewardMinutes)));
-      next.morningMinutes = Math.min(120, Math.max(15, Math.round(Number(next.morningMinutes) || defaults.morningMinutes)));
-      next.laterMinutes = Math.min(120, Math.max(15, Math.round(Number(next.laterMinutes) || defaults.laterMinutes)));
+      next.rewardMinutes = Math.min(60, Math.max(1, Math.round(Number(next.rewardMinutes) || defaults.rewardMinutes)));
+      next.taskRewardMinutes = Math.min(15, Math.max(1, Math.round(Number(next.taskRewardMinutes) || defaults.taskRewardMinutes)));
+      next.dailyLimitMinutes = Math.min(120, Math.max(15, Math.round(Number(next.dailyLimitMinutes) || defaults.dailyLimitMinutes)));
       next.mode = next.mode === 'escalating' ? 'escalating' : 'fixed';
       next.morningTaskIds = Array.isArray(next.morningTaskIds) ? next.morningTaskIds.map(String) : defaults.morningTaskIds;
       next.laterTaskIds = Array.isArray(next.laterTaskIds) ? next.laterTaskIds.map(String) : defaults.laterTaskIds;
       next.roundsByDate = next.roundsByDate && typeof next.roundsByDate === 'object' ? next.roundsByDate : {};
       next.stageClaimsByDate = next.stageClaimsByDate && typeof next.stageClaimsByDate === 'object' ? next.stageClaimsByDate : {};
+      next.bankByDate = next.bankByDate && typeof next.bankByDate === 'object' ? next.bankByDate : {};
+      next.earnedByDate = next.earnedByDate && typeof next.earnedByDate === 'object' ? next.earnedByDate : {};
+      next.taskCreditsByDate = next.taskCreditsByDate && typeof next.taskCreditsByDate === 'object' ? next.taskCreditsByDate : {};
+      next.redemptionsByDate = next.redemptionsByDate && typeof next.redemptionsByDate === 'object' ? next.redemptionsByDate : {};
       if (!next.active || typeof next.active !== 'object') next.active = null;
       if (!next.lastCompleted || typeof next.lastCompleted !== 'object') next.lastCompleted = null;
       return next;
@@ -823,10 +827,10 @@
   function saveEarnedAccessFormSettings() {
     return saveEarnedAccessDeviceSettings({
       label: String(els.earnedAccessLabelInput.value || 'Selected apps').trim().slice(0, 80) || 'Selected apps',
+      taskRewardMinutes: Math.min(15, Math.max(1, Math.round(Number(els.earnedAccessTaskMinutesInput.value) || 5))),
+      dailyLimitMinutes: Math.min(120, Math.max(15, Math.round(Number(els.earnedAccessDailyLimitInput.value) || 60))),
       stepGoal: Math.min(20000, Math.max(100, Math.round(Number(els.earnedAccessStepsInput.value) || 1000))),
-      rewardMinutes: Math.min(120, Math.max(15, Math.round(Number(els.earnedAccessMinutesInput.value) || 20))),
-      morningMinutes: Math.min(120, Math.max(15, Math.round(Number(els.earnedAccessMorningMinutesInput.value) || 20))),
-      laterMinutes: Math.min(120, Math.max(15, Math.round(Number(els.earnedAccessLaterMinutesInput.value) || 20))),
+      rewardMinutes: Math.min(60, Math.max(1, Math.round(Number(els.earnedAccessMinutesInput.value) || 10))),
       mode: els.earnedAccessModeInput.value === 'escalating' ? 'escalating' : 'fixed'
     });
   }
@@ -881,59 +885,87 @@
     }).join('') : '<span class="earned-stage-empty">Add routine items first.</span>';
   }
 
-  function startEarnedAccessStage(stage) {
-    const settings = saveEarnedAccessFormSettings();
-    const current = earnedStageState(stage, settings);
+  function creditCompletedEarnedTasks(settings) {
     const today = dateKey(startOfToday());
-    const claims = settings.stageClaimsByDate[today] || {};
+    const day = state.days[today] || { entries: {} };
+    const credits = { ...(settings.taskCreditsByDate[today] || {}) };
+    let bank = Math.max(0, Number(settings.bankByDate[today]) || 0);
+    let earned = Math.max(0, Number(settings.earnedByDate[today]) || 0);
+    let changed = false;
+    const selectedIds = [...new Set([...settings.morningTaskIds, ...settings.laterTaskIds])];
+    selectedIds.forEach(id => {
+      if (credits[id]) return;
+      const item = state.items.find(candidate => candidate.id === id);
+      if (!item || !entryMeetsTarget(item, day.entries?.[id])) return;
+      const minutes = Math.min(settings.taskRewardMinutes, Math.max(0, settings.dailyLimitMinutes - earned));
+      credits[id] = { creditedAt: new Date().toISOString(), minutes };
+      bank += minutes;
+      earned += minutes;
+      changed = true;
+    });
+    if (!changed) return settings;
+    return saveEarnedAccessDeviceSettings({
+      bankByDate: { ...settings.bankByDate, [today]: bank },
+      earnedByDate: { ...settings.earnedByDate, [today]: earned },
+      taskCreditsByDate: { ...settings.taskCreditsByDate, [today]: credits }
+    });
+  }
+
+  function addMinutesToEarnedAccessBank(settings, requestedMinutes, source) {
+    const today = dateKey(startOfToday());
+    const bank = Math.max(0, Number(settings.bankByDate[today]) || 0);
+    const earned = Math.max(0, Number(settings.earnedByDate[today]) || 0);
+    const minutes = Math.min(Math.max(0, Math.round(Number(requestedMinutes) || 0)), Math.max(0, settings.dailyLimitMinutes - earned));
+    if (!minutes) return { settings, minutes: 0 };
+    const next = saveEarnedAccessDeviceSettings({
+      bankByDate: { ...settings.bankByDate, [today]: bank + minutes },
+      earnedByDate: { ...settings.earnedByDate, [today]: earned + minutes },
+      lastCompleted: { source, label: settings.label, rewardMinutes: minutes, completedAt: new Date().toISOString() }
+    });
+    return { settings: next, minutes };
+  }
+
+  function redeemEarnedAccessBank() {
+    const settings = creditCompletedEarnedTasks(saveEarnedAccessFormSettings());
+    const today = dateKey(startOfToday());
+    const bank = Math.max(0, Number(settings.bankByDate[today]) || 0);
     const currentEarnedUntil = new Date(settings.earnedUntil || '').getTime();
-    if (!current.eligible) {
-      showToast(`Complete the selected ${stage === 'morning' ? 'morning' : 'later'} tasks first.`);
-      return;
-    }
-    if (claims[stage]) {
-      showToast('That allowance has already been used today.');
-      return;
-    }
     if (settings.active || (!Number.isNaN(currentEarnedUntil) && currentEarnedUntil > Date.now())) {
       showToast('Finish the current allowance or step round first.');
       return;
     }
-    const rewardMinutes = stage === 'morning' ? settings.morningMinutes : settings.laterMinutes;
-    const completedAt = new Date();
-    const earnedUntil = new Date(completedAt.getTime() + rewardMinutes * 60 * 1000).toISOString();
-    const stageClaimsByDate = { ...settings.stageClaimsByDate, [today]: { ...claims, [stage]: completedAt.toISOString() } };
-    saveEarnedAccessDeviceSettings({
+    if (bank < 15) {
+      showToast(`Bank ${15 - bank} more minute${15 - bank === 1 ? '' : 's'} before starting an allowance.`);
+      return;
+    }
+    const rewardMinutes = 15;
+    const startedAt = new Date();
+    const earnedUntil = new Date(startedAt.getTime() + rewardMinutes * 60 * 1000).toISOString();
+    const redemptions = Array.isArray(settings.redemptionsByDate[today]) ? settings.redemptionsByDate[today] : [];
+    const next = saveEarnedAccessDeviceSettings({
       earnedUntil,
-      stageClaimsByDate,
-      lastCompleted: { stage, label: settings.label, rewardMinutes, completedAt: completedAt.toISOString() }
+      bankByDate: { ...settings.bankByDate, [today]: bank - rewardMinutes },
+      redemptionsByDate: { ...settings.redemptionsByDate, [today]: [...redemptions, { minutes: rewardMinutes, startedAt: startedAt.toISOString(), endsAt: earnedUntil }] },
+      lastCompleted: { source: 'bank', label: settings.label, rewardMinutes, completedAt: startedAt.toISOString() }
     });
-    syncNativeEarnedAccess({ ...settings, earnedUntil }, true);
+    syncNativeEarnedAccess(next, true);
     renderEarnedAccess();
-    showToast(`${rewardMinutes} minutes earned from ${stage} tasks.`);
+    showToast(`${rewardMinutes} minutes opened from today’s bank.`);
   }
 
-  function renderEarnedAccessStages(settings, accessIsEarned) {
+  function renderEarnedAccessStages(settings) {
     const today = dateKey(startOfToday());
-    const claims = settings.stageClaimsByDate[today] || {};
-    const activeStage = accessIsEarned ? settings.lastCompleted?.stage : '';
+    const credits = settings.taskCreditsByDate[today] || {};
     const stages = [
-      { key: 'morning', container: els.earnedAccessMorningTasks, status: els.earnedAccessMorningStatus, button: els.startEarnedAccessMorningButton, minutes: settings.morningMinutes, selected: settings.morningTaskIds },
-      { key: 'later', container: els.earnedAccessLaterTasks, status: els.earnedAccessLaterStatus, button: els.startEarnedAccessLaterButton, minutes: settings.laterMinutes, selected: settings.laterTaskIds }
+      { key: 'morning', container: els.earnedAccessMorningTasks, status: els.earnedAccessMorningStatus, selected: settings.morningTaskIds },
+      { key: 'later', container: els.earnedAccessLaterTasks, status: els.earnedAccessLaterStatus, selected: settings.laterTaskIds }
     ];
     stages.forEach(stage => {
       renderEarnedTaskOptions(stage.container, stage.key, stage.selected);
       const progress = earnedStageState(stage.key, settings);
-      const claimed = Boolean(claims[stage.key]);
-      stage.button.textContent = `Start ${stage.minutes} minutes`;
-      stage.button.disabled = !progress.eligible || claimed || Boolean(settings.active) || accessIsEarned;
+      const creditedMinutes = progress.items.reduce((sum, item) => sum + (Number(credits[item.id]?.minutes) || 0), 0);
       if (!progress.items.length) stage.status.textContent = 'Choose at least one task';
-      else if (accessIsEarned && activeStage === stage.key) stage.status.textContent = `Available until ${new Date(settings.earnedUntil).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
-      else if (claimed) stage.status.textContent = 'Allowance used today';
-      else if (progress.eligible && accessIsEarned) stage.status.textContent = 'Ready after current allowance';
-      else if (progress.eligible && settings.active) stage.status.textContent = 'Ready after the step round';
-      else if (progress.eligible) stage.status.textContent = 'All selected tasks complete';
-      else stage.status.textContent = `${progress.completed} of ${progress.items.length} selected tasks complete`;
+      else stage.status.textContent = `${progress.completed} of ${progress.items.length} complete · ${creditedMinutes} min added today`;
     });
   }
 
@@ -1004,18 +1036,16 @@
     }
     const today = dateKey(startOfToday());
     const roundsByDate = { ...settings.roundsByDate, [today]: Math.max(0, Number(settings.roundsByDate[today]) || 0) + 1 };
-    const completedAt = new Date();
     const rewardMinutes = Math.max(1, Number(active.rewardMinutes) || settings.rewardMinutes);
-    const earnedUntil = new Date(completedAt.getTime() + rewardMinutes * 60 * 1000).toISOString();
-    saveEarnedAccessDeviceSettings({
+    const completedAt = new Date();
+    const updated = saveEarnedAccessDeviceSettings({
       active: null,
-      earnedUntil,
       roundsByDate,
       lastCompleted: { ...active, completedAt: completedAt.toISOString(), completedSteps: steps, gainedSteps: gained }
     });
-    syncNativeEarnedAccess({ ...settings, active: null, earnedUntil }, true);
+    const award = addMinutesToEarnedAccessBank(updated, rewardMinutes, 'steps');
     renderEarnedAccess();
-    showToast(`${rewardMinutes} minutes earned.`);
+    showToast(award.minutes ? `${award.minutes} minutes added to today’s bank.` : 'Today’s app-time limit is already reached.');
   }
 
   function renderEarnedAccess() {
@@ -1024,7 +1054,7 @@
       window.clearTimeout(earnedAccessExpiryTimer);
       earnedAccessExpiryTimer = null;
     }
-    let settings = earnedAccessDeviceSettings();
+    let settings = creditCompletedEarnedTasks(earnedAccessDeviceSettings());
     const today = dateKey(startOfToday());
     if (settings.active?.dateKey && settings.active.dateKey !== today) {
       settings = saveEarnedAccessDeviceSettings({ active: null });
@@ -1035,16 +1065,24 @@
     }
     const editing = document.activeElement;
     if (editing !== els.earnedAccessLabelInput) els.earnedAccessLabelInput.value = settings.label;
+    if (editing !== els.earnedAccessTaskMinutesInput) els.earnedAccessTaskMinutesInput.value = String(settings.taskRewardMinutes);
+    if (editing !== els.earnedAccessDailyLimitInput) els.earnedAccessDailyLimitInput.value = String(settings.dailyLimitMinutes);
     if (editing !== els.earnedAccessStepsInput) els.earnedAccessStepsInput.value = String(settings.stepGoal);
     if (editing !== els.earnedAccessMinutesInput) els.earnedAccessMinutesInput.value = String(settings.rewardMinutes);
     if (editing !== els.earnedAccessModeInput) els.earnedAccessModeInput.value = settings.mode;
-    if (editing !== els.earnedAccessMorningMinutesInput) els.earnedAccessMorningMinutesInput.value = String(settings.morningMinutes);
-    if (editing !== els.earnedAccessLaterMinutesInput) els.earnedAccessLaterMinutesInput.value = String(settings.laterMinutes);
 
     const active = settings.active;
     const accessIsEarned = !Number.isNaN(new Date(settings.earnedUntil || '').getTime()) && new Date(settings.earnedUntil).getTime() > Date.now();
+    const bankMinutes = Math.max(0, Number(settings.bankByDate[today]) || 0);
+    const earnedToday = Math.max(0, Number(settings.earnedByDate[today]) || 0);
     syncNativeEarnedAccess(settings, accessIsEarned);
-    renderEarnedAccessStages(settings, accessIsEarned);
+    renderEarnedAccessStages(settings);
+    els.earnedAccessBankStatus.textContent = `${bankMinutes} of ${settings.dailyLimitMinutes} minutes ready`;
+    els.earnedAccessBankDetail.textContent = earnedToday >= settings.dailyLimitMinutes
+      ? 'Today’s limit is reached. Banked minutes remain available until the day ends.'
+      : `${earnedToday} minutes earned today · ${settings.dailyLimitMinutes - earnedToday} still available to earn`;
+    els.useEarnedAccessButton.disabled = bankMinutes < 15 || Boolean(active) || accessIsEarned;
+    els.useEarnedAccessButton.textContent = accessIsEarned ? 'Access open' : bankMinutes < 15 ? `${bankMinutes}/15 banked` : 'Use 15 minutes';
     let percent = 0;
     if (pendingEarnedAccessStart) {
       els.earnedAccessBadge.textContent = 'Health check';
@@ -1058,13 +1096,13 @@
       percent = Math.min(100, Math.round((gained / required) * 100));
       els.earnedAccessBadge.textContent = 'Walking';
       els.earnedAccessStatus.textContent = `${active.label || settings.label} step goal`;
-      els.earnedAccessDetail.textContent = `Walk ${remaining.toLocaleString()} more steps to earn ${active.rewardMinutes || settings.rewardMinutes} minutes. Progress: ${gained.toLocaleString()} / ${required.toLocaleString()}.`;
+      els.earnedAccessDetail.textContent = `Walk ${remaining.toLocaleString()} more steps to add ${active.rewardMinutes || settings.rewardMinutes} minutes to today’s bank. Progress: ${gained.toLocaleString()} / ${required.toLocaleString()}.`;
     } else if (accessIsEarned) {
       percent = 100;
       const completed = settings.lastCompleted;
-      const minutes = Math.max(1, Number(completed?.rewardMinutes) || settings.rewardMinutes);
+      const minutes = Math.max(1, Number(completed?.rewardMinutes) || 15);
       els.earnedAccessBadge.textContent = 'Reward earned';
-      els.earnedAccessStatus.textContent = `${minutes} minutes earned`;
+      els.earnedAccessStatus.textContent = `${minutes} minutes available`;
       els.earnedAccessDetail.textContent = earnedAccessNativeState.protectionEnabled
         ? `Your selected apps are available until ${new Date(settings.earnedUntil).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}, then they will lock again.`
         : `Your ${completed?.label || settings.label} reward countdown ends at ${new Date(settings.earnedUntil).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}. Turn on protection above to enforce app blocking.`;
@@ -1073,12 +1111,12 @@
       const required = earnedAccessRequirement(settings);
       els.earnedAccessBadge.textContent = 'Ready';
       els.earnedAccessStatus.textContent = `Ready for ${settings.label}`;
-      els.earnedAccessDetail.textContent = `Next round: walk ${required.toLocaleString()} additional steps to earn ${settings.rewardMinutes} minutes.`;
+      els.earnedAccessDetail.textContent = `Next round: walk ${required.toLocaleString()} additional steps to add ${settings.rewardMinutes} minutes to today’s bank.`;
     }
     els.earnedAccessProgressBar.style.width = `${percent}%`;
     els.earnedAccessProgressBar.parentElement.setAttribute('aria-valuenow', String(percent));
-    els.startEarnedAccessButton.disabled = pendingEarnedAccessStart || Boolean(active) || accessIsEarned;
-    els.startEarnedAccessButton.textContent = pendingEarnedAccessStart ? 'Starting round…' : active ? 'Round in progress' : accessIsEarned ? 'Time earned' : `Start ${earnedAccessRequirement(settings).toLocaleString()}-step round`;
+    els.startEarnedAccessButton.disabled = pendingEarnedAccessStart || Boolean(active) || accessIsEarned || earnedToday >= settings.dailyLimitMinutes;
+    els.startEarnedAccessButton.textContent = pendingEarnedAccessStart ? 'Starting round…' : active ? 'Round in progress' : accessIsEarned ? 'Access open' : earnedToday >= settings.dailyLimitMinutes ? 'Daily limit reached' : `Start ${earnedAccessRequirement(settings).toLocaleString()}-step round`;
     els.cancelEarnedAccessButton.hidden = !active && !pendingEarnedAccessStart;
   }
 
@@ -3593,11 +3631,13 @@
     const TRUTH_MINIMUM_MS = 3 * 60 * 1000;
     const CONVICTION_MINIMUM_MS = 2 * 60 * 1000;
     const TRUTH_STEP_COUNT = 5;
+    const GOVERNING_REMINDER = 'Not for righteousness. Because of righteousness.';
     const RIGHTNESS_REMINDER = 'Faithfulness, not infallibility. Trust, not certainty. The Lord, not being right. I do not need to agonize over every choice; the sovereign Lord is able to guide and keep me.';
     const DEFAULTS = {
       personalPlea: 'Taylor, I wrote this while thinking clearly. I may not feel clear or steady every time I read it, but I will trust what the Lord led me to write when I could see these truths clearly. I plead with you now: set everything else aside for these few minutes and meditate on what is true.',
       openingPrayer: 'Father, quiet my heart. Help me receive what is true rather than follow what feels urgent. Fix my eyes on Christ and lead me by Your Word today.',
       coreTruths: [
+        GOVERNING_REMINDER,
         'I am 100% called, welcomed, purchased, adopted, and loved because of Jesus.',
         'These practices do not make me right with God. They remind me of my need for the Lord and press me to see Christ.',
         'Jesus is my righteousness, my confidence, and my guide.',
@@ -3783,6 +3823,7 @@
       const convictionItems = (useSuppliedDefaults ? DEFAULTS.convictions.items : storedItems || [])
         .map(normalizeConvictionItem).filter(Boolean);
       const coreTruths = Array.isArray(stored.coreTruths) && stored.coreTruths.length ? stored.coreTruths.filter(Boolean).map(String) : clone(DEFAULTS.coreTruths);
+      if (!coreTruths.some(truth => truth.toLowerCase().includes('not for righteousness'))) coreTruths.unshift(GOVERNING_REMINDER);
       if (!coreTruths.some(truth => truth.includes('Faithfulness, not infallibility'))) coreTruths.push(RIGHTNESS_REMINDER);
       const result = {
         personalPlea: typeof stored.personalPlea === 'string' && stored.personalPlea.trim() ? stored.personalPlea : DEFAULTS.personalPlea,
@@ -4009,7 +4050,7 @@
       api.saveState();
       unlock();
       api.switchView('today');
-      api.showToast(hasConvictions ? 'Truth and convictions carried into the day.' : 'Truth carried into the day.');
+      api.showToast(hasConvictions ? 'Enter the day from grace, carrying truth and conviction.' : 'Enter the day from grace, carrying what is true.');
     }
 
     function bindGate() {

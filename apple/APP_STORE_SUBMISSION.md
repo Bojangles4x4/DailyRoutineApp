@@ -1,6 +1,6 @@
 # App Store submission package
 
-This document records the planned TestFlight submission behavior for Daily Routine 1.16.0 (build 14). Family Controls distribution remains blocked until Apple assigns the required entitlement.
+This document records the planned TestFlight submission behavior for Daily Routine 1.17.0 (build 15). Family Controls distribution remains blocked until Apple assigns the required entitlement.
 
 ## URLs
 
@@ -51,7 +51,11 @@ Daily Routine is a personal organization tool and does not provide medical advic
 
 `routine,habits,planner,journal,prayer,reflection,checklist,wellness,private,watch`
 
-### Version 1.16.0 draft release notes
+### Version 1.17.0 draft release notes
+
+- Add small routine rewards automatically to a daily time bank, with a configurable 60-minute default ceiling.
+- Spend banked rewards through reliable 15-minute Earned Access windows while actual-use monitoring is prepared.
+- Keep the opening practice grounded by “Not for righteousness. Because of righteousness.”
 
 - Privately choose apps, categories, or websites through Apple's Screen Time picker and connect them to routine and step-based allowances.
 - Create an on-device library of truth reminders using text or pictures, then select entries or shuffle the library on a daily schedule.
@@ -85,7 +89,7 @@ Daily Routine is a personal organization tool and does not provide medical advic
 
 Before a public App Store submission, update the App Privacy questionnaire for the optional Private sync implementation. When Private sync is enabled, the sign-in email address and synchronized user content are transmitted to the owner-only Supabase account row. Disclose the applicable contact-information and user-content categories as linked to the user, not used for tracking, and used only for app functionality.
 
-The following remains true for the planned build 14:
+The following remains true for the planned build 15:
 
 - No analytics, advertising, tracking, or third-party SDKs
 - Routine, reflection, medication, prayer, and note data is local-first and is transmitted only when the owner connects Private sync
@@ -118,8 +122,8 @@ Please test the first-run flow and verify that existing routine data remains int
 3. Change a medication time between AM and PM and verify the in-app warning works without a crash or overlapping fields.
 4. Create, edit, and delete an open-ended Truth Before Tasks theme using a title, body, and one to three Scripture or plain-text truth lines.
 5. Connect Apple Health, add an 8,000-step routine goal, refresh Health, and verify the item completes automatically at the target.
-6. In Setup → Health & Watch, select morning and later routine requirements and verify each allowance becomes available only after every selected task is complete. Also start an optional movement round and confirm progress begins at zero rather than using the day's total steps.
-7. Turn on Screen Time protection, choose a nonessential test app, use an earned allowance, and confirm the app unlocks only until the displayed end time and then shields itself again.
+6. In Setup → Health & Watch, select morning and later earning routines. Complete them one at a time and verify each task adds its configured minutes automatically, only once per day, without exceeding the daily limit. Also start an optional movement round and confirm progress begins at zero rather than using the day's total steps.
+7. Turn on Screen Time protection, choose a nonessential test app, bank at least 15 minutes, use one allowance, and confirm the app unlocks only until the displayed end time and then shields itself again.
 8. Review a Health sleep suggestion and confirm bedtime is saved to the date it occurred while wake time is saved to the following morning. Confirm existing entries are not selected for replacement automatically.
 9. Confirm automatic Health step values and Earned Access progress do not appear on a second device through Private sync.
 10. Verify iPhone/Watch progress sync and complication updates. Tap a specific routine, reopen it, change the bottom shortcut in iPhone Setup, and dictate each Capture type.

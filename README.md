@@ -2,7 +2,12 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.16.0 development features
+## Version 1.17.0 development features
+
+- An automatic daily Earned Access bank: selected completed routines add five-minute credits without a separate claim
+- A configurable daily app-time ceiling, set to 60 minutes by default
+- Reliable 15-minute allowance redemptions from smaller banked rewards while actual-use monitoring is developed
+- The governing Truth Before Tasks reminder: “Not for righteousness. Because of righteousness.”
 
 - A development-only Family Controls prototype with Apple’s private app and website picker
 - Real Managed Settings shielding connected to routine and step-based Earned Access allowances
@@ -15,7 +20,7 @@ A mobile-first private routine and mood tracker designed to run as a Progressive
 - A physical-device-tested reward flow that locks selected apps, grants a timed allowance, and restores the shield automatically
 - A calmer Setup landing page organized into Routine, Appearance, Faith, Health, and Data sections
 - Compact wake, bedtime, schedule, and sleep-time controls that preserve phone space
-- Morning and later Earned Access stages based on selected routine completion, with separate configurable rewards
+- Morning and later routine selections that add configurable per-task credits to one daily bank
 - Named multi-app reward groups, while automatic app selection and enforcement remain pending Apple Family Controls approval
 - Apple Health source labels that can surface Apple Watch, Garmin Connect, and other apps contributing Health samples
 - A Truth Before Tasks reminder to choose faithfulness over infallibility, trust over certainty, and the Lord over being right

@@ -56,7 +56,7 @@ function localDateKey(date = new Date()) {
   await page.locator('[data-view="today"]').click();
   await page.locator('[data-view="setup"]').click();
   await page.locator('[data-setup-target="health"]').click();
-  assert.match(await page.locator('#earnedAccessMorningStatus').textContent(), /1 of 3 selected tasks complete/);
+  assert.match(await page.locator('#earnedAccessMorningStatus').textContent(), /1 of 3 complete · 5 min added today/);
 
   await page.evaluate(() => {
     window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'health.summary', value: { date: new Date().toISOString(), stepCount: 4820, sleepHours: 0, workoutCount: 0, sourceNames: ['Garmin Connect', 'Apple Watch'] } } }));
@@ -81,7 +81,10 @@ function localDateKey(date = new Date()) {
   await page.evaluate(() => {
     window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'health.summary', value: { date: new Date().toISOString(), stepCount: 5820, sleepHours: 0, workoutCount: 0 } } }));
   });
-  assert.equal((await page.locator('#earnedAccessStatus').textContent()).trim(), '20 minutes earned');
+  assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '25 of 60 minutes ready');
+  assert.equal(await page.locator('#useEarnedAccessButton').isDisabled(), false);
+  await page.locator('#useEarnedAccessButton').click();
+  assert.equal((await page.locator('#earnedAccessStatus').textContent()).trim(), '15 minutes available');
   assert.equal((await page.locator('#earnedAccessBadge').textContent()).trim(), 'Reward earned');
   const nativeAllowance = await page.evaluate(() => [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'earned.access.allow'));
   assert.ok(nativeAllowance?.value?.until);
@@ -89,10 +92,12 @@ function localDateKey(date = new Date()) {
   const earnedAccessData = await page.evaluate(key => {
     const device = JSON.parse(localStorage.getItem('dailyRoutine.earnedAccess.device.v1'));
     const syncedState = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
-    return { rounds: device.roundsByDate[key], active: device.active, syncedSettings: syncedState.settings };
+    return { rounds: device.roundsByDate[key], active: device.active, bank: device.bankByDate[key], earned: device.earnedByDate[key], syncedSettings: syncedState.settings };
   }, today);
   assert.equal(earnedAccessData.rounds, 1);
   assert.equal(earnedAccessData.active, null);
+  assert.equal(earnedAccessData.bank, 10);
+  assert.equal(earnedAccessData.earned, 25);
   assert.equal(Object.hasOwn(earnedAccessData.syncedSettings, 'earnedAccess'), false);
 
   const earnedAccessLayout = await page.locator('#earnedAccessCard').evaluate(node => {
@@ -105,6 +110,7 @@ function localDateKey(date = new Date()) {
   await page.locator('[data-setup-target="faith"]').click();
   await page.locator('#openTruthRemindersButton').click();
   assert.equal(await page.evaluate(() => window.__dailyRoutineNativeMessages.at(-1).action), 'truth.reminders.open');
+  assert.match(await page.locator('#truthCoreInput').inputValue(), /Not for righteousness\. Because of righteousness\./);
   assert.match(await page.locator('#truthCoreInput').inputValue(), /Faithfulness, not infallibility/);
   assert.match(await page.locator('#truthCoreInput').inputValue(), /I do not need to agonize over every choice/);
   await page.locator('#createTruthThemeButton').click();
@@ -185,12 +191,15 @@ function localDateKey(date = new Date()) {
   await page.reload({ waitUntil: 'networkidle' });
   await page.locator('[data-view="setup"]').click();
   await page.locator('[data-setup-target="health"]').click();
-  assert.equal((await page.locator('#earnedAccessMorningStatus').textContent()).trim(), 'All selected tasks complete');
-  assert.equal(await page.locator('#startEarnedAccessMorningButton').isDisabled(), false);
-  await page.locator('#startEarnedAccessMorningButton').click();
-  const stagedAccess = await page.evaluate(key => JSON.parse(localStorage.getItem('dailyRoutine.earnedAccess.device.v1')).stageClaimsByDate[key], today);
-  assert.ok(stagedAccess.morning);
-  assert.equal((await page.locator('#earnedAccessMorningStatus').textContent()).includes('Available until'), true);
+  assert.equal((await page.locator('#earnedAccessMorningStatus').textContent()).trim(), '3 of 3 complete · 15 min added today');
+  assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '15 of 60 minutes ready');
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.locator('[data-view="setup"]').click();
+  await page.locator('[data-setup-target="health"]').click();
+  assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '15 of 60 minutes ready');
+  assert.equal(await page.locator('#useEarnedAccessButton').isDisabled(), false);
+  await page.locator('#useEarnedAccessButton').click();
+  assert.equal((await page.locator('#earnedAccessStatus').textContent()).trim(), '15 minutes available');
   await page.locator('[data-view="today"]').click();
 
   await page.evaluate(() => {

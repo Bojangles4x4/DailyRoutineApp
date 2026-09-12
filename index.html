@@ -45,7 +45,7 @@
             <button id="truthContinueButton" class="primary-button" type="button">Continue</button>
           </div>
           <button id="truthEnterDayButton" class="primary-button truth-enter-button" type="button" disabled>Enter the Day</button>
-          <p class="muted micro-copy truth-gospel-note">This practice does not earn God’s acceptance. It helps you begin from the acceptance, righteousness, and life already given in Christ.</p>
+          <p class="muted micro-copy truth-gospel-note"><strong>Not for righteousness. Because of righteousness.</strong> This practice helps you begin from the acceptance and life already given in Christ.</p>
         </section>
       </section>
 
@@ -418,20 +418,26 @@
             </div>
             <div class="earned-access-fields">
               <label class="text-field compact earned-access-app-field"><span>Reward label</span><input id="earnedAccessLabelInput" type="text" maxlength="80" value="Selected apps" placeholder="Selected apps" /><small class="field-help">The actual apps are selected privately in Apple’s Screen Time picker above.</small></label>
+              <label class="text-field compact"><span>Minutes per task</span><input id="earnedAccessTaskMinutesInput" type="number" min="1" max="15" step="1" inputmode="numeric" value="5" /></label>
+              <label class="text-field compact"><span>Daily limit</span><input id="earnedAccessDailyLimitInput" type="number" min="15" max="120" step="5" inputmode="numeric" value="60" /></label>
               <label class="text-field compact"><span>Steps per round</span><input id="earnedAccessStepsInput" type="number" min="100" max="20000" step="50" inputmode="numeric" value="1000" /></label>
-              <label class="text-field compact"><span>Minutes earned</span><input id="earnedAccessMinutesInput" type="number" min="15" max="120" step="5" inputmode="numeric" value="20" /></label>
+              <label class="text-field compact"><span>Minutes per step round</span><input id="earnedAccessMinutesInput" type="number" min="1" max="60" step="1" inputmode="numeric" value="10" /></label>
               <label class="text-field compact"><span>Step pattern</span><select id="earnedAccessModeInput"><option value="fixed">Same goal each round</option><option value="escalating">Escalate 750 → 1,000 → 1,500</option></select></label>
+            </div>
+            <div class="earned-access-bank" aria-live="polite">
+              <div><span>Today’s time bank</span><strong id="earnedAccessBankStatus">0 of 60 minutes ready</strong><small id="earnedAccessBankDetail">Selected task rewards are added automatically.</small></div>
+              <button id="useEarnedAccessButton" class="primary-button" type="button" disabled>Use 15 minutes</button>
             </div>
             <div class="earned-access-stages">
               <div class="earned-stage" data-stage="morning">
-                <div class="earned-stage-heading"><div><strong>Morning access</strong><span>Complete every selected morning task</span></div><label><span>Reward</span><input id="earnedAccessMorningMinutesInput" type="number" min="15" max="120" step="5" inputmode="numeric" value="20" /></label></div>
+                <div class="earned-stage-heading"><div><strong>Morning earners</strong><span>Each selected task adds minutes when completed</span></div></div>
                 <div id="earnedAccessMorningTasks" class="earned-task-options" aria-label="Morning access requirements"></div>
-                <div class="earned-stage-status"><span id="earnedAccessMorningStatus">Choose morning tasks</span><button id="startEarnedAccessMorningButton" class="small-button" type="button" disabled>Start 20 minutes</button></div>
+                <div class="earned-stage-status"><span id="earnedAccessMorningStatus">Choose morning tasks</span></div>
               </div>
               <div class="earned-stage" data-stage="later">
-                <div class="earned-stage-heading"><div><strong>Later access</strong><span>Earn another allowance after afternoon or evening tasks</span></div><label><span>Reward</span><input id="earnedAccessLaterMinutesInput" type="number" min="15" max="120" step="5" inputmode="numeric" value="20" /></label></div>
+                <div class="earned-stage-heading"><div><strong>Later earners</strong><span>Afternoon and evening tasks add to the same bank</span></div></div>
                 <div id="earnedAccessLaterTasks" class="earned-task-options" aria-label="Later access requirements"></div>
-                <div class="earned-stage-status"><span id="earnedAccessLaterStatus">Choose later tasks</span><button id="startEarnedAccessLaterButton" class="small-button" type="button" disabled>Start 20 minutes</button></div>
+                <div class="earned-stage-status"><span id="earnedAccessLaterStatus">Choose later tasks</span></div>
               </div>
             </div>
             <div class="earned-movement-heading"><strong>Optional movement round</strong><span>Earn an additional allowance from new steps after you start the round.</span></div>
@@ -444,7 +450,7 @@
               <button id="checkEarnedAccessButton" class="secondary-button" type="button">Check progress</button>
               <button id="cancelEarnedAccessButton" class="text-button" type="button" hidden>Cancel round</button>
             </div>
-            <p class="muted micro-copy">This local development test can apply and remove a real shield. Connecting it to completed routines and automatic timed relocking is the next implementation stage.</p>
+            <p class="muted micro-copy">Task rewards are credited automatically and held in today’s bank. For this build, use them in 15-minute blocks; the next native stage will count only the time actually spent in selected apps.</p>
           </div>
           <div class="connection-status-card apple-watch-status">
             <div class="connection-icon">⌚</div>
@@ -526,13 +532,13 @@
             <a href="privacy.html">Privacy Policy</a>
             <a href="support.html">Support</a>
           </div>
-          <p class="app-version">Daily Routine <b id="appVersion">v1.16.0</b></p>
+          <p class="app-version">Daily Routine <b id="appVersion">v1.17.0</b></p>
         </section>
 
 
         <section class="card truth-settings-card" data-setup-category="faith">
           <div class="section-heading"><div><p class="eyebrow">Opening practice</p><h2>Truth Before Tasks</h2></div></div>
-          <p class="muted">Edit the words you will see before the rest of the app unlocks each day. Core identity truths remain daily; one open-ended theme rotates from your content bank.</p>
+          <p class="muted"><strong>Not for righteousness. Because of righteousness.</strong> Edit the words you will see before the rest of the app unlocks each day. Core identity truths remain daily; one open-ended theme rotates from your content bank.</p>
           <div class="form-stack truth-copy-fields">
             <label class="text-field"><span>Personal plea</span><textarea id="truthPleaInput" rows="5"></textarea></label>
             <label class="text-field"><span>Opening prayer</span><textarea id="truthPrayerInput" rows="4"></textarea></label>
