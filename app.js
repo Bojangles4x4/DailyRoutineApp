@@ -5,7 +5,7 @@
   const SNAPSHOT_KEY = 'dailyRoutineApp.snapshots.v1';
   const HEALTH_DEVICE_KEY = 'dailyRoutine.health.device.v1';
   const EARNED_ACCESS_DEVICE_KEY = 'dailyRoutine.earnedAccess.device.v1';
-  const APP_VERSION = '1.15.0';
+  const APP_VERSION = '1.16.0';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const DEFAULT_BIBLE_APP_URL = 'https://bojangles4x4.github.io/Bible-Reading-Plan/';
@@ -71,6 +71,8 @@
   let latestHealthSummary = null;
   let pendingEarnedAccessStart = false;
   let earnedAccessExpiryTimer = null;
+  let lastEarnedAccessNativeDirective = '';
+  let earnedAccessNativeState = { available: false, protectionEnabled: false, shielding: false, unlockedUntil: '' };
   let activeSetupCategory = '';
   let accountabilityPreview = '';
   let accountabilityPreviewSignature = '';
@@ -113,7 +115,7 @@
     privateSyncCard: $('privateSyncCard'), privateSyncBadge: $('privateSyncBadge'), privateSyncStatus: $('privateSyncStatus'), privateSyncDevice: $('privateSyncDevice'), privateSyncLastSync: $('privateSyncLastSync'), createSyncSnapshotButton: $('createSyncSnapshotButton'), privateSyncNowButton: $('privateSyncNowButton'), privateSyncSignIn: $('privateSyncSignIn'), privateSyncEmailInput: $('privateSyncEmailInput'), privateSyncPasswordInput: $('privateSyncPasswordInput'), privateSyncSendCodeButton: $('privateSyncSendCodeButton'), privateSyncVerifyButton: $('privateSyncVerifyButton'), privateSyncHelp: $('privateSyncHelp'), privateSyncAccount: $('privateSyncAccount'), privateSyncSignOutButton: $('privateSyncSignOutButton'), privateSyncDeleteCloudButton: $('privateSyncDeleteCloudButton'),
     connectionsCard: $('connectionsCard'), syncConnectionsButton: $('syncConnectionsButton'), bibleConnectionStatus: $('bibleConnectionStatus'), openBibleConnectionButton: $('openBibleConnectionButton'), bibleAppUrlInput: $('bibleAppUrlInput'), saveBibleConnectionButton: $('saveBibleConnectionButton'), testBibleConnectionButton: $('testBibleConnectionButton'), connectionTemplates: $('connectionTemplates'),
     appleNativeCard: $('appleNativeCard'), appleStepCount: $('appleStepCount'), appleSleepHours: $('appleSleepHours'), appleWorkoutCount: $('appleWorkoutCount'), appleHealthStatus: $('appleHealthStatus'), healthSourceSummary: $('healthSourceSummary'), healthSourceDetail: $('healthSourceDetail'), connectAppleHealthButton: $('connectAppleHealthButton'), refreshAppleHealthButton: $('refreshAppleHealthButton'), appleWatchStatus: $('appleWatchStatus'), appleStepsGoalInput: $('appleStepsGoalInput'), saveAppleStepsGoalButton: $('saveAppleStepsGoalButton'), appleWatchQuickActionInput: $('appleWatchQuickActionInput'),
-    earnedAccessCard: $('earnedAccessCard'), earnedAccessBadge: $('earnedAccessBadge'), earnedAccessLabelInput: $('earnedAccessLabelInput'), earnedAccessStepsInput: $('earnedAccessStepsInput'), earnedAccessMinutesInput: $('earnedAccessMinutesInput'), earnedAccessModeInput: $('earnedAccessModeInput'), earnedAccessStatus: $('earnedAccessStatus'), earnedAccessDetail: $('earnedAccessDetail'), earnedAccessProgressBar: $('earnedAccessProgressBar'), startEarnedAccessButton: $('startEarnedAccessButton'), checkEarnedAccessButton: $('checkEarnedAccessButton'), cancelEarnedAccessButton: $('cancelEarnedAccessButton'), earnedAccessMorningMinutesInput: $('earnedAccessMorningMinutesInput'), earnedAccessLaterMinutesInput: $('earnedAccessLaterMinutesInput'), earnedAccessMorningTasks: $('earnedAccessMorningTasks'), earnedAccessLaterTasks: $('earnedAccessLaterTasks'), earnedAccessMorningStatus: $('earnedAccessMorningStatus'), earnedAccessLaterStatus: $('earnedAccessLaterStatus'), startEarnedAccessMorningButton: $('startEarnedAccessMorningButton'), startEarnedAccessLaterButton: $('startEarnedAccessLaterButton'),
+    earnedAccessCard: $('earnedAccessCard'), earnedAccessBadge: $('earnedAccessBadge'), earnedAccessNativeStatus: $('earnedAccessNativeStatus'), openEarnedAccessControlsButton: $('openEarnedAccessControlsButton'), earnedAccessLabelInput: $('earnedAccessLabelInput'), earnedAccessStepsInput: $('earnedAccessStepsInput'), earnedAccessMinutesInput: $('earnedAccessMinutesInput'), earnedAccessModeInput: $('earnedAccessModeInput'), earnedAccessStatus: $('earnedAccessStatus'), earnedAccessDetail: $('earnedAccessDetail'), earnedAccessProgressBar: $('earnedAccessProgressBar'), startEarnedAccessButton: $('startEarnedAccessButton'), checkEarnedAccessButton: $('checkEarnedAccessButton'), cancelEarnedAccessButton: $('cancelEarnedAccessButton'), earnedAccessMorningMinutesInput: $('earnedAccessMorningMinutesInput'), earnedAccessLaterMinutesInput: $('earnedAccessLaterMinutesInput'), earnedAccessMorningTasks: $('earnedAccessMorningTasks'), earnedAccessLaterTasks: $('earnedAccessLaterTasks'), earnedAccessMorningStatus: $('earnedAccessMorningStatus'), earnedAccessLaterStatus: $('earnedAccessLaterStatus'), startEarnedAccessMorningButton: $('startEarnedAccessMorningButton'), startEarnedAccessLaterButton: $('startEarnedAccessLaterButton'),
     healthSleepSuggestion: $('healthSleepSuggestion'), healthSleepSuggestionText: $('healthSleepSuggestionText'), applyHealthSleepButton: $('applyHealthSleepButton'),
     linkedActionFields: $('linkedActionFields'), linkedTemplateInput: $('linkedTemplateInput'), linkedCompletionInput: $('linkedCompletionInput'), linkedUrlField: $('linkedUrlField'), linkedUrlInput: $('linkedUrlInput'), linkedInternalField: $('linkedInternalField'), linkedInternalTargetInput: $('linkedInternalTargetInput'), linkedButtonLabelInput: $('linkedButtonLabelInput'), timeWindowFields: $('timeWindowFields'), timeWindowStartInput: $('timeWindowStartInput'), timeWindowEndInput: $('timeWindowEndInput'),
     medicationProgressCard: $('medicationProgressCard'), weeklyReviewCard: $('weeklyReviewCard'), memoryBankCard: $('memoryBankCard'), dataBackupCard: $('dataBackupCard'),
@@ -644,11 +646,17 @@
     const bridge = () => window.DailyRoutineNative;
     $('openTruthRemindersButton').disabled = !bridge()?.postMessage;
     $('openTruthRemindersButton').addEventListener('click', () => sendNativeBridgeMessage('truth.reminders.open'));
+    els.openEarnedAccessControlsButton.disabled = !bridge()?.postMessage;
+    els.openEarnedAccessControlsButton.addEventListener('click', () => {
+      lastEarnedAccessNativeDirective = '';
+      sendNativeBridgeMessage('earned.access.controls.open');
+    });
     const reveal = () => {
       if (!bridge()?.postMessage) return;
       els.appleNativeCard.hidden = false;
       els.accountabilityHealthField.hidden = false;
       $('openTruthRemindersButton').disabled = false;
+      els.openEarnedAccessControlsButton.disabled = false;
     };
 
     reveal();
@@ -689,6 +697,13 @@
         const value = detail.value || {};
         els.appleHealthStatus.textContent = value.healthAvailable ? 'Apple Health is available and ready to connect.' : 'Apple Health is not available on this device.';
         els.appleWatchStatus.textContent = value.watchReachable ? 'Apple Watch is connected and reachable.' : value.watchInstalled ? 'Open Daily Routine on Apple Watch to enable live quick actions.' : 'Install the Daily Routine Watch companion to begin quick-action testing.';
+        earnedAccessNativeState = {
+          ...earnedAccessNativeState,
+          available: Boolean(value.earnedAccessAvailable),
+          protectionEnabled: Boolean(value.earnedAccessProtectionEnabled),
+          shielding: Boolean(value.earnedAccessShielding)
+        };
+        els.earnedAccessNativeStatus.textContent = value.earnedAccessAvailable ? 'Screen Time controls are ready.' : 'Screen Time controls are unavailable on this device.';
         syncWatchContext();
         renderAppleStepsGoal();
         renderEarnedAccess();
@@ -726,8 +741,20 @@
         handleWatchEvent(detail.value || {});
       } else if (detail.name === 'watch.context.updated') {
         els.appleWatchStatus.textContent = detail.value?.queued ? 'Today’s progress is ready and will sync when the Watch companion finishes installing.' : watchLastActionMessage || 'Today’s progress is synced with Apple Watch.';
+      } else if (detail.name === 'earned.access.status') {
+        const value = detail.value || {};
+        earnedAccessNativeState = {
+          available: true,
+          protectionEnabled: value.protectionEnabled === true || value.protectionEnabled === 'true',
+          shielding: value.shielding === true || value.shielding === 'true',
+          unlockedUntil: String(value.unlockedUntil || '')
+        };
+        els.earnedAccessNativeStatus.textContent = value.message || 'Earned Access status updated.';
+        renderEarnedAccess();
       } else if (detail.name === 'native.error') {
-        els.appleHealthStatus.textContent = detail.value?.message || 'The native connection could not complete that request.';
+        const message = detail.value?.message || 'The native connection could not complete that request.';
+        if (message.toLowerCase().includes('earned access')) els.earnedAccessNativeStatus.textContent = message;
+        else els.appleHealthStatus.textContent = message;
       }
     });
     renderAppleStepsGoal();
@@ -764,7 +791,7 @@
 
   function earnedAccessDeviceSettings() {
     const defaults = {
-      label: 'Amazon, Reddit, Instagram', stepGoal: 1000, rewardMinutes: 20, mode: 'fixed',
+      label: 'Selected apps', stepGoal: 1000, rewardMinutes: 20, mode: 'fixed',
       morningMinutes: 20, laterMinutes: 20, morningTaskIds: defaultEarnedAccessTasks('morning'), laterTaskIds: defaultEarnedAccessTasks('later'),
       active: null, earnedUntil: '', lastCompleted: null, roundsByDate: {}, stageClaimsByDate: {}
     };
@@ -773,9 +800,9 @@
       const next = parsed && typeof parsed === 'object' ? { ...defaults, ...parsed } : defaults;
       next.label = String(next.label || defaults.label).trim().slice(0, 80) || defaults.label;
       next.stepGoal = Math.min(20000, Math.max(100, Math.round(Number(next.stepGoal) || defaults.stepGoal)));
-      next.rewardMinutes = Math.min(120, Math.max(1, Math.round(Number(next.rewardMinutes) || defaults.rewardMinutes)));
-      next.morningMinutes = Math.min(120, Math.max(1, Math.round(Number(next.morningMinutes) || defaults.morningMinutes)));
-      next.laterMinutes = Math.min(120, Math.max(1, Math.round(Number(next.laterMinutes) || defaults.laterMinutes)));
+      next.rewardMinutes = Math.min(120, Math.max(15, Math.round(Number(next.rewardMinutes) || defaults.rewardMinutes)));
+      next.morningMinutes = Math.min(120, Math.max(15, Math.round(Number(next.morningMinutes) || defaults.morningMinutes)));
+      next.laterMinutes = Math.min(120, Math.max(15, Math.round(Number(next.laterMinutes) || defaults.laterMinutes)));
       next.mode = next.mode === 'escalating' ? 'escalating' : 'fixed';
       next.morningTaskIds = Array.isArray(next.morningTaskIds) ? next.morningTaskIds.map(String) : defaults.morningTaskIds;
       next.laterTaskIds = Array.isArray(next.laterTaskIds) ? next.laterTaskIds.map(String) : defaults.laterTaskIds;
@@ -795,11 +822,11 @@
 
   function saveEarnedAccessFormSettings() {
     return saveEarnedAccessDeviceSettings({
-      label: String(els.earnedAccessLabelInput.value || 'Amazon, Reddit, Instagram').trim().slice(0, 80) || 'Amazon, Reddit, Instagram',
+      label: String(els.earnedAccessLabelInput.value || 'Selected apps').trim().slice(0, 80) || 'Selected apps',
       stepGoal: Math.min(20000, Math.max(100, Math.round(Number(els.earnedAccessStepsInput.value) || 1000))),
-      rewardMinutes: Math.min(120, Math.max(1, Math.round(Number(els.earnedAccessMinutesInput.value) || 20))),
-      morningMinutes: Math.min(120, Math.max(1, Math.round(Number(els.earnedAccessMorningMinutesInput.value) || 20))),
-      laterMinutes: Math.min(120, Math.max(1, Math.round(Number(els.earnedAccessLaterMinutesInput.value) || 20))),
+      rewardMinutes: Math.min(120, Math.max(15, Math.round(Number(els.earnedAccessMinutesInput.value) || 20))),
+      morningMinutes: Math.min(120, Math.max(15, Math.round(Number(els.earnedAccessMorningMinutesInput.value) || 20))),
+      laterMinutes: Math.min(120, Math.max(15, Math.round(Number(els.earnedAccessLaterMinutesInput.value) || 20))),
       mode: els.earnedAccessModeInput.value === 'escalating' ? 'escalating' : 'fixed'
     });
   }
@@ -881,6 +908,7 @@
       stageClaimsByDate,
       lastCompleted: { stage, label: settings.label, rewardMinutes, completedAt: completedAt.toISOString() }
     });
+    syncNativeEarnedAccess({ ...settings, earnedUntil }, true);
     renderEarnedAccess();
     showToast(`${rewardMinutes} minutes earned from ${stage} tasks.`);
   }
@@ -936,6 +964,7 @@
       label: settings.label
     };
     saveEarnedAccessDeviceSettings({ active, earnedUntil: '' });
+    syncNativeEarnedAccess({ ...settings, active, earnedUntil: '' }, false);
     renderEarnedAccess();
     showToast(`${active.label} step round started at ${steps.toLocaleString()} steps.`);
   }
@@ -949,6 +978,7 @@
   function cancelEarnedAccessRound() {
     pendingEarnedAccessStart = false;
     saveEarnedAccessDeviceSettings({ active: null });
+    syncNativeEarnedAccess(earnedAccessDeviceSettings(), false);
     renderEarnedAccess();
     showToast('Earned Access round canceled.');
   }
@@ -983,6 +1013,7 @@
       roundsByDate,
       lastCompleted: { ...active, completedAt: completedAt.toISOString(), completedSteps: steps, gainedSteps: gained }
     });
+    syncNativeEarnedAccess({ ...settings, active: null, earnedUntil }, true);
     renderEarnedAccess();
     showToast(`${rewardMinutes} minutes earned.`);
   }
@@ -1012,6 +1043,7 @@
 
     const active = settings.active;
     const accessIsEarned = !Number.isNaN(new Date(settings.earnedUntil || '').getTime()) && new Date(settings.earnedUntil).getTime() > Date.now();
+    syncNativeEarnedAccess(settings, accessIsEarned);
     renderEarnedAccessStages(settings, accessIsEarned);
     let percent = 0;
     if (pendingEarnedAccessStart) {
@@ -1033,7 +1065,9 @@
       const minutes = Math.max(1, Number(completed?.rewardMinutes) || settings.rewardMinutes);
       els.earnedAccessBadge.textContent = 'Reward earned';
       els.earnedAccessStatus.textContent = `${minutes} minutes earned`;
-      els.earnedAccessDetail.textContent = `Your ${completed?.label || settings.label} reward countdown ends at ${new Date(settings.earnedUntil).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}. App access is unchanged.`;
+      els.earnedAccessDetail.textContent = earnedAccessNativeState.protectionEnabled
+        ? `Your selected apps are available until ${new Date(settings.earnedUntil).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}, then they will lock again.`
+        : `Your ${completed?.label || settings.label} reward countdown ends at ${new Date(settings.earnedUntil).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}. Turn on protection above to enforce app blocking.`;
       earnedAccessExpiryTimer = window.setTimeout(renderEarnedAccess, Math.min(Math.max(250, earnedTime - Date.now() + 250), 2147483647));
     } else {
       const required = earnedAccessRequirement(settings);
@@ -1046,6 +1080,15 @@
     els.startEarnedAccessButton.disabled = pendingEarnedAccessStart || Boolean(active) || accessIsEarned;
     els.startEarnedAccessButton.textContent = pendingEarnedAccessStart ? 'Starting round…' : active ? 'Round in progress' : accessIsEarned ? 'Time earned' : `Start ${earnedAccessRequirement(settings).toLocaleString()}-step round`;
     els.cancelEarnedAccessButton.hidden = !active && !pendingEarnedAccessStart;
+  }
+
+  function syncNativeEarnedAccess(settings, accessIsEarned) {
+    if (!window.DailyRoutineNative?.postMessage) return;
+    const directive = accessIsEarned && settings.earnedUntil ? `allow:${settings.earnedUntil}` : 'lock';
+    if (directive === lastEarnedAccessNativeDirective) return;
+    lastEarnedAccessNativeDirective = directive;
+    if (accessIsEarned) sendNativeBridgeMessage('earned.access.allow', { until: settings.earnedUntil });
+    else sendNativeBridgeMessage('earned.access.lock');
   }
 
   function healthStepsItem() {
@@ -2182,6 +2225,7 @@
     renderSetupNavigation();
     renderAppleWatchQuickAction();
     renderConnections();
+    renderEarnedAccess();
     renderPrivateSyncStatus();
     renderSnapshotStatus();
     renderBackupDownloadStatus();

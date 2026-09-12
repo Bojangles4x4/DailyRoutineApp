@@ -2,13 +2,17 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.15.0 features
+## Version 1.16.0 development features
 
+- A development-only Family Controls prototype with Apple’s private app and website picker
+- Real Managed Settings shielding connected to routine and step-based Earned Access allowances
+- Automatic on-device relocking when an earned allowance ends
+- On-device storage of opaque Apple selection tokens; selected app names and browsing history are not exposed to Daily Routine
 - One clean Daily Routine header without a repeated screen subtitle
 - A native truth-reminder library for text and pictures, with selected or shuffled notifications and a configurable daily schedule
 - Reviewable Apple Health sleep suggestions that save bedtime to the date it occurred and wake time to the following morning
 - Phone-safe actual-time fields that keep the time and Now button from overlapping
-- Clear Earned Access language identifying the current feature as a manual reward tracker while Screen Time enforcement awaits Apple approval
+- A physical-device-tested reward flow that locks selected apps, grants a timed allowance, and restores the shield automatically
 - A calmer Setup landing page organized into Routine, Appearance, Faith, Health, and Data sections
 - Compact wake, bedtime, schedule, and sleep-time controls that preserve phone space
 - Morning and later Earned Access stages based on selected routine completion, with separate configurable rewards
@@ -91,7 +95,7 @@ Open the GitHub Pages URL in Safari → Share → **Add to Home Screen** → ena
 
 ## Privacy note
 
-Data is stored locally first. If private sync is connected, routine definitions, daily entries, notes, memories, weekly reviews, and ordinary preferences are also stored in the owner's Supabase account row. Apple Health summaries, automatic Health-based step values, Earned Access baselines and progress, background photos, local snapshots, downloaded backups, and conflict archives remain device-only. Sleep suggestions become ordinary routine history only after the user applies them. Clearing browser storage can erase the local copy, so use Download backup periodically.
+Data is stored locally first. If private sync is connected, routine definitions, daily entries, notes, memories, weekly reviews, and ordinary preferences are also stored in the owner's Supabase account row. Apple Health summaries, automatic Health-based step values, Earned Access baselines and progress, Screen Time authorization and opaque app-selection tokens, background photos, local snapshots, downloaded backups, and conflict archives remain device-only. Sleep suggestions become ordinary routine history only after the user applies them. Clearing browser storage can erase the local copy, so use Download backup periodically.
 
 - [Privacy Policy](privacy.html)
 - [Support](support.html)

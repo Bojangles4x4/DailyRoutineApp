@@ -11,7 +11,10 @@ struct DailyRoutineAppleApp: App {
                 .ignoresSafeArea(.container, edges: .bottom)
                 .task { await model.reminders.refreshForNewDay() }
                 .onChange(of: scenePhase) { _, phase in
-                    if phase == .active { Task { await model.reminders.refreshForNewDay() } }
+                    if phase == .active {
+                        model.earnedAccess.refresh()
+                        Task { await model.reminders.refreshForNewDay() }
+                    }
                 }
         }
     }

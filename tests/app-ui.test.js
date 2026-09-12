@@ -47,6 +47,17 @@ function localDateKey(date = new Date()) {
   assert.ok(watchContext.items.some(item => item.id === 'morning-meds' && item.action === 'takeMedication'));
   assert.equal(watchContext.customAction.itemId, 'morning-meds');
 
+  await page.evaluate(key => {
+    const state = window.DailyRoutineApp.getState();
+    state.days[key] ||= { entries: {}, skippedItems: {} };
+    state.days[key].entries['morning-prayer'] = true;
+    window.DailyRoutineApp.saveState();
+  }, today);
+  await page.locator('[data-view="today"]').click();
+  await page.locator('[data-view="setup"]').click();
+  await page.locator('[data-setup-target="health"]').click();
+  assert.match(await page.locator('#earnedAccessMorningStatus').textContent(), /1 of 3 selected tasks complete/);
+
   await page.evaluate(() => {
     window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'health.summary', value: { date: new Date().toISOString(), stepCount: 4820, sleepHours: 0, workoutCount: 0, sourceNames: ['Garmin Connect', 'Apple Watch'] } } }));
   });
@@ -57,7 +68,9 @@ function localDateKey(date = new Date()) {
   await page.locator('#earnedAccessModeInput').selectOption('fixed');
   await page.locator('#startEarnedAccessButton').click();
   assert.equal((await page.locator('#earnedAccessStatus').textContent()).trim(), 'Reddit step goal');
-  assert.match(await page.locator('.earned-access-disclosure').textContent(), /app blocking is off/);
+  assert.match(await page.locator('.earned-access-disclosure').textContent(), /Screen Time blocking/);
+  await page.locator('#openEarnedAccessControlsButton').click();
+  assert.equal(await page.evaluate(() => window.__dailyRoutineNativeMessages.at(-1).action), 'earned.access.controls.open');
   assert.match(await page.locator('#earnedAccessDetail').textContent(), /0 \/ 1,000/);
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('dailyRoutine.earnedAccess.device.v1')).active.baselineSteps), 4820);
 
@@ -70,6 +83,9 @@ function localDateKey(date = new Date()) {
   });
   assert.equal((await page.locator('#earnedAccessStatus').textContent()).trim(), '20 minutes earned');
   assert.equal((await page.locator('#earnedAccessBadge').textContent()).trim(), 'Reward earned');
+  const nativeAllowance = await page.evaluate(() => [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'earned.access.allow'));
+  assert.ok(nativeAllowance?.value?.until);
+  assert.ok(new Date(nativeAllowance.value.until).getTime() > Date.now());
   const earnedAccessData = await page.evaluate(key => {
     const device = JSON.parse(localStorage.getItem('dailyRoutine.earnedAccess.device.v1'));
     const syncedState = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));

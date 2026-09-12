@@ -29,7 +29,7 @@ This is intentionally more than a website wrapper. The native HealthKit and Watc
 - App Store icon catalogs, privacy manifests for App Group user defaults, and bundled privacy/support pages
 - XcodeGen project specification
 
-Build 13 adds native, on-device truth reminders with text or pictures, selectable or shuffled entries, and a configurable daily schedule. It also separates Apple Health bedtime and wake-time confirmation by calendar date and identifies Earned Access clearly as a manual reward tracker. Automatic app selection, usage accounting, shielding, or extension is not enabled; those require Apple's Family Controls entitlement plus a later Managed Settings and Device Activity implementation.
+Build 14 connects Earned Access to Family Controls. It adds individual Screen Time authorization, Apple's privacy-preserving app and website picker, on-device selection persistence, real Managed Settings shielding, timed routine and step allowances, and a Device Activity monitor extension that restores the shield when an allowance ends. The complete lock, earn, unlock, and automatic re-lock cycle has passed physical-iPhone testing. TestFlight distribution still requires Apple's Family Controls distribution entitlement for the app and Device Activity extension.
 
 Tapping a checkbox or medication row updates that exact routine; tapping a completed row reopens it. Medication taps record the current time, with an AM/PM confirmation on Watch when the time does not match the routine section. Linked-app routines remain on iPhone. All Watch actions remain locked until the Morning Foundation is completed on the iPhone for the local calendar day. If personal convictions are configured, they are part of that foundation. If the Watch companion is not installed yet, the iPhone keeps the latest routine context ready and sends it when Watch Connectivity reports the companion is available.
 
@@ -55,6 +55,7 @@ Project generation applies an Xcode 26 compatibility adjustment so the modern wa
 - It does not write medication, mood, prayer, or routine data to HealthKit.
 - Health information stays on the person’s devices and is not used for advertising or analytics.
 - Automatic Health-based step values and Earned Access baselines, progress, and earned-time state are excluded from Private sync. Sleep suggestions become routine history only after the person applies them.
+- Family Controls authorization, opaque app-selection tokens, and Managed Settings shield state stay on the iPhone and are excluded from Private sync and routine backups.
 - Daily Routine data remains local-first until a separate sync design is explicitly approved.
 
 ## Apple references
@@ -63,4 +64,6 @@ Project generation applies an Xcode 26 compatibility adjustment so the modern wa
 - [Authorizing access to health data](https://developer.apple.com/documentation/healthkit/authorizing-access-to-health-data)
 - [Building a watchOS app](https://developer.apple.com/documentation/watchos-apps/building_a_watchos_app)
 - [Transferring data with Watch Connectivity](https://developer.apple.com/documentation/watchconnectivity/transferring-data-with-watch-connectivity)
+- [Requesting the Family Controls entitlement](https://developer.apple.com/documentation/familycontrols/requesting-the-family-controls-entitlement)
+- [Configuring Family Controls](https://developer.apple.com/documentation/xcode/configuring-family-controls)
 - [App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/)

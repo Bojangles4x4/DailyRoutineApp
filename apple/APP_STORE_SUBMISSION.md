@@ -1,6 +1,6 @@
 # App Store submission package
 
-This document keeps the TestFlight submission consistent with the behavior of Daily Routine 1.15.0 (build 13).
+This document records the planned TestFlight submission behavior for Daily Routine 1.16.0 (build 14). Family Controls distribution remains blocked until Apple assigns the required entitlement.
 
 ## URLs
 
@@ -51,13 +51,14 @@ Daily Routine is a personal organization tool and does not provide medical advic
 
 `routine,habits,planner,journal,prayer,reflection,checklist,wellness,private,watch`
 
-### Version 1.15.0 release notes
+### Version 1.16.0 draft release notes
 
+- Privately choose apps, categories, or websites through Apple's Screen Time picker and connect them to routine and step-based allowances.
 - Create an on-device library of truth reminders using text or pictures, then select entries or shuffle the library on a daily schedule.
 - Review Apple Health sleep suggestions before saving bedtime to the date it occurred and wake time to the following morning.
 - Keep actual-time fields and their Now buttons separated on iPhone.
 - Use a single compact Daily Routine header without a repeated Setup label.
-- See clearly that Earned Access currently tracks goals and reward countdowns without changing access to other apps.
+- Unlock selected apps during an earned allowance and restore the shield automatically when the allowance ends.
 - Navigate with a compact Daily Routine header and a focused Setup page organized by category.
 - Use smaller wake, bedtime, schedule, and sleep-time controls that leave more room for the information that matters.
 - Earn separate morning and later app-time allowances after completing selected routines, with an optional step-based allowance too.
@@ -84,12 +85,13 @@ Daily Routine is a personal organization tool and does not provide medical advic
 
 Before a public App Store submission, update the App Privacy questionnaire for the optional Private sync implementation. When Private sync is enabled, the sign-in email address and synchronized user content are transmitted to the owner-only Supabase account row. Disclose the applicable contact-information and user-content categories as linked to the user, not used for tracking, and used only for app functionality.
 
-The following remains true for build 13:
+The following remains true for the planned build 14:
 
 - No analytics, advertising, tracking, or third-party SDKs
 - Routine, reflection, medication, prayer, and note data is local-first and is transmitted only when the owner connects Private sync
 - Apple Health data is read only after user authorization, summarized on device, and not transmitted off device
 - Earned Access baselines, progress, and earned-time state remain on the device and are excluded from Private sync
+- Family Controls authorization, opaque selection tokens, and Managed Settings shield state remain on the device and are excluded from Private sync
 - Watch routine snapshots remain within the iPhone/Watch apps and their shared App Group
 - Backup and export files leave the app only through an explicit user action
 - Accountability reports remain on device until the user previews and explicitly copies or shares them to a chosen destination
@@ -117,12 +119,13 @@ Please test the first-run flow and verify that existing routine data remains int
 4. Create, edit, and delete an open-ended Truth Before Tasks theme using a title, body, and one to three Scripture or plain-text truth lines.
 5. Connect Apple Health, add an 8,000-step routine goal, refresh Health, and verify the item completes automatically at the target.
 6. In Setup → Health & Watch, select morning and later routine requirements and verify each allowance becomes available only after every selected task is complete. Also start an optional movement round and confirm progress begins at zero rather than using the day's total steps.
-7. Review a Health sleep suggestion and confirm bedtime is saved to the date it occurred while wake time is saved to the following morning. Confirm existing entries are not selected for replacement automatically.
-8. Confirm automatic Health step values and Earned Access progress do not appear on a second device through Private sync.
-9. Verify iPhone/Watch progress sync and complication updates. Tap a specific routine, reopen it, change the bottom shortcut in iPhone Setup, and dictate each Capture type.
-10. Download a JSON backup and restore it after making a temporary change.
-11. In Setup → Faith foundation → Truth reminders, add text and a picture, choose selected entries and shuffle mode in separate tests, and verify the configured local notifications appear.
-12. Create daily and weekly accountability reports, verify sensitive switches are off by default, and confirm the copied/shared text exactly matches the preview.
+7. Turn on Screen Time protection, choose a nonessential test app, use an earned allowance, and confirm the app unlocks only until the displayed end time and then shields itself again.
+8. Review a Health sleep suggestion and confirm bedtime is saved to the date it occurred while wake time is saved to the following morning. Confirm existing entries are not selected for replacement automatically.
+9. Confirm automatic Health step values and Earned Access progress do not appear on a second device through Private sync.
+10. Verify iPhone/Watch progress sync and complication updates. Tap a specific routine, reopen it, change the bottom shortcut in iPhone Setup, and dictate each Capture type.
+11. Download a JSON backup and restore it after making a temporary change.
+12. In Setup → Faith foundation → Truth reminders, add text and a picture, choose selected entries and shuffle mode in separate tests, and verify the configured local notifications appear.
+13. Create daily and weekly accountability reports, verify sensitive switches are off by default, and confirm the copied/shared text exactly matches the preview.
 
 Do not use real sensitive notes or medication details in a public bug report.
 
@@ -132,7 +135,7 @@ Daily Routine is local-first; its optional Private sync account is not required 
 
 Health access is requested only from Setup after the reviewer taps Connect Health. The app requests read access for steps, sleep, and workouts and does not write HealthKit data.
 
-Earned Access is an on-device routine-and-step reward tracker that complements separately configured Screen Time limits. Build 13 explicitly identifies this as a manual tracker. It does not automatically select, block, unblock, measure usage in, or extend access to another app because the app does not yet have Apple's Family Controls entitlement.
+Earned Access uses individual Family Controls authorization, Apple's private app and website picker, Managed Settings shielding, and a Device Activity monitor extension. Daily Routine stores only Apple's opaque selection tokens and does not receive selected app names or browsing history. A person turns protection on, earns an allowance through configured routine or step requirements, and explicitly starts it; selected apps unlock until the displayed end time and shield themselves again automatically. The full cycle has passed physical-iPhone testing. Do not distribute this Family Controls build through TestFlight until Apple assigns the distribution entitlement to the app and Device Activity extension.
 
 Watch actions remain locked until the reviewer completes the Morning Foundation opening on iPhone. A medication routine tapped on Watch records the current time; tapping the completed row again reopens it.
 
@@ -148,6 +151,8 @@ Watch actions remain locked until the reviewer completes the Morning Foundation 
 - [x] Screenshots show real app UI with fictional, non-sensitive example data (see [AppStoreAssets](AppStoreAssets/README.md))
 - [ ] Physical iPhone HealthKit authorization test passes
 - [ ] Physical iPhone/Apple Watch sync and complication refresh tests pass
+- [x] Physical iPhone Earned Access lock, allowance, and automatic re-lock test passes
+- [ ] Family Controls distribution entitlement is approved for the app and Device Activity extension
 - [ ] Signed archive validates without warnings
 - [ ] Export-compliance questions are answered for the final binary
 - [ ] TestFlight internal testing succeeds before external testing or App Review
