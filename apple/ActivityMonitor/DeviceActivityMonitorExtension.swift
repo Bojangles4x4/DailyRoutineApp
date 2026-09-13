@@ -30,11 +30,30 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
     override func eventDidReachThreshold(_ event: DeviceActivityEvent.Name, activity: DeviceActivityName) {
         super.eventDidReachThreshold(event, activity: activity)
         guard activity == EarnedAccessShared.activityName,
-              event == EarnedAccessShared.eventName,
               EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.protectionKey)
         else { return }
 
-        restoreEarnedAccessShield()
+        if event == EarnedAccessShared.eventName {
+            restoreEarnedAccessShield()
+            return
+        }
+
+        guard let usedMinutes = EarnedAccessShared.usageMinute(from: event) else { return }
+        let totalMinutes = EarnedAccessShared.defaults.integer(forKey: EarnedAccessShared.allowanceMinutesKey)
+        guard totalMinutes > 0 else { return }
+        if usedMinutes >= totalMinutes {
+            restoreEarnedAccessShield()
+            return
+        }
+
+        let nextRemaining = max(0, totalMinutes - usedMinutes)
+        let currentRemaining = EarnedAccessShared.defaults.object(forKey: EarnedAccessShared.allowanceRemainingMinutesKey) == nil
+            ? totalMinutes
+            : EarnedAccessShared.defaults.integer(forKey: EarnedAccessShared.allowanceRemainingMinutesKey)
+        EarnedAccessShared.defaults.set(
+            min(currentRemaining, nextRemaining),
+            forKey: EarnedAccessShared.allowanceRemainingMinutesKey
+        )
     }
 
     private func restoreEarnedAccessShield() {

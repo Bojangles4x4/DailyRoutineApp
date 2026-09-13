@@ -72,7 +72,7 @@
   let pendingEarnedAccessStart = false;
   let lastEarnedAccessNativeDirective = '';
   let lastMorningFoundationDirective = '';
-  let earnedAccessNativeState = { available: false, protectionEnabled: false, shielding: false, allowanceActive: false, allowanceMinutes: 0, allowanceRedemptionID: '', lastConsumedRedemptionID: '', morningGateEnabled: false };
+  let earnedAccessNativeState = { available: false, protectionEnabled: false, shielding: false, allowanceActive: false, allowanceMinutes: 0, allowanceRemainingMinutes: null, allowanceRedemptionID: '', lastConsumedRedemptionID: '', morningGateEnabled: false };
   let activeSetupCategory = '';
   let accountabilityPreview = '';
   let accountabilityPreviewSignature = '';
@@ -755,6 +755,7 @@
           shielding: value.shielding === true || value.shielding === 'true',
           allowanceActive: value.allowanceActive === true || value.allowanceActive === 'true',
           allowanceMinutes: Math.max(0, Number(value.allowanceMinutes) || 0),
+          allowanceRemainingMinutes: String(value.allowanceRemainingMinutes ?? '') === '' ? null : Math.max(0, Number(value.allowanceRemainingMinutes) || 0),
           allowanceRedemptionID: String(value.allowanceRedemptionID || ''),
           lastConsumedRedemptionID: String(value.lastConsumedRedemptionID || ''),
           morningGateEnabled: value.morningGateEnabled === true || value.morningGateEnabled === 'true'
@@ -1115,10 +1116,24 @@
       percent = 100;
       const completed = settings.lastCompleted;
       const minutes = Math.max(1, Number(completed?.rewardMinutes) || 15);
+      const nativeAllowanceMatches = earnedAccessNativeState.allowanceActive
+        && earnedAccessNativeState.allowanceRedemptionID === settings.activeAllowance?.id;
+      const remainingMinutes = nativeAllowanceMatches && Number.isFinite(earnedAccessNativeState.allowanceRemainingMinutes)
+        ? Math.min(minutes, Math.max(0, earnedAccessNativeState.allowanceRemainingMinutes))
+        : null;
+      const trackingUnavailable = nativeAllowanceMatches && earnedAccessNativeState.allowanceRemainingMinutes === null;
       els.earnedAccessBadge.textContent = 'Reward earned';
-      els.earnedAccessStatus.textContent = `${minutes} minutes available`;
+      els.earnedAccessStatus.textContent = trackingUnavailable
+        ? `${minutes}-minute allowance active`
+        : remainingMinutes === null
+        ? `${minutes} minutes available`
+        : `About ${remainingMinutes} of ${minutes} minutes remaining`;
       els.earnedAccessDetail.textContent = earnedAccessNativeState.protectionEnabled
-        ? `Use the selected apps when you choose. Only foreground use counts; they will lock after ${minutes} minutes of actual use.`
+        ? trackingUnavailable
+          ? 'This allowance began before minute tracking was installed, so its remaining balance cannot be reconstructed. New allowances will show an estimate.'
+          : remainingMinutes === null
+          ? `Use the selected apps when you choose. Only foreground use counts; they will lock after ${minutes} minutes of actual use.`
+          : 'Apple updates this estimate in whole-minute checkpoints when you return to Daily Routine. All selected earned apps share it.'
         : `Your ${completed?.label || settings.label} allowance is ready. Turn on protection above to enforce actual-use counting.`;
     } else {
       const required = earnedAccessRequirement(settings);

@@ -11,6 +11,7 @@ enum EarnedAccessShared {
     static let unlockedUntilKey = "dailyRoutine.earnedAccess.unlockedUntil.v1"
     static let allowanceActiveKey = "dailyRoutine.earnedAccess.allowanceActive.v2"
     static let allowanceMinutesKey = "dailyRoutine.earnedAccess.allowanceMinutes.v2"
+    static let allowanceRemainingMinutesKey = "dailyRoutine.earnedAccess.allowanceRemainingMinutes.v3"
     static let allowanceRedemptionIDKey = "dailyRoutine.earnedAccess.allowanceRedemptionID.v2"
     static let lastConsumedRedemptionIDKey = "dailyRoutine.earnedAccess.lastConsumedRedemptionID.v2"
     static let essentialSelectionKey = "dailyRoutine.morningFoundation.essentialSelection.v1"
@@ -20,6 +21,7 @@ enum EarnedAccessShared {
     static let foundationStoreName = ManagedSettingsStore.Name("dailyRoutine.morningFoundation")
     static let activityName = DeviceActivityName("dailyRoutine.earnedAccess.usage")
     static let eventName = DeviceActivityEvent.Name("dailyRoutine.earnedAccess.budget")
+    static let eventPrefix = "dailyRoutine.earnedAccess.minute."
     static let foundationActivityName = DeviceActivityName("dailyRoutine.morningFoundation.daily")
 
     static var defaults: UserDefaults {
@@ -78,8 +80,18 @@ enum EarnedAccessShared {
         }
         defaults.set(false, forKey: allowanceActiveKey)
         defaults.removeObject(forKey: allowanceMinutesKey)
+        defaults.removeObject(forKey: allowanceRemainingMinutesKey)
         defaults.removeObject(forKey: allowanceRedemptionIDKey)
         defaults.removeObject(forKey: unlockedUntilKey)
+    }
+
+    static func eventName(for minute: Int) -> DeviceActivityEvent.Name {
+        DeviceActivityEvent.Name("\(eventPrefix)\(minute)")
+    }
+
+    static func usageMinute(from event: DeviceActivityEvent.Name) -> Int? {
+        guard event.rawValue.hasPrefix(eventPrefix) else { return nil }
+        return Int(event.rawValue.dropFirst(eventPrefix.count))
     }
 
     static func localDateKey(_ date: Date = Date()) -> String {

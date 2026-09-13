@@ -12,6 +12,7 @@ final class EarnedAccessControlStore: ObservableObject {
     @Published private(set) var protectionEnabled = false
     @Published private(set) var allowanceActive = false
     @Published private(set) var allowanceMinutes = 0
+    @Published private(set) var allowanceRemainingMinutes: Int?
     @Published private(set) var allowanceRedemptionID = ""
     @Published private(set) var lastConsumedRedemptionID = ""
     @Published private(set) var morningGateEnabled = false
@@ -127,6 +128,7 @@ final class EarnedAccessControlStore: ObservableObject {
         EarnedAccessShared.applyShield(selection: selection, to: managedStore)
         allowanceActive = false
         allowanceMinutes = 0
+        allowanceRemainingMinutes = nil
         allowanceRedemptionID = ""
         isShielding = true
         status = "Earned Access is locked. Complete a requirement to open the selected apps."
@@ -160,34 +162,40 @@ final class EarnedAccessControlStore: ObservableObject {
                 intervalEnd: calendar.dateComponents(components, from: end),
                 repeats: false
             )
-            let event: DeviceActivityEvent
-            if #available(iOS 17.4, *) {
-                event = DeviceActivityEvent(
-                    applications: selection.applicationTokens,
-                    categories: selection.categoryTokens,
-                    webDomains: selection.webDomainTokens,
-                    threshold: DateComponents(minute: safeMinutes),
-                    includesPastActivity: false
-                )
-            } else {
-                event = DeviceActivityEvent(
-                    applications: selection.applicationTokens,
-                    categories: selection.categoryTokens,
-                    webDomains: selection.webDomainTokens,
-                    threshold: DateComponents(minute: safeMinutes)
-                )
+            var events: [DeviceActivityEvent.Name: DeviceActivityEvent] = [:]
+            for minute in 1...safeMinutes {
+                let event: DeviceActivityEvent
+                if #available(iOS 17.4, *) {
+                    event = DeviceActivityEvent(
+                        applications: selection.applicationTokens,
+                        categories: selection.categoryTokens,
+                        webDomains: selection.webDomainTokens,
+                        threshold: DateComponents(minute: minute),
+                        includesPastActivity: false
+                    )
+                } else {
+                    event = DeviceActivityEvent(
+                        applications: selection.applicationTokens,
+                        categories: selection.categoryTokens,
+                        webDomains: selection.webDomainTokens,
+                        threshold: DateComponents(minute: minute)
+                    )
+                }
+                events[EarnedAccessShared.eventName(for: minute)] = event
             }
             try activityCenter.startMonitoring(
                 EarnedAccessShared.activityName,
                 during: schedule,
-                events: [EarnedAccessShared.eventName: event]
+                events: events
             )
             EarnedAccessShared.clearShield(from: managedStore)
             EarnedAccessShared.defaults.set(true, forKey: EarnedAccessShared.allowanceActiveKey)
             EarnedAccessShared.defaults.set(safeMinutes, forKey: EarnedAccessShared.allowanceMinutesKey)
+            EarnedAccessShared.defaults.set(safeMinutes, forKey: EarnedAccessShared.allowanceRemainingMinutesKey)
             EarnedAccessShared.defaults.set(redemptionID, forKey: EarnedAccessShared.allowanceRedemptionIDKey)
             allowanceActive = true
             allowanceMinutes = safeMinutes
+            allowanceRemainingMinutes = safeMinutes
             allowanceRedemptionID = redemptionID
             isShielding = false
             status = "\(safeMinutes) minutes of selected-app use are available. Unused minutes remain available."
@@ -204,6 +212,7 @@ final class EarnedAccessControlStore: ObservableObject {
         protectionEnabled = false
         allowanceActive = false
         allowanceMinutes = 0
+        allowanceRemainingMinutes = nil
         allowanceRedemptionID = ""
         isShielding = false
         EarnedAccessShared.defaults.set(false, forKey: EarnedAccessShared.protectionKey)
@@ -273,6 +282,7 @@ final class EarnedAccessControlStore: ObservableObject {
             "shielding": isShielding ? "true" : "false",
             "allowanceActive": allowanceActive ? "true" : "false",
             "allowanceMinutes": String(allowanceMinutes),
+            "allowanceRemainingMinutes": allowanceRemainingMinutes.map(String.init) ?? "",
             "allowanceRedemptionID": allowanceRedemptionID,
             "lastConsumedRedemptionID": lastConsumedRedemptionID,
             "morningGateEnabled": morningGateEnabled ? "true" : "false",
@@ -285,6 +295,9 @@ final class EarnedAccessControlStore: ObservableObject {
         isShielding = EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.shieldingKey)
         allowanceActive = EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.allowanceActiveKey)
         allowanceMinutes = EarnedAccessShared.defaults.integer(forKey: EarnedAccessShared.allowanceMinutesKey)
+        allowanceRemainingMinutes = EarnedAccessShared.defaults.object(forKey: EarnedAccessShared.allowanceRemainingMinutesKey) == nil
+            ? nil
+            : EarnedAccessShared.defaults.integer(forKey: EarnedAccessShared.allowanceRemainingMinutesKey)
         allowanceRedemptionID = EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.allowanceRedemptionIDKey) ?? ""
         lastConsumedRedemptionID = EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.lastConsumedRedemptionIDKey) ?? ""
         morningGateEnabled = EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.morningGateEnabledKey)
@@ -326,7 +339,11 @@ final class EarnedAccessControlStore: ObservableObject {
         if let success { status = success; return }
         if isAuthorized {
             if protectionEnabled && allowanceActive {
-                status = "\(allowanceMinutes) minutes of selected-app use are available."
+                if let allowanceRemainingMinutes {
+                    status = "About \(allowanceRemainingMinutes) of \(allowanceMinutes) selected-app minutes remain."
+                } else {
+                    status = "\(allowanceMinutes) minutes of selected-app use are available."
+                }
             } else if protectionEnabled && isShielding {
                 status = "Earned Access is locked for \(selectedApplicationCount + selectedCategoryCount + selectedWebsiteCount) selection(s)."
             } else if hasSelection {

@@ -89,6 +89,14 @@ function localDateKey(date = new Date()) {
   const nativeAllowance = await page.evaluate(() => [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'earned.access.allow'));
   assert.equal(nativeAllowance?.value?.minutes, 15);
   assert.match(nativeAllowance?.value?.redemptionId, /^allowance-/);
+  await page.evaluate(redemptionId => {
+    window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'earned.access.status', value: {
+      protectionEnabled: 'true', shielding: 'false', allowanceActive: 'true', allowanceMinutes: '15',
+      allowanceRemainingMinutes: '9', allowanceRedemptionID: redemptionId, lastConsumedRedemptionID: '', morningGateEnabled: 'false'
+    } } }));
+  }, nativeAllowance.value.redemptionId);
+  assert.equal((await page.locator('#earnedAccessStatus').textContent()).trim(), 'About 9 of 15 minutes remaining');
+  assert.match(await page.locator('#earnedAccessDetail').textContent(), /whole-minute checkpoints/);
   const earnedAccessData = await page.evaluate(key => {
     const device = JSON.parse(localStorage.getItem('dailyRoutine.earnedAccess.device.v1'));
     const syncedState = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
