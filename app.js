@@ -671,7 +671,7 @@
     });
     els.refreshAppleHealthButton.addEventListener('click', () => {
       els.appleHealthStatus.textContent = 'Refreshing your on-device summary…';
-      sendNativeBridgeMessage('health.summary.request');
+      requestHealthSummary();
     });
     els.saveAppleStepsGoalButton.addEventListener('click', saveAppleStepsGoal);
     [els.earnedAccessLabelInput, els.earnedAccessTaskMinutesInput, els.earnedAccessDailyLimitInput, els.earnedAccessStepsInput, els.earnedAccessMinutesInput, els.earnedAccessModeInput].forEach(input => input.addEventListener('change', () => {
@@ -693,7 +693,7 @@
     });
     const refreshNativeState = () => {
       sendNativeBridgeMessage('earned.access.status.request');
-      if (healthDeviceSettings().connected) sendNativeBridgeMessage('health.summary.request');
+      if (healthDeviceSettings().connected) requestHealthSummary();
     };
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') refreshNativeState();
@@ -715,17 +715,18 @@
         syncWatchContext();
         renderAppleStepsGoal();
         renderEarnedAccess();
-        if (value.healthAvailable && healthDeviceSettings().connected) sendNativeBridgeMessage('health.summary.request');
+        if (value.healthAvailable && healthDeviceSettings().connected) requestHealthSummary();
       } else if (detail.name === 'health.authorization.completed') {
         saveHealthDeviceSettings({ connected: true });
         els.appleHealthStatus.textContent = 'Health permission choice saved on this iPhone.';
-        sendNativeBridgeMessage('health.summary.request');
+        requestHealthSummary();
       } else if (detail.name === 'health.summary') {
         const value = detail.value || {};
         latestHealthSummary = {
           date: value.date || new Date().toISOString(),
           stepCount: Math.max(0, Number(value.stepCount) || 0),
           stepSampleEnd: validDateValue(value.stepSampleEnd),
+          deviceStepsSinceStart: Number.isFinite(Number(value.deviceStepsSinceStart)) ? Math.max(0, Math.round(Number(value.deviceStepsSinceStart))) : null,
           sleepHours: Math.max(0, Number(value.sleepHours) || 0),
           workoutCount: Math.max(0, Math.round(Number(value.workoutCount) || 0)),
           sleepStart: validDateValue(value.sleepStart),
@@ -900,6 +901,13 @@
     return Math.max(0, Math.round(Number(latestHealthSummary.stepCount) || 0));
   }
 
+  function earnedAccessStepProgress(active) {
+    const steps = latestHealthStepsToday() ?? Math.max(0, Number(active?.baselineSteps) || 0);
+    const healthSteps = Math.max(0, steps - Math.max(0, Number(active?.baselineSteps) || 0));
+    const deviceSteps = Math.max(0, Math.round(Number(latestHealthSummary?.deviceStepsSinceStart) || 0));
+    return { steps, healthSteps, deviceSteps, gained: Math.max(healthSteps, deviceSteps) };
+  }
+
   function earnedTaskCandidates(stage) {
     const sections = stage === 'morning' ? ['morning'] : ['day', 'evening'];
     return state.items.filter(item => item.kind === 'routine' && sections.includes(item.section) && ['checkbox', 'medication', 'linked', 'number', 'time'].includes(item.type));
@@ -1011,7 +1019,8 @@
     if (steps === null) {
       pendingEarnedAccessStart = true;
       renderEarnedAccess();
-      sendNativeBridgeMessage(healthDeviceSettings().connected ? 'health.summary.request' : 'health.authorization.request');
+      if (healthDeviceSettings().connected) requestHealthSummary();
+      else sendNativeBridgeMessage('health.authorization.request');
       return;
     }
     const active = {
@@ -1032,8 +1041,8 @@
     cancelEarnedAccessHealthCheck();
     earnedAccessHealthCheckAttempts = 4;
     els.earnedAccessStatus.textContent = 'Checking Apple Health…';
-    els.earnedAccessDetail.textContent = 'Comparing your current steps with the round’s starting point.';
-    sendNativeBridgeMessage('health.summary.request');
+    els.earnedAccessDetail.textContent = 'Comparing Apple Health with live steps recorded by this iPhone.';
+    requestHealthSummary();
   }
 
   function cancelEarnedAccessHealthCheck() {
@@ -1052,7 +1061,7 @@
       cancelEarnedAccessHealthCheck();
       return;
     }
-    const gained = Math.max(0, steps - Math.max(0, Number(active.baselineSteps) || 0));
+    const { gained, deviceSteps } = earnedAccessStepProgress(active);
     const required = Math.max(1, Number(active.requiredSteps) || earnedAccessRequirement(settings));
     if (gained >= required) {
       cancelEarnedAccessHealthCheck();
@@ -1063,16 +1072,18 @@
       : '';
     const sourceNote = sampleTime ? ` Latest step sample: ${sampleTime}.` : '';
     if (!earnedAccessHealthCheckAttempts) {
-      els.earnedAccessDetail.textContent = `Apple Health still reports ${steps.toLocaleString()} total steps (${gained.toLocaleString()} / ${required.toLocaleString()} earned).${sourceNote} If your Watch shows more, open Health or Fitness briefly so it can sync, then check again.`;
+      const liveNote = deviceSteps > 0 ? ` The iPhone recorded ${deviceSteps.toLocaleString()} live steps during this round.` : '';
+      els.earnedAccessDetail.textContent = `Apple Health still reports ${steps.toLocaleString()} total steps (${gained.toLocaleString()} / ${required.toLocaleString()} earned).${liveNote}${sourceNote} If your Watch shows more, open Health or Fitness briefly so it can sync, then check again.`;
       showToast(`Apple Health still reports ${steps.toLocaleString()} steps.`);
       return;
     }
     const delay = [15000, 10000, 5000][earnedAccessHealthCheckAttempts - 1] || 5000;
     els.earnedAccessStatus.textContent = 'Waiting for Apple Health to sync…';
-    els.earnedAccessDetail.textContent = `Apple Health currently reports ${steps.toLocaleString()} total steps (${gained.toLocaleString()} / ${required.toLocaleString()} earned).${sourceNote} Checking again automatically…`;
+    const liveNote = deviceSteps > 0 ? ` The iPhone has recorded ${deviceSteps.toLocaleString()} live steps during this round.` : '';
+    els.earnedAccessDetail.textContent = `Apple Health currently reports ${steps.toLocaleString()} total steps (${gained.toLocaleString()} / ${required.toLocaleString()} earned).${liveNote}${sourceNote} Checking again automatically…`;
     earnedAccessHealthCheckTimer = setTimeout(() => {
       earnedAccessHealthCheckTimer = null;
-      sendNativeBridgeMessage('health.summary.request');
+      requestHealthSummary();
     }, delay);
   }
 
@@ -1098,7 +1109,7 @@
       renderEarnedAccess();
       return;
     }
-    const gained = Math.max(0, steps - Math.max(0, Number(active.baselineSteps) || 0));
+    const { gained } = earnedAccessStepProgress(active);
     const required = Math.max(1, Number(active.requiredSteps) || earnedAccessRequirement(settings));
     if (gained < required) {
       renderEarnedAccess();
@@ -1151,14 +1162,14 @@
       els.earnedAccessStatus.textContent = healthDeviceSettings().connected ? 'Refreshing Apple Health…' : 'Connect Apple Health…';
       els.earnedAccessDetail.textContent = 'The round will begin as soon as the current step total arrives.';
     } else if (active) {
-      const steps = latestHealthStepsToday() ?? Math.max(0, Number(active.baselineSteps) || 0);
-      const gained = Math.max(0, steps - Math.max(0, Number(active.baselineSteps) || 0));
+      const { gained, deviceSteps } = earnedAccessStepProgress(active);
       const required = Math.max(1, Number(active.requiredSteps) || 1000);
       const remaining = Math.max(0, required - gained);
       percent = Math.min(100, Math.round((gained / required) * 100));
       els.earnedAccessBadge.textContent = 'Walking';
       els.earnedAccessStatus.textContent = `${active.label || settings.label} step goal`;
-      els.earnedAccessDetail.textContent = `Walk ${remaining.toLocaleString()} more steps to add ${active.rewardMinutes || settings.rewardMinutes} minutes to today’s bank. Progress: ${gained.toLocaleString()} / ${required.toLocaleString()}.`;
+      const liveNote = deviceSteps > 0 ? ' Live iPhone motion is included.' : '';
+      els.earnedAccessDetail.textContent = `Walk ${remaining.toLocaleString()} more steps to add ${active.rewardMinutes || settings.rewardMinutes} minutes to today’s bank. Progress: ${gained.toLocaleString()} / ${required.toLocaleString()}.${liveNote}`;
     } else if (accessIsEarned) {
       percent = 100;
       const completed = settings.lastCompleted;
@@ -1348,6 +1359,11 @@
     if (!bridge?.postMessage) return false;
     bridge.postMessage(value === undefined ? { action } : { action, value });
     return true;
+  }
+
+  function requestHealthSummary() {
+    const roundStartedAt = earnedAccessDeviceSettings().active?.startedAt;
+    return sendNativeBridgeMessage('health.summary.request', roundStartedAt ? { roundStartedAt } : undefined);
   }
 
   function watchActionableItems(date, day) {

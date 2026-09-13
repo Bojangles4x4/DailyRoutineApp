@@ -26,6 +26,8 @@
 	<string>Daily Routine can read the health categories you choose to help summarize steps, sleep, and workouts alongside your routine.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Daily Routine uses HealthKit only to read the health categories you choose; it does not add or modify health data.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Daily Routine can use iPhone motion data during an active step round so your Earned Access progress updates without waiting for Apple Health to sync.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

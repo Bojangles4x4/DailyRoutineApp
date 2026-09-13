@@ -1,5 +1,6 @@
 import Foundation
 import HealthKit
+import CoreMotion
 
 enum HealthKitServiceError: LocalizedError {
     case unavailable
@@ -22,6 +23,7 @@ final class HealthKitService {
     }
 
     private let store = HKHealthStore()
+    private let pedometer = CMPedometer()
 
     var isAvailable: Bool {
         HKHealthStore.isHealthDataAvailable()
@@ -49,13 +51,14 @@ final class HealthKitService {
         try await store.requestAuthorization(toShare: [], read: readTypes)
     }
 
-    func fetchSummary(now: Date = Date()) async throws -> HealthSummary {
+    func fetchSummary(now: Date = Date(), roundStartedAt: Date? = nil) async throws -> HealthSummary {
         guard HKHealthStore.isHealthDataAvailable() else {
             throw HealthKitServiceError.unavailable
         }
 
         async let steps = fetchSteps(now: now)
         async let stepSampleEnd = fetchLatestStepSampleEnd(now: now)
+        async let deviceStepsSinceStart = fetchDeviceSteps(from: roundStartedAt, to: now)
         async let sleep = fetchRecentSleep(now: now)
         async let workouts = fetchWorkoutCount(now: now)
         async let sources = fetchSourceNames(now: now)
@@ -64,6 +67,7 @@ final class HealthKitService {
             date: now,
             stepCount: steps,
             stepSampleEnd: stepSampleEnd,
+            deviceStepsSinceStart: deviceStepsSinceStart,
             sleepHours: sleep.hours,
             workoutCount: workouts,
             sleepStart: sleep.start,
@@ -113,6 +117,19 @@ final class HealthKitService {
                 continuation.resume(returning: samples?.first?.endDate)
             }
             store.execute(query)
+        }
+    }
+
+    private func fetchDeviceSteps(from start: Date?, to end: Date) async -> Double? {
+        guard let start, start < end, CMPedometer.isStepCountingAvailable() else { return nil }
+        return await withCheckedContinuation { continuation in
+            pedometer.queryPedometerData(from: start, to: end) { data, error in
+                guard error == nil, let data else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                continuation.resume(returning: data.numberOfSteps.doubleValue)
+            }
         }
     }
 

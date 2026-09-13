@@ -145,7 +145,8 @@ struct WebAppView: UIViewRepresentable {
             case .requestHealthSummary:
                 Task {
                     do {
-                        emit(name: "health.summary", value: try await model.health.fetchSummary())
+                        let roundStartedAt = Self.roundStartedAt(from: payload)
+                        emit(name: "health.summary", value: try await model.health.fetchSummary(roundStartedAt: roundStartedAt))
                     } catch {
                         emitError(error.localizedDescription)
                     }
@@ -249,6 +250,17 @@ struct WebAppView: UIViewRepresentable {
 
         private func emitError(_ message: String) {
             emit(name: "native.error", value: ["message": message])
+        }
+
+        private static func roundStartedAt(from payload: [String: Any]) -> Date? {
+            guard
+                let value = payload["value"] as? [String: Any],
+                let rawDate = value["roundStartedAt"] as? String
+            else { return nil }
+            let fractional = ISO8601DateFormatter()
+            fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            if let date = fractional.date(from: rawDate) { return date }
+            return ISO8601DateFormatter().date(from: rawDate)
         }
 
         private func present(_ controller: UIViewController, from webView: WKWebView, fallback: () -> Void) {
