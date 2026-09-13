@@ -6,4 +6,8 @@ final class AppModel: ObservableObject {
     let watch = PhoneWatchSessionManager()
     let reminders = TruthReminderStore()
     let earnedAccess = EarnedAccessControlStore()
+
+    init() {
+        health.restoreStepRewardAutomation()
+    }
 }

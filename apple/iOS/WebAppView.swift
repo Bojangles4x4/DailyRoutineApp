@@ -151,6 +151,12 @@ struct WebAppView: UIViewRepresentable {
                         emitError(error.localizedDescription)
                     }
                 }
+            case .configureStepRewards:
+                guard let value = payload["value"] as? [String: Any] else { return }
+                let enabled = (value["enabled"] as? NSNumber)?.boolValue ?? false
+                let goalSteps = (value["goalSteps"] as? NSNumber)?.intValue ?? 8_000
+                let maxMinutes = (value["maxMinutes"] as? NSNumber)?.intValue ?? 60
+                Task { await model.health.configureStepRewards(enabled: enabled, goalSteps: goalSteps, maxMinutes: maxMinutes) }
             case .updateWatchContext:
                 guard
                     let value = payload["value"],

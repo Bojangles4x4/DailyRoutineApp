@@ -416,13 +416,14 @@
               <div><strong>Earned Access</strong><span>Complete selected routines or walk additional steps to add time to one shared bank for your selected earned apps.</span></div>
               <span id="earnedAccessBadge" class="privacy-pill">Ready</span>
             </div>
+            <label class="toggle-field"><input id="earnedAccessAutomaticStepsInput" type="checkbox" checked /><span><b>Automatic walking rewards</b><small>Track progress toward 8,000 daily steps and add minutes automatically—no round to start.</small></span></label>
             <div class="earned-access-fields">
               <label class="text-field compact earned-access-app-field"><span>App group name (optional)</span><input id="earnedAccessLabelInput" type="text" maxlength="80" value="Selected apps" placeholder="For example: Social &amp; Shopping" /><small class="field-help">This only names the group. Choose the apps privately in Apple’s Screen Time picker above.</small></label>
               <label class="text-field compact"><span>Minutes per task</span><input id="earnedAccessTaskMinutesInput" type="number" min="1" max="15" step="1" inputmode="numeric" value="5" /></label>
               <label class="text-field compact"><span>Daily limit</span><input id="earnedAccessDailyLimitInput" type="number" min="15" max="120" step="5" inputmode="numeric" value="60" /></label>
-              <label class="text-field compact"><span>Steps per round</span><input id="earnedAccessStepsInput" type="number" min="100" max="20000" step="50" inputmode="numeric" value="1000" /></label>
-              <label class="text-field compact"><span>Minutes per step round</span><input id="earnedAccessMinutesInput" type="number" min="1" max="60" step="1" inputmode="numeric" value="10" /></label>
-              <label class="text-field compact"><span>Step pattern</span><select id="earnedAccessModeInput"><option value="fixed">Same goal each round</option><option value="escalating">Escalate 750 → 1,000 → 1,500</option></select></label>
+              <label class="text-field compact"><span>Daily step goal</span><input id="earnedAccessStepsInput" type="number" min="1000" max="30000" step="500" inputmode="numeric" value="8000" /></label>
+              <label class="text-field compact"><span>Minutes at goal</span><input id="earnedAccessMinutesInput" type="number" min="15" max="120" step="5" inputmode="numeric" value="60" /></label>
+              <label class="text-field compact" hidden><span>Step pattern</span><select id="earnedAccessModeInput"><option value="fixed">Same goal each round</option><option value="escalating">Escalate 750 → 1,000 → 1,500</option></select></label>
             </div>
             <div class="earned-access-bank" aria-live="polite">
               <div><span>Today’s time bank</span><strong id="earnedAccessBankStatus">0 of 60 minutes ready</strong><small id="earnedAccessBankDetail">Selected task rewards are added automatically.</small></div>
@@ -440,7 +441,7 @@
                 <div class="earned-stage-status"><span id="earnedAccessLaterStatus">Choose later tasks</span></div>
               </div>
             </div>
-            <div class="earned-movement-heading"><strong>Optional movement round</strong><span>Earn an additional allowance from new steps after you start the round.</span></div>
+            <div class="earned-movement-heading"><strong>Daily walking progress</strong><span>Walking minutes are calculated proportionally toward the daily goal and added automatically.</span></div>
             <div class="earned-access-progress" aria-live="polite">
               <div><strong id="earnedAccessStatus">Ready for a step goal</strong><span id="earnedAccessDetail">Start a round to track additional steps toward your reward.</span></div>
               <div class="earned-access-progress-track" role="progressbar" aria-label="Earned Access step progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="earnedAccessProgressBar"></span></div>

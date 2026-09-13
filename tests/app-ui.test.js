@@ -57,6 +57,10 @@ function localDateKey(date = new Date()) {
   await page.locator('[data-view="setup"]').click();
   await page.locator('[data-setup-target="health"]').click();
   assert.match(await page.locator('#earnedAccessMorningStatus').textContent(), /1 of 3 complete · 5 min added today/);
+  assert.equal(await page.locator('#earnedAccessAutomaticStepsInput').isChecked(), true);
+  assert.equal(await page.locator('#earnedAccessStepsInput').inputValue(), '8000');
+  assert.equal(await page.locator('#earnedAccessMinutesInput').inputValue(), '60');
+  await page.locator('#earnedAccessAutomaticStepsInput').uncheck();
 
   await page.evaluate(() => {
     window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'health.summary', value: { date: new Date().toISOString(), stepCount: 4820, sleepHours: 0, workoutCount: 0, sourceNames: ['Garmin Connect', 'Apple Watch'] } } }));
@@ -65,7 +69,6 @@ function localDateKey(date = new Date()) {
   await page.locator('#earnedAccessLabelInput').fill('Reddit');
   await page.locator('#earnedAccessStepsInput').fill('1000');
   await page.locator('#earnedAccessMinutesInput').fill('20');
-  await page.locator('#earnedAccessModeInput').selectOption('fixed');
   await page.locator('#startEarnedAccessButton').click();
   assert.equal((await page.locator('#earnedAccessStatus').textContent()).trim(), 'Reddit step goal');
   assert.match(await page.locator('.earned-access-disclosure').textContent(), /Screen Time blocking/);
@@ -288,6 +291,24 @@ function localDateKey(date = new Date()) {
   });
   assert.equal(navPosition.position, 'fixed');
   assert.ok(Math.abs(navPosition.bottom - navPosition.viewport) < 2);
+
+  const automaticPage = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+  await automaticPage.addInitScript(() => {
+    window.__dailyRoutineNativeMessages = [];
+    window.DailyRoutineNative = { postMessage(message) { window.__dailyRoutineNativeMessages.push(message); } };
+  });
+  await automaticPage.goto(baseURL, { waitUntil: 'networkidle' });
+  await automaticPage.evaluate(() => {
+    window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'health.summary', value: { date: new Date().toISOString(), stepCount: 4000, sleepHours: 0, workoutCount: 0 } } }));
+  });
+  const automaticReward = await automaticPage.evaluate(key => {
+    const settings = JSON.parse(localStorage.getItem('dailyRoutine.earnedAccess.device.v1'));
+    const nativeConfiguration = [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'health.step-rewards.configure');
+    return { bank: settings.bankByDate[key], earned: settings.earnedByDate[key], walking: settings.movementCreditedByDate[key], nativeConfiguration };
+  }, today);
+  assert.deepEqual({ bank: automaticReward.bank, earned: automaticReward.earned, walking: automaticReward.walking }, { bank: 30, earned: 30, walking: 30 });
+  assert.deepEqual(automaticReward.nativeConfiguration.value, { enabled: true, goalSteps: 8000, maxMinutes: 60 });
+  await automaticPage.close();
 
   assert.deepEqual(errors, []);
   await browser.close();
