@@ -12,6 +12,7 @@ enum EarnedAccessShared {
     static let allowanceActiveKey = "dailyRoutine.earnedAccess.allowanceActive.v2"
     static let allowanceMinutesKey = "dailyRoutine.earnedAccess.allowanceMinutes.v2"
     static let allowanceRemainingMinutesKey = "dailyRoutine.earnedAccess.allowanceRemainingMinutes.v3"
+    static let allowanceExpiresAtKey = "dailyRoutine.earnedAccess.expiresAt.v3"
     static let allowanceRedemptionIDKey = "dailyRoutine.earnedAccess.allowanceRedemptionID.v2"
     static let lastConsumedRedemptionIDKey = "dailyRoutine.earnedAccess.lastConsumedRedemptionID.v2"
     static let essentialSelectionKey = "dailyRoutine.morningFoundation.essentialSelection.v1"
@@ -81,17 +82,21 @@ enum EarnedAccessShared {
         defaults.set(false, forKey: allowanceActiveKey)
         defaults.removeObject(forKey: allowanceMinutesKey)
         defaults.removeObject(forKey: allowanceRemainingMinutesKey)
+        defaults.removeObject(forKey: allowanceExpiresAtKey)
         defaults.removeObject(forKey: allowanceRedemptionIDKey)
         defaults.removeObject(forKey: unlockedUntilKey)
     }
 
-    static func eventName(for minute: Int) -> DeviceActivityEvent.Name {
-        DeviceActivityEvent.Name("\(eventPrefix)\(minute)")
+    static func eventName(for minute: Int, redemptionID: String) -> DeviceActivityEvent.Name {
+        DeviceActivityEvent.Name("\(eventPrefix)\(minute).\(redemptionID)")
     }
 
-    static func usageMinute(from event: DeviceActivityEvent.Name) -> Int? {
+    static func usageCheckpoint(from event: DeviceActivityEvent.Name) -> (minute: Int, redemptionID: String)? {
         guard event.rawValue.hasPrefix(eventPrefix) else { return nil }
-        return Int(event.rawValue.dropFirst(eventPrefix.count))
+        let remainder = event.rawValue.dropFirst(eventPrefix.count)
+        let parts = remainder.split(separator: ".", maxSplits: 1).map(String.init)
+        guard parts.count == 2, let minute = Int(parts[0]), !parts[1].isEmpty else { return nil }
+        return (minute, parts[1])
     }
 
     static func localDateKey(_ date: Date = Date()) -> String {

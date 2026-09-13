@@ -183,7 +183,7 @@ final class EarnedAccessControlStore: ObservableObject {
                         threshold: DateComponents(minute: minute)
                     )
                 }
-                events[EarnedAccessShared.eventName(for: minute)] = event
+                events[EarnedAccessShared.eventName(for: minute, redemptionID: redemptionID)] = event
             }
             try activityCenter.startMonitoring(
                 EarnedAccessShared.activityName,
@@ -194,6 +194,7 @@ final class EarnedAccessControlStore: ObservableObject {
             EarnedAccessShared.defaults.set(true, forKey: EarnedAccessShared.allowanceActiveKey)
             EarnedAccessShared.defaults.set(safeMinutes, forKey: EarnedAccessShared.allowanceMinutesKey)
             EarnedAccessShared.defaults.set(safeMinutes, forKey: EarnedAccessShared.allowanceRemainingMinutesKey)
+            EarnedAccessShared.defaults.set(end.timeIntervalSince1970, forKey: EarnedAccessShared.allowanceExpiresAtKey)
             EarnedAccessShared.defaults.set(redemptionID, forKey: EarnedAccessShared.allowanceRedemptionIDKey)
             allowanceActive = true
             allowanceMinutes = safeMinutes

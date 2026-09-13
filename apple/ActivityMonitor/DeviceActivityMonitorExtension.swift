@@ -1,5 +1,6 @@
 import DeviceActivity
 import FamilyControls
+import Foundation
 import ManagedSettings
 
 final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
@@ -21,10 +22,14 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
 
     override func intervalDidEnd(for activity: DeviceActivityName) {
         super.intervalDidEnd(for: activity)
-        if activity == EarnedAccessShared.activityName,
-           EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.protectionKey) {
-            restoreEarnedAccessShield()
-        }
+        guard activity == EarnedAccessShared.activityName,
+              EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.protectionKey),
+              EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.allowanceActiveKey),
+              EarnedAccessShared.defaults.object(forKey: EarnedAccessShared.allowanceExpiresAtKey) != nil,
+              Date().timeIntervalSince1970 >= EarnedAccessShared.defaults.double(forKey: EarnedAccessShared.allowanceExpiresAtKey) - 5
+        else { return }
+
+        restoreEarnedAccessShield(completed: true)
     }
 
     override func eventDidReachThreshold(_ event: DeviceActivityEvent.Name, activity: DeviceActivityName) {
@@ -34,19 +39,22 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         else { return }
 
         if event == EarnedAccessShared.eventName {
-            restoreEarnedAccessShield()
+            guard EarnedAccessShared.defaults.object(forKey: EarnedAccessShared.allowanceExpiresAtKey) == nil else { return }
+            restoreEarnedAccessShield(completed: true)
             return
         }
 
-        guard let usedMinutes = EarnedAccessShared.usageMinute(from: event) else { return }
+        guard let checkpoint = EarnedAccessShared.usageCheckpoint(from: event),
+              checkpoint.redemptionID == EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.allowanceRedemptionIDKey)
+        else { return }
         let totalMinutes = EarnedAccessShared.defaults.integer(forKey: EarnedAccessShared.allowanceMinutesKey)
         guard totalMinutes > 0 else { return }
-        if usedMinutes >= totalMinutes {
-            restoreEarnedAccessShield()
+        if checkpoint.minute >= totalMinutes {
+            restoreEarnedAccessShield(completed: true)
             return
         }
 
-        let nextRemaining = max(0, totalMinutes - usedMinutes)
+        let nextRemaining = max(0, totalMinutes - checkpoint.minute)
         let currentRemaining = EarnedAccessShared.defaults.object(forKey: EarnedAccessShared.allowanceRemainingMinutesKey) == nil
             ? totalMinutes
             : EarnedAccessShared.defaults.integer(forKey: EarnedAccessShared.allowanceRemainingMinutesKey)
@@ -56,9 +64,9 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         )
     }
 
-    private func restoreEarnedAccessShield() {
+    private func restoreEarnedAccessShield(completed: Bool) {
         let selection = EarnedAccessShared.loadSelection()
         EarnedAccessShared.applyShield(selection: selection, to: store)
-        EarnedAccessShared.clearAllowance(completed: true)
+        EarnedAccessShared.clearAllowance(completed: completed)
     }
 }
