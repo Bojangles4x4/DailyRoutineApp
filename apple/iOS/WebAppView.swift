@@ -103,7 +103,8 @@ struct WebAppView: UIViewRepresentable {
                     emitError("The Earned Access usage allowance was not valid.")
                     return
                 }
-                model.earnedAccess.allowAccess(minutes: minutes.intValue, redemptionID: redemptionID)
+                let label = (value["label"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+                model.earnedAccess.allowAccess(minutes: minutes.intValue, redemptionID: redemptionID, label: label)
                 emit(name: "earned.access.status", value: model.earnedAccess.bridgeStatus)
             case .lockMorningFoundation, .completeMorningFoundation:
                 guard

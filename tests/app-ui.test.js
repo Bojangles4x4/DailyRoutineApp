@@ -41,6 +41,8 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#setupOverview').isVisible(), true);
   await page.locator('[data-setup-target="health"]').click();
   assert.ok(await page.locator('#appleWatchQuickActionInput option').count() > 1);
+  assert.equal(await page.locator('#earnedAccessAutomaticUseInput').isChecked(), true);
+  await page.locator('#earnedAccessAutomaticUseInput').uncheck();
   await page.locator('#appleWatchQuickActionInput').selectOption('routine:morning-meds');
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('dailyRoutineApp.v1')).settings.watchQuickAction), 'routine:morning-meds');
   const watchContext = await page.evaluate(() => [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'watch.context.update')?.value);
@@ -199,7 +201,7 @@ function localDateKey(date = new Date()) {
     state.days[key].entries['morning-prayer'] = true;
     state.days[key].entries['morning-teeth'] = true;
     localStorage.setItem('dailyRoutineApp.v1', JSON.stringify(state));
-    localStorage.removeItem('dailyRoutine.earnedAccess.device.v1');
+    localStorage.setItem('dailyRoutine.earnedAccess.device.v1', JSON.stringify({ automaticSteps: true, automaticAccess: false }));
   }, today);
   await page.reload({ waitUntil: 'networkidle' });
   await page.locator('[data-view="setup"]').click();
@@ -304,9 +306,12 @@ function localDateKey(date = new Date()) {
   const automaticReward = await automaticPage.evaluate(key => {
     const settings = JSON.parse(localStorage.getItem('dailyRoutine.earnedAccess.device.v1'));
     const nativeConfiguration = [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'health.step-rewards.configure');
-    return { bank: settings.bankByDate[key], earned: settings.earnedByDate[key], walking: settings.movementCreditedByDate[key], nativeConfiguration };
+    const nativeAllowance = [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'earned.access.allow');
+    return { bank: settings.bankByDate[key], earned: settings.earnedByDate[key], walking: settings.movementCreditedByDate[key], activeAllowance: settings.activeAllowance, nativeConfiguration, nativeAllowance };
   }, today);
-  assert.deepEqual({ bank: automaticReward.bank, earned: automaticReward.earned, walking: automaticReward.walking }, { bank: 30, earned: 30, walking: 30 });
+  assert.deepEqual({ bank: automaticReward.bank, earned: automaticReward.earned, walking: automaticReward.walking }, { bank: 0, earned: 30, walking: 30 });
+  assert.equal(automaticReward.activeAllowance.minutes, 30);
+  assert.equal(automaticReward.nativeAllowance.value.minutes, 30);
   assert.deepEqual(automaticReward.nativeConfiguration.value, { enabled: true, goalSteps: 8000, maxMinutes: 60 });
   await automaticPage.close();
 

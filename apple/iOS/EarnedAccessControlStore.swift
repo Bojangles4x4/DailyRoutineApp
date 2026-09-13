@@ -2,6 +2,7 @@ import DeviceActivity
 import FamilyControls
 import Foundation
 import ManagedSettings
+import UserNotifications
 
 @MainActor
 final class EarnedAccessControlStore: ObservableObject {
@@ -134,7 +135,7 @@ final class EarnedAccessControlStore: ObservableObject {
         status = "Earned Access is locked. Complete a requirement to open the selected apps."
     }
 
-    func allowAccess(minutes: Int, redemptionID: String) {
+    func allowAccess(minutes: Int, redemptionID: String, label: String? = nil) {
         readSharedState()
         if allowanceActive,
            allowanceRedemptionID == redemptionID,
@@ -196,16 +197,37 @@ final class EarnedAccessControlStore: ObservableObject {
             EarnedAccessShared.defaults.set(safeMinutes, forKey: EarnedAccessShared.allowanceRemainingMinutesKey)
             EarnedAccessShared.defaults.set(end.timeIntervalSince1970, forKey: EarnedAccessShared.allowanceExpiresAtKey)
             EarnedAccessShared.defaults.set(redemptionID, forKey: EarnedAccessShared.allowanceRedemptionIDKey)
+            EarnedAccessShared.defaults.set(String((label ?? "Earned apps").prefix(80)), forKey: EarnedAccessShared.allowanceLabelKey)
             allowanceActive = true
             allowanceMinutes = safeMinutes
             allowanceRemainingMinutes = safeMinutes
             allowanceRedemptionID = redemptionID
             isShielding = false
             status = "\(safeMinutes) minutes of selected-app use are available. Unused minutes remain available."
+            notifyAllowanceOpened(minutes: safeMinutes, label: label)
         } catch {
             lockIfEnabled()
             status = "The usage allowance could not start: \(error.localizedDescription)"
         }
+    }
+
+    private func notifyAllowanceOpened(minutes: Int, label: String?) {
+        let content = UNMutableNotificationContent()
+        content.title = "Earned apps are available"
+        let name = String((label ?? "Your selected apps").prefix(80))
+        content.body = "\(name): about \(minutes) minute\(minutes == 1 ? "" : "s") available. Only foreground use counts."
+        content.sound = .default
+        content.threadIdentifier = "earned-access-usage"
+        let request = UNNotificationRequest(
+            identifier: "dailyRoutine.earnedAccess.opened.\(redemptionIDSafeSuffix())",
+            content: content,
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        )
+        UNUserNotificationCenter.current().add(request) { _ in }
+    }
+
+    private func redemptionIDSafeSuffix() -> String {
+        String(UUID().uuidString.prefix(12))
     }
 
     func disableProtection() {

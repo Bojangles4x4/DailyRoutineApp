@@ -14,6 +14,7 @@ enum EarnedAccessShared {
     static let allowanceRemainingMinutesKey = "dailyRoutine.earnedAccess.allowanceRemainingMinutes.v3"
     static let allowanceExpiresAtKey = "dailyRoutine.earnedAccess.expiresAt.v3"
     static let allowanceRedemptionIDKey = "dailyRoutine.earnedAccess.allowanceRedemptionID.v2"
+    static let allowanceLabelKey = "dailyRoutine.earnedAccess.allowanceLabel.v1"
     static let lastConsumedRedemptionIDKey = "dailyRoutine.earnedAccess.lastConsumedRedemptionID.v2"
     static let essentialSelectionKey = "dailyRoutine.morningFoundation.essentialSelection.v1"
     static let morningGateEnabledKey = "dailyRoutine.morningFoundation.enabled.v1"
@@ -84,6 +85,7 @@ enum EarnedAccessShared {
         defaults.removeObject(forKey: allowanceRemainingMinutesKey)
         defaults.removeObject(forKey: allowanceExpiresAtKey)
         defaults.removeObject(forKey: allowanceRedemptionIDKey)
+        defaults.removeObject(forKey: allowanceLabelKey)
         defaults.removeObject(forKey: unlockedUntilKey)
     }
 

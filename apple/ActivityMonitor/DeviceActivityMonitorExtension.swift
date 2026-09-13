@@ -2,6 +2,7 @@ import DeviceActivity
 import FamilyControls
 import Foundation
 import ManagedSettings
+import UserNotifications
 
 final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
     private let store = ManagedSettingsStore(named: EarnedAccessShared.storeName)
@@ -50,6 +51,7 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         let totalMinutes = EarnedAccessShared.defaults.integer(forKey: EarnedAccessShared.allowanceMinutesKey)
         guard totalMinutes > 0 else { return }
         if checkpoint.minute >= totalMinutes {
+            notifyUsage(remaining: 0, used: totalMinutes, redemptionID: checkpoint.redemptionID)
             restoreEarnedAccessShield(completed: true)
             return
         }
@@ -62,6 +64,30 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
             min(currentRemaining, nextRemaining),
             forKey: EarnedAccessShared.allowanceRemainingMinutesKey
         )
+        if checkpoint.minute.isMultiple(of: 5) {
+            notifyUsage(remaining: nextRemaining, used: checkpoint.minute, redemptionID: checkpoint.redemptionID)
+        }
+    }
+
+    private func notifyUsage(remaining: Int, used: Int, redemptionID: String) {
+        let content = UNMutableNotificationContent()
+        let label = EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.allowanceLabelKey) ?? "Earned apps"
+        if remaining > 0 {
+            content.title = "\(remaining) earned minutes left"
+            content.body = "\(label) has used \(used) minute\(used == 1 ? "" : "s"). Only foreground use counts."
+        } else {
+            content.title = "Earned app time used"
+            content.body = "\(label) is locked again. Complete more routines or keep walking to earn additional time."
+        }
+        content.sound = .default
+        content.threadIdentifier = "earned-access-usage"
+        let safeID = String(redemptionID.suffix(20))
+        let request = UNNotificationRequest(
+            identifier: "dailyRoutine.earnedAccess.usage.\(safeID).\(used)",
+            content: content,
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        )
+        UNUserNotificationCenter.current().add(request) { _ in }
     }
 
     private func restoreEarnedAccessShield(completed: Bool) {
