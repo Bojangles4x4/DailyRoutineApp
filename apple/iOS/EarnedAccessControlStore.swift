@@ -136,7 +136,9 @@ final class EarnedAccessControlStore: ObservableObject {
 
     func allowAccess(minutes: Int, redemptionID: String) {
         readSharedState()
-        if allowanceActive, allowanceRedemptionID == redemptionID {
+        if allowanceActive,
+           allowanceRedemptionID == redemptionID,
+           allowanceRemainingMinutes != nil {
             refreshStatus()
             return
         }
