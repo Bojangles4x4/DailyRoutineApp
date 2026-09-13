@@ -17,6 +17,7 @@ enum NativeBridgeAction: String, Codable {
 struct HealthSummary: Codable, Sendable {
     let date: Date
     let stepCount: Double
+    let stepSampleEnd: Date?
     let sleepHours: Double
     let workoutCount: Int
     let sleepStart: Date?

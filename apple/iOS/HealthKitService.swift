@@ -55,6 +55,7 @@ final class HealthKitService {
         }
 
         async let steps = fetchSteps(now: now)
+        async let stepSampleEnd = fetchLatestStepSampleEnd(now: now)
         async let sleep = fetchRecentSleep(now: now)
         async let workouts = fetchWorkoutCount(now: now)
         async let sources = fetchSourceNames(now: now)
@@ -62,6 +63,7 @@ final class HealthKitService {
         return try await HealthSummary(
             date: now,
             stepCount: steps,
+            stepSampleEnd: stepSampleEnd,
             sleepHours: sleep.hours,
             workoutCount: workouts,
             sleepStart: sleep.start,
@@ -87,6 +89,28 @@ final class HealthKitService {
                 }
                 let value = result?.sumQuantity()?.doubleValue(for: .count()) ?? 0
                 continuation.resume(returning: value)
+            }
+            store.execute(query)
+        }
+    }
+
+    private func fetchLatestStepSampleEnd(now: Date) async throws -> Date? {
+        guard let stepType else { throw HealthKitServiceError.missingType }
+        let start = Calendar.current.startOfDay(for: now)
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: now)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: stepType,
+                predicate: predicate,
+                limit: 1,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]
+            ) { _, samples, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                continuation.resume(returning: samples?.first?.endDate)
             }
             store.execute(query)
         }

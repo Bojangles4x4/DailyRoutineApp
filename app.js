@@ -70,6 +70,8 @@
   let watchLastActionMessage = '';
   let latestHealthSummary = null;
   let pendingEarnedAccessStart = false;
+  let earnedAccessHealthCheckAttempts = 0;
+  let earnedAccessHealthCheckTimer = null;
   let lastEarnedAccessNativeDirective = '';
   let lastMorningFoundationDirective = '';
   let earnedAccessNativeState = { available: false, protectionEnabled: false, shielding: false, allowanceActive: false, allowanceMinutes: 0, allowanceRemainingMinutes: null, allowanceRedemptionID: '', lastConsumedRedemptionID: '', morningGateEnabled: false };
@@ -723,6 +725,7 @@
         latestHealthSummary = {
           date: value.date || new Date().toISOString(),
           stepCount: Math.max(0, Number(value.stepCount) || 0),
+          stepSampleEnd: validDateValue(value.stepSampleEnd),
           sleepHours: Math.max(0, Number(value.sleepHours) || 0),
           workoutCount: Math.max(0, Math.round(Number(value.workoutCount) || 0)),
           sleepStart: validDateValue(value.sleepStart),
@@ -737,6 +740,7 @@
         renderHealthSources();
         applyLatestHealthSteps();
         updateEarnedAccessFromHealth();
+        continueEarnedAccessHealthCheck();
         renderHealthSleepSuggestion();
         if (state.settings.accountabilityReport?.includeHealth) {
           accountabilityPreview = '';
@@ -1025,13 +1029,56 @@
   }
 
   function checkEarnedAccessProgress() {
+    cancelEarnedAccessHealthCheck();
+    earnedAccessHealthCheckAttempts = 4;
     els.earnedAccessStatus.textContent = 'Checking Apple Health…';
     els.earnedAccessDetail.textContent = 'Comparing your current steps with the round’s starting point.';
     sendNativeBridgeMessage('health.summary.request');
   }
 
+  function cancelEarnedAccessHealthCheck() {
+    if (earnedAccessHealthCheckTimer) clearTimeout(earnedAccessHealthCheckTimer);
+    earnedAccessHealthCheckTimer = null;
+    earnedAccessHealthCheckAttempts = 0;
+  }
+
+  function continueEarnedAccessHealthCheck() {
+    if (!earnedAccessHealthCheckAttempts) return;
+    earnedAccessHealthCheckAttempts -= 1;
+    const settings = earnedAccessDeviceSettings();
+    const active = settings.active;
+    const steps = latestHealthStepsToday();
+    if (!active || steps === null) {
+      cancelEarnedAccessHealthCheck();
+      return;
+    }
+    const gained = Math.max(0, steps - Math.max(0, Number(active.baselineSteps) || 0));
+    const required = Math.max(1, Number(active.requiredSteps) || earnedAccessRequirement(settings));
+    if (gained >= required) {
+      cancelEarnedAccessHealthCheck();
+      return;
+    }
+    const sampleTime = latestHealthSummary?.stepSampleEnd
+      ? new Intl.DateTimeFormat([], { hour: 'numeric', minute: '2-digit' }).format(new Date(latestHealthSummary.stepSampleEnd))
+      : '';
+    const sourceNote = sampleTime ? ` Latest step sample: ${sampleTime}.` : '';
+    if (!earnedAccessHealthCheckAttempts) {
+      els.earnedAccessDetail.textContent = `Apple Health still reports ${steps.toLocaleString()} total steps (${gained.toLocaleString()} / ${required.toLocaleString()} earned).${sourceNote} If your Watch shows more, open Health or Fitness briefly so it can sync, then check again.`;
+      showToast(`Apple Health still reports ${steps.toLocaleString()} steps.`);
+      return;
+    }
+    const delay = [15000, 10000, 5000][earnedAccessHealthCheckAttempts - 1] || 5000;
+    els.earnedAccessStatus.textContent = 'Waiting for Apple Health to sync…';
+    els.earnedAccessDetail.textContent = `Apple Health currently reports ${steps.toLocaleString()} total steps (${gained.toLocaleString()} / ${required.toLocaleString()} earned).${sourceNote} Checking again automatically…`;
+    earnedAccessHealthCheckTimer = setTimeout(() => {
+      earnedAccessHealthCheckTimer = null;
+      sendNativeBridgeMessage('health.summary.request');
+    }, delay);
+  }
+
   function cancelEarnedAccessRound() {
     pendingEarnedAccessStart = false;
+    cancelEarnedAccessHealthCheck();
     saveEarnedAccessDeviceSettings({ active: null });
     syncNativeEarnedAccess(earnedAccessDeviceSettings(), false);
     renderEarnedAccess();
