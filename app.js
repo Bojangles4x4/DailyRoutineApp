@@ -1307,6 +1307,7 @@
     els.startEarnedAccessButton.hidden = settings.automaticSteps;
     els.checkEarnedAccessButton.hidden = settings.automaticSteps;
     if (settings.automaticSteps) els.cancelEarnedAccessButton.hidden = true;
+    publishRoutineSharedSnapshot();
   }
 
   function syncNativeStepRewardAutomation(settings) {
@@ -1490,9 +1491,33 @@
     return Intl.DateTimeFormat().resolvedOptions().timeZone || 'local';
   }
 
+  function routineSharedEarnedAccessBalance(contextDateKey) {
+    const today = dateKey(startOfToday());
+    if (contextDateKey !== today) return { remainingMinutes: 0, dailyLimitMinutes: 60 };
+    const settings = earnedAccessDeviceSettings();
+    const dailyLimitMinutes = Math.min(120, Math.max(1, Math.round(Number(settings.dailyLimitMinutes) || 60)));
+    let remainingMinutes = Math.max(0, Math.round(Number(settings.bankByDate?.[today]) || 0));
+    if (settings.activeAllowance) {
+      const nativeMatches = earnedAccessNativeState.allowanceActive
+        && earnedAccessNativeState.allowanceRedemptionID === settings.activeAllowance.id
+        && Number.isFinite(earnedAccessNativeState.allowanceRemainingMinutes);
+      remainingMinutes += nativeMatches
+        ? Math.max(0, Math.round(earnedAccessNativeState.allowanceRemainingMinutes))
+        : Math.max(0, Math.round(Number(settings.activeAllowance.minutes) || 0));
+    }
+    return {
+      remainingMinutes: Math.min(dailyLimitMinutes, remainingMinutes),
+      dailyLimitMinutes
+    };
+  }
+
   function routineSharedSnapshot(context = watchRoutineContext()) {
     const foundationComplete = context.truthBeforeTasksComplete === true
       && Boolean(state.settings.truthBeforeTasks?.completions?.[context.dateKey]);
+    const convictions = state.settings.truthBeforeTasks?.convictions?.items
+      || state.settings.truthBeforeTasks?.convictions?.points
+      || [];
+    const earnedAccess = routineSharedEarnedAccessBalance(context.dateKey);
     const eligibleItems = (context.items || [])
       .filter(item => item.action === 'toggleRoutine' && !/\b(pray|prayer|scripture|meds?|medication|medicine|health)\b/i.test(item.name))
       .slice(0, 24)
@@ -1512,8 +1537,11 @@
       localDateKey: context.dateKey,
       timeZoneIdentifier: sharedStateTimeZone(),
       foundationComplete,
+      convictionsEnabled: convictions.length > 0,
       completed: Math.max(0, Number(context.completed) || 0),
       total: Math.max(0, Number(context.total) || 0),
+      earnedAccessRemainingMinutes: earnedAccess.remainingMinutes,
+      earnedAccessDailyLimitMinutes: earnedAccess.dailyLimitMinutes,
       nextItem,
       eligibleItems,
       updatedAt: new Date().toISOString()

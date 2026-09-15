@@ -6,7 +6,7 @@ Status: first interactive prototype implemented for the Build 16 candidate. Simu
 
 The installed Xcode 26.6 / iPhoneOS 26.5 SDK and Apple WidgetKit documentation confirm that `.systemLarge` is the largest Home Screen widget family available on iPhone. The widget therefore supports:
 
-- large: foundation status, progress, up to four eligible routine actions, and an app link;
+- large: explicit Truth Before Tasks and Convictions status, progress, aggregate Earned Access time, up to three eligible routine actions, freshness time, and an app link;
 - medium: foundation status, progress, and the first eligible routine action;
 - small: foundation status and progress, with a link into the app.
 
@@ -15,7 +15,8 @@ There is no full-screen iPhone WidgetKit family in the verified SDK. `.systemExt
 ## Privacy and gating
 
 - The widget reads only `RoutineSharedSnapshot`; it never reads the full routine database.
-- Prayer, Scripture, medication, Health, notes, Screen Time selections, and Earned Access data are excluded from the snapshot.
+- Prayer, Scripture, medication, Health, notes, Screen Time selections, selected-app identities, and selection tokens are excluded from the snapshot.
+- The only Earned Access values included are the aggregate minutes remaining and daily ceiling. No app or website names are shared with the widget.
 - Routine item labels are marked privacy-sensitive so the system can redact them while locked.
 - When the Morning Foundation is incomplete, the widget exposes only a link to begin on iPhone.
 - Missing, wrong-day, or wrong-time-zone snapshots show “Open Daily Routine to refresh.”
@@ -39,4 +40,5 @@ The widget cannot complete Truth Before Tasks or Convictions, update medication,
 3. Add the large “Today’s Rhythm” widget to the Home Screen.
 4. Verify locked-foundation behavior, privacy redaction, and the stale-snapshot fallback.
 5. Complete one ordinary checkbox from the widget and confirm exactly one completion in the app.
-6. Repeat around midnight or after a test time-zone change before expanding native actions.
+6. Earn and use selected-app time, then confirm the widget shows the latest aggregate whole-minute balance without showing app identities.
+7. Repeat around midnight or after a test time-zone change before expanding native actions.

@@ -4,7 +4,7 @@ A mobile-first private routine and mood tracker designed to run as a Progressive
 
 ## Version 1.17.0 development features
 
-- A privacy-minimized iPhone Home Screen widget in large, medium, and small sizes, with safe checkbox actions on the large and medium layouts
+- A privacy-minimized iPhone Home Screen widget in large, medium, and small sizes, with safe checkbox actions and an app-name-free aggregate Earned Access balance
 - A clearer native Setup area with separate cards for widgets, Health metrics, Earned Access, and Apple Watch
 - An automatic daily Earned Access bank: selected completed routines add five-minute credits without a separate claim
 - A configurable daily app-time ceiling, set to 60 minutes by default

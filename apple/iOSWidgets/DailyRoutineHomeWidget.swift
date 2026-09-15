@@ -20,8 +20,11 @@ struct RoutineHomeEntry: TimelineEntry {
             localDateKey: RoutineHomeTimelineProvider.localDateKey(),
             timeZoneIdentifier: TimeZone.current.identifier,
             foundationComplete: true,
+            convictionsEnabled: true,
             completed: 6,
             total: 10,
+            earnedAccessRemainingMinutes: 25,
+            earnedAccessDailyLimitMinutes: 60,
             nextItem: RoutineSharedItemSnapshot(
                 id: "preview-next",
                 title: "Morning walk",
@@ -151,22 +154,33 @@ struct RoutineHomeWidgetView: View {
     }
 
     private func largeView(_ snapshot: RoutineSharedSnapshot) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 11) {
             header(snapshot, compact: false)
-
-            HStack(spacing: 12) {
-                foundationStatus(snapshot)
-                Spacer()
-                Text("\(snapshot.completed) / \(snapshot.total)")
-                    .font(.system(.headline, design: .rounded, weight: .bold))
-                    .foregroundStyle(.mint)
-            }
 
             ProgressView(value: progress(snapshot))
                 .tint(.mint)
 
+            foundationStatus(snapshot)
+
+            HStack(spacing: 8) {
+                metricTile(
+                    title: "Earned apps",
+                    value: earnedAccessSummary(snapshot),
+                    highlighted: true
+                )
+                .privacySensitive()
+                metricTile(
+                    title: "Remaining",
+                    value: "\(max(0, snapshot.total - snapshot.completed)) routines"
+                )
+                metricTile(
+                    title: "Available",
+                    value: "\(snapshot.eligibleItems.filter { !$0.completed }.count) actions"
+                )
+            }
+
             if snapshot.foundationComplete {
-                let items = Array(snapshot.eligibleItems.filter { !$0.completed }.prefix(4))
+                let items = Array(snapshot.eligibleItems.filter { !$0.completed }.prefix(3))
                 if items.isEmpty {
                     completedView
                 } else {
@@ -181,10 +195,21 @@ struct RoutineHomeWidgetView: View {
             }
 
             Spacer(minLength: 0)
-            Link(destination: Self.appURL) {
-                Label("Open Daily Routine", systemImage: "arrow.up.forward.app")
+            HStack {
+                if let updated = updatedDate(snapshot) {
+                    Text("Updated \(updated.formatted(date: .omitted, time: .shortened))")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 8)
+                Link(destination: Self.appURL) {
+                    HStack(spacing: 4) {
+                        Text("Open routine")
+                        Image(systemName: "chevron.right")
+                    }
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
+                }
             }
         }
     }
@@ -193,12 +218,14 @@ struct RoutineHomeWidgetView: View {
         HStack(spacing: 8) {
             Image(systemName: "sun.max.fill")
                 .foregroundStyle(.yellow)
-            Text(compact ? "TODAY" : "MY DAILY RHYTHMS")
+            Text(compact ? "TODAY" : "TODAY’S RHYTHM")
                 .font(compact ? .caption.weight(.bold) : .subheadline.weight(.bold))
                 .tracking(compact ? 0.8 : 0.4)
             Spacer(minLength: 0)
             if !compact {
-                Text("\(Int((progress(snapshot) * 100).rounded()))%")
+                Text(family == .systemLarge
+                    ? "\(Int((progress(snapshot) * 100).rounded()))% · \(snapshot.completed)/\(snapshot.total)"
+                    : "\(Int((progress(snapshot) * 100).rounded()))%")
                     .font(.system(.headline, design: .rounded, weight: .bold))
                     .foregroundStyle(.mint)
             }
@@ -207,11 +234,47 @@ struct RoutineHomeWidgetView: View {
 
     private func foundationStatus(_ snapshot: RoutineSharedSnapshot) -> some View {
         Label(
-            snapshot.foundationComplete ? "Foundation complete" : "Morning Foundation",
-            systemImage: snapshot.foundationComplete ? "checkmark.shield.fill" : "lock.shield.fill"
+            foundationStatusTitle(snapshot),
+            systemImage: snapshot.foundationComplete ? "checkmark.circle.fill" : "lock.shield.fill"
         )
         .font(.caption.weight(.semibold))
         .foregroundStyle(snapshot.foundationComplete ? .mint : .orange)
+        .lineLimit(family == .systemSmall ? 2 : 1)
+        .minimumScaleFactor(0.75)
+    }
+
+    private func foundationStatusTitle(_ snapshot: RoutineSharedSnapshot) -> String {
+        guard snapshot.foundationComplete else { return "Begin Truth Before Tasks" }
+        return snapshot.convictionsEnabled == true
+            ? "Truth Before Tasks ✓ · Convictions ✓"
+            : "Truth Before Tasks complete"
+    }
+
+    private func metricTile(title: String, value: String, highlighted: Bool = false) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(highlighted ? Color.mint : Color.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 9)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+    }
+
+    private func earnedAccessSummary(_ snapshot: RoutineSharedSnapshot) -> String {
+        guard let minutes = snapshot.earnedAccessRemainingMinutes else { return "Open app" }
+        return "\(minutes) min left"
+    }
+
+    private func updatedDate(_ snapshot: RoutineSharedSnapshot) -> Date? {
+        ISO8601DateFormatter.bridgeWithFractionalSeconds.date(from: snapshot.updatedAt)
+            ?? ISO8601DateFormatter.bridge.date(from: snapshot.updatedAt)
     }
 
     private func progressSummary(_ snapshot: RoutineSharedSnapshot) -> some View {
@@ -263,7 +326,7 @@ struct RoutineHomeWidgetView: View {
             VStack(alignment: .leading, spacing: 10) {
                 Label("Begin with truth, then convictions", systemImage: "sun.horizon.fill")
                     .font(.headline)
-                Text("Routine actions remain protected until the full Morning Foundation is complete on iPhone.")
+                Text("Routine actions remain protected until Truth Before Tasks and any configured convictions are complete on iPhone.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Text("Begin on iPhone")

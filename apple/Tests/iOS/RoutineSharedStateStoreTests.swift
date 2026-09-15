@@ -31,6 +31,53 @@ final class RoutineSharedStateStoreTests: XCTestCase {
         XCTAssertFalse(text.localizedCaseInsensitiveContains("health"))
         XCTAssertFalse(text.localizedCaseInsensitiveContains("prayer"))
         XCTAssertFalse(text.localizedCaseInsensitiveContains("note"))
+        XCTAssertFalse(text.localizedCaseInsensitiveContains("facebook"))
+        XCTAssertFalse(text.localizedCaseInsensitiveContains("selected apps"))
+        XCTAssertEqual(snapshot.earnedAccessRemainingMinutes, 25)
+        XCTAssertEqual(snapshot.earnedAccessDailyLimitMinutes, 60)
+    }
+
+    func testLegacySnapshotWithoutWidgetBalanceStillDecodes() throws {
+        let legacy: [String: Any] = [
+            "schemaVersion": 1,
+            "revision": 4,
+            "localDateKey": "2026-09-14",
+            "timeZoneIdentifier": "America/Chicago",
+            "foundationComplete": true,
+            "completed": 2,
+            "total": 5,
+            "eligibleItems": [],
+            "updatedAt": "2026-09-14T12:00:00Z"
+        ]
+
+        let data = try JSONSerialization.data(withJSONObject: legacy)
+        let snapshot = try JSONDecoder().decode(RoutineSharedSnapshot.self, from: data)
+
+        XCTAssertTrue(snapshot.isValid)
+        XCTAssertNil(snapshot.convictionsEnabled)
+        XCTAssertNil(snapshot.earnedAccessRemainingMinutes)
+        XCTAssertNil(snapshot.earnedAccessDailyLimitMinutes)
+    }
+
+    func testIncompleteOrExcessiveWidgetBalanceIsRejected() throws {
+        let invalid = RoutineSharedSnapshot(
+            schemaVersion: 1,
+            revision: 7,
+            localDateKey: "2026-09-14",
+            timeZoneIdentifier: "America/Chicago",
+            foundationComplete: true,
+            convictionsEnabled: true,
+            completed: 2,
+            total: 10,
+            earnedAccessRemainingMinutes: 61,
+            earnedAccessDailyLimitMinutes: 60,
+            nextItem: nil,
+            eligibleItems: [],
+            updatedAt: "2026-09-14T12:00:00Z"
+        )
+
+        XCTAssertFalse(invalid.isValid)
+        XCTAssertThrowsError(try store.save(snapshot: invalid))
     }
 
     func testDuplicateCommandIDIsEnqueuedOnceAndResolvedOnce() throws {
@@ -109,8 +156,11 @@ final class RoutineSharedStateStoreTests: XCTestCase {
             localDateKey: "09/14/2026",
             timeZoneIdentifier: "America/Chicago",
             foundationComplete: true,
+            convictionsEnabled: true,
             completed: 2,
             total: 10,
+            earnedAccessRemainingMinutes: 25,
+            earnedAccessDailyLimitMinutes: 60,
             nextItem: nil,
             eligibleItems: [],
             updatedAt: "2026-09-14T12:00:00Z"
@@ -134,8 +184,11 @@ final class RoutineSharedStateStoreTests: XCTestCase {
             localDateKey: "2026-09-14",
             timeZoneIdentifier: "America/Chicago",
             foundationComplete: true,
+            convictionsEnabled: true,
             completed: 2,
             total: 10,
+            earnedAccessRemainingMinutes: 25,
+            earnedAccessDailyLimitMinutes: 60,
             nextItem: item,
             eligibleItems: [item],
             updatedAt: "2026-09-14T12:00:00.000Z"

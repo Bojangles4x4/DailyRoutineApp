@@ -20,8 +20,11 @@ struct RoutineSharedSnapshot: Codable, Equatable, Sendable {
     let localDateKey: String
     let timeZoneIdentifier: String
     let foundationComplete: Bool
+    let convictionsEnabled: Bool?
     let completed: Int
     let total: Int
+    let earnedAccessRemainingMinutes: Int?
+    let earnedAccessDailyLimitMinutes: Int?
     let nextItem: RoutineSharedItemSnapshot?
     let eligibleItems: [RoutineSharedItemSnapshot]
     let updatedAt: String
@@ -33,6 +36,10 @@ struct RoutineSharedSnapshot: Codable, Equatable, Sendable {
             && !timeZoneIdentifier.isEmpty
             && completed >= 0
             && total >= completed
+            && Self.isValidEarnedAccessBalance(
+                remaining: earnedAccessRemainingMinutes,
+                dailyLimit: earnedAccessDailyLimitMinutes
+            )
             && RoutineSharedDate.parse(updatedAt) != nil
             && eligibleItems.count <= 24
             && Set(eligibleItems.map(\.id)).count == eligibleItems.count
@@ -56,6 +63,14 @@ struct RoutineSharedSnapshot: Codable, Equatable, Sendable {
             of: #"\b(pray|prayer|scripture|meds?|medication|medicine|health)\b"#,
             options: [.regularExpression, .caseInsensitive]
         ) != nil
+    }
+
+    private static func isValidEarnedAccessBalance(remaining: Int?, dailyLimit: Int?) -> Bool {
+        guard remaining != nil || dailyLimit != nil else { return true }
+        guard let remaining, let dailyLimit else { return false }
+        return (0...120).contains(remaining)
+            && (1...120).contains(dailyLimit)
+            && remaining <= dailyLimit
     }
 }
 

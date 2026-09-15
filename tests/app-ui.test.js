@@ -50,6 +50,9 @@ function localDateKey(date = new Date()) {
   }, today);
   assert.equal(lockedCommandResult.snapshot.schemaVersion, 1);
   assert.equal(lockedCommandResult.snapshot.foundationComplete, false);
+  assert.equal(lockedCommandResult.snapshot.convictionsEnabled, true);
+  assert.equal(lockedCommandResult.snapshot.earnedAccessRemainingMinutes, 0);
+  assert.equal(lockedCommandResult.snapshot.earnedAccessDailyLimitMinutes, 60);
   assert.equal(lockedCommandResult.acknowledgement.status, 'rejected');
   assert.match(lockedCommandResult.acknowledgement.message, /Morning Foundation/);
   assert.equal(lockedCommandResult.prepare, undefined);
@@ -200,6 +203,11 @@ function localDateKey(date = new Date()) {
   }, nativeAllowance.value.redemptionId);
   assert.equal((await page.locator('#earnedAccessStatus').textContent()).trim(), 'About 9 of 15 minutes remaining');
   assert.match(await page.locator('#earnedAccessDetail').textContent(), /whole-minute checkpoints/);
+  const earnedWidgetSnapshot = await page.evaluate(() => [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'routine.snapshot.publish')?.value);
+  assert.equal(earnedWidgetSnapshot.earnedAccessRemainingMinutes, 19);
+  assert.equal(earnedWidgetSnapshot.earnedAccessDailyLimitMinutes, 60);
+  assert.equal(earnedWidgetSnapshot.convictionsEnabled, true);
+  assert.equal(JSON.stringify(earnedWidgetSnapshot).includes('Reddit'), false);
   const earnedAccessData = await page.evaluate(key => {
     const device = JSON.parse(localStorage.getItem('dailyRoutine.earnedAccess.device.v1'));
     const syncedState = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));

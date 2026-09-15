@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import UIKit
 import WebKit
+import WidgetKit
 
 struct WebAppView: UIViewRepresentable {
     @ObservedObject var model: AppModel
@@ -121,6 +122,7 @@ struct WebAppView: UIViewRepresentable {
                 }
                 do {
                     try model.routineSharedState.save(snapshot: snapshot)
+                    WidgetCenter.shared.reloadTimelines(ofKind: RoutineHomeWidgetConstants.kind)
                     emit(
                         name: "routine.snapshot.saved",
                         value: RoutineSnapshotSavedEvent(

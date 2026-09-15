@@ -8,7 +8,7 @@ enum RoutineHomeWidgetConstants {
 
 struct CompleteRoutineItemIntent: AppIntent {
     static var title: LocalizedStringResource = "Complete Routine Item"
-    static var description = IntentDescription("Completes one eligible Daily Routine checkbox after the Morning Foundation.")
+    static var description = IntentDescription("Completes one eligible Daily Routine checkbox after Truth Before Tasks and any configured convictions.")
     static var openAppWhenRun = true
     static var isDiscoverable = false
 
