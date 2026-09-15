@@ -87,6 +87,55 @@ struct WebAppView: UIViewRepresentable {
             }
 
             switch action {
+            case .publishRoutineSnapshot:
+                guard
+                    let value = payload["value"],
+                    JSONSerialization.isValidJSONObject(value),
+                    let data = try? JSONSerialization.data(withJSONObject: value),
+                    let snapshot = try? JSONDecoder().decode(RoutineSharedSnapshot.self, from: data)
+                else {
+                    emitError("The shared routine snapshot was not valid.")
+                    return
+                }
+                do {
+                    try model.routineSharedState.save(snapshot: snapshot)
+                    emit(
+                        name: "routine.snapshot.saved",
+                        value: RoutineSnapshotSavedEvent(
+                            revision: snapshot.revision,
+                            localDateKey: snapshot.localDateKey
+                        )
+                    )
+                } catch {
+                    emitError(error.localizedDescription)
+                }
+            case .requestRoutineCommands:
+                emitPendingRoutineCommands()
+            case .acknowledgeRoutineCommand:
+                guard
+                    let value = payload["value"] as? [String: Any],
+                    let commandID = value["commandId"] as? String,
+                    !commandID.isEmpty,
+                    let rawStatus = value["status"] as? String,
+                    let status = RoutineSharedCommandStatus(rawValue: rawStatus),
+                    status != .pending
+                else {
+                    emitError("The shared routine command result was not valid.")
+                    return
+                }
+                do {
+                    let revision = (value["stateRevision"] as? NSNumber)?.intValue
+                    let message = value["message"] as? String
+                    _ = try model.routineSharedState.resolve(
+                        commandID: commandID,
+                        status: status,
+                        stateRevision: revision,
+                        message: message
+                    )
+                    emitPendingRoutineCommands()
+                } catch {
+                    emitError(error.localizedDescription)
+                }
             case .requestEarnedAccessStatus:
                 model.earnedAccess.refresh()
                 emit(name: "earned.access.status", value: model.earnedAccess.bridgeStatus)
@@ -200,6 +249,7 @@ struct WebAppView: UIViewRepresentable {
             pendingWatchEvents.forEach { emit(name: "watch.event", value: $0) }
             pendingWatchEvents.removeAll()
             emit(name: "earned.access.status", value: model.earnedAccess.bridgeStatus)
+            emitPendingRoutineCommands()
         }
 
         func webView(
@@ -259,6 +309,14 @@ struct WebAppView: UIViewRepresentable {
             emit(name: "native.error", value: ["message": message])
         }
 
+        private func emitPendingRoutineCommands() {
+            do {
+                emit(name: "routine.commands.pending", value: try model.routineSharedState.pendingCommands())
+            } catch {
+                emitError(error.localizedDescription)
+            }
+        }
+
         private static func roundStartedAt(from payload: [String: Any]) -> Date? {
             guard
                 let value = payload["value"] as? [String: Any],
@@ -307,6 +365,11 @@ struct WebAppView: UIViewRepresentable {
             return controller
         }
     }
+}
+
+private struct RoutineSnapshotSavedEvent: Encodable {
+    let revision: Int
+    let localDateKey: String
 }
 
 private extension JSONEncoder {

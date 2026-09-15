@@ -1,6 +1,6 @@
 # iOS 27 opportunities roadmap
 
-Status: planning and evaluation only. This document does not commit Daily Routine to an iOS 27 feature, change the current shipping architecture, or replace the current product rules.
+Status: roadmap plus implementation tracking. The first P0 shared-state slice is implemented and documented in [SHARED_STATE_FOUNDATION.md](SHARED_STATE_FOUNDATION.md); physical-device lifecycle validation remains. This document does not commit Daily Routine to an iOS 27 user-facing feature or replace the current product rules.
 
 ## Purpose and recommendation
 
@@ -39,6 +39,8 @@ Hard constraint: Apple Watch is not a general-purpose NFC tag reader for the pro
 | Personal note | Safari Notify Me | Use Safari’s page-change monitoring independently of Daily Routine when useful. |
 
 ## Now — P0: safe native command/state foundation
+
+Implementation progress: a versioned privacy-minimized snapshot, coordinated atomic App Group store, bounded idempotent command journal, native/web bridge, and one web-reconciled `routine.checkbox.set` command are now implemented. Native and browser regression tests pass. The command remains queue-and-reconcile rather than an independent native routine writer. Physical-device termination/relaunch, midnight, and time-zone validation are still required before a widget or App Intent uses it.
 
 ### Opportunity
 

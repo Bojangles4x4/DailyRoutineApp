@@ -5,6 +5,8 @@
   const SNAPSHOT_KEY = 'dailyRoutineApp.snapshots.v1';
   const HEALTH_DEVICE_KEY = 'dailyRoutine.health.device.v1';
   const EARNED_ACCESS_DEVICE_KEY = 'dailyRoutine.earnedAccess.device.v1';
+  const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
+  const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
   const APP_VERSION = '1.17.0';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
@@ -134,6 +136,8 @@
     showToast,
     syncWatchContext,
     syncMorningFoundation,
+    routineSharedSnapshot,
+    handleRoutineSharedCommand,
     buildAccountabilityReport,
     syncStatus: () => syncCoordinator?.status() || null,
     dateKey,
@@ -274,6 +278,7 @@
 
   function saveState({ trackSync = true } = {}) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    advanceSharedStateRevision();
     if (trackSync) syncCoordinator?.markLocalChange(state);
     renderPrivateSyncStatus();
     maybeAutoSnapshot();
@@ -695,6 +700,7 @@
     });
     const refreshNativeState = () => {
       sendNativeBridgeMessage('earned.access.status.request');
+      sendNativeBridgeMessage('routine.commands.request');
       if (healthDeviceSettings().connected) requestHealthSummary();
     };
     document.addEventListener('visibilitychange', () => {
@@ -718,6 +724,7 @@
         renderAppleStepsGoal();
         renderEarnedAccess();
         if (value.healthAvailable && healthDeviceSettings().connected) requestHealthSummary();
+        sendNativeBridgeMessage('routine.commands.request');
       } else if (detail.name === 'health.authorization.completed') {
         saveHealthDeviceSettings({ connected: true });
         els.appleHealthStatus.textContent = 'Health permission choice saved on this iPhone.';
@@ -775,15 +782,20 @@
         els.earnedAccessNativeStatus.textContent = value.message || 'Earned Access status updated.';
         syncMorningFoundation(!document.body.classList.contains('truth-locked'));
         renderEarnedAccess();
+      } else if (detail.name === 'routine.commands.pending') {
+        const commands = Array.isArray(detail.value) ? detail.value : [];
+        commands.forEach(handleRoutineSharedCommand);
       } else if (detail.name === 'native.error') {
         const message = detail.value?.message || 'The native connection could not complete that request.';
         if (message.toLowerCase().includes('earned access')) els.earnedAccessNativeStatus.textContent = message;
+        else if (message.toLowerCase().includes('shared routine')) els.appleWatchStatus.textContent = message;
         else els.appleHealthStatus.textContent = message;
       }
     });
     renderAppleStepsGoal();
     renderEarnedAccess();
     sendNativeBridgeMessage('earned.access.status.request');
+    sendNativeBridgeMessage('routine.commands.request');
   }
 
   function healthDeviceSettings() {
@@ -1460,6 +1472,135 @@
     return true;
   }
 
+  function sharedStateRevision() {
+    const revision = Number(localStorage.getItem(SHARED_STATE_REVISION_KEY));
+    return Number.isSafeInteger(revision) && revision >= 0 ? revision : 0;
+  }
+
+  function advanceSharedStateRevision() {
+    const next = sharedStateRevision() + 1;
+    localStorage.setItem(SHARED_STATE_REVISION_KEY, String(next));
+    return next;
+  }
+
+  function sharedStateTimeZone() {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'local';
+  }
+
+  function routineSharedSnapshot(context = watchRoutineContext()) {
+    const foundationComplete = context.truthBeforeTasksComplete === true
+      && Boolean(state.settings.truthBeforeTasks?.completions?.[context.dateKey]);
+    const eligibleItems = (context.items || [])
+      .filter(item => item.action === 'toggleRoutine' && !/\b(pray|prayer|scripture|meds?|medication|medicine|health)\b/i.test(item.name))
+      .slice(0, 24)
+      .map(item => ({
+        id: String(item.id),
+        title: String(item.name).slice(0, 160),
+        section: String(item.section || ''),
+        completed: Boolean(item.completed),
+        actionID: 'routine.checkbox.set'
+      }));
+    const nextItem = foundationComplete
+      ? eligibleItems.find(item => !item.completed) || null
+      : null;
+    return {
+      schemaVersion: 1,
+      revision: sharedStateRevision(),
+      localDateKey: context.dateKey,
+      timeZoneIdentifier: sharedStateTimeZone(),
+      foundationComplete,
+      completed: Math.max(0, Number(context.completed) || 0),
+      total: Math.max(0, Number(context.total) || 0),
+      nextItem,
+      eligibleItems,
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  function publishRoutineSharedSnapshot(context = watchRoutineContext()) {
+    return sendNativeBridgeMessage('routine.snapshot.publish', routineSharedSnapshot(context));
+  }
+
+  function readSharedCommandResults() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(SHARED_COMMAND_RESULTS_KEY) || '[]');
+      return Array.isArray(parsed) ? parsed.filter(result => result && result.commandId).slice(-200) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function writeSharedCommandResult(result) {
+    const results = readSharedCommandResults().filter(candidate => candidate.commandId !== result.commandId);
+    results.push(result);
+    localStorage.setItem(SHARED_COMMAND_RESULTS_KEY, JSON.stringify(results.slice(-200)));
+  }
+
+  function acknowledgeRoutineSharedCommand(result) {
+    sendNativeBridgeMessage('routine.command.acknowledge', {
+      commandId: result.commandId,
+      status: result.status,
+      stateRevision: result.stateRevision,
+      message: result.message
+    });
+  }
+
+  function handleRoutineSharedCommand(command) {
+    const commandId = String(command?.id || '');
+    if (!commandId) return;
+    const previous = readSharedCommandResults().find(result => result.commandId === commandId);
+    if (previous) {
+      acknowledgeRoutineSharedCommand(previous);
+      return;
+    }
+
+    const finish = (status, message) => {
+      const result = { commandId, status, stateRevision: sharedStateRevision(), message };
+      writeSharedCommandResult(result);
+      acknowledgeRoutineSharedCommand(result);
+      return status === 'applied';
+    };
+    const today = dateKey(startOfToday());
+    if (Number(command.schemaVersion) !== 1) return finish('rejected', 'Unsupported command schema.');
+    if (String(command.actionID || '') !== 'routine.checkbox.set') return finish('rejected', 'Unsupported routine action.');
+    if (String(command.localDateKey || '') !== today) return finish('rejected', 'The command belongs to a different local day.');
+    if (String(command.timeZoneIdentifier || '') !== sharedStateTimeZone()) return finish('rejected', 'The time zone changed before the action ran.');
+    if (command.expectedRevision === null || command.expectedRevision === undefined
+      || !Number.isSafeInteger(Number(command.expectedRevision))
+      || Number(command.expectedRevision) !== sharedStateRevision()) {
+      return finish('rejected', 'The routine changed before the action ran. Open Daily Routine to refresh.');
+    }
+    const foundationComplete = Boolean(state.settings.truthBeforeTasks?.completions?.[today])
+      && !document.body.classList.contains('truth-locked');
+    if (command.requiresFoundationComplete !== true || !foundationComplete) {
+      return finish('rejected', 'Complete the Morning Foundation on iPhone first.');
+    }
+
+    const targetID = String(command.targetID || '');
+    const day = ensureDay(today);
+    const item = scheduledItemsForDate(startOfToday()).find(candidate => (
+      candidate.id === targetID
+        && candidate.kind === 'routine'
+        && candidate.type === 'checkbox'
+        && !/\b(pray|prayer|scripture|meds?|medication|medicine|health)\b/i.test(candidate.name)
+        && !day.skippedItems?.[candidate.id]
+    ));
+    if (!item) return finish('rejected', 'That checkbox is not eligible today.');
+    const rawCompleted = command.payload?.completed;
+    if (rawCompleted !== 'true' && rawCompleted !== 'false' && rawCompleted !== true && rawCompleted !== false) {
+      return finish('rejected', 'The requested completion value was invalid.');
+    }
+    const completed = rawCompleted === 'true' || rawCompleted === true;
+    const currentlyCompleted = entryMeetsTarget(item, day.entries?.[item.id]);
+    if (completed !== currentlyCompleted) {
+      if (completed) day.entries[item.id] = true;
+      else delete day.entries[item.id];
+      saveState();
+      renderAll();
+    }
+    return finish('applied', completed ? `${item.name} completed.` : `${item.name} reopened.`);
+  }
+
   function requestHealthSummary() {
     const roundStartedAt = earnedAccessDeviceSettings().active?.startedAt;
     return sendNativeBridgeMessage('health.summary.request', roundStartedAt ? { roundStartedAt } : undefined);
@@ -1523,7 +1664,9 @@
   }
 
   function syncWatchContext() {
-    return sendNativeBridgeMessage('watch.context.update', watchRoutineContext());
+    const context = watchRoutineContext();
+    publishRoutineSharedSnapshot(context);
+    return sendNativeBridgeMessage('watch.context.update', context);
   }
 
   function watchMoodItem(items) {

@@ -17,6 +17,10 @@ schemes:
         DailyRoutine: all
     run:
       config: Debug
+    test:
+      config: Debug
+      targets:
+        - DailyRoutineTests
   DailyRoutineWatch:
     build:
       targets:
@@ -67,6 +71,7 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         NSHealthShareUsageDescription: Daily Routine can read the health categories you choose to help summarize steps, sleep, and workouts alongside your routine.
         NSHealthUpdateUsageDescription: Daily Routine uses HealthKit only to read the health categories you choose; it does not add or modify health data.
+        NSMotionUsageDescription: Daily Routine can use iPhone motion data during an active step round so your Earned Access progress updates without waiting for Apple Health to sync.
         UILaunchScreen: {}
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
@@ -181,3 +186,16 @@ targets:
         GENERATE_INFOPLIST_FILE: true
         PRODUCT_BUNDLE_IDENTIFIER: com.bojangles4x4.DailyRoutine.watchuitests
         TEST_TARGET_NAME: DailyRoutineWatch
+  DailyRoutineTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests/iOS
+    dependencies:
+      - target: DailyRoutine
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: true
+        PRODUCT_BUNDLE_IDENTIFIER: com.bojangles4x4.DailyRoutine.tests
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/DailyRoutine.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DailyRoutine"
+        BUNDLE_LOADER: "$(TEST_HOST)"

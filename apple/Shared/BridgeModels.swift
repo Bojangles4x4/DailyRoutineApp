@@ -13,6 +13,9 @@ enum NativeBridgeAction: String, Codable {
     case requestEarnedAccessStatus = "earned.access.status.request"
     case lockMorningFoundation = "morning.foundation.lock"
     case completeMorningFoundation = "morning.foundation.complete"
+    case publishRoutineSnapshot = "routine.snapshot.publish"
+    case requestRoutineCommands = "routine.commands.request"
+    case acknowledgeRoutineCommand = "routine.command.acknowledge"
 }
 
 struct HealthSummary: Codable, Sendable {

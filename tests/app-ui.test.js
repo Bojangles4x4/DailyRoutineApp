@@ -27,6 +27,33 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#truthEnterDayButton').isDisabled(), true);
 
   const today = localDateKey();
+  const lockedCommandResult = await page.evaluate(key => {
+    const snapshot = [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'routine.snapshot.publish')?.value;
+    window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'routine.commands.pending', value: [{
+      schemaVersion: 1,
+      id: 'locked-command-1',
+      actionID: 'routine.checkbox.set',
+      origin: 'test',
+      createdAt: new Date().toISOString(),
+      localDateKey: key,
+      timeZoneIdentifier: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      targetID: 'evening-prepare',
+      expectedRevision: snapshot.revision,
+      requiresFoundationComplete: true,
+      payload: { completed: 'true' }
+    }] } }));
+    return {
+      snapshot,
+      acknowledgement: [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'routine.command.acknowledge')?.value,
+      prepare: JSON.parse(localStorage.getItem('dailyRoutineApp.v1')).days[key]?.entries?.['evening-prepare']
+    };
+  }, today);
+  assert.equal(lockedCommandResult.snapshot.schemaVersion, 1);
+  assert.equal(lockedCommandResult.snapshot.foundationComplete, false);
+  assert.equal(lockedCommandResult.acknowledgement.status, 'rejected');
+  assert.match(lockedCommandResult.acknowledgement.message, /Morning Foundation/);
+  assert.equal(lockedCommandResult.prepare, undefined);
+
   await page.evaluate(key => {
     const state = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
     state.settings.truthBeforeTasks.completions[key] = new Date().toISOString();
@@ -34,6 +61,51 @@ function localDateKey(date = new Date()) {
     localStorage.setItem('dailyRoutineApp.v1', JSON.stringify(state));
   }, today);
   await page.reload({ waitUntil: 'networkidle' });
+
+  const sharedCommandResult = await page.evaluate(key => {
+    const snapshot = [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'routine.snapshot.publish')?.value;
+    const command = {
+      schemaVersion: 1,
+      id: 'shared-checkbox-command-1',
+      actionID: 'routine.checkbox.set',
+      origin: 'test',
+      createdAt: new Date().toISOString(),
+      localDateKey: key,
+      timeZoneIdentifier: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      targetID: 'evening-prepare',
+      expectedRevision: snapshot.revision,
+      requiresFoundationComplete: true,
+      payload: { completed: 'true' }
+    };
+    const send = value => window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'routine.commands.pending', value } }));
+    send([command]);
+    const firstAcknowledgement = [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'routine.command.acknowledge')?.value;
+    send([command]);
+    const duplicateAcknowledgement = [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'routine.command.acknowledge')?.value;
+    const staleCommand = { ...command, id: 'stale-command-1', targetID: 'evening-teeth' };
+    send([staleCommand]);
+    const staleAcknowledgement = [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'routine.command.acknowledge')?.value;
+    const state = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
+    const latestSnapshot = [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'routine.snapshot.publish')?.value;
+    return {
+      initialSnapshot: snapshot,
+      latestSnapshot,
+      firstAcknowledgement,
+      duplicateAcknowledgement,
+      staleAcknowledgement,
+      prepare: state.days[key].entries['evening-prepare'],
+      eveningTeeth: state.days[key].entries['evening-teeth']
+    };
+  }, today);
+  assert.equal(sharedCommandResult.initialSnapshot.foundationComplete, true);
+  assert.equal(sharedCommandResult.initialSnapshot.eligibleItems.some(item => item.id === 'morning-meds'), false);
+  assert.equal(sharedCommandResult.firstAcknowledgement.status, 'applied');
+  assert.equal(sharedCommandResult.duplicateAcknowledgement.status, 'applied');
+  assert.equal(sharedCommandResult.prepare, true);
+  assert.equal(sharedCommandResult.staleAcknowledgement.status, 'rejected');
+  assert.match(sharedCommandResult.staleAcknowledgement.message, /changed before/);
+  assert.equal(sharedCommandResult.eveningTeeth, undefined);
+  assert.ok(sharedCommandResult.latestSnapshot.revision > sharedCommandResult.initialSnapshot.revision);
 
   await page.locator('[data-view="setup"]').click();
   assert.equal((await page.locator('#pageTitle').textContent()).trim(), 'Daily Routine');
