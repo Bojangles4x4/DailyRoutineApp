@@ -1,5 +1,7 @@
 # Apple app product scope
 
+For future native opportunities, priorities, and architecture decision gates, see [IOS_27_ROADMAP.md](IOS_27_ROADMAP.md). That roadmap carries forward the current implementation and newer product decisions. The delivery phases below describe the product's original progression and must not be read as instructions to replace newer behavior.
+
 ## Product principles carried forward
 
 Recent Daily Routine work points to a clear native product direction:
@@ -35,7 +37,7 @@ Recent Daily Routine work points to a clear native product direction:
 
 - Show today’s completion summary.
 - Require Truth Before Tasks on iPhone before enabling Watch quick actions.
-- Complete the next routine item.
+- Let the user select and update an exact eligible routine item; do not assume the displayed “next” item is the action they intend to take.
 - Add one water unit.
 - Record a lightweight mood check-in.
 - Queue actions when the phone is unavailable and reconcile them when it reconnects.
@@ -58,5 +60,5 @@ Recent Daily Routine work points to a clear native product direction:
 - Confirm final app-name availability; the bundle identifier is `com.bojangles4x4.DailyRoutine`.
 - Confirm the activated Apple Developer team and App Store ownership in Xcode.
 - Which Health categories are truly useful after real-device testing.
-- Whether cross-device sync should use CloudKit, an App Group, or remain manual backup only.
+- Confirm that future native surfaces preserve the existing optional Supabase Private sync document as the cross-device routine authority; App Group state remains limited to device coordination and privacy-minimized snapshots.
 - Confirm the prepared privacy policy and App Privacy answers still match the submitted binary.

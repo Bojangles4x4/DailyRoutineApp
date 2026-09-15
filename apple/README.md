@@ -37,6 +37,10 @@ Tapping a checkbox or medication row updates that exact routine; tapping a compl
 
 The Watch app writes its latest received routine summary to an App Group shared with the WidgetKit extension. This lets complications show current progress without exposing the full routine database or Health information.
 
+## Future Apple-platform opportunities
+
+See [IOS_27_ROADMAP.md](IOS_27_ROADMAP.md) for the documentation-only iOS 27 evaluation plan covering a safe native command/state boundary, interactive iPhone widgets, an iPhone NFC morning flow, a private on-device reflection assistant, Siri, and optional home integrations. The roadmap recommends incremental native extensions rather than a full SwiftUI rewrite and does not alter the current app or its data rules.
+
 See [APP_STORE_SUBMISSION.md](APP_STORE_SUBMISSION.md) for the prepared listing copy, App Privacy answers, HealthKit disclosure, TestFlight instructions, review notes, and final submission checklist.
 
 ## Prerequisites
