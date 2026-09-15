@@ -129,10 +129,10 @@ function localDateKey(date = new Date()) {
 
   await page.locator('[data-view="setup"]').click();
   assert.equal((await page.locator('#pageTitle').textContent()).trim(), 'Daily Routine');
-  assert.equal(await page.locator('#pageContext').count(), 0);
+  assert.equal((await page.locator('#pageContext').textContent()).trim(), 'Setup');
   assert.equal(await page.locator('#setupOverview').isVisible(), true);
   await page.locator('[data-setup-target="health"]').click();
-  assert.equal((await page.locator('#setupCategoryTitle').textContent()).trim(), 'Health, Watch & widgets');
+  assert.equal((await page.locator('#setupCategoryTitle').textContent()).trim(), 'Health & access');
   assert.equal(await page.locator('#iphoneWidgetCard').isVisible(), true);
   assert.equal(await page.locator('.widget-size-options>div').count(), 3);
   assert.match(await page.locator('#iphoneWidgetCard').textContent(), /Daily Routine/);
@@ -282,7 +282,7 @@ function localDateKey(date = new Date()) {
   for (let index = 0; index < 5; index += 1) await page.locator('#truthContinueButton').click();
   assert.equal(await page.locator('#truthHeroTitle').textContent(), 'Convictions Before Circumstances');
   assert.equal((await page.locator('#pageTitle').textContent()).trim(), 'Daily Routine');
-  assert.equal(await page.locator('#pageContext').count(), 0);
+  assert.equal((await page.locator('#pageContext').textContent()).trim(), 'Morning foundation');
   assert.match(await page.locator('#truthStepBody').textContent(), /Choose faithfulness over urgency/);
   assert.match(await page.locator('#truthStepBody').textContent(), /Proverbs 16:9/);
   assert.equal(await page.locator('#truthEnterDayButton').isDisabled(), true);

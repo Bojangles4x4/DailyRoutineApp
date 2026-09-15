@@ -94,7 +94,7 @@
 
   const $ = id => document.getElementById(id);
   const els = {
-    pageTitle: $('pageTitle'), heroGreeting: $('heroGreeting'), heroDate: $('heroDate'), heroStatus: $('heroStatus'),
+    pageTitle: $('pageTitle'), pageContext: $('pageContext'), heroGreeting: $('heroGreeting'), heroDate: $('heroDate'), heroStatus: $('heroStatus'),
     wakeTimeDisplay: $('wakeTimeDisplay'), bedTimeDisplay: $('bedTimeDisplay'), progressRing: $('progressRing'), progressPercent: $('progressPercent'),
     selectedDateButton: $('selectedDateButton'), datePickerInput: $('datePickerInput'), prevDay: $('prevDay'), nextDay: $('nextDay'), routineSections: $('routineSections'), dayModeInput: $('dayModeInput'), undoButton: $('undoButton'), weekFocusBanner: $('weekFocusBanner'), onThisDayMemory: $('onThisDayMemory'),
     statCompleted: $('statCompleted'), statOptional: $('statOptional'), statStreak: $('statStreak'), statMood: $('statMood'), copySummaryButton: $('copySummaryButton'),
@@ -515,9 +515,16 @@
   }
 
   function switchView(view) {
-    document.querySelectorAll('.nav-button').forEach(button => button.classList.toggle('active', button.dataset.view === view));
+    const contexts = { today: 'Today', notes: 'Notes', history: 'Progress', setup: 'Setup' };
+    document.querySelectorAll('.nav-button').forEach(button => {
+      const active = button.dataset.view === view;
+      button.classList.toggle('active', active);
+      if (active) button.setAttribute('aria-current', 'page');
+      else button.removeAttribute('aria-current');
+    });
     document.querySelectorAll('.view').forEach(node => node.classList.remove('active'));
     $(`${view}View`).classList.add('active');
+    els.pageContext.textContent = contexts[view] || 'Today';
     if (view === 'setup') activeSetupCategory = '';
     if (view === 'notes') renderNotes();
     if (view === 'history') renderHistory();
@@ -2653,7 +2660,7 @@
   }
 
   function renderSetupNavigation() {
-    const titles = { routine: 'Routine & schedule', appearance: 'Appearance & accessibility', faith: 'Faith foundation', health: 'Health, Watch & widgets', data: 'Data, sync & privacy' };
+    const titles = { routine: 'Routine & schedule', appearance: 'Appearance & accessibility', faith: 'Faith foundation', health: 'Health & access', data: 'Account & data' };
     if (activeSetupCategory) els.setupView.dataset.category = activeSetupCategory;
     else delete els.setupView.dataset.category;
     els.setupOverview.hidden = Boolean(activeSetupCategory);
@@ -4263,10 +4270,12 @@
       document.body.classList.add('truth-locked');
       document.querySelectorAll('.nav-button').forEach(button => {
         button.classList.remove('active');
+        button.removeAttribute('aria-current');
         button.setAttribute('aria-disabled', 'true');
       });
       document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
       el('truthView').classList.add('active');
+      if (el('pageContext')) el('pageContext').textContent = 'Morning foundation';
       renderStep();
       if (!timer) timer = window.setInterval(tick, 1000);
       api.syncWatchContext();
