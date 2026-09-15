@@ -38,6 +38,7 @@ struct WebAppView: UIViewRepresentable {
         webView.scrollView.isDirectionalLockEnabled = true
         context.coordinator.webView = webView
         context.coordinator.connectWatchEvents()
+        context.coordinator.connectLifecycleEvents()
 
         guard let indexURL = Bundle.main.url(forResource: "index", withExtension: "html") else {
             assertionFailure("The bundled web app is missing index.html")
@@ -55,15 +56,36 @@ struct WebAppView: UIViewRepresentable {
         private var isWebAppReady = false
         private var pendingWatchEvents: [WatchEvent] = []
         private var processedWatchEventIDs = Set<UUID>()
+        private var didBecomeActiveObserver: NSObjectProtocol?
         weak var webView: WKWebView?
 
         init(model: AppModel) {
             self.model = model
         }
 
+        deinit {
+            if let didBecomeActiveObserver {
+                NotificationCenter.default.removeObserver(didBecomeActiveObserver)
+            }
+        }
+
         func connectWatchEvents() {
             model.watch.onEvent = { [weak self] event in
                 self?.receiveWatchEvent(event)
+            }
+        }
+
+        func connectLifecycleEvents() {
+            guard didBecomeActiveObserver == nil else { return }
+            didBecomeActiveObserver = NotificationCenter.default.addObserver(
+                forName: UIApplication.didBecomeActiveNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    guard let self, self.isWebAppReady else { return }
+                    self.emitPendingRoutineCommands()
+                }
             }
         }
 

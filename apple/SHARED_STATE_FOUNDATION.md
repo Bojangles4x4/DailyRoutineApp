@@ -1,12 +1,12 @@
 # Shared-state foundation
 
-Status: first safe implementation slice complete. This foundation does not yet add an iPhone widget, App Intent, Shortcut, NFC automation, or Siri action.
+Status: first safe implementation slice complete and now used by one limited iPhone Home Screen widget prototype. The foundation does not yet add a general Shortcut, NFC automation, Siri action, or independent native routine writer.
 
 ## Authority and boundaries
 
 The bundled web app and its existing optional Private sync document remain authoritative for routine data. The shared native store is a device-local coordination layer, not another routine database.
 
-The App Group contains two bounded JSON files:
+The App Group’s `Library/Application Support/DailyRoutineSharedState` directory contains two bounded JSON files:
 
 - `routine-shared-snapshot-v1.json`: a privacy-minimized view of the current local day.
 - `routine-command-journal-v1.json`: pending and resolved native command envelopes.
@@ -118,18 +118,27 @@ The browser regression suite covers:
 - successful application after foundation completion;
 - safe duplicate delivery;
 - stale-revision rejection;
+- wrong-local-day and changed-time-zone rejection;
 - no mutation from rejected commands;
 - revision increase and refreshed snapshot publication;
 - medication exclusion from eligible items;
 - all existing web UI regressions.
 
+Physical-iPhone validation also passed on Taylor's iPhone:
+
+- the privacy-minimized snapshot survived app termination and a clean relaunch;
+- the App Group snapshot contained the correct local day, time zone, foundation state, and completion totals;
+- the snapshot contained no prayer, Scripture, medication, or Health labels;
+- a queued `routine.checkbox.set` command survived termination, was reconciled after a clean relaunch, and was acknowledged as applied;
+- the physical command set an already-completed item to its existing final state, confirming the full command lifecycle without changing visible routine completion data.
+
 ## Next implementation gate
 
-Before creating an iPhone widget or NFC/App Intent surface:
+Before expanding an iPhone widget or NFC/App Intent surface beyond the first queue-and-open prototype:
 
-1. exercise a queued command across a real app termination/relaunch on Taylor’s iPhone;
-2. test midnight and time-zone-change rejection on device;
-3. confirm App Group snapshot and journal contents on the physical device;
-4. retain queue-and-open fallback for the first user-facing prototype.
+1. test midnight and time-zone-change rejection on device;
+2. retain queue-and-open fallback for the first user-facing prototype;
+3. keep the first prototype limited to one reversible checkbox command;
+4. verify stale-state messaging and privacy redaction on the physical widget.
 
-Only after those checks should one small interactive iPhone widget prototype enqueue `routine.checkbox.set`. Broader routine types remain out of scope until separately designed and tested.
+The physical lifecycle, App Group inspection, and no-op command-path checks now permit one small interactive iPhone widget prototype to enqueue `routine.checkbox.set`. Broader routine types remain out of scope until separately designed and tested.

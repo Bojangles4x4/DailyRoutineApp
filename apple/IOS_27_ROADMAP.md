@@ -1,6 +1,6 @@
 # iOS 27 opportunities roadmap
 
-Status: roadmap plus implementation tracking. The first P0 shared-state slice is implemented and documented in [SHARED_STATE_FOUNDATION.md](SHARED_STATE_FOUNDATION.md); physical-device lifecycle validation remains. This document does not commit Daily Routine to an iOS 27 user-facing feature or replace the current product rules.
+Status: roadmap plus implementation tracking. The first P0 shared-state slice is implemented and documented in [SHARED_STATE_FOUNDATION.md](SHARED_STATE_FOUNDATION.md); physical-device lifecycle and a no-op queued-command round trip now pass. Midnight and time-zone edge tests remain. This document does not commit Daily Routine to an iOS 27 user-facing feature or replace the current product rules.
 
 ## Purpose and recommendation
 
@@ -40,7 +40,7 @@ Hard constraint: Apple Watch is not a general-purpose NFC tag reader for the pro
 
 ## Now — P0: safe native command/state foundation
 
-Implementation progress: a versioned privacy-minimized snapshot, coordinated atomic App Group store, bounded idempotent command journal, native/web bridge, and one web-reconciled `routine.checkbox.set` command are now implemented. Native and browser regression tests pass. The command remains queue-and-reconcile rather than an independent native routine writer. Physical-device termination/relaunch, midnight, and time-zone validation are still required before a widget or App Intent uses it.
+Implementation progress: a versioned privacy-minimized snapshot, coordinated atomic App Group store, bounded idempotent command journal, native/web bridge, and one web-reconciled `routine.checkbox.set` command are now implemented. Native and browser regression tests pass. The command remains queue-and-reconcile rather than an independent native routine writer. Physical-device termination/relaunch, App Group inspection, and a queued no-op command round trip pass; midnight and time-zone validation remain before broader native actions.
 
 ### Opportunity
 
@@ -137,9 +137,11 @@ Material impact: a small native state/command service and a corresponding narrow
 
 Evaluate an extra-large or full-page interactive Home Screen widget as a calm Daily Routine / Truth Before Tasks command center using the existing visual language.
 
-The exact extra-large/full-page iPhone widget API and shipping-device support have **not yet been established** from the inspected Apple material. Treat that presentation as a requested opportunity with an SDK and device verification gate, not as a promised iOS 27 capability.
+The installed Xcode 26.6 / iPhoneOS 26.5 SDK and Apple’s WidgetKit documentation establish `.systemLarge` as the largest Home Screen widget family available on iPhone. `.systemExtraLarge` is available on iPadOS and macOS, not as a full-page iPhone widget. The first prototype therefore targets a large iPhone widget, with medium and small fallbacks, rather than promising an unavailable full-screen family.
 
 The current `DailyRoutineWatchWidgets` target is watchOS-only. It is not automatically an iPhone widget and cannot embed the existing web UI.
+
+Implementation progress: a separate `DailyRoutineHomeWidgets` iOS extension now provides large, medium, and small prototypes using the P0 snapshot and command journal. The large layout shows up to four privacy-sensitive eligible items; only checkbox completion is interactive, and it opens the app for authoritative reconciliation. Simulator compilation and native tests pass. Signed provisioning and physical-widget checks remain; see [IPHONE_WIDGET.md](IPHONE_WIDGET.md).
 
 ### Scoped concept
 

@@ -40,6 +40,7 @@ targets:
       - path: Shared
         excludes:
           - WidgetSnapshotStore.swift
+      - path: iOSWidgetShared
       - path: ../index.html
         buildPhase: resources
       - path: ../styles.css
@@ -75,6 +76,10 @@ targets:
         UILaunchScreen: {}
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
+        CFBundleURLTypes:
+          - CFBundleURLName: com.bojangles4x4.DailyRoutine
+            CFBundleURLSchemes:
+              - dailyroutine
     entitlements:
       path: Config/DailyRoutine.entitlements
       properties:
@@ -93,6 +98,32 @@ targets:
         embed: true
       - target: DailyRoutineActivityMonitor
         embed: true
+      - target: DailyRoutineHomeWidgets
+        embed: true
+  DailyRoutineHomeWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: iOSWidgets
+      - path: iOSWidgetShared
+      - path: Shared/RoutineSharedStateStore.swift
+    info:
+      path: Config/DailyRoutineHomeWidgets-Info.plist
+      properties:
+        CFBundleDisplayName: Daily Routine Widgets
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: Config/DailyRoutineHomeWidgets.entitlements
+    settings:
+      base:
+        APPLICATION_EXTENSION_API_ONLY: true
+        DEVELOPMENT_TEAM: UQ7AURZ83A
+        PRODUCT_BUNDLE_IDENTIFIER: com.bojangles4x4.DailyRoutine.widgets
+        SKIP_INSTALL: true
+        TARGETED_DEVICE_FAMILY: "1"
   DailyRoutineActivityMonitor:
     type: app-extension
     platform: iOS

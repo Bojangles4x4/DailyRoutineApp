@@ -145,9 +145,16 @@ final class RoutineSharedStateStore {
 
     init(directoryURL: URL? = nil, fileManager: FileManager = .default) {
         self.fileManager = fileManager
-        self.directoryURL = directoryURL ?? fileManager.containerURL(
-            forSecurityApplicationGroupIdentifier: Self.appGroupIdentifier
-        )
+        if let directoryURL {
+            self.directoryURL = directoryURL
+        } else {
+            self.directoryURL = fileManager.containerURL(
+                forSecurityApplicationGroupIdentifier: Self.appGroupIdentifier
+            )?
+            .appendingPathComponent("Library", isDirectory: true)
+            .appendingPathComponent("Application Support", isDirectory: true)
+            .appendingPathComponent("DailyRoutineSharedState", isDirectory: true)
+        }
         if let directoryURL = self.directoryURL {
             try? fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
         }
@@ -339,7 +346,7 @@ final class RoutineSharedStateStore {
     private static let decoder = JSONDecoder()
 }
 
-private extension ISO8601DateFormatter {
+extension ISO8601DateFormatter {
     static let bridge: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime]

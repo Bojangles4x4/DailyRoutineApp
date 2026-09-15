@@ -78,6 +78,17 @@ function localDateKey(date = new Date()) {
       payload: { completed: 'true' }
     };
     const send = value => window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'routine.commands.pending', value } }));
+    const wrongDayCommand = { ...command, id: 'wrong-day-command-1', localDateKey: '1999-01-01' };
+    send([wrongDayCommand]);
+    const wrongDayAcknowledgement = [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'routine.command.acknowledge')?.value;
+    const currentTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const wrongTimeZoneCommand = {
+      ...command,
+      id: 'wrong-time-zone-command-1',
+      timeZoneIdentifier: currentTimeZone === 'Pacific/Honolulu' ? 'America/Chicago' : 'Pacific/Honolulu'
+    };
+    send([wrongTimeZoneCommand]);
+    const wrongTimeZoneAcknowledgement = [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'routine.command.acknowledge')?.value;
     send([command]);
     const firstAcknowledgement = [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'routine.command.acknowledge')?.value;
     send([command]);
@@ -90,6 +101,8 @@ function localDateKey(date = new Date()) {
     return {
       initialSnapshot: snapshot,
       latestSnapshot,
+      wrongDayAcknowledgement,
+      wrongTimeZoneAcknowledgement,
       firstAcknowledgement,
       duplicateAcknowledgement,
       staleAcknowledgement,
@@ -99,6 +112,10 @@ function localDateKey(date = new Date()) {
   }, today);
   assert.equal(sharedCommandResult.initialSnapshot.foundationComplete, true);
   assert.equal(sharedCommandResult.initialSnapshot.eligibleItems.some(item => item.id === 'morning-meds'), false);
+  assert.equal(sharedCommandResult.wrongDayAcknowledgement.status, 'rejected');
+  assert.match(sharedCommandResult.wrongDayAcknowledgement.message, /different local day/);
+  assert.equal(sharedCommandResult.wrongTimeZoneAcknowledgement.status, 'rejected');
+  assert.match(sharedCommandResult.wrongTimeZoneAcknowledgement.message, /time zone changed/);
   assert.equal(sharedCommandResult.firstAcknowledgement.status, 'applied');
   assert.equal(sharedCommandResult.duplicateAcknowledgement.status, 'applied');
   assert.equal(sharedCommandResult.prepare, true);

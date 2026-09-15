@@ -27,6 +27,7 @@ This is intentionally more than a website wrapper. The native HealthKit and Watc
 - WidgetKit complications for circular, inline, and rectangular layouts, including the Watch Smart Stack
 - Morning Foundation synchronization that keeps Watch quick actions and complications locked until Truth Before Tasks and any configured convictions are complete on iPhone
 - A versioned, privacy-minimized App Group snapshot and idempotent native command journal, with stale-state and Morning Foundation validation; see [SHARED_STATE_FOUNDATION.md](SHARED_STATE_FOUNDATION.md)
+- A separate interactive iPhone Home Screen widget prototype in large, medium, and small sizes, limited to foundation status, progress, and safe checkbox completion; see [IPHONE_WIDGET.md](IPHONE_WIDGET.md)
 - App Store icon catalogs, privacy manifests for App Group user defaults, and bundled privacy/support pages
 - XcodeGen project specification
 
