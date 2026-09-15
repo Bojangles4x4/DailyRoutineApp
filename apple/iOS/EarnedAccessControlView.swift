@@ -12,6 +12,30 @@ struct EarnedAccessControlView: View {
         NavigationStack {
             Form {
                 Section {
+                    HStack(spacing: 12) {
+                        Image(systemName: protectionSymbol)
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(protectionColor)
+                            .frame(width: 38, height: 38)
+                            .background(protectionColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(protectionTitle)
+                                .font(.headline)
+                            Text(protectionDetail)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(.vertical, 3)
+                    LabeledContent("Morning gate", value: store.morningGateEnabled ? "On" : "Off")
+                    LabeledContent("Earned-app protection", value: store.protectionEnabled ? "On" : "Off")
+                } header: {
+                    Text("Today")
+                } footer: {
+                    Text("Unused earned minutes expire at midnight. Each new day begins locked until Truth Before Tasks and any configured convictions are complete.")
+                }
+
+                Section {
                     LabeledContent("Screen Time access", value: authorizationLabel)
                     if !store.isAuthorized {
                         Button("Allow Screen Time access") {
@@ -36,7 +60,7 @@ struct EarnedAccessControlView: View {
                     Button("Save selection") { store.saveSelection() }
                         .disabled(!store.isAuthorized || !store.hasSelection)
                 } header: {
-                    Text("Earned apps")
+                    Text("Apps that use earned minutes")
                 } footer: {
                     Text("Choose the social, retail, or other nonessential apps that should use your earned time bank. All selected apps share one bank, and their combined foreground use spends the allowance.")
                 }
@@ -52,7 +76,7 @@ struct EarnedAccessControlView: View {
                         .disabled(!store.isAuthorized || !store.hasSelection)
                     }
                 } header: {
-                    Text("Protection")
+                    Text("Earned-app protection")
                 } footer: {
                     Text("When protection is on, selected apps remain shielded until Daily Routine grants an allowance. Only actual foreground use counts against it.")
                 }
@@ -74,7 +98,7 @@ struct EarnedAccessControlView: View {
                         .disabled(!store.isAuthorized || !store.hasEssentialSelection)
                     }
                 } header: {
-                    Text("Before Truth Before Tasks")
+                    Text("Apps available before the opening")
                 } footer: {
                     Text("The morning gate shields nearly every app until today’s opening is complete. Daily Routine stays available automatically. Choose individual essentials such as Messages and navigation before turning it on.")
                 }
@@ -108,5 +132,42 @@ struct EarnedAccessControlView: View {
         if store.authorizationStatus == .denied { return "Not allowed" }
         if store.authorizationStatus == .notDetermined { return "Not requested" }
         return "Unavailable"
+    }
+
+    private var protectionTitle: String {
+        if !store.isAuthorized { return "Screen Time setup needed" }
+        if store.morningGateEnabled && !store.morningFoundationCompleteToday {
+            return "Locked until Truth Before Tasks"
+        }
+        if !store.morningGateEnabled { return "Morning gate is off" }
+        if !store.protectionEnabled { return "Earned-app protection is off" }
+        if store.allowanceActive {
+            if let remaining = store.allowanceRemainingMinutes { return "About \(remaining) earned minutes available" }
+            return "Earned apps are available"
+        }
+        return store.isShielding ? "Earned apps are locked" : "Protection is ready"
+    }
+
+    private var protectionDetail: String {
+        if !store.isAuthorized { return "Allow access, then choose the apps to manage." }
+        if store.morningGateEnabled && !store.morningFoundationCompleteToday {
+            return "Yesterday’s unused minutes cannot open apps today."
+        }
+        if !store.morningGateEnabled { return "Turn it on to protect the start of each day." }
+        if !store.protectionEnabled { return "Turn it on before relying on the earned time bank." }
+        if store.allowanceActive { return "Only foreground use in selected apps reduces the shared balance." }
+        return "Complete a selected routine or keep walking to earn time."
+    }
+
+    private var protectionSymbol: String {
+        if store.morningGateEnabled && !store.morningFoundationCompleteToday { return "lock.shield.fill" }
+        if store.allowanceActive { return "checkmark.circle.fill" }
+        return store.isAuthorized && store.protectionEnabled ? "shield.fill" : "exclamationmark.triangle.fill"
+    }
+
+    private var protectionColor: Color {
+        if store.allowanceActive { return .green }
+        if store.morningGateEnabled && !store.morningFoundationCompleteToday { return .orange }
+        return store.isAuthorized && store.protectionEnabled ? .teal : .orange
     }
 }

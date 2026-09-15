@@ -43,6 +43,7 @@ final class EarnedAccessControlStore: ObservableObject {
             try? EarnedAccessShared.saveSelection(saved)
         }
         readSharedState()
+        expireStaleAllowanceIfNeeded()
         if protectionEnabled, !allowanceActive, hasSelection {
             EarnedAccessShared.applyShield(selection: selection, to: managedStore)
             isShielding = true
@@ -66,6 +67,9 @@ final class EarnedAccessControlStore: ObservableObject {
     }
     var hasEssentialSelection: Bool {
         essentialApplicationCount + essentialWebsiteCount > 0
+    }
+    var morningFoundationCompleteToday: Bool {
+        EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.morningFoundationCompleteDateKey) == EarnedAccessShared.localDateKey()
     }
 
     func requestAuthorization() async {
@@ -152,13 +156,19 @@ final class EarnedAccessControlStore: ObservableObject {
             status = "Enable Earned Access and choose apps before starting an allowance."
             return
         }
+        guard !morningGateEnabled || morningFoundationCompleteToday else {
+            refreshMorningGateShield()
+            status = "Complete Truth Before Tasks before opening earned apps today."
+            return
+        }
 
         let safeMinutes = min(120, max(1, minutes))
         do {
             activityCenter.stopMonitoring([EarnedAccessShared.activityName])
             let calendar = Calendar.current
             let start = Date()
-            let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start.addingTimeInterval(86_400)
+            let startOfToday = calendar.startOfDay(for: start)
+            let end = calendar.date(byAdding: .day, value: 1, to: startOfToday) ?? start.addingTimeInterval(86_400)
             let components: Set<Calendar.Component> = [.era, .year, .month, .day, .hour, .minute, .second]
             let schedule = DeviceActivitySchedule(
                 intervalStart: calendar.dateComponents(components, from: start),
@@ -196,6 +206,7 @@ final class EarnedAccessControlStore: ObservableObject {
             EarnedAccessShared.defaults.set(safeMinutes, forKey: EarnedAccessShared.allowanceMinutesKey)
             EarnedAccessShared.defaults.set(safeMinutes, forKey: EarnedAccessShared.allowanceRemainingMinutesKey)
             EarnedAccessShared.defaults.set(end.timeIntervalSince1970, forKey: EarnedAccessShared.allowanceExpiresAtKey)
+            EarnedAccessShared.defaults.set(EarnedAccessShared.localDateKey(start), forKey: EarnedAccessShared.allowanceDateKey)
             EarnedAccessShared.defaults.set(redemptionID, forKey: EarnedAccessShared.allowanceRedemptionIDKey)
             EarnedAccessShared.defaults.set(String((label ?? "Earned apps").prefix(80)), forKey: EarnedAccessShared.allowanceLabelKey)
             allowanceActive = true
@@ -286,6 +297,7 @@ final class EarnedAccessControlStore: ObservableObject {
     func refresh() {
         authorizationStatus = authorizationCenter.authorizationStatus
         readSharedState()
+        expireStaleAllowanceIfNeeded()
         if !isAuthorized && (protectionEnabled || morningGateEnabled) {
             disableProtection()
             disableMorningGate()
@@ -311,6 +323,9 @@ final class EarnedAccessControlStore: ObservableObject {
             "allowanceRedemptionID": allowanceRedemptionID,
             "lastConsumedRedemptionID": lastConsumedRedemptionID,
             "morningGateEnabled": morningGateEnabled ? "true" : "false",
+            "morningFoundationCompleteToday": morningFoundationCompleteToday ? "true" : "false",
+            "selectionCount": String(selectedApplicationCount + selectedCategoryCount + selectedWebsiteCount),
+            "essentialCount": String(essentialApplicationCount + essentialWebsiteCount),
             "message": status
         ]
     }
@@ -340,6 +355,28 @@ final class EarnedAccessControlStore: ObservableObject {
             try activityCenter.startMonitoring(EarnedAccessShared.foundationActivityName, during: schedule)
         } catch {
             status = "The daily morning gate schedule could not start: \(error.localizedDescription)"
+        }
+    }
+
+    private func expireStaleAllowanceIfNeeded() {
+        guard allowanceActive else { return }
+        let today = EarnedAccessShared.localDateKey()
+        let allowanceDate = EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.allowanceDateKey)
+        let expiresAt = EarnedAccessShared.defaults.object(forKey: EarnedAccessShared.allowanceExpiresAtKey) == nil
+            ? nil
+            : EarnedAccessShared.defaults.double(forKey: EarnedAccessShared.allowanceExpiresAtKey)
+        let expired = allowanceDate != today || expiresAt == nil || (expiresAt ?? 0) <= Date().timeIntervalSince1970
+        guard expired else { return }
+
+        activityCenter.stopMonitoring([EarnedAccessShared.activityName])
+        EarnedAccessShared.clearAllowance()
+        allowanceActive = false
+        allowanceMinutes = 0
+        allowanceRemainingMinutes = nil
+        allowanceRedemptionID = ""
+        if protectionEnabled, isAuthorized, hasSelection {
+            EarnedAccessShared.applyShield(selection: selection, to: managedStore)
+            isShielding = true
         }
     }
 

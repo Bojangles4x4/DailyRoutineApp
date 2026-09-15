@@ -57,6 +57,24 @@ function localDateKey(date = new Date()) {
   assert.match(lockedCommandResult.acknowledgement.message, /Morning Foundation/);
   assert.equal(lockedCommandResult.prepare, undefined);
 
+  const yesterday = localDateKey(new Date(Date.now() - 86_400_000));
+  await page.evaluate(({ key, startedAt }) => {
+    localStorage.setItem('dailyRoutine.earnedAccess.device.v1', JSON.stringify({
+      automaticSteps: true,
+      automaticAccess: true,
+      activeAllowance: { id: 'yesterday-allowance', minutes: 20, dateKey: key, startedAt },
+      bankByDate: { [key]: 10 },
+      earnedByDate: { [key]: 30 }
+    }));
+  }, { key: yesterday, startedAt: `${yesterday}T18:00:00.000Z` });
+  await page.reload({ waitUntil: 'networkidle' });
+  const rolloverProtection = await page.evaluate(() => ({
+    activeAllowance: JSON.parse(localStorage.getItem('dailyRoutine.earnedAccess.device.v1')).activeAllowance,
+    lastDirective: [...window.__dailyRoutineNativeMessages].reverse().find(message => ['earned.access.lock', 'earned.access.allow'].includes(message.action))?.action
+  }));
+  assert.equal(rolloverProtection.activeAllowance, null);
+  assert.equal(rolloverProtection.lastDirective, 'earned.access.lock');
+
   await page.evaluate(key => {
     const state = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
     state.settings.truthBeforeTasks.completions[key] = new Date().toISOString();
@@ -142,6 +160,19 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#appleNativeCard #earnedAccessCard').count(), 0);
   assert.equal(await page.locator('#appleNativeCard #appleWatchCard').count(), 0);
   assert.ok(await page.locator('#appleWatchQuickActionInput option').count() > 1);
+  await page.evaluate(() => {
+    window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'earned.access.status', value: {
+      protectionEnabled: 'true', shielding: 'true', allowanceActive: 'false', allowanceMinutes: '0',
+      allowanceRemainingMinutes: '', allowanceRedemptionID: '', lastConsumedRedemptionID: '', morningGateEnabled: 'true',
+      morningFoundationCompleteToday: 'true', selectionCount: '3', essentialCount: '2'
+    } } }));
+  });
+  assert.match(await page.locator('#earnedAccessGateStatus').textContent(), /locked/i);
+  if (process.env.DAILY_ROUTINE_SCREENSHOT_DIR) {
+    await page.locator('#earnedAccessCard').scrollIntoViewIfNeeded();
+    await page.locator('#earnedAccessCard').screenshot({ path: `${process.env.DAILY_ROUTINE_SCREENSHOT_DIR}/daily-routine-build16-earned-access.png` });
+  }
+  await page.locator('.earned-access-settings-disclosure summary').click();
   assert.equal(await page.locator('#earnedAccessAutomaticUseInput').isChecked(), true);
   await page.locator('#earnedAccessAutomaticUseInput').uncheck();
   await page.locator('#appleWatchQuickActionInput').selectOption('routine:morning-meds');
@@ -174,7 +205,7 @@ function localDateKey(date = new Date()) {
   await page.locator('#earnedAccessMinutesInput').fill('20');
   await page.locator('#startEarnedAccessButton').click();
   assert.equal((await page.locator('#earnedAccessStatus').textContent()).trim(), 'Reddit step goal');
-  assert.match(await page.locator('.earned-access-disclosure').textContent(), /Screen Time blocking/);
+  assert.match(await page.locator('.earned-access-disclosure').textContent(), /Current protection/);
   await page.locator('#openEarnedAccessControlsButton').click();
   assert.equal(await page.evaluate(() => window.__dailyRoutineNativeMessages.at(-1).action), 'earned.access.controls.open');
   assert.match(await page.locator('#earnedAccessDetail').textContent(), /0 \/ 1,000/);
@@ -187,21 +218,24 @@ function localDateKey(date = new Date()) {
   await page.evaluate(() => {
     window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'health.summary', value: { date: new Date().toISOString(), stepCount: 5820, sleepHours: 0, workoutCount: 0 } } }));
   });
-  assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '25 of 60 minutes ready');
+  assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '25 of 60 minutes available');
   assert.equal(await page.locator('#useEarnedAccessButton').isDisabled(), false);
   await page.locator('#useEarnedAccessButton').click();
   assert.equal((await page.locator('#earnedAccessStatus').textContent()).trim(), '15 minutes available');
-  assert.equal((await page.locator('#earnedAccessBadge').textContent()).trim(), 'Reward earned');
+  assert.equal((await page.locator('#earnedAccessBadge').textContent()).trim(), 'Open');
   const nativeAllowance = await page.evaluate(() => [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'earned.access.allow'));
   assert.equal(nativeAllowance?.value?.minutes, 15);
   assert.match(nativeAllowance?.value?.redemptionId, /^allowance-/);
   await page.evaluate(redemptionId => {
     window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'earned.access.status', value: {
       protectionEnabled: 'true', shielding: 'false', allowanceActive: 'true', allowanceMinutes: '15',
-      allowanceRemainingMinutes: '9', allowanceRedemptionID: redemptionId, lastConsumedRedemptionID: '', morningGateEnabled: 'false'
+      allowanceRemainingMinutes: '9', allowanceRedemptionID: redemptionId, lastConsumedRedemptionID: '', morningGateEnabled: 'true',
+      morningFoundationCompleteToday: 'true', selectionCount: '3', essentialCount: '2'
     } } }));
   }, nativeAllowance.value.redemptionId);
   assert.equal((await page.locator('#earnedAccessStatus').textContent()).trim(), 'About 9 of 15 minutes remaining');
+  assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '19 of 60 minutes available');
+  assert.equal((await page.locator('#earnedAccessAvailableNow').textContent()).trim(), '19 min');
   assert.match(await page.locator('#earnedAccessDetail').textContent(), /whole-minute checkpoints/);
   const earnedWidgetSnapshot = await page.evaluate(() => [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'routine.snapshot.publish')?.value);
   assert.equal(earnedWidgetSnapshot.earnedAccessRemainingMinutes, 19);
@@ -313,11 +347,11 @@ function localDateKey(date = new Date()) {
   await page.locator('[data-view="setup"]').click();
   await page.locator('[data-setup-target="health"]').click();
   assert.equal((await page.locator('#earnedAccessMorningStatus').textContent()).trim(), '3 of 3 complete · 15 min added today');
-  assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '15 of 60 minutes ready');
+  assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '15 of 60 minutes available');
   await page.reload({ waitUntil: 'networkidle' });
   await page.locator('[data-view="setup"]').click();
   await page.locator('[data-setup-target="health"]').click();
-  assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '15 of 60 minutes ready');
+  assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '15 of 60 minutes available');
   assert.equal(await page.locator('#useEarnedAccessButton').isDisabled(), false);
   await page.locator('#useEarnedAccessButton').click();
   assert.equal((await page.locator('#earnedAccessStatus').textContent()).trim(), '15 minutes available');
@@ -412,13 +446,27 @@ function localDateKey(date = new Date()) {
   const automaticReward = await automaticPage.evaluate(key => {
     const settings = JSON.parse(localStorage.getItem('dailyRoutine.earnedAccess.device.v1'));
     const nativeConfiguration = [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'health.step-rewards.configure');
-    const nativeAllowance = [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'earned.access.allow');
-    return { bank: settings.bankByDate[key], earned: settings.earnedByDate[key], walking: settings.movementCreditedByDate[key], activeAllowance: settings.activeAllowance, nativeConfiguration, nativeAllowance };
+    const nativeLock = [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'earned.access.lock');
+    return { bank: settings.bankByDate[key], earned: settings.earnedByDate[key], walking: settings.movementCreditedByDate[key], activeAllowance: settings.activeAllowance, nativeConfiguration, nativeLock };
   }, today);
-  assert.deepEqual({ bank: automaticReward.bank, earned: automaticReward.earned, walking: automaticReward.walking }, { bank: 0, earned: 30, walking: 30 });
-  assert.equal(automaticReward.activeAllowance.minutes, 30);
-  assert.equal(automaticReward.nativeAllowance.value.minutes, 30);
+  assert.deepEqual({ bank: automaticReward.bank, earned: automaticReward.earned, walking: automaticReward.walking }, { bank: 30, earned: 30, walking: 30 });
+  assert.equal(automaticReward.activeAllowance, null);
+  assert.ok(automaticReward.nativeLock);
   assert.deepEqual(automaticReward.nativeConfiguration.value, { enabled: true, goalSteps: 8000, maxMinutes: 60 });
+  await automaticPage.evaluate(key => {
+    const state = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
+    state.settings.truthBeforeTasks.completions[key] = new Date().toISOString();
+    localStorage.setItem('dailyRoutineApp.v1', JSON.stringify(state));
+  }, today);
+  await automaticPage.reload({ waitUntil: 'networkidle' });
+  const openedAfterFoundation = await automaticPage.evaluate(key => {
+    const settings = JSON.parse(localStorage.getItem('dailyRoutine.earnedAccess.device.v1'));
+    const nativeAllowance = [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'earned.access.allow');
+    return { bank: settings.bankByDate[key], activeAllowance: settings.activeAllowance, nativeAllowance };
+  }, today);
+  assert.equal(openedAfterFoundation.bank, 0);
+  assert.equal(openedAfterFoundation.activeAllowance.minutes, 30);
+  assert.equal(openedAfterFoundation.nativeAllowance.value.minutes, 30);
   await automaticPage.close();
 
   assert.deepEqual(errors, []);

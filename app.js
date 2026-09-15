@@ -77,7 +77,7 @@
   let lastStepRewardNativeDirective = '';
   let lastEarnedAccessNativeDirective = '';
   let lastMorningFoundationDirective = '';
-  let earnedAccessNativeState = { available: false, protectionEnabled: false, shielding: false, allowanceActive: false, allowanceMinutes: 0, allowanceRemainingMinutes: null, allowanceRedemptionID: '', lastConsumedRedemptionID: '', morningGateEnabled: false };
+  let earnedAccessNativeState = { available: false, protectionEnabled: false, shielding: false, allowanceActive: false, allowanceMinutes: 0, allowanceRemainingMinutes: null, allowanceRedemptionID: '', lastConsumedRedemptionID: '', morningGateEnabled: false, morningFoundationCompleteToday: false, selectionCount: 0, essentialCount: 0 };
   let activeSetupCategory = '';
   let accountabilityPreview = '';
   let accountabilityPreviewSignature = '';
@@ -120,7 +120,7 @@
     privateSyncCard: $('privateSyncCard'), privateSyncBadge: $('privateSyncBadge'), privateSyncStatus: $('privateSyncStatus'), privateSyncDevice: $('privateSyncDevice'), privateSyncLastSync: $('privateSyncLastSync'), createSyncSnapshotButton: $('createSyncSnapshotButton'), privateSyncNowButton: $('privateSyncNowButton'), privateSyncSignIn: $('privateSyncSignIn'), privateSyncEmailInput: $('privateSyncEmailInput'), privateSyncPasswordInput: $('privateSyncPasswordInput'), privateSyncSendCodeButton: $('privateSyncSendCodeButton'), privateSyncVerifyButton: $('privateSyncVerifyButton'), privateSyncHelp: $('privateSyncHelp'), privateSyncAccount: $('privateSyncAccount'), privateSyncSignOutButton: $('privateSyncSignOutButton'), privateSyncDeleteCloudButton: $('privateSyncDeleteCloudButton'),
     connectionsCard: $('connectionsCard'), syncConnectionsButton: $('syncConnectionsButton'), bibleConnectionStatus: $('bibleConnectionStatus'), openBibleConnectionButton: $('openBibleConnectionButton'), bibleAppUrlInput: $('bibleAppUrlInput'), saveBibleConnectionButton: $('saveBibleConnectionButton'), testBibleConnectionButton: $('testBibleConnectionButton'), connectionTemplates: $('connectionTemplates'),
     appleNativeCard: $('appleNativeCard'), iphoneWidgetCard: $('iphoneWidgetCard'), appleWatchCard: $('appleWatchCard'), appleStepCount: $('appleStepCount'), appleSleepHours: $('appleSleepHours'), appleWorkoutCount: $('appleWorkoutCount'), appleHealthStatus: $('appleHealthStatus'), healthSourceSummary: $('healthSourceSummary'), healthSourceDetail: $('healthSourceDetail'), connectAppleHealthButton: $('connectAppleHealthButton'), refreshAppleHealthButton: $('refreshAppleHealthButton'), appleWatchStatus: $('appleWatchStatus'), appleStepsGoalInput: $('appleStepsGoalInput'), saveAppleStepsGoalButton: $('saveAppleStepsGoalButton'), appleWatchQuickActionInput: $('appleWatchQuickActionInput'),
-    earnedAccessCard: $('earnedAccessCard'), earnedAccessBadge: $('earnedAccessBadge'), earnedAccessNativeStatus: $('earnedAccessNativeStatus'), openEarnedAccessControlsButton: $('openEarnedAccessControlsButton'), earnedAccessLabelInput: $('earnedAccessLabelInput'), earnedAccessTaskMinutesInput: $('earnedAccessTaskMinutesInput'), earnedAccessDailyLimitInput: $('earnedAccessDailyLimitInput'), earnedAccessAutomaticStepsInput: $('earnedAccessAutomaticStepsInput'), earnedAccessAutomaticUseInput: $('earnedAccessAutomaticUseInput'), earnedAccessStepsInput: $('earnedAccessStepsInput'), earnedAccessMinutesInput: $('earnedAccessMinutesInput'), earnedAccessModeInput: $('earnedAccessModeInput'), earnedAccessBankStatus: $('earnedAccessBankStatus'), earnedAccessBankDetail: $('earnedAccessBankDetail'), useEarnedAccessButton: $('useEarnedAccessButton'), earnedAccessStatus: $('earnedAccessStatus'), earnedAccessDetail: $('earnedAccessDetail'), earnedAccessProgressBar: $('earnedAccessProgressBar'), startEarnedAccessButton: $('startEarnedAccessButton'), checkEarnedAccessButton: $('checkEarnedAccessButton'), cancelEarnedAccessButton: $('cancelEarnedAccessButton'), earnedAccessMorningTasks: $('earnedAccessMorningTasks'), earnedAccessLaterTasks: $('earnedAccessLaterTasks'), earnedAccessMorningStatus: $('earnedAccessMorningStatus'), earnedAccessLaterStatus: $('earnedAccessLaterStatus'),
+    earnedAccessCard: $('earnedAccessCard'), earnedAccessBadge: $('earnedAccessBadge'), earnedAccessNativeStatus: $('earnedAccessNativeStatus'), earnedAccessGateStatus: $('earnedAccessGateStatus'), earnedAccessGateDetail: $('earnedAccessGateDetail'), earnedAccessAvailableNow: $('earnedAccessAvailableNow'), earnedAccessEarnedToday: $('earnedAccessEarnedToday'), earnedAccessStepMetric: $('earnedAccessStepMetric'), openEarnedAccessControlsButton: $('openEarnedAccessControlsButton'), earnedAccessLabelInput: $('earnedAccessLabelInput'), earnedAccessTaskMinutesInput: $('earnedAccessTaskMinutesInput'), earnedAccessDailyLimitInput: $('earnedAccessDailyLimitInput'), earnedAccessAutomaticStepsInput: $('earnedAccessAutomaticStepsInput'), earnedAccessAutomaticUseInput: $('earnedAccessAutomaticUseInput'), earnedAccessStepsInput: $('earnedAccessStepsInput'), earnedAccessMinutesInput: $('earnedAccessMinutesInput'), earnedAccessModeInput: $('earnedAccessModeInput'), earnedAccessBankStatus: $('earnedAccessBankStatus'), earnedAccessBankDetail: $('earnedAccessBankDetail'), useEarnedAccessButton: $('useEarnedAccessButton'), earnedAccessStatus: $('earnedAccessStatus'), earnedAccessDetail: $('earnedAccessDetail'), earnedAccessProgressBar: $('earnedAccessProgressBar'), startEarnedAccessButton: $('startEarnedAccessButton'), checkEarnedAccessButton: $('checkEarnedAccessButton'), cancelEarnedAccessButton: $('cancelEarnedAccessButton'), earnedAccessMorningTasks: $('earnedAccessMorningTasks'), earnedAccessLaterTasks: $('earnedAccessLaterTasks'), earnedAccessMorningStatus: $('earnedAccessMorningStatus'), earnedAccessLaterStatus: $('earnedAccessLaterStatus'),
     healthSleepSuggestion: $('healthSleepSuggestion'), healthSleepSuggestionText: $('healthSleepSuggestionText'), applyHealthSleepButton: $('applyHealthSleepButton'),
     linkedActionFields: $('linkedActionFields'), linkedTemplateInput: $('linkedTemplateInput'), linkedCompletionInput: $('linkedCompletionInput'), linkedUrlField: $('linkedUrlField'), linkedUrlInput: $('linkedUrlInput'), linkedInternalField: $('linkedInternalField'), linkedInternalTargetInput: $('linkedInternalTargetInput'), linkedButtonLabelInput: $('linkedButtonLabelInput'), timeWindowFields: $('timeWindowFields'), timeWindowStartInput: $('timeWindowStartInput'), timeWindowEndInput: $('timeWindowEndInput'),
     medicationProgressCard: $('medicationProgressCard'), weeklyReviewCard: $('weeklyReviewCard'), memoryBankCard: $('memoryBankCard'), dataBackupCard: $('dataBackupCard'),
@@ -783,7 +783,10 @@
           allowanceRemainingMinutes: String(value.allowanceRemainingMinutes ?? '') === '' ? null : Math.max(0, Number(value.allowanceRemainingMinutes) || 0),
           allowanceRedemptionID: String(value.allowanceRedemptionID || ''),
           lastConsumedRedemptionID: String(value.lastConsumedRedemptionID || ''),
-          morningGateEnabled: value.morningGateEnabled === true || value.morningGateEnabled === 'true'
+          morningGateEnabled: value.morningGateEnabled === true || value.morningGateEnabled === 'true',
+          morningFoundationCompleteToday: value.morningFoundationCompleteToday === true || value.morningFoundationCompleteToday === 'true',
+          selectionCount: Math.max(0, Number(value.selectionCount) || 0),
+          essentialCount: Math.max(0, Number(value.essentialCount) || 0)
         };
         const settings = earnedAccessDeviceSettings();
         if (settings.activeAllowance?.id && earnedAccessNativeState.lastConsumedRedemptionID === settings.activeAllowance.id) {
@@ -846,6 +849,7 @@
     try {
       const parsed = JSON.parse(localStorage.getItem(EARNED_ACCESS_DEVICE_KEY) || '{}');
       const next = parsed && typeof parsed === 'object' ? { ...defaults, ...parsed } : defaults;
+      let needsSave = false;
       const needsAutomaticMigration = !parsed || typeof parsed !== 'object' || !Object.hasOwn(parsed, 'automaticSteps');
       const needsAutomaticAccessMigration = !parsed || typeof parsed !== 'object' || !Object.hasOwn(parsed, 'automaticAccess');
       if (needsAutomaticMigration) {
@@ -874,15 +878,26 @@
       next.taskCreditsByDate = next.taskCreditsByDate && typeof next.taskCreditsByDate === 'object' ? next.taskCreditsByDate : {};
       next.redemptionsByDate = next.redemptionsByDate && typeof next.redemptionsByDate === 'object' ? next.redemptionsByDate : {};
       if (!next.active || typeof next.active !== 'object') next.active = null;
+      if (next.active?.dateKey && next.active.dateKey !== dateKey(startOfToday())) {
+        next.active = null;
+        needsSave = true;
+      }
       if (!next.activeAllowance || typeof next.activeAllowance !== 'object') {
-        const legacyEnd = new Date(next.earnedUntil || '').getTime();
-        next.activeAllowance = !Number.isNaN(legacyEnd) && legacyEnd > Date.now()
-          ? { id: `legacy-${Math.round(legacyEnd)}`, minutes: Math.max(15, Number(next.lastCompleted?.rewardMinutes) || 15), startedAt: new Date().toISOString() }
-          : null;
+        next.activeAllowance = null;
+      } else {
+        const startedAt = new Date(next.activeAllowance.startedAt || '');
+        const allowanceDay = String(next.activeAllowance.dateKey || (!Number.isNaN(startedAt.getTime()) ? dateKey(startedAt) : ''));
+        if (!allowanceDay || allowanceDay !== dateKey(startOfToday())) {
+          next.activeAllowance = null;
+          needsSave = true;
+        } else if (next.activeAllowance.dateKey !== allowanceDay) {
+          next.activeAllowance = { ...next.activeAllowance, dateKey: allowanceDay };
+          needsSave = true;
+        }
       }
       next.earnedUntil = '';
       if (!next.lastCompleted || typeof next.lastCompleted !== 'object') next.lastCompleted = null;
-      if (needsAutomaticMigration || needsAutomaticAccessMigration) localStorage.setItem(EARNED_ACCESS_DEVICE_KEY, JSON.stringify(next));
+      if (needsAutomaticMigration || needsAutomaticAccessMigration || needsSave) localStorage.setItem(EARNED_ACCESS_DEVICE_KEY, JSON.stringify(next));
       return next;
     } catch { return defaults; }
   }
@@ -1028,7 +1043,7 @@
   }
 
   function automaticallyOpenEarnedAccess(settings) {
-    if (!settings.automaticAccess || settings.active) return settings;
+    if (!settings.automaticAccess || settings.active || document.body.classList.contains('truth-locked')) return settings;
     const today = dateKey(startOfToday());
     const bank = Math.max(0, Math.round(Number(settings.bankByDate[today]) || 0));
     if (!bank) return settings;
@@ -1046,7 +1061,7 @@
     const redemptionID = `allowance-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const redemptions = Array.isArray(settings.redemptionsByDate[today]) ? settings.redemptionsByDate[today] : [];
     const next = saveEarnedAccessDeviceSettings({
-      activeAllowance: { id: redemptionID, minutes, startedAt: startedAt.toISOString() },
+      activeAllowance: { id: redemptionID, minutes, startedAt: startedAt.toISOString(), dateKey: today },
       bankByDate: { ...settings.bankByDate, [today]: 0 },
       redemptionsByDate: { ...settings.redemptionsByDate, [today]: [...redemptions, { id: redemptionID, minutes, startedAt: startedAt.toISOString(), automatic: true }] }
     });
@@ -1071,7 +1086,7 @@
     const redemptionID = `allowance-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const redemptions = Array.isArray(settings.redemptionsByDate[today]) ? settings.redemptionsByDate[today] : [];
     const next = saveEarnedAccessDeviceSettings({
-      activeAllowance: { id: redemptionID, minutes: rewardMinutes, startedAt: startedAt.toISOString() },
+      activeAllowance: { id: redemptionID, minutes: rewardMinutes, startedAt: startedAt.toISOString(), dateKey: today },
       bankByDate: { ...settings.bankByDate, [today]: bank - rewardMinutes },
       redemptionsByDate: { ...settings.redemptionsByDate, [today]: [...redemptions, { id: redemptionID, minutes: rewardMinutes, startedAt: startedAt.toISOString() }] },
       lastCompleted: { source: 'bank', label: settings.label, rewardMinutes, completedAt: startedAt.toISOString() }
@@ -1225,7 +1240,6 @@
     if (!els.earnedAccessCard) return;
     let settings = creditCompletedEarnedTasks(earnedAccessDeviceSettings());
     settings = automaticallyOpenEarnedAccess(settings);
-    settings = automaticallyOpenEarnedAccess(settings);
     const today = dateKey(startOfToday());
     if (settings.active?.dateKey && settings.active.dateKey !== today) {
       settings = saveEarnedAccessDeviceSettings({ active: null });
@@ -1241,23 +1255,41 @@
     if (editing !== els.earnedAccessModeInput) els.earnedAccessModeInput.value = settings.mode;
 
     const active = settings.active;
-    const accessIsEarned = Boolean(settings.activeAllowance);
+    const foundationLocked = document.body.classList.contains('truth-locked');
+    const accessIsEarned = Boolean(settings.activeAllowance) && !foundationLocked;
     const bankMinutes = Math.max(0, Number(settings.bankByDate[today]) || 0);
     const earnedToday = Math.max(0, Number(settings.earnedByDate[today]) || 0);
+    const nativeAllowanceMatches = Boolean(settings.activeAllowance)
+      && earnedAccessNativeState.allowanceActive
+      && earnedAccessNativeState.allowanceRedemptionID === settings.activeAllowance?.id;
+    const allowanceRemaining = settings.activeAllowance
+      ? nativeAllowanceMatches && Number.isFinite(earnedAccessNativeState.allowanceRemainingMinutes)
+        ? Math.max(0, earnedAccessNativeState.allowanceRemainingMinutes)
+        : Math.max(0, Number(settings.activeAllowance.minutes) || 0)
+      : 0;
+    const totalAvailable = Math.min(settings.dailyLimitMinutes, bankMinutes + allowanceRemaining);
+    const stepsToday = latestHealthStepsToday() ?? Math.max(0, Number(state.days[today]?.entries?.['apple-health-steps']) || 0);
+    const stepGoal = Math.max(1000, Number(settings.stepGoal) || 8000);
+    const stepPercent = Math.min(100, Math.round((stepsToday / stepGoal) * 100));
     syncNativeEarnedAccess(settings, accessIsEarned);
     syncNativeStepRewardAutomation(settings);
     renderEarnedAccessStages(settings);
-    els.earnedAccessBankStatus.textContent = `${bankMinutes} of ${settings.dailyLimitMinutes} minutes ready`;
-    els.earnedAccessBankDetail.textContent = earnedToday >= settings.dailyLimitMinutes
-      ? 'Today’s limit is reached. Banked minutes remain available until the day ends.'
-      : `${earnedToday} minutes earned today · ${settings.dailyLimitMinutes - earnedToday} still available to earn`;
+    els.earnedAccessAvailableNow.textContent = `${foundationLocked ? 0 : totalAvailable} min`;
+    els.earnedAccessEarnedToday.textContent = `${earnedToday} min`;
+    els.earnedAccessStepMetric.textContent = `${stepPercent}%`;
+    els.earnedAccessBankStatus.textContent = `${totalAvailable} of ${settings.dailyLimitMinutes} minutes available`;
+    els.earnedAccessBankDetail.textContent = foundationLocked && totalAvailable
+      ? `${totalAvailable} earned minute${totalAvailable === 1 ? '' : 's'} waiting for today’s foundation · resets at midnight`
+      : earnedToday >= settings.dailyLimitMinutes
+      ? 'Today’s limit is reached · unused minutes reset at midnight'
+      : `${earnedToday} earned today · ${settings.dailyLimitMinutes - earnedToday} still available to earn · resets at midnight`;
     els.useEarnedAccessButton.disabled = bankMinutes < 15 || Boolean(active) || accessIsEarned;
     els.useEarnedAccessButton.textContent = accessIsEarned ? 'Access open' : bankMinutes < 15 ? `${bankMinutes}/15 banked` : 'Use 15 minutes';
     els.useEarnedAccessButton.hidden = settings.automaticAccess;
     let percent = 0;
     if (settings.automaticSteps && !accessIsEarned) {
-      const steps = latestHealthStepsToday() ?? Math.max(0, Number(state.days[today]?.entries?.['apple-health-steps']) || 0);
-      const goal = Math.max(1000, Number(settings.stepGoal) || 8000);
+      const steps = stepsToday;
+      const goal = stepGoal;
       const maximum = Math.min(settings.dailyLimitMinutes, Math.max(15, Number(settings.rewardMinutes) || 60));
       const credited = Math.max(0, Number(settings.movementCreditedByDate[today]) || 0);
       percent = Math.min(100, Math.round((steps / goal) * 100));
@@ -1281,8 +1313,6 @@
       percent = 100;
       const completed = settings.lastCompleted;
       const minutes = Math.max(1, Number(completed?.rewardMinutes) || 15);
-      const nativeAllowanceMatches = earnedAccessNativeState.allowanceActive
-        && earnedAccessNativeState.allowanceRedemptionID === settings.activeAllowance?.id;
       const remainingMinutes = nativeAllowanceMatches && Number.isFinite(earnedAccessNativeState.allowanceRemainingMinutes)
         ? Math.min(minutes, Math.max(0, earnedAccessNativeState.allowanceRemainingMinutes))
         : null;
@@ -1314,6 +1344,44 @@
     els.startEarnedAccessButton.hidden = settings.automaticSteps;
     els.checkEarnedAccessButton.hidden = settings.automaticSteps;
     if (settings.automaticSteps) els.cancelEarnedAccessButton.hidden = true;
+    const gate = els.earnedAccessGateStatus.closest('.earned-access-gate');
+    gate.classList.remove('is-locked', 'is-open', 'is-warning', 'is-ready');
+    if (!earnedAccessNativeState.available) {
+      gate.classList.add('is-warning');
+      els.earnedAccessGateStatus.textContent = 'Finish setup in the iPhone app';
+      els.earnedAccessGateDetail.textContent = 'Allow Screen Time, choose earned apps, and turn on the morning gate.';
+      els.earnedAccessBadge.textContent = 'Setup needed';
+    } else if (!earnedAccessNativeState.morningGateEnabled) {
+      gate.classList.add('is-warning');
+      els.earnedAccessGateStatus.textContent = 'Morning gate is off';
+      els.earnedAccessGateDetail.textContent = 'Turn it on so nonessential apps stay blocked until Truth Before Tasks is complete.';
+      els.earnedAccessBadge.textContent = 'Setup needed';
+    } else if (foundationLocked) {
+      gate.classList.add('is-locked');
+      els.earnedAccessGateStatus.textContent = 'Locked until today’s foundation is complete';
+      els.earnedAccessGateDetail.textContent = 'Yesterday’s unused minutes cannot open apps today.';
+      els.earnedAccessBadge.textContent = 'Locked';
+    } else if (!earnedAccessNativeState.protectionEnabled) {
+      gate.classList.add('is-warning');
+      els.earnedAccessGateStatus.textContent = 'Earned-app protection is off';
+      els.earnedAccessGateDetail.textContent = 'The morning gate may be complete, but the selected earned apps are not being protected.';
+      els.earnedAccessBadge.textContent = 'Setup needed';
+    } else if (accessIsEarned) {
+      gate.classList.add('is-open');
+      els.earnedAccessGateStatus.textContent = `${totalAvailable} earned minute${totalAvailable === 1 ? '' : 's'} available`;
+      els.earnedAccessGateDetail.textContent = 'Only foreground time in the selected earned apps reduces this shared balance.';
+      els.earnedAccessBadge.textContent = 'Open';
+    } else if (earnedAccessNativeState.shielding) {
+      gate.classList.add('is-locked');
+      els.earnedAccessGateStatus.textContent = 'Earned apps are locked';
+      els.earnedAccessGateDetail.textContent = 'Complete a selected routine or keep walking to add time.';
+      els.earnedAccessBadge.textContent = 'Locked';
+    } else {
+      gate.classList.add('is-ready');
+      els.earnedAccessGateStatus.textContent = 'Protection is ready';
+      els.earnedAccessGateDetail.textContent = 'Selected apps will open automatically when minutes are earned.';
+      els.earnedAccessBadge.textContent = 'Ready';
+    }
     publishRoutineSharedSnapshot();
   }
 
@@ -1330,10 +1398,11 @@
 
   function syncNativeEarnedAccess(settings, accessIsEarned) {
     if (!window.DailyRoutineNative?.postMessage) return;
-    const directive = accessIsEarned && settings.activeAllowance?.id ? `allow:${settings.activeAllowance.id}` : 'lock';
+    const foundationLocked = document.body.classList.contains('truth-locked');
+    const directive = !foundationLocked && accessIsEarned && settings.activeAllowance?.id ? `allow:${settings.activeAllowance.id}` : 'lock';
     if (directive === lastEarnedAccessNativeDirective) return;
     lastEarnedAccessNativeDirective = directive;
-    if (accessIsEarned) sendNativeBridgeMessage('earned.access.allow', { minutes: settings.activeAllowance.minutes, redemptionId: settings.activeAllowance.id, label: settings.label });
+    if (!foundationLocked && accessIsEarned) sendNativeBridgeMessage('earned.access.allow', { minutes: settings.activeAllowance.minutes, redemptionId: settings.activeAllowance.id, label: settings.label });
     else sendNativeBridgeMessage('earned.access.lock');
   }
 

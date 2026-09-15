@@ -425,53 +425,73 @@
         </section>
 
         <section class="card earned-access-card" id="earnedAccessCard" data-setup-category="health" hidden>
-            <div class="section-heading earned-access-section-heading">
-              <div><p class="eyebrow">Screen Time</p><h2>Earned Access</h2></div>
-              <span id="earnedAccessBadge" class="privacy-pill">Ready</span>
+          <div class="section-heading earned-access-section-heading">
+            <div><p class="eyebrow">Screen Time</p><h2>Earned Access</h2></div>
+            <span id="earnedAccessBadge" class="privacy-pill">Checking</span>
+          </div>
+          <p class="muted setup-help earned-access-intro">Your chosen apps share one daily time bank. Truth Before Tasks must be complete before any earned allowance can open.</p>
+
+          <div class="earned-access-dashboard">
+            <div class="earned-access-gate earned-access-disclosure" aria-live="polite">
+              <span class="earned-access-gate-icon" aria-hidden="true">●</span>
+              <div><span>Current protection</span><strong id="earnedAccessGateStatus">Checking Screen Time…</strong><small id="earnedAccessGateDetail">Confirming today’s foundation and app shields.</small></div>
             </div>
-            <p class="muted setup-help earned-access-intro">Complete selected routines or walk toward your step goal to add time to one shared bank for the apps you choose.</p>
-            <div class="earned-access-disclosure">
-              <strong>Screen Time blocking · local test</strong>
-              <span id="earnedAccessNativeStatus">Authorize Screen Time and privately choose an app to test Apple’s real blocking screen.</span>
-              <button id="openEarnedAccessControlsButton" class="secondary-button" type="button">Choose & test app blocking</button>
+            <div class="earned-access-metrics">
+              <div><strong id="earnedAccessAvailableNow">0 min</strong><span>Available now</span></div>
+              <div><strong id="earnedAccessEarnedToday">0 min</strong><span>Earned today</span></div>
+              <div><strong id="earnedAccessStepMetric">0%</strong><span>Step goal</span></div>
             </div>
-            <label class="toggle-field"><input id="earnedAccessAutomaticStepsInput" type="checkbox" checked /><span><b>Automatic walking rewards</b><small>Track progress toward 8,000 daily steps and add minutes automatically—no round to start.</small></span></label>
-            <label class="toggle-field"><input id="earnedAccessAutomaticUseInput" type="checkbox" checked /><span><b>Open earned apps automatically</b><small>As soon as minutes are earned, make the selected apps available and begin counting only their foreground use.</small></span></label>
-            <div class="earned-access-fields">
-              <label class="text-field compact earned-access-app-field"><span>App group name (optional)</span><input id="earnedAccessLabelInput" type="text" maxlength="80" value="Selected apps" placeholder="For example: Social &amp; Shopping" /><small class="field-help">This only names the group. Choose the apps privately in Apple’s Screen Time picker above.</small></label>
-              <label class="text-field compact"><span>Minutes per task</span><input id="earnedAccessTaskMinutesInput" type="number" min="1" max="15" step="1" inputmode="numeric" value="5" /></label>
-              <label class="text-field compact"><span>Daily limit</span><input id="earnedAccessDailyLimitInput" type="number" min="15" max="120" step="5" inputmode="numeric" value="60" /></label>
-              <label class="text-field compact"><span>Daily step goal</span><input id="earnedAccessStepsInput" type="number" min="1000" max="30000" step="500" inputmode="numeric" value="8000" /></label>
-              <label class="text-field compact"><span>Minutes at goal</span><input id="earnedAccessMinutesInput" type="number" min="15" max="120" step="5" inputmode="numeric" value="60" /></label>
-              <label class="text-field compact" hidden><span>Step pattern</span><select id="earnedAccessModeInput"><option value="fixed">Same goal each round</option><option value="escalating">Escalate 750 → 1,000 → 1,500</option></select></label>
+          </div>
+
+          <button id="openEarnedAccessControlsButton" class="secondary-button earned-access-picker-button" type="button">Choose earned and essential apps</button>
+          <p id="earnedAccessNativeStatus" class="muted micro-copy earned-access-native-status">Authorize Screen Time and privately choose the apps Daily Routine should manage.</p>
+
+          <div class="earned-access-bank" aria-live="polite">
+            <div><span>Today’s shared bank</span><strong id="earnedAccessBankStatus">0 of 60 minutes available</strong><small id="earnedAccessBankDetail">Minutes reset at midnight and never roll into tomorrow.</small></div>
+            <button id="useEarnedAccessButton" class="primary-button" type="button" disabled>Use 15 minutes</button>
+          </div>
+
+          <div class="earned-access-rule-heading"><strong>Ways to earn time</strong><span>Completed requirements add to the same daily bank.</span></div>
+          <div class="earned-access-stages">
+            <div class="earned-stage" data-stage="morning">
+              <div class="earned-stage-heading"><div><strong>Morning routines</strong><span>Earn a few minutes per selected task</span></div></div>
+              <div id="earnedAccessMorningTasks" class="earned-task-options" aria-label="Morning access requirements"></div>
+              <div class="earned-stage-status"><span id="earnedAccessMorningStatus">Choose morning tasks</span></div>
             </div>
-            <div class="earned-access-bank" aria-live="polite">
-              <div><span>Today’s time bank</span><strong id="earnedAccessBankStatus">0 of 60 minutes ready</strong><small id="earnedAccessBankDetail">Selected task rewards are added automatically.</small></div>
-              <button id="useEarnedAccessButton" class="primary-button" type="button" disabled>Use 15 minutes</button>
+            <div class="earned-stage" data-stage="later">
+              <div class="earned-stage-heading"><div><strong>Later routines</strong><span>Add more time in the afternoon or evening</span></div></div>
+              <div id="earnedAccessLaterTasks" class="earned-task-options" aria-label="Later access requirements"></div>
+              <div class="earned-stage-status"><span id="earnedAccessLaterStatus">Choose later tasks</span></div>
             </div>
-            <div class="earned-access-stages">
-              <div class="earned-stage" data-stage="morning">
-                <div class="earned-stage-heading"><div><strong>Morning earners</strong><span>Each selected task adds minutes when completed</span></div></div>
-                <div id="earnedAccessMorningTasks" class="earned-task-options" aria-label="Morning access requirements"></div>
-                <div class="earned-stage-status"><span id="earnedAccessMorningStatus">Choose morning tasks</span></div>
+          </div>
+
+          <div class="earned-movement-heading"><strong>Walking toward today’s goal</strong><span>Steps add minutes proportionally and automatically.</span></div>
+          <div class="earned-access-progress" aria-live="polite">
+            <div><strong id="earnedAccessStatus">Checking today’s steps…</strong><span id="earnedAccessDetail">Walking progress will appear here.</span></div>
+            <div class="earned-access-progress-track" role="progressbar" aria-label="Earned Access step progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="earnedAccessProgressBar"></span></div>
+          </div>
+          <div class="connection-actions earned-access-actions">
+            <button id="startEarnedAccessButton" class="primary-button" type="button">Start step round</button>
+            <button id="checkEarnedAccessButton" class="secondary-button" type="button">Check progress</button>
+            <button id="cancelEarnedAccessButton" class="text-button" type="button" hidden>Cancel round</button>
+          </div>
+
+          <details class="earned-access-settings-disclosure">
+            <summary>Automation and daily limits</summary>
+            <div class="earned-access-settings-body">
+              <label class="toggle-field"><input id="earnedAccessAutomaticStepsInput" type="checkbox" checked /><span><b>Automatic walking rewards</b><small>Track progress toward your daily step goal and add minutes automatically.</small></span></label>
+              <label class="toggle-field"><input id="earnedAccessAutomaticUseInput" type="checkbox" checked /><span><b>Open earned apps automatically</b><small>Open selected apps only after today’s foundation is complete and minutes have been earned.</small></span></label>
+              <div class="earned-access-fields">
+                <label class="text-field compact earned-access-app-field"><span>Earned app group name</span><input id="earnedAccessLabelInput" type="text" maxlength="80" value="Selected apps" placeholder="For example: Social &amp; Shopping" /><small class="field-help">This label never chooses apps. Use Apple’s private picker above.</small></label>
+                <label class="text-field compact"><span>Minutes per task</span><input id="earnedAccessTaskMinutesInput" type="number" min="1" max="15" step="1" inputmode="numeric" value="5" /></label>
+                <label class="text-field compact"><span>Daily limit</span><input id="earnedAccessDailyLimitInput" type="number" min="15" max="120" step="5" inputmode="numeric" value="60" /></label>
+                <label class="text-field compact"><span>Daily step goal</span><input id="earnedAccessStepsInput" type="number" min="1000" max="30000" step="500" inputmode="numeric" value="8000" /></label>
+                <label class="text-field compact"><span>Minutes at goal</span><input id="earnedAccessMinutesInput" type="number" min="15" max="120" step="5" inputmode="numeric" value="60" /></label>
+                <label class="text-field compact" hidden><span>Step pattern</span><select id="earnedAccessModeInput"><option value="fixed">Same goal each round</option><option value="escalating">Escalate 750 → 1,000 → 1,500</option></select></label>
               </div>
-              <div class="earned-stage" data-stage="later">
-                <div class="earned-stage-heading"><div><strong>Later earners</strong><span>Afternoon and evening tasks add to the same bank</span></div></div>
-                <div id="earnedAccessLaterTasks" class="earned-task-options" aria-label="Later access requirements"></div>
-                <div class="earned-stage-status"><span id="earnedAccessLaterStatus">Choose later tasks</span></div>
-              </div>
             </div>
-            <div class="earned-movement-heading"><strong>Daily walking progress</strong><span>Walking minutes are calculated proportionally toward the daily goal and added automatically.</span></div>
-            <div class="earned-access-progress" aria-live="polite">
-              <div><strong id="earnedAccessStatus">Ready for a step goal</strong><span id="earnedAccessDetail">Start a round to track additional steps toward your reward.</span></div>
-              <div class="earned-access-progress-track" role="progressbar" aria-label="Earned Access step progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="earnedAccessProgressBar"></span></div>
-            </div>
-            <div class="connection-actions earned-access-actions">
-              <button id="startEarnedAccessButton" class="primary-button" type="button">Start step round</button>
-              <button id="checkEarnedAccessButton" class="secondary-button" type="button">Check progress</button>
-              <button id="cancelEarnedAccessButton" class="text-button" type="button" hidden>Cancel round</button>
-            </div>
-            <p class="muted micro-copy">Today’s bank applies only to the apps chosen under Earned apps. They share the bank: foreground time in any selected app reduces the same allowance. Return here to see Apple’s approximate whole-minute balance.</p>
+          </details>
+          <p class="muted micro-copy earned-access-reset-note"><strong>Daily reset:</strong> unused minutes expire at midnight. Tomorrow begins locked again until Truth Before Tasks and any configured convictions are complete.</p>
         </section>
 
         <section class="card apple-watch-card" id="appleWatchCard" data-setup-category="health" hidden>

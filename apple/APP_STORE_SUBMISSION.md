@@ -1,6 +1,6 @@
 # App Store submission package
 
-This document records the planned TestFlight submission behavior for Daily Routine 1.17.0 (build 15). Family Controls distribution remains blocked until Apple assigns the required entitlement.
+This document records the planned TestFlight submission behavior for Daily Routine 1.17.0 (build 16). Family Controls distribution remains blocked until Apple assigns the required entitlement.
 
 ## URLs
 
@@ -124,12 +124,13 @@ Please test the first-run flow and verify that existing routine data remains int
 5. Connect Apple Health, add an 8,000-step routine goal, refresh Health, and verify the item completes automatically at the target.
 6. In Setup → Health & Watch, select morning and later earning routines. Complete them one at a time and verify each task adds its configured minutes automatically, only once per day, without exceeding the daily limit. Also start an optional movement round and confirm progress begins at zero rather than using the day's total steps.
 7. Turn on Screen Time protection, choose a nonessential test app, bank at least 15 minutes, use one allowance, and confirm the app remains available across idle time but shields itself again after 15 minutes of actual foreground use.
-8. Review a Health sleep suggestion and confirm bedtime is saved to the date it occurred while wake time is saved to the following morning. Confirm existing entries are not selected for replacement automatically.
-9. Confirm automatic Health step values and Earned Access progress do not appear on a second device through Private sync.
-10. Verify iPhone/Watch progress sync and complication updates. Tap a specific routine, reopen it, change the bottom shortcut in iPhone Setup, and dictate each Capture type.
-11. Download a JSON backup and restore it after making a temporary change.
-12. In Setup → Faith foundation → Truth reminders, add text and a picture, choose selected entries and shuffle mode in separate tests, and verify the configured local notifications appear.
-13. Create daily and weekly accountability reports, verify sensitive switches are off by default, and confirm the copied/shared text exactly matches the preview.
+8. Leave banked or active minutes unused overnight. After midnight, confirm selected apps are shielded, yesterday’s minutes are gone, and no allowance opens until the new day’s Truth Before Tasks and configured convictions are complete.
+9. Review a Health sleep suggestion and confirm bedtime is saved to the date it occurred while wake time is saved to the following morning. Confirm existing entries are not selected for replacement automatically.
+10. Confirm automatic Health step values and Earned Access progress do not appear on a second device through Private sync.
+11. Verify iPhone/Watch progress sync and complication updates. Tap a specific routine, reopen it, change the bottom shortcut in iPhone Setup, and dictate each Capture type.
+12. Download a JSON backup and restore it after making a temporary change.
+13. In Setup → Faith foundation → Truth reminders, add text and a picture, choose selected entries and shuffle mode in separate tests, and verify the configured local notifications appear.
+14. Create daily and weekly accountability reports, verify sensitive switches are off by default, and confirm the copied/shared text exactly matches the preview.
 
 Do not use real sensitive notes or medication details in a public bug report.
 
@@ -139,7 +140,7 @@ Daily Routine is local-first; its optional Private sync account is not required 
 
 Health access is requested only from Setup after the reviewer taps Connect Health. The app requests read access for steps, sleep, and workouts and does not write HealthKit data.
 
-Earned Access uses individual Family Controls authorization, Apple's private app and website picker, Managed Settings shielding, and a Device Activity monitor extension. Daily Routine stores only Apple's opaque selection tokens and does not receive selected app names or browsing history. A person turns protection on, earns an allowance through configured routine or step requirements, and explicitly starts it; selected apps unlock until the foreground-use threshold is reached and then shield themselves again automatically. An optional morning gate shields nonessential apps until Truth Before Tasks is complete while leaving Daily Routine and the person's privately selected essentials available. Complete physical-iPhone testing before distribution. Do not distribute this Family Controls build through TestFlight until Apple assigns the distribution entitlement to the app and Device Activity extension.
+Earned Access uses individual Family Controls authorization, Apple's private app and website picker, Managed Settings shielding, and a Device Activity monitor extension. Daily Routine stores only Apple's opaque selection tokens and does not receive selected app names or browsing history. A person turns protection on and earns a shared daily allowance through configured routine or step requirements; when automatic opening is enabled, selected apps unlock only after the current day’s morning foundation is complete. Foreground use spends the allowance, and the apps shield themselves again when it is exhausted. Unused minutes expire at local midnight and never roll into the next day. The optional morning gate shields nonessential apps until Truth Before Tasks is complete while leaving Daily Routine and the person's privately selected essentials available. Complete physical-iPhone testing before distribution. Do not distribute this Family Controls build through TestFlight until Apple assigns the distribution entitlement to the app and Device Activity extension.
 
 Watch actions remain locked until the reviewer completes the Morning Foundation opening on iPhone. A medication routine tapped on Watch records the current time; tapping the completed row again reopens it.
 

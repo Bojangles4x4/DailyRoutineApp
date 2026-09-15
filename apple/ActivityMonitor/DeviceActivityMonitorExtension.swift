@@ -11,9 +11,19 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
     override func intervalDidStart(for activity: DeviceActivityName) {
         super.intervalDidStart(for: activity)
         guard activity == EarnedAccessShared.foundationActivityName,
-              EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.morningGateEnabledKey),
-              EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.morningFoundationCompleteDateKey) != EarnedAccessShared.localDateKey()
+              EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.morningGateEnabledKey)
         else { return }
+
+        let today = EarnedAccessShared.localDateKey()
+        if EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.allowanceActiveKey),
+           EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.allowanceDateKey) != today {
+            if EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.protectionKey) {
+                EarnedAccessShared.applyShield(selection: EarnedAccessShared.loadSelection(), to: store)
+            }
+            EarnedAccessShared.clearAllowance()
+        }
+
+        guard EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.morningFoundationCompleteDateKey) != today else { return }
 
         EarnedAccessShared.applyFoundationShield(
             exceptions: EarnedAccessShared.loadEssentialSelection(),
