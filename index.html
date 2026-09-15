@@ -29,7 +29,7 @@
 
       <section id="truthView" class="view truth-view" aria-labelledby="pageTitle">
         <section class="truth-hero">
-          <p id="truthHeroEyebrow" class="eyebrow">Begin with what is true</p>
+          <p id="truthHeroEyebrow" class="eyebrow" hidden>Begin with what is true</p>
           <h2 id="truthHeroTitle">Truth Before Tasks</h2>
           <p id="truthHeroIntro" class="truth-intro">Before plans, pressure, or productivity, take a few quiet minutes to remember who God is and what Christ has done.</p>
           <div class="truth-progress" aria-label="Opening meditation progress"><span id="truthProgressBar"></span></div>
@@ -37,8 +37,8 @@
         </section>
         <section class="card truth-stage">
           <div class="truth-step-heading">
-            <p id="truthStepLabel" class="eyebrow">Step 1 of 5</p>
-            <h3 id="truthStepTitle">A plea from a clear moment</h3>
+            <p id="truthStepLabel" class="eyebrow" hidden>Step 1 of 5</p>
+            <h3 id="truthStepTitle" hidden>A plea from a clear moment</h3>
           </div>
           <div id="truthStepBody" class="truth-step-body"></div>
           <div class="truth-controls">
@@ -46,7 +46,7 @@
             <button id="truthContinueButton" class="primary-button" type="button">Continue</button>
           </div>
           <button id="truthEnterDayButton" class="primary-button truth-enter-button" type="button" disabled>Enter the Day</button>
-          <p class="muted micro-copy truth-gospel-note"><strong>Not for righteousness. Because of righteousness.</strong> This practice helps you begin from the acceptance and life already given in Christ.</p>
+          <p class="muted micro-copy truth-gospel-note"><strong>Not for righteousness. Because of righteousness.</strong></p>
         </section>
       </section>
 
@@ -613,7 +613,6 @@
           <div class="section-heading"><div><p class="eyebrow">Second opening phase</p><h2>Convictions Before Circumstances</h2></div><span id="convictionStatus" class="privacy-pill">Not configured</span></div>
           <p class="muted">Now spend a few moments recommitting to the convictions you have held true and will continue to hold true in this day.</p>
           <div class="form-stack conviction-copy-fields">
-            <label class="text-field"><span>Opening words</span><textarea id="convictionIntroInput" rows="4"></textarea></label>
             <div class="conviction-editor-heading"><div><strong>Your convictions</strong><span>Add an optional Scripture beneath any conviction.</span></div><button id="addConvictionButton" class="secondary-button" type="button">+ Add conviction</button></div>
             <div id="convictionItemList" class="conviction-item-list"></div>
             <button id="saveConvictionsButton" class="primary-button" type="button">Save convictions</button>

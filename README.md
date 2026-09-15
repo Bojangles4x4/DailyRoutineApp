@@ -28,6 +28,7 @@ A mobile-first private routine and mood tracker designed to run as a Progressive
 - Apple Health source labels that can surface Apple Watch, Garmin Connect, and other apps contributing Health samples
 - A Truth Before Tasks reminder to choose faithfulness over infallibility, trust over certainty, and the Lord over being right
 - Truth Before Tasks daily opening before the rest of the routine unlocks
+- A quieter morning opening that removes repeated subtitles, step headings, and conviction-introduction copy while preserving all editable truth, prayer, theme, conviction, and Scripture content
 - Optional two-minute Convictions Before Circumstances phase with editable convictions and optional Scripture for each one
 - Apple Watch routine list for completing or reopening the exact checkbox or medication item you choose
 - Customizable bottom Watch shortcut, with Water +1 as the default

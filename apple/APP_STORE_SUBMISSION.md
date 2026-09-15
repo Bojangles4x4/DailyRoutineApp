@@ -117,7 +117,7 @@ Revisit these answers before submission if networking, cloud sync, crash reporti
 
 Please test the first-run flow and verify that existing routine data remains intact.
 
-1. Complete Truth Before Tasks and a configured Convictions Before Circumstances phase, then confirm the main app and Watch quick actions unlock.
+1. Complete the simplified Truth Before Tasks and a configured Convictions Before Circumstances phase, confirm the personal content appears without repeated step headings, then confirm the main app and Watch quick actions unlock.
 2. Create and complete routine items, notes, and a Review & Reflect session.
 3. Change a medication time between AM and PM and verify the in-app warning works without a crash or overlapping fields.
 4. Create, edit, and delete an open-ended Truth Before Tasks theme using a title, body, and one to three Scripture or plain-text truth lines.

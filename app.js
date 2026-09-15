@@ -524,6 +524,7 @@
     });
     document.querySelectorAll('.view').forEach(node => node.classList.remove('active'));
     $(`${view}View`).classList.add('active');
+    els.pageContext.hidden = false;
     els.pageContext.textContent = contexts[view] || 'Today';
     if (view === 'setup') activeSetupCategory = '';
     if (view === 'notes') renderNotes();
@@ -4344,7 +4345,10 @@
       });
       document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
       el('truthView').classList.add('active');
-      if (el('pageContext')) el('pageContext').textContent = 'Morning foundation';
+      if (el('pageContext')) {
+        el('pageContext').textContent = '';
+        el('pageContext').hidden = true;
+      }
       renderStep();
       if (!timer) timer = window.setInterval(tick, 1000);
       api.syncWatchContext();
@@ -4407,7 +4411,6 @@
           phase: 'convictions',
           title: `Conviction ${index + 1}`,
           render() {
-            if (index === 0 && currentConfig.convictions.intro) body.append(textNode('p', currentConfig.convictions.intro, 'conviction-intro'));
             body.append(textNode('p', item.text, 'truth-lead conviction-point'));
             if (item.scripture) {
               const divider = item.scripture.indexOf('|');
@@ -4638,7 +4641,6 @@
       el('truthPleaInput').value = config().personalPlea;
       el('truthPrayerInput').value = config().openingPrayer;
       el('truthCoreInput').value = config().coreTruths.join('\n');
-      el('convictionIntroInput').value = config().convictions.intro;
       el('convictionStatus').textContent = convictionItems().length ? `${convictionItems().length} active` : 'Not configured';
       renderThemeList();
       renderConvictionEditor();
@@ -4743,13 +4745,12 @@
         refreshConvictionEditorLabels();
       });
       el('saveConvictionsButton').addEventListener('click', () => {
-        const intro = el('convictionIntroInput').value.trim() || DEFAULTS.convictions.intro;
         const items = readConvictionEditor();
         if (!items) {
           api.showToast('Finish or remove the empty conviction.');
           return;
         }
-        config().convictions = { intro, items };
+        config().convictions = { intro: '', items };
         api.saveState();
         renderSettings();
         api.showToast(items.length ? 'Convictions will join tomorrow’s opening.' : 'Convictions phase is turned off.');

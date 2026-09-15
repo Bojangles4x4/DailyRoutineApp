@@ -277,7 +277,7 @@ function localDateKey(date = new Date()) {
   assert.match(await page.locator('#truthThemeList').textContent(), /An open-ended theme/);
 
   assert.equal(await page.locator('.conviction-editor-item').count(), 16);
-  assert.match(await page.locator('#convictionIntroInput').inputValue(), /unchanging Word of God/);
+  assert.equal(await page.locator('#convictionIntroInput').count(), 0);
   while (await page.locator('.conviction-editor-item').count() > 2) {
     await page.locator('.conviction-editor-item').last().evaluate(node => node.remove());
   }
@@ -316,7 +316,11 @@ function localDateKey(date = new Date()) {
   for (let index = 0; index < 5; index += 1) await page.locator('#truthContinueButton').click();
   assert.equal(await page.locator('#truthHeroTitle').textContent(), 'Convictions Before Circumstances');
   assert.equal((await page.locator('#pageTitle').textContent()).trim(), 'Daily Routine');
-  assert.equal((await page.locator('#pageContext').textContent()).trim(), 'Morning foundation');
+  assert.equal(await page.locator('#pageContext').isHidden(), true);
+  assert.equal(await page.locator('#truthHeroEyebrow').isHidden(), true);
+  assert.equal(await page.locator('#truthStepLabel').isHidden(), true);
+  assert.equal(await page.locator('#truthStepTitle').isHidden(), true);
+  assert.equal((await page.locator('.truth-gospel-note').textContent()).trim(), 'Not for righteousness. Because of righteousness.');
   assert.match(await page.locator('#truthStepBody').textContent(), /Choose faithfulness over urgency/);
   assert.match(await page.locator('#truthStepBody').textContent(), /Proverbs 16:9/);
   assert.equal(await page.locator('#truthEnterDayButton').isDisabled(), true);
