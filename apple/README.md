@@ -35,6 +35,8 @@ Build 14 connects Earned Access to Family Controls. It adds individual Screen Ti
 
 Build 15 advances the automated Earned Access model. Selected routine completions add small rewards to a device-only daily time bank automatically, with a default 60-minute ceiling. Each 15-minute redemption now counts only actual foreground use of the selected apps, and a separate morning foundation gate can keep nonessential apps shielded until Truth Before Tasks is complete. The opening practice also carries the governing reminder, “Not for righteousness. Because of righteousness.”
 
+Build 16 adds the privacy-minimized iPhone Home Screen widget and a simpler native Setup flow. Widget setup, Health metrics, Earned Access, and the Apple Watch companion now have separate focused cards while retaining the existing on-device behavior.
+
 Tapping a checkbox or medication row updates that exact routine; tapping a completed row reopens it. Medication taps record the current time, with an AM/PM confirmation on Watch when the time does not match the routine section. Linked-app routines remain on iPhone. All Watch actions remain locked until the Morning Foundation is completed on the iPhone for the local calendar day. If personal convictions are configured, they are part of that foundation. If the Watch companion is not installed yet, the iPhone keeps the latest routine context ready and sends it when Watch Connectivity reports the companion is available.
 
 The Watch app writes its latest received routine summary to an App Group shared with the WidgetKit extension. This lets complications show current progress without exposing the full routine database or Health information.

@@ -129,6 +129,15 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#pageContext').count(), 0);
   assert.equal(await page.locator('#setupOverview').isVisible(), true);
   await page.locator('[data-setup-target="health"]').click();
+  assert.equal((await page.locator('#setupCategoryTitle').textContent()).trim(), 'Health, Watch & widgets');
+  assert.equal(await page.locator('#iphoneWidgetCard').isVisible(), true);
+  assert.equal(await page.locator('.widget-size-options>div').count(), 3);
+  assert.match(await page.locator('#iphoneWidgetCard').textContent(), /Daily Routine/);
+  assert.equal(await page.locator('#appleNativeCard').isVisible(), true);
+  assert.equal(await page.locator('#earnedAccessCard').isVisible(), true);
+  assert.equal(await page.locator('#appleWatchCard').isVisible(), true);
+  assert.equal(await page.locator('#appleNativeCard #earnedAccessCard').count(), 0);
+  assert.equal(await page.locator('#appleNativeCard #appleWatchCard').count(), 0);
   assert.ok(await page.locator('#appleWatchQuickActionInput option').count() > 1);
   assert.equal(await page.locator('#earnedAccessAutomaticUseInput').isChecked(), true);
   await page.locator('#earnedAccessAutomaticUseInput').uncheck();

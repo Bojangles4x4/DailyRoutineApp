@@ -296,7 +296,7 @@
           </div></div>
           <div class="setup-group"><p>Foundation & connections</p><div class="setup-category-list">
             <button type="button" data-setup-target="faith"><span class="setup-category-icon warm">☼</span><span><b>Faith foundation</b><small id="setupFaithSummary">Truth Before Tasks · Convictions</small></span><i>›</i></button>
-            <button type="button" data-setup-target="health"><span class="setup-category-icon">♡</span><span><b>Health, Watch & connections</b><small id="setupHealthSummary">Apple Health, Watch, and linked actions</small></span><i>›</i></button>
+            <button type="button" data-setup-target="health"><span class="setup-category-icon">♡</span><span><b>Health, Watch & widgets</b><small id="setupHealthSummary">Health sources, Watch, widgets, and connections</small></span><i>›</i></button>
           </div></div>
           <div class="setup-group"><p>Account</p><div class="setup-category-list">
             <button type="button" data-setup-target="data"><span class="setup-category-icon">✓</span><span><b>Data, sync & privacy</b><small id="setupDataSummary">Private sync, backups, and sharing</small></span><i>›</i></button>
@@ -383,9 +383,29 @@
           </div>
         </section>
 
+        <section class="card iphone-widget-card" id="iphoneWidgetCard" data-setup-category="health" hidden>
+          <div class="section-heading"><div><p class="eyebrow">Home Screen</p><h2>Today’s Rhythm widget</h2></div><span class="native-badge">Build 16</span></div>
+          <p class="muted setup-help">See your Morning Foundation and today’s progress without opening the app. The large widget can also complete eligible, non-sensitive checkbox routines.</p>
+          <div class="widget-size-options" aria-label="Available iPhone widget sizes">
+            <div><span class="widget-size-shape large" aria-hidden="true"></span><strong>Large</strong><small>Progress and up to four routine actions</small></div>
+            <div><span class="widget-size-shape medium" aria-hidden="true"></span><strong>Medium</strong><small>Progress and the first available action</small></div>
+            <div><span class="widget-size-shape small" aria-hidden="true"></span><strong>Small</strong><small>Foundation and progress at a glance</small></div>
+          </div>
+          <details class="widget-install-guide">
+            <summary>How to add it after installing Build 16</summary>
+            <ol>
+              <li>Touch and hold an empty area of your iPhone Home Screen.</li>
+              <li>Tap <b>Edit</b>, then <b>Add Widget</b>.</li>
+              <li>Search for <b>Daily Routine</b> (the app currently in TestFlight).</li>
+              <li>Choose a size and tap <b>Add Widget</b>.</li>
+            </ol>
+          </details>
+          <div class="widget-privacy-note"><span aria-hidden="true">◈</span><p><strong>Private by design</strong><small>Prayer, Scripture, medication, Health details, notes, and Earned Access selections never appear in the widget. Routine labels can be hidden while your phone is locked.</small></p></div>
+        </section>
+
         <section class="card apple-native-card" id="appleNativeCard" data-setup-category="health" hidden>
-          <div class="section-heading"><div><p class="eyebrow">Apple integration</p><h2>Health & Watch</h2></div><span class="native-badge">Native app</span></div>
-          <p class="muted setup-help">Connect only the health categories you choose. Daily Routine reads a small summary and never silently changes your routine.</p>
+          <div class="section-heading"><div><p class="eyebrow">Apple Health</p><h2>Health metrics</h2></div><span class="native-badge">On device</span></div>
+          <p class="muted setup-help">Apple Health is the private hub. Daily Routine reads only the categories you choose and can identify contributing sources such as Apple Watch or Garmin when they write data to Health.</p>
           <div class="apple-health-grid">
             <div><strong id="appleStepCount">—</strong><span>Steps today</span></div>
             <div><strong id="appleSleepHours">—</strong><span>Sleep hours</span></div>
@@ -406,15 +426,18 @@
             <button id="saveAppleStepsGoalButton" class="secondary-button" type="button">Add to routine</button>
           </div>
           <p class="muted micro-copy">Automatic step values stay on this device and are excluded from Private sync.</p>
-          <div class="earned-access-card" id="earnedAccessCard">
+        </section>
+
+        <section class="card earned-access-card" id="earnedAccessCard" data-setup-category="health" hidden>
+            <div class="section-heading earned-access-section-heading">
+              <div><p class="eyebrow">Screen Time</p><h2>Earned Access</h2></div>
+              <span id="earnedAccessBadge" class="privacy-pill">Ready</span>
+            </div>
+            <p class="muted setup-help earned-access-intro">Complete selected routines or walk toward your step goal to add time to one shared bank for the apps you choose.</p>
             <div class="earned-access-disclosure">
               <strong>Screen Time blocking · local test</strong>
               <span id="earnedAccessNativeStatus">Authorize Screen Time and privately choose an app to test Apple’s real blocking screen.</span>
               <button id="openEarnedAccessControlsButton" class="secondary-button" type="button">Choose & test app blocking</button>
-            </div>
-            <div class="earned-access-heading">
-              <div><strong>Earned Access</strong><span>Complete selected routines or walk additional steps to add time to one shared bank for your selected earned apps.</span></div>
-              <span id="earnedAccessBadge" class="privacy-pill">Ready</span>
             </div>
             <label class="toggle-field"><input id="earnedAccessAutomaticStepsInput" type="checkbox" checked /><span><b>Automatic walking rewards</b><small>Track progress toward 8,000 daily steps and add minutes automatically—no round to start.</small></span></label>
             <label class="toggle-field"><input id="earnedAccessAutomaticUseInput" type="checkbox" checked /><span><b>Open earned apps automatically</b><small>As soon as minutes are earned, make the selected apps available and begin counting only their foreground use.</small></span></label>
@@ -453,10 +476,14 @@
               <button id="cancelEarnedAccessButton" class="text-button" type="button" hidden>Cancel round</button>
             </div>
             <p class="muted micro-copy">Today’s bank applies only to the apps chosen under Earned apps. They share the bank: foreground time in any selected app reduces the same allowance. Return here to see Apple’s approximate whole-minute balance.</p>
-          </div>
+        </section>
+
+        <section class="card apple-watch-card" id="appleWatchCard" data-setup-category="health" hidden>
+          <div class="section-heading"><div><p class="eyebrow">Apple Watch</p><h2>Watch companion</h2></div><span class="native-badge">Installed together</span></div>
+          <p class="muted setup-help">Review today’s routine, complete an item, capture a note, or use your chosen shortcut from your wrist.</p>
           <div class="connection-status-card apple-watch-status">
             <div class="connection-icon">⌚</div>
-            <div class="connection-copy"><strong>Apple Watch companion</strong><span id="appleWatchStatus">Ready for quick-action testing after the Watch app is installed.</span></div>
+            <div class="connection-copy"><strong>Watch status</strong><span id="appleWatchStatus">Ready for quick-action testing after the Watch app is installed.</span></div>
           </div>
           <div class="watch-action-setting">
             <div><strong>Bottom Watch shortcut</strong><span>Keep Water +1, or choose any checkbox or medication routine for the left button on your Watch.</span></div>
