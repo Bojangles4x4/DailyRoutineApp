@@ -6,6 +6,7 @@ enum NativeBridgeAction: String, Codable {
     case configureStepRewards = "health.step-rewards.configure"
     case updateWatchContext = "watch.context.update"
     case shareText = "share.text"
+    case shareFile = "share.file"
     case openTruthReminders = "truth.reminders.open"
     case openEarnedAccessControls = "earned.access.controls.open"
     case lockEarnedAccess = "earned.access.lock"

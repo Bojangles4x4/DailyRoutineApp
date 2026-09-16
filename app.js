@@ -4064,7 +4064,15 @@
   function frequencyLabel(item) { const v = item.frequency; if (v === 'weekdays') return 'Weekdays'; if (v === 'weekends') return 'Weekends'; if (v === 'custom') { const labels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']; return (item.days || []).sort((a, b) => a - b).map(day => labels[day]).join(', ') || 'Specific days'; } return 'Every day'; }
   function formatNumber(value) { return Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 }); }
   function csvCell(value) { const str = String(value ?? ''); return /[",\n\r]/.test(str) ? `"${str.replaceAll('"', '""')}"` : str; }
-  function downloadBlob(content, filename, type) { const blob = new Blob([content], { type }), url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
+  function downloadBlob(content, filename, type) {
+    if (sendNativeBridgeMessage('share.file', { filename, type, content })) {
+      showToast('Opening save options…');
+      return;
+    }
+    const blob = new Blob([content], { type }), url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
   function escapeHtml(value) { return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char])); }
   function debounce(fn, delay) { let timer; return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); }; }
   function showToast(message) { clearTimeout(toastTimer); els.toast.textContent = message; els.toast.classList.add('show'); toastTimer = setTimeout(() => els.toast.classList.remove('show'), 1800); }

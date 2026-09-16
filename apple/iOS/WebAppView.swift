@@ -253,6 +253,17 @@ struct WebAppView: UIViewRepresentable {
                     return
                 }
                 presentShareSheet(title: value["title"] as? String, text: text)
+            case .shareFile:
+                guard
+                    let value = payload["value"] as? [String: Any],
+                    let filename = value["filename"] as? String,
+                    !filename.isEmpty,
+                    let content = value["content"] as? String
+                else {
+                    emitError("The exported file was not valid.")
+                    return
+                }
+                presentShareSheet(filename: filename, content: content)
             }
         }
 
@@ -370,6 +381,36 @@ struct WebAppView: UIViewRepresentable {
                 popover.sourceRect = CGRect(x: webView.bounds.midX, y: webView.bounds.maxY - 1, width: 1, height: 1)
             }
             guard let presenter = topViewController(from: webView?.window?.rootViewController) else {
+                emitError("The share options could not be opened.")
+                return
+            }
+            presenter.present(controller, animated: true)
+        }
+
+        private func presentShareSheet(filename: String, content: String) {
+            let safeFilename = URL(fileURLWithPath: filename).lastPathComponent
+            guard !safeFilename.isEmpty else {
+                emitError("The exported filename was not valid.")
+                return
+            }
+            let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(safeFilename)
+            do {
+                try Data(content.utf8).write(to: fileURL, options: .atomic)
+            } catch {
+                emitError("The exported file could not be prepared.")
+                return
+            }
+
+            let controller = UIActivityViewController(activityItems: [fileURL], applicationActivities: nil)
+            controller.completionWithItemsHandler = { _, _, _, _ in
+                try? FileManager.default.removeItem(at: fileURL)
+            }
+            if let popover = controller.popoverPresentationController, let webView {
+                popover.sourceView = webView
+                popover.sourceRect = CGRect(x: webView.bounds.midX, y: webView.bounds.maxY - 1, width: 1, height: 1)
+            }
+            guard let presenter = topViewController(from: webView?.window?.rootViewController) else {
+                try? FileManager.default.removeItem(at: fileURL)
                 emitError("The share options could not be opened.")
                 return
             }

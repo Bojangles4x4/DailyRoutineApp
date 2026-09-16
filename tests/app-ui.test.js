@@ -473,6 +473,18 @@ function localDateKey(date = new Date()) {
   assert.equal(openedAfterFoundation.nativeAllowance.value.minutes, 30);
   await automaticPage.close();
 
+  const exportedFiles = await page.evaluate(() => {
+    window.__dailyRoutineNativeMessages = [];
+    document.querySelector('#exportCsvButton').click();
+    document.querySelector('#exportJsonButton').click();
+    return window.__dailyRoutineNativeMessages.filter(message => message.action === 'share.file');
+  });
+  assert.equal(exportedFiles.length, 2);
+  assert.match(exportedFiles[0].value.filename, /^daily-routine-progress-\d{4}-\d{2}-\d{2}\.csv$/);
+  assert.match(exportedFiles[0].value.content, /^Date,Day Mode,Actual Wake/);
+  assert.match(exportedFiles[1].value.filename, /^daily-routine-backup-\d{4}-\d{2}-\d{2}\.json$/);
+  assert.match(exportedFiles[1].value.content, /"state"/);
+
   assert.deepEqual(errors, []);
   await browser.close();
   console.log('App UI regression tests passed.');
