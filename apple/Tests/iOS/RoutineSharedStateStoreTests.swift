@@ -170,6 +170,14 @@ final class RoutineSharedStateStoreTests: XCTestCase {
         XCTAssertNil(try store.loadSnapshot())
     }
 
+    func testEarnedAccessUsageCheckpointsStayCompactAndIncludeFinalMinute() {
+        XCTAssertEqual(EarnedAccessShared.usageCheckpoints(totalMinutes: 1), [1])
+        XCTAssertEqual(EarnedAccessShared.usageCheckpoints(totalMinutes: 15), [5, 10, 15])
+        XCTAssertEqual(EarnedAccessShared.usageCheckpoints(totalMinutes: 17), [5, 10, 15, 17])
+        XCTAssertEqual(EarnedAccessShared.usageCheckpoints(totalMinutes: 60), Array(stride(from: 5, through: 60, by: 5)))
+        XCTAssertEqual(EarnedAccessShared.usageCheckpoints(totalMinutes: 500).last, 120)
+    }
+
     private func makeSnapshot() -> RoutineSharedSnapshot {
         let item = RoutineSharedItemSnapshot(
             id: "morning-teeth",

@@ -145,6 +145,17 @@ function localDateKey(date = new Date()) {
   assert.equal(sharedCommandResult.eveningTeeth, undefined);
   assert.ok(sharedCommandResult.latestSnapshot.revision > sharedCommandResult.initialSnapshot.revision);
 
+  const compactTodayRow = page.locator('#todayView .routine-task-list .compact-checkbox-row').first();
+  assert.equal(await compactTodayRow.isVisible(), true);
+  const compactRowGeometry = await compactTodayRow.evaluate(row => {
+    const main = row.querySelector(':scope > .task-main').getBoundingClientRect();
+    const skip = row.querySelector(':scope > .task-utility .skip-item').getBoundingClientRect();
+    return { rowHeight: row.getBoundingClientRect().height, mainHeight: main.height, skipHeight: skip.height };
+  });
+  assert.ok(compactRowGeometry.rowHeight <= 54, `Expected a compact Today row, received ${compactRowGeometry.rowHeight}px`);
+  assert.ok(compactRowGeometry.mainHeight >= 44, `Expected a 44px task target, received ${compactRowGeometry.mainHeight}px`);
+  assert.ok(compactRowGeometry.skipHeight >= 44, `Expected a 44px Skip target, received ${compactRowGeometry.skipHeight}px`);
+
   await page.locator('[data-view="setup"]').click();
   assert.equal((await page.locator('#pageTitle').textContent()).trim(), 'Daily Routine');
   assert.equal((await page.locator('#pageContext').textContent()).trim(), 'Setup');
@@ -164,7 +175,7 @@ function localDateKey(date = new Date()) {
     window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'earned.access.status', value: {
       protectionEnabled: 'true', shielding: 'true', allowanceActive: 'false', allowanceMinutes: '0',
       allowanceRemainingMinutes: '', allowanceRedemptionID: '', lastConsumedRedemptionID: '', morningGateEnabled: 'true',
-      morningFoundationCompleteToday: 'true', selectionCount: '3', essentialCount: '2'
+      morningFoundationCompleteToday: 'true', selectionCount: '3', essentialCount: '2', dailyResetScheduled: 'true', morningGateScheduled: 'true', notificationsAllowed: 'true'
     } } }));
   });
   assert.match(await page.locator('#earnedAccessGateStatus').textContent(), /locked/i);
@@ -230,13 +241,13 @@ function localDateKey(date = new Date()) {
     window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'earned.access.status', value: {
       protectionEnabled: 'true', shielding: 'false', allowanceActive: 'true', allowanceMinutes: '15',
       allowanceRemainingMinutes: '9', allowanceRedemptionID: redemptionId, lastConsumedRedemptionID: '', morningGateEnabled: 'true',
-      morningFoundationCompleteToday: 'true', selectionCount: '3', essentialCount: '2'
+      morningFoundationCompleteToday: 'true', selectionCount: '3', essentialCount: '2', dailyResetScheduled: 'true', morningGateScheduled: 'true', notificationsAllowed: 'true'
     } } }));
   }, nativeAllowance.value.redemptionId);
   assert.equal((await page.locator('#earnedAccessStatus').textContent()).trim(), 'About 9 of 15 minutes remaining');
   assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '19 of 60 minutes available');
   assert.equal((await page.locator('#earnedAccessAvailableNow').textContent()).trim(), '19 min');
-  assert.match(await page.locator('#earnedAccessDetail').textContent(), /whole-minute checkpoints/);
+  assert.match(await page.locator('#earnedAccessDetail').textContent(), /five-minute usage checkpoints/);
   const earnedWidgetSnapshot = await page.evaluate(() => [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'routine.snapshot.publish')?.value);
   assert.equal(earnedWidgetSnapshot.earnedAccessRemainingMinutes, 19);
   assert.equal(earnedWidgetSnapshot.earnedAccessDailyLimitMinutes, 60);

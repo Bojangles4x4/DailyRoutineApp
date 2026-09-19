@@ -17,12 +17,14 @@ final class EarnedAccessControlStore: ObservableObject {
     @Published private(set) var allowanceRedemptionID = ""
     @Published private(set) var lastConsumedRedemptionID = ""
     @Published private(set) var morningGateEnabled = false
+    @Published private(set) var notificationAuthorizationStatus: UNAuthorizationStatus = .notDetermined
     @Published private(set) var status = "Allow Screen Time access, then choose apps to begin the local test."
 
     private let authorizationCenter = AuthorizationCenter.shared
     private let managedStore = ManagedSettingsStore(named: EarnedAccessShared.storeName)
     private let foundationStore = ManagedSettingsStore(named: EarnedAccessShared.foundationStoreName)
     private let activityCenter = DeviceActivityCenter()
+    private let notificationCenter = UNUserNotificationCenter.current()
 
     private var folder: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -44,12 +46,14 @@ final class EarnedAccessControlStore: ObservableObject {
         }
         readSharedState()
         expireStaleAllowanceIfNeeded()
+        ensureProtectionSchedules()
         if protectionEnabled, !allowanceActive, hasSelection {
             EarnedAccessShared.applyShield(selection: selection, to: managedStore)
             isShielding = true
         }
         refreshMorningGateShield()
         refreshStatus()
+        Task { await refreshNotificationAuthorization() }
     }
 
     var selectedApplicationCount: Int { selection.applicationTokens.count }
@@ -71,6 +75,16 @@ final class EarnedAccessControlStore: ObservableObject {
     var morningFoundationCompleteToday: Bool {
         EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.morningFoundationCompleteDateKey) == EarnedAccessShared.localDateKey()
     }
+    var dailyResetScheduled: Bool {
+        activityCenter.activities.contains(EarnedAccessShared.dailyResetActivityName)
+    }
+    var morningGateScheduled: Bool {
+        activityCenter.activities.contains(EarnedAccessShared.foundationActivityName)
+    }
+    var notificationsAllowed: Bool {
+        notificationAuthorizationStatus == .authorized || notificationAuthorizationStatus == .provisional
+    }
+    var notificationsDenied: Bool { notificationAuthorizationStatus == .denied }
 
     func requestAuthorization() async {
         do {
@@ -80,6 +94,18 @@ final class EarnedAccessControlStore: ObservableObject {
         } catch {
             authorizationStatus = authorizationCenter.authorizationStatus
             status = "Screen Time access was not authorized: \(error.localizedDescription)"
+        }
+    }
+
+    func requestUsageNotifications() async {
+        do {
+            if notificationAuthorizationStatus == .notDetermined {
+                _ = try await notificationCenter.requestAuthorization(options: [.alert, .sound])
+            }
+            await refreshNotificationAuthorization()
+        } catch {
+            await refreshNotificationAuthorization()
+            status = "Usage notifications were not allowed: \(error.localizedDescription)"
         }
     }
 
@@ -106,6 +132,7 @@ final class EarnedAccessControlStore: ObservableObject {
     func enableProtection() {
         protectionEnabled = true
         EarnedAccessShared.defaults.set(true, forKey: EarnedAccessShared.protectionKey)
+        scheduleDailyReset()
         lockIfEnabled()
     }
 
@@ -164,19 +191,21 @@ final class EarnedAccessControlStore: ObservableObject {
 
         let safeMinutes = min(120, max(1, minutes))
         do {
+            scheduleDailyReset()
             activityCenter.stopMonitoring([EarnedAccessShared.activityName])
             let calendar = Calendar.current
             let start = Date()
             let startOfToday = calendar.startOfDay(for: start)
             let end = calendar.date(byAdding: .day, value: 1, to: startOfToday) ?? start.addingTimeInterval(86_400)
+            let monitorEnd = max(end, start.addingTimeInterval(15 * 60))
             let components: Set<Calendar.Component> = [.era, .year, .month, .day, .hour, .minute, .second]
             let schedule = DeviceActivitySchedule(
                 intervalStart: calendar.dateComponents(components, from: start),
-                intervalEnd: calendar.dateComponents(components, from: end),
+                intervalEnd: calendar.dateComponents(components, from: monitorEnd),
                 repeats: false
             )
             var events: [DeviceActivityEvent.Name: DeviceActivityEvent] = [:]
-            for minute in 1...safeMinutes {
+            for minute in EarnedAccessShared.usageCheckpoints(totalMinutes: safeMinutes) {
                 let event: DeviceActivityEvent
                 if #available(iOS 17.4, *) {
                     event = DeviceActivityEvent(
@@ -242,7 +271,7 @@ final class EarnedAccessControlStore: ObservableObject {
     }
 
     func disableProtection() {
-        activityCenter.stopMonitoring([EarnedAccessShared.activityName])
+        activityCenter.stopMonitoring([EarnedAccessShared.activityName, EarnedAccessShared.dailyResetActivityName])
         EarnedAccessShared.clearAllowance()
         EarnedAccessShared.clearShield(from: managedStore)
         protectionEnabled = false
@@ -303,6 +332,8 @@ final class EarnedAccessControlStore: ObservableObject {
             disableMorningGate()
             return
         }
+        ensureProtectionSchedules()
+        Task { await refreshNotificationAuthorization() }
         if protectionEnabled, !allowanceActive, hasSelection {
             EarnedAccessShared.applyShield(selection: selection, to: managedStore)
             isShielding = true
@@ -326,6 +357,9 @@ final class EarnedAccessControlStore: ObservableObject {
             "morningFoundationCompleteToday": morningFoundationCompleteToday ? "true" : "false",
             "selectionCount": String(selectedApplicationCount + selectedCategoryCount + selectedWebsiteCount),
             "essentialCount": String(essentialApplicationCount + essentialWebsiteCount),
+            "dailyResetScheduled": dailyResetScheduled ? "true" : "false",
+            "morningGateScheduled": morningGateScheduled ? "true" : "false",
+            "notificationsAllowed": notificationsAllowed ? "true" : "false",
             "message": status
         ]
     }
@@ -343,16 +377,39 @@ final class EarnedAccessControlStore: ObservableObject {
         morningGateEnabled = EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.morningGateEnabledKey)
     }
 
-    private func scheduleMorningGate() {
-        guard morningGateEnabled else { return }
-        let schedule = DeviceActivitySchedule(
-            intervalStart: DateComponents(hour: 0, minute: 0),
-            intervalEnd: DateComponents(hour: 23, minute: 59),
+    private func refreshNotificationAuthorization() async {
+        notificationAuthorizationStatus = await notificationCenter.notificationSettings().authorizationStatus
+    }
+
+    private func ensureProtectionSchedules() {
+        if protectionEnabled { scheduleDailyReset() }
+        if morningGateEnabled { scheduleMorningGate() }
+    }
+
+    private func dailySchedule() -> DeviceActivitySchedule {
+        DeviceActivitySchedule(
+            intervalStart: DateComponents(hour: 0, minute: 0, second: 0),
+            intervalEnd: DateComponents(hour: 23, minute: 59, second: 59),
             repeats: true
         )
+    }
+
+    private func scheduleDailyReset() {
+        guard protectionEnabled,
+              !activityCenter.activities.contains(EarnedAccessShared.dailyResetActivityName)
+        else { return }
         do {
-            activityCenter.stopMonitoring([EarnedAccessShared.foundationActivityName])
-            try activityCenter.startMonitoring(EarnedAccessShared.foundationActivityName, during: schedule)
+            try activityCenter.startMonitoring(EarnedAccessShared.dailyResetActivityName, during: dailySchedule())
+        } catch {
+            status = "The daily Earned Access reset could not start: \(error.localizedDescription)"
+        }
+    }
+
+    private func scheduleMorningGate() {
+        guard morningGateEnabled else { return }
+        guard !activityCenter.activities.contains(EarnedAccessShared.foundationActivityName) else { return }
+        do {
+            try activityCenter.startMonitoring(EarnedAccessShared.foundationActivityName, during: dailySchedule())
         } catch {
             status = "The daily morning gate schedule could not start: \(error.localizedDescription)"
         }

@@ -10,25 +10,40 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
 
     override func intervalDidStart(for activity: DeviceActivityName) {
         super.intervalDidStart(for: activity)
+        if activity == EarnedAccessShared.dailyResetActivityName {
+            enforceDailyReset()
+            return
+        }
         guard activity == EarnedAccessShared.foundationActivityName,
               EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.morningGateEnabledKey)
         else { return }
 
-        let today = EarnedAccessShared.localDateKey()
-        if EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.allowanceActiveKey),
-           EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.allowanceDateKey) != today {
-            if EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.protectionKey) {
-                EarnedAccessShared.applyShield(selection: EarnedAccessShared.loadSelection(), to: store)
-            }
-            EarnedAccessShared.clearAllowance()
-        }
+        enforceDailyReset()
 
+        let today = EarnedAccessShared.localDateKey()
         guard EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.morningFoundationCompleteDateKey) != today else { return }
 
         EarnedAccessShared.applyFoundationShield(
             exceptions: EarnedAccessShared.loadEssentialSelection(),
             to: foundationStore
         )
+    }
+
+    private func enforceDailyReset(now: Date = Date()) {
+        guard EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.protectionKey) else { return }
+        let allowanceActive = EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.allowanceActiveKey)
+        let allowanceDate = EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.allowanceDateKey)
+        let expiresAt = EarnedAccessShared.defaults.object(forKey: EarnedAccessShared.allowanceExpiresAtKey) == nil
+            ? nil
+            : EarnedAccessShared.defaults.double(forKey: EarnedAccessShared.allowanceExpiresAtKey)
+        let allowanceIsCurrent = allowanceActive
+            && allowanceDate == EarnedAccessShared.localDateKey(now)
+            && (expiresAt ?? 0) > now.timeIntervalSince1970
+        guard !allowanceIsCurrent else { return }
+
+        DeviceActivityCenter().stopMonitoring([EarnedAccessShared.activityName])
+        EarnedAccessShared.applyShield(selection: EarnedAccessShared.loadSelection(), to: store)
+        if allowanceActive { EarnedAccessShared.clearAllowance() }
     }
 
     override func intervalDidEnd(for activity: DeviceActivityName) {

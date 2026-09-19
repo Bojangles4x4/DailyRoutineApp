@@ -4,6 +4,11 @@ A mobile-first private routine and mood tracker designed to run as a Progressive
 
 ## Version 1.17.0 development features
 
+- Build 19 Earned Access hardening: an independent midnight relock schedule, visible schedule health, and automatic schedule repair when the app becomes active
+- Compact five-minute foreground-usage checkpoints with notifications and an exact final relock checkpoint
+- Immediate Health, Earned Access, and widget snapshot refresh when returning to Daily Routine
+- Newly earned minutes remain safely banked while an allowance is active instead of extending it from an approximate remaining balance
+- Shorter Today checkbox rows that keep full-size task and Skip touch targets on one line
 - A privacy-minimized iPhone Home Screen widget in large, medium, and small sizes, with safe checkbox actions and an app-name-free aggregate Earned Access balance
 - A clearer native Setup area with separate cards for widgets, Health metrics, Earned Access, and Apple Watch
 - An automatic daily Earned Access bank: selected completed routines add five-minute credits without a separate claim

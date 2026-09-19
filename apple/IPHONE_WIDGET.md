@@ -1,6 +1,6 @@
 # iPhone Home Screen widget
 
-Status: first interactive prototype implemented for the Build 16 candidate. Simulator compilation and the native unit suite pass. Signed provisioning and physical-widget validation remain.
+Status: the widget was signed, installed through TestFlight Build 18, and confirmed to receive its private snapshot on a physical iPhone. Build 19 keeps the widget current when the app returns to the foreground. Interactive task completion, privacy redaction, and midnight rollover still need focused physical checks.
 
 ## Supported sizes
 
@@ -35,10 +35,7 @@ The widget cannot complete Truth Before Tasks or Convictions, update medication,
 
 ## Remaining physical checks
 
-1. Sign the new `com.bojangles4x4.DailyRoutine.widgets` extension with Taylor's Apple developer account.
-2. Install the development build on the connected iPhone.
-3. Add the large “Today’s Rhythm” widget to the Home Screen.
-4. Verify locked-foundation behavior, privacy redaction, and the stale-snapshot fallback.
-5. Complete one ordinary checkbox from the widget and confirm exactly one completion in the app.
-6. Earn and use selected-app time, then confirm the widget shows the latest aggregate whole-minute balance without showing app identities.
-7. Repeat around midnight or after a test time-zone change before expanding native actions.
+1. Verify locked-foundation behavior, privacy redaction, and the stale-snapshot fallback.
+2. Complete one ordinary checkbox from the widget and confirm exactly one completion in the app.
+3. Earn and use selected-app time, then confirm the widget shows the latest aggregate five-minute-checkpoint balance without showing app identities.
+4. Repeat around midnight or after a test time-zone change before expanding native actions.

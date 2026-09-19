@@ -25,6 +25,7 @@ enum EarnedAccessShared {
     static let activityName = DeviceActivityName("dailyRoutine.earnedAccess.usage")
     static let eventName = DeviceActivityEvent.Name("dailyRoutine.earnedAccess.budget")
     static let eventPrefix = "dailyRoutine.earnedAccess.minute."
+    static let dailyResetActivityName = DeviceActivityName("dailyRoutine.earnedAccess.dailyReset")
     static let foundationActivityName = DeviceActivityName("dailyRoutine.morningFoundation.daily")
 
     static var defaults: UserDefaults {
@@ -101,6 +102,13 @@ enum EarnedAccessShared {
         let parts = remainder.split(separator: ".", maxSplits: 1).map(String.init)
         guard parts.count == 2, let minute = Int(parts[0]), !parts[1].isEmpty else { return nil }
         return (minute, parts[1])
+    }
+
+    static func usageCheckpoints(totalMinutes: Int) -> [Int] {
+        let safeMinutes = min(120, max(1, totalMinutes))
+        var checkpoints = Array(stride(from: 5, through: safeMinutes, by: 5))
+        if checkpoints.last != safeMinutes { checkpoints.append(safeMinutes) }
+        return checkpoints
     }
 
     static func localDateKey(_ date: Date = Date()) -> String {

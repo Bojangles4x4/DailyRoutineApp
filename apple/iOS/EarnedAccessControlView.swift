@@ -1,5 +1,6 @@
 import FamilyControls
 import SwiftUI
+import UIKit
 
 struct EarnedAccessControlView: View {
     @ObservedObject var store: EarnedAccessControlStore
@@ -29,6 +30,25 @@ struct EarnedAccessControlView: View {
                     .padding(.vertical, 3)
                     LabeledContent("Morning gate", value: store.morningGateEnabled ? "On" : "Off")
                     LabeledContent("Earned-app protection", value: store.protectionEnabled ? "On" : "Off")
+                    if store.protectionEnabled {
+                        LabeledContent("Daily reset", value: store.dailyResetScheduled ? "Scheduled" : "Needs attention")
+                    }
+                    if store.morningGateEnabled {
+                        LabeledContent("Morning schedule", value: store.morningGateScheduled ? "Scheduled" : "Needs attention")
+                    }
+                    LabeledContent("Usage notifications", value: store.notificationsAllowed ? "Allowed" : "Not allowed")
+                    if !store.notificationsAllowed {
+                        if store.notificationsDenied {
+                            Button("Open iPhone notification settings") {
+                                guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                                UIApplication.shared.open(url)
+                            }
+                        } else {
+                            Button("Allow usage notifications") {
+                                Task { await store.requestUsageNotifications() }
+                            }
+                        }
+                    }
                 } header: {
                     Text("Today")
                 } footer: {

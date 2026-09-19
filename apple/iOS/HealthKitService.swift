@@ -139,7 +139,7 @@ final class HealthKitService {
         guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else { return }
         let content = UNMutableNotificationContent()
         content.title = "Earned Apps time added"
-        content.body = "Your walking progress has earned (milestone) of (configuration.maxMinutes) minutes today."
+        content.body = "Your walking progress has earned \(milestone) of \(configuration.maxMinutes) minutes today."
         content.sound = .default
         content.threadIdentifier = "earned-access-walking"
         let request = UNNotificationRequest(

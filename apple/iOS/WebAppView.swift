@@ -85,7 +85,13 @@ struct WebAppView: UIViewRepresentable {
             ) { [weak self] _ in
                 Task { @MainActor [weak self] in
                     guard let self, self.isWebAppReady else { return }
+                    self.model.earnedAccess.refresh()
+                    self.emit(name: "earned.access.status", value: self.model.earnedAccess.bridgeStatus)
                     self.emitPendingRoutineCommands()
+                    if self.model.health.isAvailable,
+                       let summary = try? await self.model.health.fetchSummary() {
+                        self.emit(name: "health.summary", value: summary)
+                    }
                 }
             }
         }

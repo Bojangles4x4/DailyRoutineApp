@@ -77,7 +77,7 @@
   let lastStepRewardNativeDirective = '';
   let lastEarnedAccessNativeDirective = '';
   let lastMorningFoundationDirective = '';
-  let earnedAccessNativeState = { available: false, protectionEnabled: false, shielding: false, allowanceActive: false, allowanceMinutes: 0, allowanceRemainingMinutes: null, allowanceRedemptionID: '', lastConsumedRedemptionID: '', morningGateEnabled: false, morningFoundationCompleteToday: false, selectionCount: 0, essentialCount: 0 };
+  let earnedAccessNativeState = { available: false, protectionEnabled: false, shielding: false, allowanceActive: false, allowanceMinutes: 0, allowanceRemainingMinutes: null, allowanceRedemptionID: '', lastConsumedRedemptionID: '', morningGateEnabled: false, morningFoundationCompleteToday: false, selectionCount: 0, essentialCount: 0, dailyResetScheduled: false, morningGateScheduled: false, notificationsAllowed: false };
   let activeSetupCategory = '';
   let accountabilityPreview = '';
   let accountabilityPreviewSignature = '';
@@ -787,7 +787,10 @@
           morningGateEnabled: value.morningGateEnabled === true || value.morningGateEnabled === 'true',
           morningFoundationCompleteToday: value.morningFoundationCompleteToday === true || value.morningFoundationCompleteToday === 'true',
           selectionCount: Math.max(0, Number(value.selectionCount) || 0),
-          essentialCount: Math.max(0, Number(value.essentialCount) || 0)
+          essentialCount: Math.max(0, Number(value.essentialCount) || 0),
+          dailyResetScheduled: value.dailyResetScheduled === true || value.dailyResetScheduled === 'true',
+          morningGateScheduled: value.morningGateScheduled === true || value.morningGateScheduled === 'true',
+          notificationsAllowed: value.notificationsAllowed === true || value.notificationsAllowed === 'true'
         };
         const settings = earnedAccessDeviceSettings();
         if (settings.activeAllowance?.id && earnedAccessNativeState.lastConsumedRedemptionID === settings.activeAllowance.id) {
@@ -1047,16 +1050,9 @@
     if (!settings.automaticAccess || settings.active || document.body.classList.contains('truth-locked')) return settings;
     const today = dateKey(startOfToday());
     const bank = Math.max(0, Math.round(Number(settings.bankByDate[today]) || 0));
-    if (!bank) return settings;
+    if (!bank || settings.activeAllowance) return settings;
 
     let minutes = bank;
-    if (settings.activeAllowance) {
-      const nativeMatches = earnedAccessNativeState.allowanceActive
-        && earnedAccessNativeState.allowanceRedemptionID === settings.activeAllowance.id
-        && Number.isFinite(earnedAccessNativeState.allowanceRemainingMinutes);
-      if (!nativeMatches) return settings;
-      minutes += earnedAccessNativeState.allowanceRemainingMinutes;
-    }
     minutes = Math.min(120, Math.max(1, minutes));
     const startedAt = new Date();
     const redemptionID = `allowance-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -1329,7 +1325,7 @@
           ? 'This allowance began before minute tracking was installed, so its remaining balance cannot be reconstructed. New allowances will show an estimate.'
           : remainingMinutes === null
           ? `Use the selected apps when you choose. Only foreground use counts; they will lock after ${minutes} minutes of actual use.`
-          : 'Apple updates this estimate in whole-minute checkpoints when you return to Daily Routine. All selected earned apps share it.'
+          : 'Apple updates this estimate at five-minute usage checkpoints and whenever you return to Daily Routine. All selected earned apps share it.'
         : `Your ${completed?.label || settings.label} allowance is ready. Turn on protection above to enforce actual-use counting.`;
     } else {
       const required = earnedAccessRequirement(settings);
@@ -1357,6 +1353,11 @@
       els.earnedAccessGateStatus.textContent = 'Morning gate is off';
       els.earnedAccessGateDetail.textContent = 'Turn it on so nonessential apps stay blocked until Truth Before Tasks is complete.';
       els.earnedAccessBadge.textContent = 'Setup needed';
+    } else if (!earnedAccessNativeState.dailyResetScheduled || !earnedAccessNativeState.morningGateScheduled) {
+      gate.classList.add('is-warning');
+      els.earnedAccessGateStatus.textContent = 'Protection schedule needs attention';
+      els.earnedAccessGateDetail.textContent = 'Open the app controls to restore the daily reset and morning protection schedules.';
+      els.earnedAccessBadge.textContent = 'Check setup';
     } else if (foundationLocked) {
       gate.classList.add('is-locked');
       els.earnedAccessGateStatus.textContent = 'Locked until today’s foundation is complete';
@@ -2337,7 +2338,9 @@
   function decorateRoutineRow(row, item) {
     const utility = document.createElement('div');
     utility.className = 'task-utility';
-    utility.innerHTML = `<button class="skip-item" type="button">Skip this day</button>`;
+    const isCompactCheckboxRow = Boolean(row.querySelector(':scope > label.task-main > .check-control'));
+    if (isCompactCheckboxRow) row.classList.add('compact-checkbox-row');
+    utility.innerHTML = `<button class="skip-item" type="button" aria-label="Skip ${escapeHtml(item.name)} for today" title="Skip this task for today">Skip</button>`;
     utility.querySelector('button').addEventListener('click', () => skipItemToday(item));
     row.appendChild(utility);
   }
