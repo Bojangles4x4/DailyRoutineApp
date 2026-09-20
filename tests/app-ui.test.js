@@ -145,16 +145,89 @@ function localDateKey(date = new Date()) {
   assert.equal(sharedCommandResult.eveningTeeth, undefined);
   assert.ok(sharedCommandResult.latestSnapshot.revision > sharedCommandResult.initialSnapshot.revision);
 
+  assert.equal(await page.locator('#todayView .hero-targets').count(), 0);
+  assert.equal(await page.locator('#todayView #heroStatus').count(), 0);
+  assert.match(await page.locator('.foundation-copy').textContent(), /your worth is not in what you do, but in what Christ did for you/i);
+  assert.equal((await page.locator('.foundation-mark').textContent()).trim(), '100%');
+  const todaySectionOrder = await page.evaluate(() => {
+    const morning = document.querySelector('#morningRoutineSection [data-routine-section="morning"]');
+    const moments = document.querySelector('#postMorningMoments');
+    const later = document.querySelector('#laterRoutineSections');
+    return Boolean(morning && moments && later
+      && (morning.compareDocumentPosition(moments) & Node.DOCUMENT_POSITION_FOLLOWING)
+      && (moments.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING));
+  });
+  assert.equal(todaySectionOrder, true);
+
   const compactTodayRow = page.locator('#todayView .routine-task-list .compact-checkbox-row').first();
   assert.equal(await compactTodayRow.isVisible(), true);
   const compactRowGeometry = await compactTodayRow.evaluate(row => {
     const main = row.querySelector(':scope > .task-main').getBoundingClientRect();
-    const skip = row.querySelector(':scope > .task-utility .skip-item').getBoundingClientRect();
-    return { rowHeight: row.getBoundingClientRect().height, mainHeight: main.height, skipHeight: skip.height };
+    return { rowHeight: row.getBoundingClientRect().height, mainHeight: main.height };
   });
-  assert.ok(compactRowGeometry.rowHeight <= 54, `Expected a compact Today row, received ${compactRowGeometry.rowHeight}px`);
-  assert.ok(compactRowGeometry.mainHeight >= 44, `Expected a 44px task target, received ${compactRowGeometry.mainHeight}px`);
-  assert.ok(compactRowGeometry.skipHeight >= 44, `Expected a 44px Skip target, received ${compactRowGeometry.skipHeight}px`);
+  assert.ok(compactRowGeometry.rowHeight <= 60, `Expected a compact Today row, received ${compactRowGeometry.rowHeight}px`);
+  assert.ok(compactRowGeometry.mainHeight >= 48, `Expected a 48px task target, received ${compactRowGeometry.mainHeight}px`);
+  assert.equal(await compactTodayRow.locator('.task-meta').count(), 0);
+  assert.equal(await page.locator('#todayView .skip-item').count(), 0);
+  assert.equal(await page.locator('#todayView .task-row.skipped').count(), 0);
+  assert.equal(await page.locator('.day-mode-card').count(), 0);
+  assert.equal(await page.locator('.date-nav #dayModeInput').count(), 1);
+  assert.equal(await page.locator('.summary-card').count(), 0);
+  assert.equal((await page.locator('#morningRoutineSection .check-all').textContent()).trim(), '✓✓');
+  assert.equal((await page.locator('#morningRoutineSection .collapse-section').textContent()).trim(), '⌃');
+  assert.equal(await page.locator('#memoryTodayPreview').count(), 0);
+  assert.equal(await page.locator('#todayView .linked-more-actions').count(), 1);
+  assert.equal(await page.locator('#todayView .linked-more-actions .manual-linked-button').count(), 1);
+  const medicationRow = page.locator('#todayView .medication-row').first();
+  assert.equal(await medicationRow.isVisible(), true);
+  assert.doesNotMatch(await medicationRow.textContent(), /optional/i);
+  assert.equal(await medicationRow.locator('.medication-now').count(), 1);
+  assert.equal(await medicationRow.locator('.medication-manual').count(), 1);
+  const waterRow = page.locator('#todayView .water-task-row').first();
+  assert.equal(await waterRow.isVisible(), true);
+  assert.equal(await waterRow.locator('.number-step').count(), 2);
+
+  if (process.env.DAILY_ROUTINE_TODAY_SCREENSHOT_DIR) {
+    const screenshotDir = process.env.DAILY_ROUTINE_TODAY_SCREENSHOT_DIR;
+    fs.mkdirSync(screenshotDir, { recursive: true });
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: `${screenshotDir}/today-top.png` });
+    await page.locator('#morningRoutineSection').scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollBy(0, -54));
+    await page.screenshot({ path: `${screenshotDir}/today-morning.png` });
+    await page.evaluate(() => {
+      const reminder = document.querySelector('#godMomentReminder');
+      reminder.hidden = false;
+      document.querySelector('#godMomentReminderText').textContent = 'God met you with patience when you needed it most.';
+      document.querySelector('#godMomentReminderDate').textContent = 'Remembered today';
+    });
+    await page.locator('#postMorningMoments').scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollBy(0, -54));
+    await page.screenshot({ path: `${screenshotDir}/today-moments.png` });
+    await page.locator('#laterRoutineSections [data-routine-section="day"]').scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollBy(0, -54));
+    await page.screenshot({ path: `${screenshotDir}/today-throughout.png` });
+    await page.evaluate(key => {
+      const state = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
+      state.days[key] ||= { entries: {}, skippedItems: {}, mode: 'normal' };
+      state.days[key].actualWakeTime = '06:30';
+      state.days[key].actualBedTime = '22:15';
+      localStorage.setItem('dailyRoutineApp.v1', JSON.stringify(state));
+    }, today);
+    await page.reload({ waitUntil: 'networkidle' });
+    assert.equal(await page.locator('#actualTimeDetails').isHidden(), true);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: `${screenshotDir}/today-sleep-collapsed.png` });
+    await page.locator('#toggleActualTimeButton').click();
+    assert.equal(await page.locator('#actualTimeDetails').isVisible(), true);
+    await page.evaluate(key => {
+      const state = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
+      delete state.days[key].actualWakeTime;
+      delete state.days[key].actualBedTime;
+      localStorage.setItem('dailyRoutineApp.v1', JSON.stringify(state));
+    }, today);
+    await page.reload({ waitUntil: 'networkidle' });
+  }
 
   await page.locator('[data-view="setup"]').click();
   assert.equal((await page.locator('#pageTitle').textContent()).trim(), 'Daily Routine');

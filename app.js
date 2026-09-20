@@ -7,7 +7,7 @@
   const EARNED_ACCESS_DEVICE_KEY = 'dailyRoutine.earnedAccess.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.17.0';
+  const APP_VERSION = '1.18.0';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const DEFAULT_BIBLE_APP_URL = 'https://bojangles4x4.github.io/Bible-Reading-Plan/';
@@ -81,6 +81,7 @@
   let activeSetupCategory = '';
   let accountabilityPreview = '';
   let accountabilityPreviewSignature = '';
+  let actualTimesExpanded = false;
   const syncCoordinator = window.DailyRoutineSync?.createCoordinator({ storage: localStorage }) || null;
   const syncCloud = window.DailyRoutineCloud?.createClient({
     url: PRIVATE_SYNC_URL,
@@ -94,9 +95,9 @@
 
   const $ = id => document.getElementById(id);
   const els = {
-    pageTitle: $('pageTitle'), pageContext: $('pageContext'), heroGreeting: $('heroGreeting'), heroDate: $('heroDate'), heroStatus: $('heroStatus'),
-    wakeTimeDisplay: $('wakeTimeDisplay'), bedTimeDisplay: $('bedTimeDisplay'), progressRing: $('progressRing'), progressPercent: $('progressPercent'),
-    selectedDateButton: $('selectedDateButton'), datePickerInput: $('datePickerInput'), prevDay: $('prevDay'), nextDay: $('nextDay'), routineSections: $('routineSections'), dayModeInput: $('dayModeInput'), undoButton: $('undoButton'), weekFocusBanner: $('weekFocusBanner'), onThisDayMemory: $('onThisDayMemory'),
+    pageTitle: $('pageTitle'), pageContext: $('pageContext'), heroGreeting: $('heroGreeting'), heroDate: $('heroDate'),
+    progressRing: $('progressRing'), progressPercent: $('progressPercent'),
+    selectedDateButton: $('selectedDateButton'), datePickerInput: $('datePickerInput'), prevDay: $('prevDay'), nextDay: $('nextDay'), routineSections: $('routineSections'), morningRoutineSection: $('morningRoutineSection'), laterRoutineSections: $('laterRoutineSections'), dayModeInput: $('dayModeInput'), undoButton: $('undoButton'), weekFocusBanner: $('weekFocusBanner'), onThisDayMemory: $('onThisDayMemory'),
     statCompleted: $('statCompleted'), statOptional: $('statOptional'), statStreak: $('statStreak'), statMood: $('statMood'), copySummaryButton: $('copySummaryButton'),
     historyList: $('historyList'), rangeSelector: $('rangeSelector'), progressOverall: $('progressOverall'), progress80Days: $('progress80Days'), progressTrackedDays: $('progressTrackedDays'),
     progressRangeNote: $('progressRangeNote'), weekSummary: $('weekSummary'), weekOverall: $('weekOverall'), sectionBreakdown: $('sectionBreakdown'), strongHabits: $('strongHabits'), weakHabits: $('weakHabits'), trendList: $('trendList'), patternInsights: $('patternInsights'),
@@ -109,7 +110,7 @@
     numberGoalFields: $('numberGoalFields'), itemTargetInput: $('itemTargetInput'), itemUnitInput: $('itemUnitInput'), scaleFields: $('scaleFields'), scaleMinInput: $('scaleMinInput'), scaleMaxInput: $('scaleMaxInput'), scaleStepInput: $('scaleStepInput'), scaleLowLabelInput: $('scaleLowLabelInput'), scaleHighLabelInput: $('scaleHighLabelInput'),
     promptField: $('promptField'), itemPlaceholderInput: $('itemPlaceholderInput'), optionalField: $('optionalField'), itemOptionalInput: $('itemOptionalInput'),
     medicationFields: $('medicationFields'), medicationDoseInput: $('medicationDoseInput'), memoryFields: $('memoryFields'), memoryCategoryInput: $('memoryCategoryInput'), pauseUntilInput: $('pauseUntilInput'),
-    actualWakeInput: $('actualWakeInput'), actualBedInput: $('actualBedInput'), wakeNowButton: $('wakeNowButton'), bedNowButton: $('bedNowButton'), badgeEnabledInput: $('badgeEnabledInput'),
+    actualWakeInput: $('actualWakeInput'), actualBedInput: $('actualBedInput'), wakeNowButton: $('wakeNowButton'), bedNowButton: $('bedNowButton'), actualTimeSummary: $('actualTimeSummary'), actualTimeDetails: $('actualTimeDetails'), toggleActualTimeButton: $('toggleActualTimeButton'), badgeEnabledInput: $('badgeEnabledInput'),
     quickNoteButton: $('quickNoteButton'), quickMemoryButton: $('quickMemoryButton'), memoryTodayPreview: $('memoryTodayPreview'), addMemoryButton: $('addMemoryButton'), memoryCount: $('memoryCount'), memoryArchive: $('memoryArchive'), exportMemoriesButton: $('exportMemoriesButton'), memorySearchInput: $('memorySearchInput'), memoryFilterInput: $('memoryFilterInput'), memoryFavoritesOnlyInput: $('memoryFavoritesOnlyInput'),
     godMomentReminder: $('godMomentReminder'), godMomentReminderText: $('godMomentReminderText'), godMomentReminderDate: $('godMomentReminderDate'), openGodMomentsButton: $('openGodMomentsButton'), backupReminder: $('backupReminder'), backupReminderText: $('backupReminderText'), openBackupButton: $('openBackupButton'),
     addNoteButton: $('addNoteButton'), notesOpenCount: $('notesOpenCount'), godMomentCount: $('godMomentCount'), notesDueCount: $('notesDueCount'), notesSearchInput: $('notesSearchInput'), notesTypeFilter: $('notesTypeFilter'), notesStatusFilter: $('notesStatusFilter'), notesResultsTitle: $('notesResultsTitle'), notesResultCount: $('notesResultCount'), notesList: $('notesList'), importGodMomentsInput: $('importGodMomentsInput'),
@@ -454,9 +455,7 @@
   }
 
   function scoredItemsForDate(date) {
-    const day = state.days[dateKey(date)] || {};
-    const skipped = day.skippedItems || {};
-    return scheduledItemsForDate(date).filter(item => !skipped[item.id]);
+    return scheduledItemsForDate(date);
   }
 
   function dayIsExcused(date) {
@@ -535,13 +534,14 @@
   }
 
   function bindTodayControls() {
-    els.prevDay.addEventListener('click', () => { selectedDate = shiftDate(selectedDate, -1); renderToday(); });
-    els.nextDay.addEventListener('click', () => { selectedDate = shiftDate(selectedDate, 1); renderToday(); });
-    els.selectedDateButton.addEventListener('click', () => { selectedDate = startOfToday(); renderToday(); });
-    els.datePickerInput.addEventListener('change', () => { if (!els.datePickerInput.value) return; const picked = fromDateKey(els.datePickerInput.value); if (dateKey(picked) <= dateKey(startOfToday())) { selectedDate = picked; renderToday(); } });
+    els.prevDay.addEventListener('click', () => { selectedDate = shiftDate(selectedDate, -1); actualTimesExpanded = false; renderToday(); });
+    els.nextDay.addEventListener('click', () => { selectedDate = shiftDate(selectedDate, 1); actualTimesExpanded = false; renderToday(); });
+    els.selectedDateButton.addEventListener('click', () => { selectedDate = startOfToday(); actualTimesExpanded = false; renderToday(); });
+    els.datePickerInput.addEventListener('change', () => { if (!els.datePickerInput.value) return; const picked = fromDateKey(els.datePickerInput.value); if (dateKey(picked) <= dateKey(startOfToday())) { selectedDate = picked; actualTimesExpanded = false; renderToday(); } });
     els.dayModeInput.addEventListener('change', () => setDayMode(els.dayModeInput.value));
     els.undoButton.addEventListener('click', performUndo);
-    els.copySummaryButton.addEventListener('click', copyDailySummary);
+    els.copySummaryButton?.addEventListener('click', copyDailySummary);
+    els.toggleActualTimeButton.addEventListener('click', () => { actualTimesExpanded = !actualTimesExpanded; renderToday(); });
     els.actualWakeInput.addEventListener('change', () => saveActualTime('actualWakeTime', els.actualWakeInput.value));
     els.actualBedInput.addEventListener('change', () => saveActualTime('actualBedTime', els.actualBedInput.value));
     els.wakeNowButton.addEventListener('click', () => { const value = currentTimeValue(); els.actualWakeInput.value = value; saveActualTime('actualWakeTime', value); });
@@ -1692,7 +1692,6 @@
         && candidate.kind === 'routine'
         && candidate.type === 'checkbox'
         && !/\b(pray|prayer|scripture|meds?|medication|medicine|health)\b/i.test(candidate.name)
-        && !day.skippedItems?.[candidate.id]
     ));
     if (!item) return finish('rejected', 'That checkbox is not eligible today.');
     const rawCompleted = command.payload?.completed;
@@ -1718,14 +1717,14 @@
   function watchActionableItems(date, day) {
     const sectionOrder = { morning: 0, day: 1, evening: 2 };
     return scheduledItemsForDate(date)
-      .filter(item => item.kind === 'routine' && item.type === 'checkbox' && !day.skippedItems?.[item.id] && !entryMeetsTarget(item, day.entries?.[item.id]))
+      .filter(item => item.kind === 'routine' && item.type === 'checkbox' && !entryMeetsTarget(item, day.entries?.[item.id]))
       .sort((a, b) => (sectionOrder[a.section] ?? 9) - (sectionOrder[b.section] ?? 9) || (a.order ?? 0) - (b.order ?? 0));
   }
 
   function watchRoutineItems(date, day) {
     const sectionOrder = { morning: 0, day: 1, evening: 2 };
     return scheduledItemsForDate(date)
-      .filter(item => item.kind === 'routine' && ['checkbox', 'medication'].includes(item.type) && !day.skippedItems?.[item.id])
+      .filter(item => item.kind === 'routine' && ['checkbox', 'medication'].includes(item.type))
       .sort((a, b) => (sectionOrder[a.section] ?? 9) - (sectionOrder[b.section] ?? 9) || (a.order ?? 0) - (b.order ?? 0));
   }
 
@@ -1856,7 +1855,7 @@
 
     const today = startOfToday();
     const day = ensureDay(dateKey(today));
-    const scheduled = scheduledItemsForDate(today).filter(item => !day.skippedItems?.[item.id]);
+    const scheduled = scheduledItemsForDate(today);
     let item;
 
     if (event.action === 'captureNote') {
@@ -2278,10 +2277,15 @@
     const today = startOfToday();
     els.heroGreeting.textContent = greetingForHour(new Date().getHours());
     els.heroDate.textContent = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric' }).format(selectedDate);
-    els.wakeTimeDisplay.textContent = formatTime(state.settings.wakeTime);
-    els.bedTimeDisplay.textContent = formatTime(state.settings.bedTime);
     els.actualWakeInput.value = day.actualWakeTime || '';
     els.actualBedInput.value = day.actualBedTime || '';
+    const sleepTimesComplete = Boolean(day.actualWakeTime && day.actualBedTime);
+    els.actualTimeSummary.textContent = day.actualWakeTime || day.actualBedTime
+      ? [day.actualWakeTime ? `Woke ${formatTime(day.actualWakeTime)}` : '', day.actualBedTime ? `Bed ${formatTime(day.actualBedTime)}` : ''].filter(Boolean).join(' · ')
+      : 'Not recorded';
+    els.actualTimeDetails.hidden = sleepTimesComplete && !actualTimesExpanded;
+    els.toggleActualTimeButton.hidden = !sleepTimesComplete;
+    els.toggleActualTimeButton.textContent = actualTimesExpanded ? 'Done' : 'Edit';
     els.dayModeInput.value = day.mode || 'normal';
     els.datePickerInput.value = dateKey(selectedDate);
     renderWeekFocusBanner();
@@ -2298,76 +2302,45 @@
   }
 
   function renderRoutineSections(day) {
-    els.routineSections.innerHTML = '';
+    els.morningRoutineSection.innerHTML = '';
+    els.laterRoutineSections.innerHTML = '';
     const scheduled = scheduledItemsForDate(selectedDate);
     ['morning', 'day', 'evening'].forEach(section => {
       const items = scheduled.filter(item => item.section === section).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-      const scored = items.filter(item => !day.skippedItems?.[item.id]);
-      const required = scored.filter(item => !item.optional);
+      const required = items.filter(item => !item.optional);
       const logged = required.filter(item => entryMeetsTarget(item, day.entries?.[item.id])).length;
       const routineItems = items.filter(item => item.kind !== 'checkin');
       const checkinItems = items.filter(item => item.kind === 'checkin');
-      const [title, subtitle] = sectionLabels[section];
+      const [title] = sectionLabels[section];
       const wrapper = document.createElement('section');
       const isCollapsed = collapsedSections.has(section);
-      const checkboxItems = routineItems.filter(item => item.type === 'checkbox' && !day.skippedItems?.[item.id] && !entryIsLogged(item, day.entries?.[item.id]));
+      const checkboxItems = routineItems.filter(item => item.type === 'checkbox' && !entryIsLogged(item, day.entries?.[item.id]));
       wrapper.className = `routine-section${isCollapsed ? ' collapsed' : ''}`;
-      wrapper.innerHTML = `<div class="card"><div class="section-heading"><div><p class="eyebrow">${escapeHtml(subtitle)}</p><h2>${escapeHtml(title)}</h2></div><div class="section-tools"><span class="section-progress">${logged}/${required.length}</span>${checkboxItems.length ? '<button class="tiny-action check-all" type="button">Check all</button>' : ''}<button class="tiny-action collapse-section" type="button">${isCollapsed ? 'Show' : 'Hide'}</button></div></div><div class="section-body"><div class="task-list routine-task-list"></div><div class="checkin-slot"></div></div></div>`;
+      wrapper.dataset.routineSection = section;
+      wrapper.innerHTML = `<div class="card"><div class="section-heading routine-heading"><h2>${escapeHtml(title)}</h2><div class="section-tools"><span class="section-progress">${logged}/${required.length}</span>${checkboxItems.length ? '<button class="tiny-action check-all icon-action" type="button" aria-label="Complete all unchecked tasks" title="Check all">✓✓</button>' : ''}<button class="tiny-action collapse-section icon-action" type="button" aria-label="${isCollapsed ? 'Show' : 'Hide'} ${escapeHtml(title)}" title="${isCollapsed ? 'Show' : 'Hide'}">${isCollapsed ? '⌄' : '⌃'}</button></div></div><div class="section-body"><div class="task-list routine-task-list"></div><div class="checkin-slot"></div></div></div>`;
       const routineList = wrapper.querySelector('.routine-task-list');
       const checkinSlot = wrapper.querySelector('.checkin-slot');
       if (!routineItems.length) routineList.innerHTML = '<div class="empty-state compact-empty">No routine items scheduled.</div>';
       else routineItems.forEach(item => {
-        const row = day.skippedItems?.[item.id] ? buildSkippedRow(item) : buildTaskRow(item, day.entries?.[item.id]);
-        if (!day.skippedItems?.[item.id]) decorateRoutineRow(row, item);
-        routineList.appendChild(row);
+        routineList.appendChild(buildTaskRow(item, day.entries?.[item.id]));
       });
       if (checkinItems.length) {
         const panel = document.createElement('div');
-        panel.className = 'checkin-panel';
+        panel.className = `checkin-panel ${section}-checkin-panel`;
         panel.innerHTML = `<div class="checkin-heading"><span>${escapeHtml(title)} check-in</span><small>${checkinItems.filter(item => entryIsLogged(item, day.entries?.[item.id])).length}/${checkinItems.length} logged</small></div><div class="checkin-list"></div>`;
         const list = panel.querySelector('.checkin-list');
-        checkinItems.forEach(item => list.appendChild(day.skippedItems?.[item.id] ? buildSkippedRow(item) : buildCheckinRow(item, day.entries?.[item.id])));
+        checkinItems.forEach(item => list.appendChild(buildCheckinRow(item, day.entries?.[item.id])));
         checkinSlot.appendChild(panel);
       }
       wrapper.querySelector('.collapse-section').addEventListener('click', () => { collapsedSections.has(section) ? collapsedSections.delete(section) : collapsedSections.add(section); renderToday(); });
       wrapper.querySelector('.check-all')?.addEventListener('click', () => completeSectionCheckboxes(section));
-      els.routineSections.appendChild(wrapper);
+      (section === 'morning' ? els.morningRoutineSection : els.laterRoutineSections).appendChild(wrapper);
     });
-  }
-
-  function decorateRoutineRow(row, item) {
-    const utility = document.createElement('div');
-    utility.className = 'task-utility';
-    const isCompactCheckboxRow = Boolean(row.querySelector(':scope > label.task-main > .check-control'));
-    if (isCompactCheckboxRow) row.classList.add('compact-checkbox-row');
-    utility.innerHTML = `<button class="skip-item" type="button" aria-label="Skip ${escapeHtml(item.name)} for today" title="Skip this task for today">Skip</button>`;
-    utility.querySelector('button').addEventListener('click', () => skipItemToday(item));
-    row.appendChild(utility);
-  }
-
-  function buildSkippedRow(item) {
-    const row = document.createElement('div');
-    row.className = 'task-row skipped';
-    row.innerHTML = `<div class="task-main"><span class="skip-mark">↷</span><span class="task-name">${escapeHtml(item.name)}<span class="task-meta">Skipped for this day · does not lower completion</span></span><button class="small-button unskip-item" type="button">Undo skip</button></div>`;
-    row.querySelector('.unskip-item').addEventListener('click', () => unskipItemToday(item));
-    return row;
-  }
-
-  function skipItemToday(item) {
-    const key = dateKey(selectedDate), day = ensureDay(key), previous = Boolean(day.skippedItems[item.id]);
-    day.skippedItems[item.id] = true;
-    pushUndo(`Skip ${item.name}`, () => { const target = ensureDay(key); if (previous) target.skippedItems[item.id] = true; else delete target.skippedItems[item.id]; saveState(); renderToday(); renderHistory(); });
-    saveState(); renderToday(); renderHistory(); showToast(`${item.name} skipped today`);
-  }
-
-  function unskipItemToday(item) {
-    const key = dateKey(selectedDate), day = ensureDay(key);
-    delete day.skippedItems[item.id]; saveState(); renderToday(); renderHistory(); showToast('Skip removed');
   }
 
   function completeSectionCheckboxes(section) {
     const key = dateKey(selectedDate), day = ensureDay(key), changed = [];
-    scheduledItemsForDate(selectedDate).filter(item => item.section === section && item.type === 'checkbox' && !day.skippedItems?.[item.id]).forEach(item => {
+    scheduledItemsForDate(selectedDate).filter(item => item.section === section && item.type === 'checkbox').forEach(item => {
       if (day.entries[item.id] !== true) { changed.push([item.id, day.entries[item.id]]); day.entries[item.id] = true; }
     });
     if (!changed.length) return;
@@ -2375,8 +2348,10 @@
     saveState(); renderToday(); renderHistory(); showToast('Checkboxes completed');
   }
 
-  function metaForItem(item) {
-    const bits = [item.optional ? 'Optional' : 'Required', frequencyLabel(item)];
+  function metaForItem(item, options = {}) {
+    const bits = [];
+    if (options.showRequirement !== false) bits.push(item.optional ? 'Optional' : 'Required');
+    if (options.showFrequency !== false) bits.push(frequencyLabel(item));
     if (hasTarget(item)) bits.push(`Target ${item.target}${item.unit ? ` ${item.unit}` : ''}`);
     const timing = timeWindowStatus(item, selectedDate);
     if (timing.label) bits.push(timing.label);
@@ -2390,18 +2365,22 @@
     if (item.type === 'medication') return buildMedicationRow(row, item, value);
     if (item.type === 'memory') return buildMemoryRow(row, item, value);
     if (item.type === 'checkbox') {
-      row.innerHTML = `<label class="task-main"><input class="check-control" type="checkbox" ${value === true ? 'checked' : ''}/><span class="task-name">${escapeHtml(item.name)}<span class="task-meta">${escapeHtml(metaForItem(item))}</span></span></label>`;
+      row.classList.add('compact-checkbox-row');
+      const detail = metaForItem(item, { showRequirement: false, showFrequency: false });
+      row.innerHTML = `<label class="task-main"><input class="check-control" type="checkbox" ${value === true ? 'checked' : ''}/><span class="task-name">${escapeHtml(item.name)}${detail ? `<span class="task-meta">${escapeHtml(detail)}</span>` : ''}</span></label>`;
       row.querySelector('input').addEventListener('change', event => saveEntry(item, event.target.checked));
       return row;
     }
-    row.innerHTML = `<div class="task-main"><span class="task-name">${escapeHtml(item.name)}<span class="task-meta">${escapeHtml(metaForItem(item))}</span></span></div><div class="task-extra"></div>`;
+    const isWater = item.type === 'number' && (item.id === 'day-water' || /water/i.test(item.name));
+    if (isWater) row.classList.add('water-task-row');
+    row.innerHTML = `<div class="task-main"><span class="task-name">${escapeHtml(item.name)}${isWater ? '' : `<span class="task-meta">${escapeHtml(metaForItem(item))}</span>`}</span></div><div class="task-extra"></div>`;
     buildEntryControl(row.querySelector('.task-extra'), item, value, false);
     return row;
   }
 
   function buildCheckinRow(item, value) {
     const row = document.createElement('div');
-    row.className = `checkin-row${entryIsLogged(item, value) ? ' logged' : ''}`;
+    row.className = `checkin-row${item.type === 'scale' ? ' scale-checkin-row' : ''}${entryIsLogged(item, value) ? ' logged' : ''}`;
     row.innerHTML = `<div class="checkin-question"><strong>${escapeHtml(item.name)}</strong>${item.optional ? '' : '<span class="required-badge">Required</span>'}</div><div class="checkin-control"></div>`;
     buildEntryControl(row.querySelector('.checkin-control'), item, value, true);
     return row;
@@ -2416,8 +2395,17 @@
       container.innerHTML = `<textarea class="task-input" rows="${rows}" placeholder="${escapeHtml(placeholder)}">${escapeHtml(value || '')}</textarea>`;
       container.querySelector('textarea').addEventListener('input', debounce(event => saveEntry(item, event.target.value, false), 250));
     } else if (item.type === 'number') {
-      container.innerHTML = `<div class="number-entry"><input class="task-input inline-number" type="number" step="any" inputmode="decimal" value="${escapeHtml(value ?? '')}" placeholder="0"/><span>${escapeHtml(item.unit || '')}</span>${hasTarget(item) ? `<small>/ ${escapeHtml(item.target)} ${escapeHtml(item.unit || '')}</small>` : ''}</div>`;
-      container.querySelector('input').addEventListener('change', event => saveEntry(item, event.target.value));
+      const isWater = item.id === 'day-water' || /water/i.test(item.name);
+      if (isWater) {
+        const current = Math.max(0, Number(value) || 0);
+        container.innerHTML = `<div class="number-entry water-stepper"><button class="number-step" type="button" data-delta="-1" aria-label="Decrease ${escapeHtml(item.name)}">−</button><label><input class="task-input inline-number" type="number" min="0" step="1" inputmode="numeric" value="${escapeHtml(current)}" aria-label="${escapeHtml(item.name)} amount"/><span>${escapeHtml(item.unit || '')}</span></label><button class="number-step" type="button" data-delta="1" aria-label="Increase ${escapeHtml(item.name)}">+</button>${hasTarget(item) ? `<small>${escapeHtml(current)} of ${escapeHtml(item.target)} ${escapeHtml(item.unit || '')}</small>` : ''}</div>`;
+        const input = container.querySelector('input');
+        input.addEventListener('change', event => saveEntry(item, Math.max(0, Number(event.target.value) || 0)));
+        container.querySelectorAll('.number-step').forEach(button => button.addEventListener('click', () => saveEntry(item, Math.max(0, current + Number(button.dataset.delta)))));
+      } else {
+        container.innerHTML = `<div class="number-entry"><input class="task-input inline-number" type="number" step="any" inputmode="decimal" value="${escapeHtml(value ?? '')}" placeholder="0"/><span>${escapeHtml(item.unit || '')}</span>${hasTarget(item) ? `<small>/ ${escapeHtml(item.target)} ${escapeHtml(item.unit || '')}</small>` : ''}</div>`;
+        container.querySelector('input').addEventListener('change', event => saveEntry(item, event.target.value));
+      }
     } else if (item.type === 'time') {
       container.innerHTML = `<input class="task-input" type="time" value="${escapeHtml(value || '')}"/>`;
       container.querySelector('input').addEventListener('change', event => saveEntry(item, event.target.value));
@@ -2484,13 +2472,10 @@
     els.progressPercent.textContent = `${c.percent}%`;
     els.progressRing.style.setProperty('--p', c.percent);
     els.progressRing.setAttribute('aria-label', `${c.percent} percent complete`);
-    els.statCompleted.textContent = `${c.completed}/${c.total}`;
-    els.statOptional.textContent = `${c.optionalLogged}/${c.optionalTotal}`;
-    els.statStreak.textContent = calculateStreak();
-    const latestMood = getLatestMood(day); els.statMood.textContent = latestMood === null ? '—' : formatNumber(latestMood);
-    const completionStatus = c.total ? `${c.completed} of ${c.total} required complete.` : 'No required routines scheduled.';
-    const encouragement = c.percent === 100 ? 'Day complete. Nicely done.' : c.percent >= Number(state.settings.streakThreshold || 80) ? 'Strong day. Keep closing it out.' : c.percent >= 40 ? 'Good progress. Keep moving.' : 'Start deliberately.';
-    els.heroStatus.textContent = c.excused ? `${dayModeLabel(day.mode)} · this day is excused from routine analytics.` : `${completionStatus} ${encouragement}`;
+    if (els.statCompleted) els.statCompleted.textContent = `${c.completed}/${c.total}`;
+    if (els.statOptional) els.statOptional.textContent = `${c.optionalLogged}/${c.optionalTotal}`;
+    if (els.statStreak) els.statStreak.textContent = calculateStreak();
+    const latestMood = getLatestMood(day); if (els.statMood) els.statMood.textContent = latestMood === null ? '—' : formatNumber(latestMood);
     updateAppBadge();
   }
 
@@ -3199,7 +3184,9 @@
     const key = dateKey(selectedDate), day = ensureDay(key), previous = day[field];
     if (value) day[field] = value; else delete day[field];
     pushUndo('Update actual time', () => { const target = ensureDay(key); if (previous) target[field] = previous; else delete target[field]; saveState(); renderToday(); renderHistory(); });
-    saveState(); renderHistory(); showToast(value ? 'Actual time saved' : 'Actual time cleared');
+    saveState();
+    if (day.actualWakeTime && day.actualBedTime) actualTimesExpanded = false;
+    renderToday(); renderHistory(); showToast(value ? 'Actual time saved' : 'Actual time cleared');
   }
 
   function currentTimeValue() {
@@ -3247,19 +3234,21 @@
   }
 
   function buildMedicationRow(row, item, value) {
-    const taken = entryIsLogged(item, value), time = medicationTime(value), dose = value?.dose ?? item.medicationDose ?? '', note = value?.note ?? '';
+    const taken = entryIsLogged(item, value), time = medicationTime(value), dose = value?.dose ?? item.medicationDose ?? '';
+    const timing = metaForItem(item, { showRequirement: false, showFrequency: false });
+    const detail = taken ? `${time ? `Taken ${formatTime(time)}` : 'Taken · time not logged'}${dose ? ` · ${escapeHtml(dose)}` : ''}` : timing;
+    row.classList.add('medication-row');
     row.classList.toggle('done', taken);
-    row.innerHTML = `<div class="task-main medication-main"><span class="medication-icon" aria-hidden="true">Rx</span><span class="task-name">${escapeHtml(item.name)}<span class="task-meta">${escapeHtml(metaForItem(item))}${taken ? ` · ${time ? `Taken ${formatTime(time)}` : 'Taken · time not logged'}${dose ? ` · ${escapeHtml(dose)}` : ''}` : ''}</span></span>${taken ? '<span class="completion-badge">✓ Taken</span>' : ''}</div><div class="medication-actions"></div>`;
+    row.innerHTML = `<div class="task-main medication-main"><span class="medication-icon" aria-hidden="true">Rx</span><span class="task-name">${escapeHtml(item.name)}${detail ? `<span class="task-meta">${detail}</span>` : ''}</span>${taken ? '<span class="completion-badge">✓ Taken</span>' : ''}</div><div class="medication-actions"></div>`;
     const actions = row.querySelector('.medication-actions');
     if (!taken) {
-      actions.innerHTML = `<button class="primary-button medication-now" type="button">Taken now</button><button class="small-button medication-manual" type="button">Add time</button>`;
+      actions.innerHTML = `<button class="primary-button medication-now" type="button">Now</button><button class="small-button medication-manual" type="button">Time</button>`;
       actions.querySelector('.medication-now').addEventListener('click', () => logMedicationNow(item));
       actions.querySelector('.medication-manual').addEventListener('click', () => saveMedicationTime(item, currentTimeValue(), true));
     } else {
-      actions.innerHTML = `<div class="medication-detail-grid"><label class="med-time-edit"><span>Taken at</span><input class="task-input med-time-input" type="time" value="${escapeHtml(time)}" /></label><label class="med-time-edit"><span>Dose</span><input class="task-input med-dose-input" type="text" maxlength="40" value="${escapeHtml(dose)}" placeholder="optional" /></label></div><label class="med-note-edit"><span>Note</span><input class="task-input med-note-input" type="text" maxlength="160" value="${escapeHtml(note)}" placeholder="Optional note…" /></label><div class="medication-finished"><span class="already-logged">✓ Already logged</span><button class="small-button medication-clear" type="button">Clear</button></div>`;
+      actions.innerHTML = `<div class="medication-detail-grid"><label class="med-time-edit"><span>Taken at</span><input class="task-input med-time-input" type="time" value="${escapeHtml(time)}" /></label><label class="med-time-edit"><span>Dose</span><input class="task-input med-dose-input" type="text" maxlength="40" value="${escapeHtml(dose)}" /></label></div><div class="medication-finished"><span class="already-logged">✓ Already logged</span><button class="small-button medication-clear" type="button">Clear</button></div>`;
       actions.querySelector('.med-time-input').addEventListener('change', event => saveMedicationTime(item, event.target.value, true));
       actions.querySelector('.med-dose-input').addEventListener('change', event => saveMedicationDetail(item, 'dose', event.target.value));
-      actions.querySelector('.med-note-input').addEventListener('change', event => saveMedicationDetail(item, 'note', event.target.value));
       actions.querySelector('.medication-clear').addEventListener('click', () => clearMedication(item));
     }
     return row;
@@ -3334,16 +3323,17 @@
 
   function buildMemoryRow(row, item, value) {
     const entry = memoryEntryForToday(item, value);
+    const detail = metaForItem(item, { showRequirement: false, showFrequency: false });
     row.classList.add('memory-routine-row');
     if (!entry) {
-      row.innerHTML = `<div class="task-main"><span class="task-name">${escapeHtml(item.name)}<span class="task-meta">${escapeHtml(metaForItem(item))}</span></span></div><div class="memory-empty-inline"><span>No saved ${item.memoryCategory && item.memoryCategory !== 'any' ? escapeHtml(item.memoryCategory) + 's' : 'memories'} yet.</span><button class="primary-button" type="button">+ Remember something</button></div>`;
+      row.innerHTML = `<div class="task-main"><span class="task-name">${escapeHtml(item.name)}${detail ? `<span class="task-meta">${escapeHtml(detail)}</span>` : ''}</span></div><div class="memory-empty-inline"><span>No saved ${item.memoryCategory && item.memoryCategory !== 'any' ? escapeHtml(item.memoryCategory) + 's' : 'memories'} yet.</span><button class="primary-button" type="button">+ Remember something</button></div>`;
       row.querySelector('button').addEventListener('click', () => openMemoryDialog(item.memoryCategory === 'any' ? 'blessing' : item.memoryCategory));
       return row;
     }
     const memory = state.memories.find(candidate => candidate.id === entry.memoryId);
     if (!memory) return row;
     row.classList.toggle('done', Boolean(entry.reflected));
-    row.innerHTML = `<div class="memory-routine-head"><div><span class="memory-category">${escapeHtml(memoryCategoryLabel(memory.category))}</span><strong>${escapeHtml(item.name)}</strong></div><span class="task-meta">${escapeHtml(metaForItem(item))}</span></div><blockquote>${escapeHtml(memory.text)}</blockquote><div class="memory-routine-meta">${escapeHtml(formatMemoryDate(memory.createdAt))}</div><div class="memory-routine-actions"><button class="small-button another-memory" type="button">Another one ↻</button><button class="${entry.reflected ? 'secondary-button' : 'primary-button'} reflect-memory" type="button">${entry.reflected ? 'Reflected ✓' : 'I reflected on this'}</button></div>`;
+    row.innerHTML = `<div class="memory-routine-head"><div><span class="memory-category">${escapeHtml(memoryCategoryLabel(memory.category))}</span><strong>${escapeHtml(item.name)}</strong></div>${detail ? `<span class="task-meta">${escapeHtml(detail)}</span>` : ''}</div><blockquote>${escapeHtml(memory.text)}</blockquote><div class="memory-routine-meta">${escapeHtml(formatMemoryDate(memory.createdAt))}</div><div class="memory-routine-actions"><button class="small-button another-memory" type="button">Another one ↻</button><button class="${entry.reflected ? 'secondary-button' : 'primary-button'} reflect-memory" type="button">${entry.reflected ? 'Reflected ✓' : 'I reflected on this'}</button></div>`;
     row.querySelector('.another-memory').addEventListener('click', () => rotateMemory(item, entry.memoryId));
     row.querySelector('.reflect-memory').addEventListener('click', () => toggleMemoryReflected(item));
     return row;
@@ -3385,6 +3375,7 @@
   }
 
   function renderMemoryPreview() {
+    if (!els.memoryTodayPreview) return;
     const memories = state.memories.filter(memory => !memory.archived).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     if (!memories.length) {
       els.memoryTodayPreview.innerHTML = '<span class="muted">Capture small blessings, moments, prayers, or thoughts so the app can bring them back later.</span>';
@@ -3563,8 +3554,10 @@
     const timing = timeWindowStatus(item, selectedDate);
     const templateIcon = ({ bible: '📖', website: '↗', shortcut: '⚡', phone: '☎', text: '💬', email: '✉', maps: '⌖', internal: '◎' })[item.linkedTemplate] || '↗';
     const next = value?.nextReference ? `Next: ${value.nextReference}` : '';
+    const detail = metaForItem(item, { showRequirement: false, showFrequency: false });
     row.classList.toggle('done', progress.completed);
-    row.innerHTML = `<div class="linked-main"><span class="linked-icon" aria-hidden="true">${templateIcon}</span><span class="task-name">${escapeHtml(item.name)}<span class="task-meta">${escapeHtml(metaForItem(item))}${next ? ` · ${escapeHtml(next)}` : ''}</span></span>${timing.status ? `<span class="due-pill ${timing.status}">${escapeHtml(timing.shortLabel)}</span>` : ''}</div><div class="linked-progress"><div class="linked-progress-copy"><strong>${escapeHtml(progress.label)}</strong><span>${progress.completed ? 'Complete' : item.linkedTemplate === 'bible' ? 'Reading progress' : 'Action status'}</span></div><div class="linked-progress-track"><span style="width:${Math.min(100, Math.round(progress.current / Math.max(1, progress.total) * 100))}%"></span></div></div><div class="linked-actions"><button class="primary-button open-linked-button" type="button">${escapeHtml(item.linkedButtonLabel || (item.linkedTemplate === 'bible' ? 'Continue reading' : 'Open'))}</button><button class="secondary-button manual-linked-button" type="button">${progress.completed ? 'Mark incomplete' : 'Mark complete'}</button>${item.linkedTemplate === 'bible' ? '<button class="small-button sync-linked-button" type="button">Sync</button>' : ''}</div>`;
+    const meta = [detail, next].filter(Boolean).join(' · ');
+    row.innerHTML = `<div class="linked-main"><span class="linked-icon" aria-hidden="true">${templateIcon}</span><span class="task-name">${escapeHtml(item.name)}${meta ? `<span class="task-meta">${escapeHtml(meta)}</span>` : ''}</span>${timing.status ? `<span class="due-pill ${timing.status}">${escapeHtml(timing.shortLabel)}</span>` : ''}</div><div class="linked-progress"><div class="linked-progress-copy"><strong>${escapeHtml(progress.label)}</strong><span>${progress.completed ? 'Complete' : item.linkedTemplate === 'bible' ? 'Reading progress' : 'Action status'}</span></div><div class="linked-progress-track"><span style="width:${Math.min(100, Math.round(progress.current / Math.max(1, progress.total) * 100))}%"></span></div></div><div class="linked-actions compact-linked-actions"><button class="primary-button open-linked-button" type="button">${escapeHtml(item.linkedButtonLabel || (item.linkedTemplate === 'bible' ? 'Continue reading' : 'Open'))}</button><details class="linked-more-actions"><summary aria-label="More actions" title="More actions">•••</summary><div><button class="secondary-button manual-linked-button" type="button">${progress.completed ? 'Mark incomplete' : 'Mark complete'}</button>${item.linkedTemplate === 'bible' ? '<button class="small-button sync-linked-button" type="button">Sync</button>' : ''}</div></details></div>`;
     row.querySelector('.open-linked-button').addEventListener('click', () => openLinkedAction(item));
     row.querySelector('.manual-linked-button').addEventListener('click', () => saveEntry(item, progress.completed ? { completed: false, progress: 0, total: progress.total, source: 'manual' } : { completed: true, progress: progress.total, completedCount: progress.total, total: progress.total, completedAt: new Date().toISOString(), source: 'manual' }));
     row.querySelector('.sync-linked-button')?.addEventListener('click', () => { syncLinkedIntegrations(true); renderAll(); });
@@ -3747,8 +3740,8 @@
     saveState(); renderToday(); renderHistory(); showToast(mode === 'normal' ? 'Normal scoring restored' : `${dayModeLabel(mode)} set as excused`);
   }
 
-  function pushUndo(label, action) { undoAction = { label, action }; if (els.undoButton) { els.undoButton.disabled = false; els.undoButton.textContent = `Undo`; els.undoButton.title = label; } }
-  function performUndo() { if (!undoAction) return; const action = undoAction.action; undoAction = null; action(); if (els.undoButton) { els.undoButton.disabled = true; els.undoButton.textContent = 'Undo'; } showToast('Last action undone'); }
+  function pushUndo(label, action) { undoAction = { label, action }; if (els.undoButton) { els.undoButton.disabled = false; els.undoButton.textContent = '↶'; els.undoButton.title = label; els.undoButton.setAttribute('aria-label', `Undo ${label}`); } }
+  function performUndo() { if (!undoAction) return; const action = undoAction.action; undoAction = null; action(); if (els.undoButton) { els.undoButton.disabled = true; els.undoButton.textContent = '↶'; els.undoButton.title = 'Undo'; els.undoButton.setAttribute('aria-label', 'Undo last change'); } showToast('Last action undone'); }
 
   function currentWeekKey() { return dateKey(startOfCurrentWeek()); }
   function nextWeekKey() { return dateKey(shiftDate(startOfCurrentWeek(), 7)); }
@@ -3922,7 +3915,7 @@
     dates.forEach(date => {
       if (dayIsExcused(date)) return;
       const day = state.days[dateKey(date)] || { entries: {}, skippedItems: {} };
-      scheduledItemsForDate(date).filter(item => item.type === 'medication' && !day.skippedItems?.[item.id]).forEach(item => {
+      scheduledItemsForDate(date).filter(item => item.type === 'medication').forEach(item => {
         const value = day.entries?.[item.id];
         records.push({ date, item, value, taken: entryIsLogged(item, value), time: medicationTime(value) });
       });

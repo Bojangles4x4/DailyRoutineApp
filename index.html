@@ -55,28 +55,17 @@
           <div class="hero-copy">
             <p class="hero-kicker" id="heroGreeting">Good morning</p>
             <h2 id="heroDate">Today</h2>
-            <div class="hero-targets">
-              <span><b id="wakeTimeDisplay">6:00 AM</b> wake</span>
-              <span><b id="bedTimeDisplay">10:30 PM</b> bed</span>
-            </div>
-            <p class="hero-status" id="heroStatus">Start deliberately.</p>
             <p class="week-focus-banner" id="weekFocusBanner" hidden></p>
           </div>
           <div class="progress-ring" id="progressRing" aria-label="0 percent complete"><span id="progressPercent">0%</span></div>
         </section>
 
         <section class="card foundation-card" aria-label="Today's foundation">
-          <div class="foundation-mark" aria-hidden="true">100%</div>
           <div>
             <p class="eyebrow">Today’s foundation</p>
-            <h2>You are loved, accepted, adopted, and forgiven because of Jesus.</h2>
-            <p>I do these because of what Christ has done for me—not to earn what He has already given.</p>
+            <p class="foundation-copy">Remember that your worth is not in what you do, but in what Christ did for you. Because of Him, you can do these tasks not to earn merit but to live out a life merited by grace. For it is from His fullness you have received grace upon grace.</p>
           </div>
-        </section>
-
-        <section id="godMomentReminder" class="card god-moment-reminder" hidden>
-          <div><p class="eyebrow">Remember this God Moment…</p><blockquote id="godMomentReminderText"></blockquote><small id="godMomentReminderDate"></small></div>
-          <button id="openGodMomentsButton" class="small-button" type="button">Open God Moments</button>
+          <div class="foundation-mark" aria-label="Foundation complete">100%</div>
         </section>
 
         <section id="backupReminder" class="card backup-reminder" hidden>
@@ -87,49 +76,46 @@
         <div class="date-nav date-nav-v15" aria-label="Choose date">
           <button id="prevDay" class="ghost-button" type="button" aria-label="Previous day">‹</button>
           <button id="selectedDateButton" class="date-button" type="button" aria-label="Return to today"></button>
+          <select id="dayModeInput" aria-label="How this day should count"><option value="normal">Normal day</option><option value="sick">Sick day</option><option value="travel">Travel day</option><option value="vacation">Vacation</option><option value="rest">Planned rest</option></select>
+          <button id="undoButton" class="ghost-button undo-button" type="button" disabled aria-label="Undo last change" title="Undo">↶</button>
           <label class="calendar-button" aria-label="Jump to a date">📅<input id="datePickerInput" type="date" /></label>
           <button id="nextDay" class="ghost-button" type="button" aria-label="Next day">›</button>
         </div>
 
-        <section class="card day-mode-card">
-          <div class="day-mode-copy"><span class="eyebrow">Flexibility</span><strong>How should this day count?</strong></div>
-          <select id="dayModeInput" aria-label="Day mode"><option value="normal">Normal day</option><option value="sick">Sick day</option><option value="travel">Travel day</option><option value="vacation">Vacation</option><option value="rest">Planned rest</option></select>
-          <button id="undoButton" class="small-button" type="button" disabled>Undo</button>
-        </section>
-
         <section class="card actual-time-card">
-          <div class="section-heading"><div><p class="eyebrow">Timing</p><h2>Actual sleep times</h2></div><span class="section-progress">for this day</span></div>
-          <div class="actual-time-grid compact-time-grid">
-            <div class="actual-time-field compact-time-field"><label for="actualWakeInput">Woke up</label><div><input id="actualWakeInput" type="time" /><button id="wakeNowButton" class="small-button" type="button">Now</button></div></div>
-            <div class="actual-time-field compact-time-field"><label for="actualBedInput">Went to bed</label><div><input id="actualBedInput" type="time" /><button id="bedNowButton" class="small-button" type="button">Now</button></div></div>
+          <div class="section-heading actual-time-heading"><div><p class="eyebrow">Timing</p><h2>Actual sleep times</h2></div><div class="actual-time-summary"><span id="actualTimeSummary">Not recorded</span><button id="toggleActualTimeButton" class="small-button" type="button">Enter times</button></div></div>
+          <div id="actualTimeDetails" class="actual-time-details">
+            <div class="actual-time-grid compact-time-grid">
+              <div class="actual-time-field compact-time-field"><label for="actualWakeInput">Woke up</label><div><input id="actualWakeInput" type="time" /><button id="wakeNowButton" class="small-button" type="button">Now</button></div></div>
+              <div class="actual-time-field compact-time-field"><label for="actualBedInput">Went to bed</label><div><input id="actualBedInput" type="time" /><button id="bedNowButton" class="small-button" type="button">Now</button></div></div>
+            </div>
+            <p class="muted micro-copy">Last night’s bedtime belongs to yesterday; this morning’s wake time belongs here. Enter either when Health has no recording.</p>
           </div>
-          <p class="muted micro-copy">Each time belongs to the date it happened. Last night’s bedtime is on yesterday’s page; this morning’s wake time is here. Enter times manually whenever Health has no recording.</p>
           <div id="healthSleepSuggestion" class="health-sleep-suggestion" hidden>
             <div><strong>Apple Health suggestion</strong><span id="healthSleepSuggestionText"></span></div>
             <button id="applyHealthSleepButton" class="small-button" type="button">Review times</button>
           </div>
         </section>
 
-        <section class="card capture-card">
-          <div class="section-heading"><div><p class="eyebrow">Remember</p><h2>Capture a small thing</h2></div><div class="section-tools"><button id="quickNoteButton" class="secondary-button" type="button">+ Note</button><button id="quickMemoryButton" class="primary-button" type="button">+ Remember</button></div></div>
-          <div id="onThisDayMemory" class="on-this-day" hidden></div>
-          <div id="memoryTodayPreview" class="memory-preview"></div>
-        </section>
+        <div id="routineSections">
+          <div id="morningRoutineSection"></div>
+          <div id="postMorningMoments">
+            <section id="godMomentReminder" class="card god-moment-reminder" hidden>
+              <details class="god-moment-details">
+                <summary><span class="eyebrow">God Moment</span><span id="godMomentReminderText" class="god-moment-quote"></span></summary>
+                <small id="godMomentReminderDate"></small>
+              </details>
+              <button id="openGodMomentsButton" class="small-button" type="button">All moments</button>
+            </section>
 
-        <div id="routineSections"></div>
+            <section class="card capture-card">
+              <div class="section-heading"><div><p class="eyebrow">Remember</p><h2>Capture a small thing</h2></div><div class="section-tools"><button id="quickNoteButton" class="secondary-button" type="button">+ Note</button><button id="quickMemoryButton" class="primary-button" type="button">+ Remember</button></div></div>
+              <div id="onThisDayMemory" class="on-this-day" hidden></div>
+            </section>
+          </div>
+          <div id="laterRoutineSections"></div>
+        </div>
 
-        <section class="card summary-card">
-          <div class="section-heading">
-            <div><p class="eyebrow">Daily snapshot</p><h2>At a glance</h2></div>
-            <button id="copySummaryButton" class="small-button" type="button">Copy</button>
-          </div>
-          <div class="stats-grid">
-            <div><strong id="statCompleted">0/0</strong><span>Required</span></div>
-            <div><strong id="statOptional">0</strong><span>Optional logged</span></div>
-            <div><strong id="statStreak">0</strong><span>Current streak</span></div>
-            <div><strong id="statMood">—</strong><span>Latest mood</span></div>
-          </div>
-        </section>
       </section>
 
       <section id="notesView" class="view" aria-labelledby="pageTitle">
@@ -380,7 +366,7 @@
         </section>
 
         <section class="card iphone-widget-card" id="iphoneWidgetCard" data-setup-category="health" hidden>
-          <div class="section-heading"><div><p class="eyebrow">Home Screen</p><h2>Today’s Rhythm widget</h2></div><span class="native-badge">Build 19</span></div>
+          <div class="section-heading"><div><p class="eyebrow">Home Screen</p><h2>Today’s Rhythm widget</h2></div><span class="native-badge">Build 20</span></div>
           <p class="muted setup-help">See your Morning Foundation and today’s progress without opening the app. The large widget can also complete eligible, non-sensitive checkbox routines.</p>
           <div class="widget-size-options" aria-label="Available iPhone widget sizes">
             <div><span class="widget-size-shape large" aria-hidden="true"></span><strong>Large</strong><small>Progress, earned time, and up to three routine actions</small></div>
@@ -388,7 +374,7 @@
             <div><span class="widget-size-shape small" aria-hidden="true"></span><strong>Small</strong><small>Foundation and progress at a glance</small></div>
           </div>
           <details class="widget-install-guide">
-            <summary>How to add it after installing Build 19</summary>
+            <summary>How to add it after installing Build 20</summary>
             <ol>
               <li>Touch and hold an empty area of your iPhone Home Screen.</li>
               <li>Tap <b>Edit</b>, then <b>Add Widget</b>.</li>
@@ -577,7 +563,7 @@
             <a href="privacy.html">Privacy Policy</a>
             <a href="support.html">Support</a>
           </div>
-          <p class="app-version">Daily Routine <b id="appVersion">v1.17.0</b></p>
+          <p class="app-version">Daily Routine <b id="appVersion">v1.18.0</b></p>
         </section>
 
 

@@ -1,6 +1,6 @@
 # App Store submission package
 
-This document records the planned TestFlight submission behavior for Daily Routine 1.17.0 (build 16). Family Controls distribution remains blocked until Apple assigns the required entitlement.
+This document records the planned TestFlight submission behavior for Daily Routine 1.18.0 (build 20). Apple has approved the Family Controls distribution entitlement for this app.
 
 ## URLs
 
@@ -51,7 +51,11 @@ Daily Routine is a personal organization tool and does not provide medical advic
 
 `routine,habits,planner,journal,prayer,reflection,checklist,wellness,private,watch`
 
-### Version 1.17.0 draft release notes
+### Version 1.18.0 draft release notes
+
+- Simplify Today with a compact foundation, routine headers, sleep summary, check-ins, and Water controls.
+- Remove Skip controls and keep routine completion focused on the tasks scheduled for the day.
+- Reorder God Moments and quick capture after the Morning routine and reduce repeated task metadata.
 
 - Add small routine rewards automatically to a daily time bank, with a configurable 60-minute default ceiling.
 - Spend banked rewards through 15-minute Earned Access allowances that count only actual foreground use.

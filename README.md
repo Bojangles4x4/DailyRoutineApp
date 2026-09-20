@@ -2,8 +2,12 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.17.0 development features
+## Version 1.18.0 development features
 
+- Build 20 redesigns Today around a compact foundation, focused routine rows, larger task targets, and less repeated metadata
+- Removes Skip from active routine scoring and reclaims that space for the actions used every day
+- Moves day type into the date toolbar, collapses completed sleep-time details, and removes the redundant Today snapshot
+- Adds compact Water controls, morning check-ins, God Moment resurfacing, capture actions, and linked Bible-reading actions
 - Build 19 Earned Access hardening: an independent midnight relock schedule, visible schedule health, and automatic schedule repair when the app becomes active
 - Compact five-minute foreground-usage checkpoints with notifications and an exact final relock checkpoint
 - Immediate Health, Earned Access, and widget snapshot refresh when returning to Daily Routine
