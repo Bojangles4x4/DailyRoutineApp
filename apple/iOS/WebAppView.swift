@@ -39,6 +39,7 @@ struct WebAppView: UIViewRepresentable {
         webView.scrollView.isDirectionalLockEnabled = true
         context.coordinator.webView = webView
         context.coordinator.connectWatchEvents()
+        context.coordinator.connectHealthEvents()
         context.coordinator.connectLifecycleEvents()
 
         guard let indexURL = Bundle.main.url(forResource: "index", withExtension: "html") else {
@@ -58,6 +59,7 @@ struct WebAppView: UIViewRepresentable {
         private var pendingWatchEvents: [WatchEvent] = []
         private var processedWatchEventIDs = Set<UUID>()
         private var didBecomeActiveObserver: NSObjectProtocol?
+        private var healthRefreshTask: Task<Void, Never>?
         weak var webView: WKWebView?
 
         init(model: AppModel) {
@@ -68,11 +70,30 @@ struct WebAppView: UIViewRepresentable {
             if let didBecomeActiveObserver {
                 NotificationCenter.default.removeObserver(didBecomeActiveObserver)
             }
+            healthRefreshTask?.cancel()
         }
 
         func connectWatchEvents() {
             model.watch.onEvent = { [weak self] event in
                 self?.receiveWatchEvent(event)
+            }
+        }
+
+        func connectHealthEvents() {
+            model.health.onStepRewardUpdate = { [weak self] in
+                self?.scheduleHealthRefresh()
+            }
+        }
+
+        private func scheduleHealthRefresh() {
+            guard UIApplication.shared.applicationState == .active else { return }
+            healthRefreshTask?.cancel()
+            healthRefreshTask = Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .seconds(1))
+                guard let self, !Task.isCancelled, self.isWebAppReady,
+                      let summary = try? await self.model.health.fetchSummary()
+                else { return }
+                self.emit(name: "health.summary", value: summary)
             }
         }
 

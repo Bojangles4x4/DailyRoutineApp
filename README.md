@@ -2,8 +2,12 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.18.0 development features
+## Version 1.19.0 development features
 
+- Build 21 refreshes visible Health and walking progress automatically when new step samples arrive while Daily Routine is open
+- Walking milestones now notify in five-minute earned-time increments, while selected-app usage continues to report five-minute remaining-time checkpoints
+- Adds a collapsed, privacy-safe reliability status for Health freshness, Screen Time protection, daily schedules, notifications, and widget syncing
+- Replaces the ambiguous double-check section control with a compact, clearly labeled All action
 - Build 20 redesigns Today around a compact foundation, focused routine rows, larger task targets, and less repeated metadata
 - Removes Skip from active routine scoring and reclaims that space for the actions used every day
 - Moves day type into the date toolbar, collapses completed sleep-time details, and removes the redundant Today snapshot
@@ -12,7 +16,7 @@ A mobile-first private routine and mood tracker designed to run as a Progressive
 - Compact five-minute foreground-usage checkpoints with notifications and an exact final relock checkpoint
 - Immediate Health, Earned Access, and widget snapshot refresh when returning to Daily Routine
 - Newly earned minutes remain safely banked while an allowance is active instead of extending it from an approximate remaining balance
-- Shorter Today checkbox rows that keep full-size task and Skip touch targets on one line
+- Shorter Today checkbox rows that keep full-size completion targets on one line
 - A privacy-minimized iPhone Home Screen widget in large, medium, and small sizes, with safe checkbox actions and an app-name-free aggregate Earned Access balance
 - A clearer native Setup area with separate cards for widgets, Health metrics, Earned Access, and Apple Watch
 - An automatic daily Earned Access bank: selected completed routines add five-minute credits without a separate claim

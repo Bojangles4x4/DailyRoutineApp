@@ -1,6 +1,6 @@
 # iPhone Home Screen widget
 
-Status: the widget was signed, installed through TestFlight Build 18, and confirmed to receive its private snapshot on a physical iPhone. Build 19 keeps the widget current when the app returns to the foreground. Interactive task completion, privacy redaction, and midnight rollover still need focused physical checks.
+Status: the widget was signed, installed through TestFlight Build 18, and confirmed to receive its private snapshot on a physical iPhone. Build 20 physical testing confirmed widget refresh and ordinary checkbox completion. Build 21 adds a privacy-safe visible sync timestamp to the Earned Access reliability status; locked-state redaction and midnight rollover remain focused regression checks.
 
 ## Supported sizes
 
@@ -36,6 +36,5 @@ The widget cannot complete Truth Before Tasks or Convictions, update medication,
 ## Remaining physical checks
 
 1. Verify locked-foundation behavior, privacy redaction, and the stale-snapshot fallback.
-2. Complete one ordinary checkbox from the widget and confirm exactly one completion in the app.
-3. Earn and use selected-app time, then confirm the widget shows the latest aggregate five-minute-checkpoint balance without showing app identities.
-4. Repeat around midnight or after a test time-zone change before expanding native actions.
+2. Earn and use selected-app time, then confirm the widget shows the latest aggregate five-minute-checkpoint balance without showing app identities.
+3. Repeat around midnight or after a test time-zone change before expanding native actions.

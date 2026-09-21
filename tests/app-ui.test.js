@@ -173,7 +173,8 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('.day-mode-card').count(), 0);
   assert.equal(await page.locator('.date-nav #dayModeInput').count(), 1);
   assert.equal(await page.locator('.summary-card').count(), 0);
-  assert.equal((await page.locator('#morningRoutineSection .check-all').textContent()).trim(), '✓✓');
+  assert.equal((await page.locator('#morningRoutineSection .check-all').textContent()).trim(), 'All');
+  assert.equal(await page.locator('#morningRoutineSection .check-all').getAttribute('aria-label'), 'Complete all unchecked tasks');
   assert.equal((await page.locator('#morningRoutineSection .collapse-section').textContent()).trim(), '⌃');
   assert.equal(await page.locator('#memoryTodayPreview').count(), 0);
   assert.equal(await page.locator('#todayView .linked-more-actions').count(), 1);
@@ -252,11 +253,14 @@ function localDateKey(date = new Date()) {
     } } }));
   });
   assert.match(await page.locator('#earnedAccessGateStatus').textContent(), /locked/i);
+  assert.equal((await page.locator('#earnedAccessScreenTimeStatus').textContent()).trim(), 'Apps are shielded');
+  assert.equal((await page.locator('#earnedAccessScheduleStatus').textContent()).trim(), 'Daily protection armed');
+  assert.equal((await page.locator('#earnedAccessNotificationStatus').textContent()).trim(), 'Allowed');
   if (process.env.DAILY_ROUTINE_SCREENSHOT_DIR) {
     await page.locator('#earnedAccessCard').scrollIntoViewIfNeeded();
     await page.locator('#earnedAccessCard').screenshot({ path: `${process.env.DAILY_ROUTINE_SCREENSHOT_DIR}/daily-routine-build16-earned-access.png` });
   }
-  await page.locator('.earned-access-settings-disclosure summary').click();
+  await page.getByText('Automation and daily limits', { exact: true }).click();
   assert.equal(await page.locator('#earnedAccessAutomaticUseInput').isChecked(), true);
   await page.locator('#earnedAccessAutomaticUseInput').uncheck();
   await page.locator('#appleWatchQuickActionInput').selectOption('routine:morning-meds');
@@ -282,8 +286,12 @@ function localDateKey(date = new Date()) {
 
   await page.evaluate(() => {
     window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'health.summary', value: { date: new Date().toISOString(), stepCount: 4820, sleepHours: 0, workoutCount: 0, sourceNames: ['Garmin Connect', 'Apple Watch'] } } }));
+    window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'routine.snapshot.saved', value: { revision: 42 } } }));
   });
   assert.match(await page.locator('#healthSourceDetail').textContent(), /Garmin Connect/);
+  assert.match(await page.locator('#earnedAccessHealthSyncStatus').textContent(), /Updated just now/);
+  assert.equal((await page.locator('#earnedAccessStepSampleStatus').textContent()).trim(), 'No sample today');
+  assert.match(await page.locator('#earnedAccessWidgetStatus').textContent(), /Synced just now · r42/);
   await page.locator('#earnedAccessLabelInput').fill('Reddit');
   await page.locator('#earnedAccessStepsInput').fill('1000');
   await page.locator('#earnedAccessMinutesInput').fill('20');

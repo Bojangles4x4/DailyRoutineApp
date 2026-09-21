@@ -7,7 +7,7 @@
   const EARNED_ACCESS_DEVICE_KEY = 'dailyRoutine.earnedAccess.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.18.0';
+  const APP_VERSION = '1.19.0';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const DEFAULT_BIBLE_APP_URL = 'https://bojangles4x4.github.io/Bible-Reading-Plan/';
@@ -71,6 +71,9 @@
   let reflectionReviewExpanded = false;
   let watchLastActionMessage = '';
   let latestHealthSummary = null;
+  let latestHealthSummaryReceivedAt = null;
+  let lastRoutineSnapshotSavedAt = null;
+  let lastRoutineSnapshotSavedRevision = null;
   let pendingEarnedAccessStart = false;
   let earnedAccessHealthCheckAttempts = 0;
   let earnedAccessHealthCheckTimer = null;
@@ -121,7 +124,7 @@
     privateSyncCard: $('privateSyncCard'), privateSyncBadge: $('privateSyncBadge'), privateSyncStatus: $('privateSyncStatus'), privateSyncDevice: $('privateSyncDevice'), privateSyncLastSync: $('privateSyncLastSync'), createSyncSnapshotButton: $('createSyncSnapshotButton'), privateSyncNowButton: $('privateSyncNowButton'), privateSyncSignIn: $('privateSyncSignIn'), privateSyncEmailInput: $('privateSyncEmailInput'), privateSyncPasswordInput: $('privateSyncPasswordInput'), privateSyncSendCodeButton: $('privateSyncSendCodeButton'), privateSyncVerifyButton: $('privateSyncVerifyButton'), privateSyncHelp: $('privateSyncHelp'), privateSyncAccount: $('privateSyncAccount'), privateSyncSignOutButton: $('privateSyncSignOutButton'), privateSyncDeleteCloudButton: $('privateSyncDeleteCloudButton'),
     connectionsCard: $('connectionsCard'), syncConnectionsButton: $('syncConnectionsButton'), bibleConnectionStatus: $('bibleConnectionStatus'), openBibleConnectionButton: $('openBibleConnectionButton'), bibleAppUrlInput: $('bibleAppUrlInput'), saveBibleConnectionButton: $('saveBibleConnectionButton'), testBibleConnectionButton: $('testBibleConnectionButton'), connectionTemplates: $('connectionTemplates'),
     appleNativeCard: $('appleNativeCard'), iphoneWidgetCard: $('iphoneWidgetCard'), appleWatchCard: $('appleWatchCard'), appleStepCount: $('appleStepCount'), appleSleepHours: $('appleSleepHours'), appleWorkoutCount: $('appleWorkoutCount'), appleHealthStatus: $('appleHealthStatus'), healthSourceSummary: $('healthSourceSummary'), healthSourceDetail: $('healthSourceDetail'), connectAppleHealthButton: $('connectAppleHealthButton'), refreshAppleHealthButton: $('refreshAppleHealthButton'), appleWatchStatus: $('appleWatchStatus'), appleStepsGoalInput: $('appleStepsGoalInput'), saveAppleStepsGoalButton: $('saveAppleStepsGoalButton'), appleWatchQuickActionInput: $('appleWatchQuickActionInput'),
-    earnedAccessCard: $('earnedAccessCard'), earnedAccessBadge: $('earnedAccessBadge'), earnedAccessNativeStatus: $('earnedAccessNativeStatus'), earnedAccessGateStatus: $('earnedAccessGateStatus'), earnedAccessGateDetail: $('earnedAccessGateDetail'), earnedAccessAvailableNow: $('earnedAccessAvailableNow'), earnedAccessEarnedToday: $('earnedAccessEarnedToday'), earnedAccessStepMetric: $('earnedAccessStepMetric'), openEarnedAccessControlsButton: $('openEarnedAccessControlsButton'), earnedAccessLabelInput: $('earnedAccessLabelInput'), earnedAccessTaskMinutesInput: $('earnedAccessTaskMinutesInput'), earnedAccessDailyLimitInput: $('earnedAccessDailyLimitInput'), earnedAccessAutomaticStepsInput: $('earnedAccessAutomaticStepsInput'), earnedAccessAutomaticUseInput: $('earnedAccessAutomaticUseInput'), earnedAccessStepsInput: $('earnedAccessStepsInput'), earnedAccessMinutesInput: $('earnedAccessMinutesInput'), earnedAccessModeInput: $('earnedAccessModeInput'), earnedAccessBankStatus: $('earnedAccessBankStatus'), earnedAccessBankDetail: $('earnedAccessBankDetail'), useEarnedAccessButton: $('useEarnedAccessButton'), earnedAccessStatus: $('earnedAccessStatus'), earnedAccessDetail: $('earnedAccessDetail'), earnedAccessProgressBar: $('earnedAccessProgressBar'), startEarnedAccessButton: $('startEarnedAccessButton'), checkEarnedAccessButton: $('checkEarnedAccessButton'), cancelEarnedAccessButton: $('cancelEarnedAccessButton'), earnedAccessMorningTasks: $('earnedAccessMorningTasks'), earnedAccessLaterTasks: $('earnedAccessLaterTasks'), earnedAccessMorningStatus: $('earnedAccessMorningStatus'), earnedAccessLaterStatus: $('earnedAccessLaterStatus'),
+    earnedAccessCard: $('earnedAccessCard'), earnedAccessBadge: $('earnedAccessBadge'), earnedAccessNativeStatus: $('earnedAccessNativeStatus'), earnedAccessGateStatus: $('earnedAccessGateStatus'), earnedAccessGateDetail: $('earnedAccessGateDetail'), earnedAccessAvailableNow: $('earnedAccessAvailableNow'), earnedAccessEarnedToday: $('earnedAccessEarnedToday'), earnedAccessStepMetric: $('earnedAccessStepMetric'), openEarnedAccessControlsButton: $('openEarnedAccessControlsButton'), earnedAccessLabelInput: $('earnedAccessLabelInput'), earnedAccessTaskMinutesInput: $('earnedAccessTaskMinutesInput'), earnedAccessDailyLimitInput: $('earnedAccessDailyLimitInput'), earnedAccessAutomaticStepsInput: $('earnedAccessAutomaticStepsInput'), earnedAccessAutomaticUseInput: $('earnedAccessAutomaticUseInput'), earnedAccessStepsInput: $('earnedAccessStepsInput'), earnedAccessMinutesInput: $('earnedAccessMinutesInput'), earnedAccessModeInput: $('earnedAccessModeInput'), earnedAccessBankStatus: $('earnedAccessBankStatus'), earnedAccessBankDetail: $('earnedAccessBankDetail'), useEarnedAccessButton: $('useEarnedAccessButton'), earnedAccessStatus: $('earnedAccessStatus'), earnedAccessDetail: $('earnedAccessDetail'), earnedAccessProgressBar: $('earnedAccessProgressBar'), startEarnedAccessButton: $('startEarnedAccessButton'), checkEarnedAccessButton: $('checkEarnedAccessButton'), cancelEarnedAccessButton: $('cancelEarnedAccessButton'), earnedAccessMorningTasks: $('earnedAccessMorningTasks'), earnedAccessLaterTasks: $('earnedAccessLaterTasks'), earnedAccessMorningStatus: $('earnedAccessMorningStatus'), earnedAccessLaterStatus: $('earnedAccessLaterStatus'), earnedAccessHealthSyncStatus: $('earnedAccessHealthSyncStatus'), earnedAccessStepSampleStatus: $('earnedAccessStepSampleStatus'), earnedAccessScreenTimeStatus: $('earnedAccessScreenTimeStatus'), earnedAccessScheduleStatus: $('earnedAccessScheduleStatus'), earnedAccessNotificationStatus: $('earnedAccessNotificationStatus'), earnedAccessWidgetStatus: $('earnedAccessWidgetStatus'),
     healthSleepSuggestion: $('healthSleepSuggestion'), healthSleepSuggestionText: $('healthSleepSuggestionText'), applyHealthSleepButton: $('applyHealthSleepButton'),
     linkedActionFields: $('linkedActionFields'), linkedTemplateInput: $('linkedTemplateInput'), linkedCompletionInput: $('linkedCompletionInput'), linkedUrlField: $('linkedUrlField'), linkedUrlInput: $('linkedUrlInput'), linkedInternalField: $('linkedInternalField'), linkedInternalTargetInput: $('linkedInternalTargetInput'), linkedButtonLabelInput: $('linkedButtonLabelInput'), timeWindowFields: $('timeWindowFields'), timeWindowStartInput: $('timeWindowStartInput'), timeWindowEndInput: $('timeWindowEndInput'),
     medicationProgressCard: $('medicationProgressCard'), weeklyReviewCard: $('weeklyReviewCard'), memoryBankCard: $('memoryBankCard'), dataBackupCard: $('dataBackupCard'),
@@ -742,6 +745,7 @@
         requestHealthSummary();
       } else if (detail.name === 'health.summary') {
         const value = detail.value || {};
+        latestHealthSummaryReceivedAt = new Date();
         latestHealthSummary = {
           date: value.date || new Date().toISOString(),
           stepCount: Math.max(0, Number(value.stepCount) || 0),
@@ -769,6 +773,10 @@
           accountabilityPreviewSignature = '';
           renderAccountabilityReport();
         }
+      } else if (detail.name === 'routine.snapshot.saved') {
+        lastRoutineSnapshotSavedAt = new Date();
+        lastRoutineSnapshotSavedRevision = Math.max(0, Number(detail.value?.revision) || 0);
+        renderEarnedAccessReliability();
       } else if (detail.name === 'watch.event') {
         handleWatchEvent(detail.value || {});
       } else if (detail.name === 'watch.context.updated') {
@@ -1233,6 +1241,36 @@
     showToast(award.minutes ? `${award.minutes} minutes added to today’s bank.` : 'Today’s app-time limit is already reached.');
   }
 
+  function renderEarnedAccessReliability() {
+    if (!els.earnedAccessHealthSyncStatus) return;
+    const healthConnected = Boolean(healthDeviceSettings().connected);
+    els.earnedAccessHealthSyncStatus.textContent = latestHealthSummaryReceivedAt
+      ? `Updated ${formatRelativeTime(latestHealthSummaryReceivedAt)}`
+      : healthConnected ? 'Waiting for refresh' : 'Health not connected';
+    const sampleDate = latestHealthSummary?.stepSampleEnd ? new Date(latestHealthSummary.stepSampleEnd) : null;
+    els.earnedAccessStepSampleStatus.textContent = sampleDate && !Number.isNaN(sampleDate.getTime())
+      ? `Received ${formatRelativeTime(sampleDate)}`
+      : latestHealthSummaryReceivedAt ? 'No sample today' : 'Not received';
+    els.earnedAccessScreenTimeStatus.textContent = !earnedAccessNativeState.available
+      ? 'Open the iPhone app'
+      : !earnedAccessNativeState.protectionEnabled
+      ? 'Protection is off'
+      : earnedAccessNativeState.allowanceActive
+      ? 'Allowance is active'
+      : earnedAccessNativeState.shielding ? 'Apps are shielded' : 'Ready';
+    els.earnedAccessScheduleStatus.textContent = !earnedAccessNativeState.available
+      ? 'Unavailable on web'
+      : earnedAccessNativeState.dailyResetScheduled && (!earnedAccessNativeState.morningGateEnabled || earnedAccessNativeState.morningGateScheduled)
+      ? 'Daily protection armed'
+      : 'Needs attention';
+    els.earnedAccessNotificationStatus.textContent = !earnedAccessNativeState.available
+      ? 'Unavailable on web'
+      : earnedAccessNativeState.notificationsAllowed ? 'Allowed' : 'Not allowed';
+    els.earnedAccessWidgetStatus.textContent = lastRoutineSnapshotSavedAt
+      ? `Synced ${formatRelativeTime(lastRoutineSnapshotSavedAt)} · r${lastRoutineSnapshotSavedRevision}`
+      : window.DailyRoutineNative?.postMessage ? 'Waiting to sync' : 'Available in iPhone app';
+  }
+
   function renderEarnedAccess() {
     if (!els.earnedAccessCard) return;
     let settings = creditCompletedEarnedTasks(earnedAccessDeviceSettings());
@@ -1384,6 +1422,7 @@
       els.earnedAccessGateDetail.textContent = 'Selected apps will open automatically when minutes are earned.';
       els.earnedAccessBadge.textContent = 'Ready';
     }
+    renderEarnedAccessReliability();
     publishRoutineSharedSnapshot();
   }
 
@@ -2317,7 +2356,7 @@
       const checkboxItems = routineItems.filter(item => item.type === 'checkbox' && !entryIsLogged(item, day.entries?.[item.id]));
       wrapper.className = `routine-section${isCollapsed ? ' collapsed' : ''}`;
       wrapper.dataset.routineSection = section;
-      wrapper.innerHTML = `<div class="card"><div class="section-heading routine-heading"><h2>${escapeHtml(title)}</h2><div class="section-tools"><span class="section-progress">${logged}/${required.length}</span>${checkboxItems.length ? '<button class="tiny-action check-all icon-action" type="button" aria-label="Complete all unchecked tasks" title="Check all">✓✓</button>' : ''}<button class="tiny-action collapse-section icon-action" type="button" aria-label="${isCollapsed ? 'Show' : 'Hide'} ${escapeHtml(title)}" title="${isCollapsed ? 'Show' : 'Hide'}">${isCollapsed ? '⌄' : '⌃'}</button></div></div><div class="section-body"><div class="task-list routine-task-list"></div><div class="checkin-slot"></div></div></div>`;
+      wrapper.innerHTML = `<div class="card"><div class="section-heading routine-heading"><h2>${escapeHtml(title)}</h2><div class="section-tools"><span class="section-progress">${logged}/${required.length}</span>${checkboxItems.length ? '<button class="tiny-action check-all section-all-action" type="button" aria-label="Complete all unchecked tasks" title="Complete all unchecked tasks">All</button>' : ''}<button class="tiny-action collapse-section icon-action" type="button" aria-label="${isCollapsed ? 'Show' : 'Hide'} ${escapeHtml(title)}" title="${isCollapsed ? 'Show' : 'Hide'}">${isCollapsed ? '⌄' : '⌃'}</button></div></div><div class="section-body"><div class="task-list routine-task-list"></div><div class="checkin-slot"></div></div></div>`;
       const routineList = wrapper.querySelector('.routine-task-list');
       const checkinSlot = wrapper.querySelector('.checkin-slot');
       if (!routineItems.length) routineList.innerHTML = '<div class="empty-state compact-empty">No routine items scheduled.</div>';

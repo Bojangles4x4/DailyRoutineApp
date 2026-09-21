@@ -38,6 +38,8 @@ final class HealthKitService {
     private let automationMilestoneKey = "dailyRoutine.health.stepRewards.notificationMilestone.v1"
     private var stepObserver: HKObserverQuery?
 
+    var onStepRewardUpdate: (() -> Void)?
+
     var isAvailable: Bool {
         HKHealthStore.isHealthDataAvailable()
     }
@@ -82,7 +84,7 @@ final class HealthKitService {
         guard enabled else {
             if let stepObserver { store.stop(stepObserver) }
             stepObserver = nil
-            if let stepType { store.disableBackgroundDelivery(for: stepType) { _, _ in } }
+            if let stepType { try? await store.disableBackgroundDelivery(for: stepType) }
             return
         }
         let authorization = await notificationCenter.notificationSettings().authorizationStatus
@@ -123,8 +125,9 @@ final class HealthKitService {
     private func processStepRewardUpdate(configuration: StepRewardConfiguration? = nil, now: Date = Date()) async {
         let configuration = configuration ?? loadStepRewardConfiguration()
         guard configuration.enabled, let steps = try? await fetchSteps(now: now) else { return }
+        onStepRewardUpdate?()
         let earned = min(configuration.maxMinutes, Int(floor((min(steps, Double(configuration.goalSteps)) / Double(configuration.goalSteps)) * Double(configuration.maxMinutes))))
-        let milestone = (earned / 15) * 15
+        let milestone = (earned / 5) * 5
         let day = Self.localDateKey(now)
         let savedDay = automationDefaults.string(forKey: automationDayKey) ?? ""
         let previousMilestone = savedDay == day ? automationDefaults.integer(forKey: automationMilestoneKey) : 0
@@ -132,14 +135,14 @@ final class HealthKitService {
             automationDefaults.set(day, forKey: automationDayKey)
             automationDefaults.set(0, forKey: automationMilestoneKey)
         }
-        guard milestone >= 15, milestone > previousMilestone else { return }
+        guard milestone >= 5, milestone > previousMilestone else { return }
         automationDefaults.set(milestone, forKey: automationMilestoneKey)
 
         let settings = await notificationCenter.notificationSettings()
         guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else { return }
         let content = UNMutableNotificationContent()
-        content.title = "Earned Apps time added"
-        content.body = "Your walking progress has earned \(milestone) of \(configuration.maxMinutes) minutes today."
+        content.title = "\(milestone) walking minutes earned"
+        content.body = "Your steps have earned \(milestone) of \(configuration.maxMinutes) minutes today. Daily Routine syncs the latest balance automatically while the app is active."
         content.sound = .default
         content.threadIdentifier = "earned-access-walking"
         let request = UNNotificationRequest(

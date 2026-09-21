@@ -1,6 +1,6 @@
 # App Store submission package
 
-This document records the planned TestFlight submission behavior for Daily Routine 1.18.0 (build 20). Apple has approved the Family Controls distribution entitlement for this app.
+This document records the planned TestFlight submission behavior for Daily Routine 1.19.0 (build 21). Apple has approved the Family Controls distribution entitlement for this app.
 
 ## URLs
 
@@ -51,8 +51,11 @@ Daily Routine is a personal organization tool and does not provide medical advic
 
 `routine,habits,planner,journal,prayer,reflection,checklist,wellness,private,watch`
 
-### Version 1.18.0 draft release notes
+### Version 1.19.0 draft release notes
 
+- Refresh Health and walking progress automatically when new step samples arrive while Daily Routine is open.
+- Notify at five-minute walking-reward milestones and show a privacy-safe reliability status for Health, Screen Time schedules, notifications, and widget syncing.
+- Clarify the routine-section bulk completion control with a compact All label.
 - Simplify Today with a compact foundation, routine headers, sleep summary, check-ins, and Water controls.
 - Remove Skip controls and keep routine completion focused on the tasks scheduled for the day.
 - Reorder God Moments and quick capture after the Morning routine and reduce repeated task metadata.
@@ -144,7 +147,7 @@ Daily Routine is local-first; its optional Private sync account is not required 
 
 Health access is requested only from Setup after the reviewer taps Connect Health. The app requests read access for steps, sleep, and workouts and does not write HealthKit data.
 
-Earned Access uses individual Family Controls authorization, Apple's private app and website picker, Managed Settings shielding, and a Device Activity monitor extension. Daily Routine stores only Apple's opaque selection tokens and does not receive selected app names or browsing history. A person turns protection on and earns a shared daily allowance through configured routine or step requirements; when automatic opening is enabled, selected apps unlock only after the current day’s morning foundation is complete. Foreground use spends the allowance, and the apps shield themselves again when it is exhausted. Unused minutes expire at local midnight and never roll into the next day. The optional morning gate shields nonessential apps until Truth Before Tasks is complete while leaving Daily Routine and the person's privately selected essentials available. Complete physical-iPhone testing before distribution. Do not distribute this Family Controls build through TestFlight until Apple assigns the distribution entitlement to the app and Device Activity extension.
+Earned Access uses individual Family Controls authorization, Apple's private app and website picker, Managed Settings shielding, and a Device Activity monitor extension. Daily Routine stores only Apple's opaque selection tokens and does not receive selected app names or browsing history. A person turns protection on and earns a shared daily allowance through configured routine or step requirements; when automatic opening is enabled, selected apps unlock only after the current day’s morning foundation is complete. Foreground use spends the allowance, and the apps shield themselves again when it is exhausted. Unused minutes expire at local midnight and never roll into the next day. The optional morning gate shields nonessential apps until Truth Before Tasks is complete while leaving Daily Routine and the person's privately selected essentials available. Apple has assigned the Family Controls distribution entitlement to the app and Device Activity extension; continue physical-iPhone regression testing for every TestFlight build.
 
 Watch actions remain locked until the reviewer completes the Morning Foundation opening on iPhone. A medication routine tapped on Watch records the current time; tapping the completed row again reopens it.
 
