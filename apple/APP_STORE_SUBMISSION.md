@@ -1,6 +1,6 @@
 # App Store submission package
 
-This document records the planned TestFlight submission behavior for Daily Routine 1.19.0 (build 21). Apple has approved the Family Controls distribution entitlement for this app.
+This document records the planned TestFlight submission behavior for Daily Routine 1.20.0 (build 22). Apple has approved the Family Controls distribution entitlement for this app.
 
 ## URLs
 
@@ -51,8 +51,10 @@ Daily Routine is a personal organization tool and does not provide medical advic
 
 `routine,habits,planner,journal,prayer,reflection,checklist,wellness,private,watch`
 
-### Version 1.19.0 draft release notes
+### Version 1.20.0 draft release notes
 
+- Continue automatic Earned Access through newly earned routine and walking minutes without relocking at an obsolete internal allowance boundary.
+- Clarify usage notifications so they report the shared remaining balance across all selected earned apps.
 - Refresh Health and walking progress automatically when new step samples arrive while Daily Routine is open.
 - Notify at five-minute walking-reward milestones and show a privacy-safe reliability status for Health, Screen Time schedules, notifications, and widget syncing.
 - Clarify the routine-section bulk completion control with a compact All label.
@@ -130,7 +132,7 @@ Please test the first-run flow and verify that existing routine data remains int
 4. Create, edit, and delete an open-ended Truth Before Tasks theme using a title, body, and one to three Scripture or plain-text truth lines.
 5. Connect Apple Health, add an 8,000-step routine goal, refresh Health, and verify the item completes automatically at the target.
 6. In Setup → Health & Watch, select morning and later earning routines. Complete them one at a time and verify each task adds its configured minutes automatically, only once per day, without exceeding the daily limit. Also start an optional movement round and confirm progress begins at zero rather than using the day's total steps.
-7. Turn on Screen Time protection, choose a nonessential test app, bank at least 15 minutes, use one allowance, and confirm the app remains available across idle time but shields itself again after 15 minutes of actual foreground use.
+7. Turn on Screen Time protection, choose a nonessential test app, and earn time from more than one source. Confirm automatic access combines the rewards into one continuous balance, remains available across idle time, and shields itself after the shared foreground-use balance is exhausted. Also verify manual mode still redeems 15-minute allowances.
 8. Leave banked or active minutes unused overnight. After midnight, confirm selected apps are shielded, yesterday’s minutes are gone, and no allowance opens until the new day’s Truth Before Tasks and configured convictions are complete.
 9. Review a Health sleep suggestion and confirm bedtime is saved to the date it occurred while wake time is saved to the following morning. Confirm existing entries are not selected for replacement automatically.
 10. Confirm automatic Health step values and Earned Access progress do not appear on a second device through Private sync.

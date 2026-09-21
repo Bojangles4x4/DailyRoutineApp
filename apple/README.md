@@ -41,6 +41,8 @@ Build 19 hardens Earned Access after physical TestFlight testing. Earned-app pro
 
 Build 21 adds active Health refreshes when new step samples arrive, five-minute walking-reward notifications, and a collapsed privacy-safe reliability panel. The panel reports freshness and connection health without revealing selected apps, browsing activity, or Health values.
 
+Build 22 fixes the allowance boundary found during physical TestFlight testing. When automatic access is enabled, newly earned routine or walking minutes are combined with the active allowance using Apple’s latest five-minute usage checkpoint before the person leaves Daily Routine. This keeps selected apps open across what used to be separate internal segments. Usage notifications now describe the shared remaining balance rather than cumulative usage inside one segment.
+
 Tapping a checkbox or medication row updates that exact routine; tapping a completed row reopens it. Medication taps record the current time, with an AM/PM confirmation on Watch when the time does not match the routine section. Linked-app routines remain on iPhone. All Watch actions remain locked until the Morning Foundation is completed on the iPhone for the local calendar day. If personal convictions are configured, they are part of that foundation. If the Watch companion is not installed yet, the iPhone keeps the latest routine context ready and sends it when Watch Connectivity reports the companion is available.
 
 The Watch app writes its latest received routine summary to an App Group shared with the WidgetKit extension. This lets complications show current progress without exposing the full routine database or Health information.

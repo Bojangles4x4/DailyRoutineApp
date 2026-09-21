@@ -1,6 +1,6 @@
 # iPhone Home Screen widget
 
-Status: the widget was signed, installed through TestFlight Build 18, and confirmed to receive its private snapshot on a physical iPhone. Build 20 physical testing confirmed widget refresh and ordinary checkbox completion. Build 21 adds a privacy-safe visible sync timestamp to the Earned Access reliability status; locked-state redaction and midnight rollover remain focused regression checks.
+Status: the widget was signed, installed through TestFlight Build 18, and confirmed to receive its private snapshot on a physical iPhone. Build 20 physical testing confirmed widget refresh and ordinary checkbox completion. Build 21 adds a privacy-safe visible sync timestamp to the Earned Access reliability status. Build 22 keeps the widget’s aggregate earned-time figure aligned with the combined automatic allowance; locked-state redaction and midnight rollover remain focused regression checks.
 
 ## Supported sizes
 

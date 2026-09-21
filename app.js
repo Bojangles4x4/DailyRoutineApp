@@ -7,7 +7,7 @@
   const EARNED_ACCESS_DEVICE_KEY = 'dailyRoutine.earnedAccess.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.19.0';
+  const APP_VERSION = '1.20.0';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const DEFAULT_BIBLE_APP_URL = 'https://bojangles4x4.github.io/Bible-Reading-Plan/';
@@ -1058,19 +1058,47 @@
     if (!settings.automaticAccess || settings.active || document.body.classList.contains('truth-locked')) return settings;
     const today = dateKey(startOfToday());
     const bank = Math.max(0, Math.round(Number(settings.bankByDate[today]) || 0));
-    if (!bank || settings.activeAllowance) return settings;
+    if (!bank) return settings;
 
-    let minutes = bank;
-    minutes = Math.min(120, Math.max(1, minutes));
+    const nativeAllowanceMatches = Boolean(settings.activeAllowance)
+      && earnedAccessNativeState.allowanceActive
+      && earnedAccessNativeState.allowanceRedemptionID === settings.activeAllowance.id
+      && Number.isFinite(earnedAccessNativeState.allowanceRemainingMinutes);
+    if (settings.activeAllowance && !nativeAllowanceMatches) {
+      // Wait for Apple's latest usage checkpoint before folding newly earned time
+      // into an active allowance. Reusing the original allowance total here could
+      // restore minutes that have already been spent.
+      return settings;
+    }
+
+    const activeRemaining = nativeAllowanceMatches
+      ? Math.max(0, Math.round(earnedAccessNativeState.allowanceRemainingMinutes))
+      : 0;
+    const minutes = Math.min(settings.dailyLimitMinutes, 120, Math.max(1, activeRemaining + bank));
+    const bankUsed = Math.max(0, minutes - activeRemaining);
+    if (!bankUsed) return settings;
     const startedAt = new Date();
     const redemptionID = `allowance-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const redemptions = Array.isArray(settings.redemptionsByDate[today]) ? settings.redemptionsByDate[today] : [];
     const next = saveEarnedAccessDeviceSettings({
       activeAllowance: { id: redemptionID, minutes, startedAt: startedAt.toISOString(), dateKey: today },
-      bankByDate: { ...settings.bankByDate, [today]: 0 },
-      redemptionsByDate: { ...settings.redemptionsByDate, [today]: [...redemptions, { id: redemptionID, minutes, startedAt: startedAt.toISOString(), automatic: true }] }
+      bankByDate: { ...settings.bankByDate, [today]: Math.max(0, bank - bankUsed) },
+      redemptionsByDate: {
+        ...settings.redemptionsByDate,
+        [today]: [...redemptions, {
+          id: redemptionID,
+          minutes,
+          startedAt: startedAt.toISOString(),
+          automatic: true,
+          carriedMinutes: activeRemaining,
+          addedMinutes: bankUsed,
+          replacesRedemptionId: settings.activeAllowance?.id || ''
+        }]
+      }
     });
-    showToast(`${minutes} earned-app minute${minutes === 1 ? '' : 's'} opened automatically.`);
+    showToast(settings.activeAllowance
+      ? `${bankUsed} new minute${bankUsed === 1 ? '' : 's'} added · about ${minutes} available.`
+      : `${minutes} earned-app minute${minutes === 1 ? '' : 's'} opened automatically.`);
     return next;
   }
 
@@ -1347,7 +1375,7 @@
     } else if (accessIsEarned) {
       percent = 100;
       const completed = settings.lastCompleted;
-      const minutes = Math.max(1, Number(completed?.rewardMinutes) || 15);
+      const minutes = Math.max(1, Number(settings.activeAllowance?.minutes) || Number(completed?.rewardMinutes) || 15);
       const remainingMinutes = nativeAllowanceMatches && Number.isFinite(earnedAccessNativeState.allowanceRemainingMinutes)
         ? Math.min(minutes, Math.max(0, earnedAccessNativeState.allowanceRemainingMinutes))
         : null;

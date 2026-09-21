@@ -2,8 +2,10 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.19.0 development features
+## Version 1.20.0 development features
 
+- Build 22 combines new routine and walking rewards with the active automatic allowance so selected apps do not relock at an obsolete internal boundary
+- Earned-app notifications now describe the shared remaining balance instead of showing cumulative use inside an internal allowance
 - Build 21 refreshes visible Health and walking progress automatically when new step samples arrive while Daily Routine is open
 - Walking milestones now notify in five-minute earned-time increments, while selected-app usage continues to report five-minute remaining-time checkpoints
 - Adds a collapsed, privacy-safe reliability status for Health freshness, Screen Time protection, daily schedules, notifications, and widget syncing
@@ -15,7 +17,7 @@ A mobile-first private routine and mood tracker designed to run as a Progressive
 - Build 19 Earned Access hardening: an independent midnight relock schedule, visible schedule health, and automatic schedule repair when the app becomes active
 - Compact five-minute foreground-usage checkpoints with notifications and an exact final relock checkpoint
 - Immediate Health, Earned Access, and widget snapshot refresh when returning to Daily Routine
-- Newly earned minutes remain safely banked while an allowance is active instead of extending it from an approximate remaining balance
+- Newly earned minutes are safely folded into the active automatic allowance using Apple’s latest five-minute usage checkpoint
 - Shorter Today checkbox rows that keep full-size completion targets on one line
 - A privacy-minimized iPhone Home Screen widget in large, medium, and small sizes, with safe checkbox actions and an app-name-free aggregate Earned Access balance
 - A clearer native Setup area with separate cards for widgets, Health metrics, Earned Access, and Apple Watch

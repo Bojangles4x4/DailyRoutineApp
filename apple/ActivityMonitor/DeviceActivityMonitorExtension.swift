@@ -96,13 +96,12 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
 
     private func notifyUsage(remaining: Int, used: Int, redemptionID: String) {
         let content = UNMutableNotificationContent()
-        let label = EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.allowanceLabelKey) ?? "Earned apps"
         if remaining > 0 {
-            content.title = "\(remaining) earned minutes left"
-            content.body = "\(label) has used \(used) minute\(used == 1 ? "" : "s"). Only foreground use counts."
+            content.title = "About \(remaining) earned minutes remain"
+            content.body = "This is your shared balance across all selected earned apps. Only foreground use counts, and the estimate updates every five minutes."
         } else {
-            content.title = "Earned app time used"
-            content.body = "\(label) is locked again. Complete more routines or keep walking to earn additional time."
+            content.title = "Earned app balance used"
+            content.body = "Your selected earned apps are locked again. Complete more routines or keep walking to earn additional time."
         }
         content.sound = .default
         content.threadIdentifier = "earned-access-usage"

@@ -563,6 +563,26 @@ function localDateKey(date = new Date()) {
   assert.equal(openedAfterFoundation.bank, 0);
   assert.equal(openedAfterFoundation.activeAllowance.minutes, 30);
   assert.equal(openedAfterFoundation.nativeAllowance.value.minutes, 30);
+  await automaticPage.evaluate(redemptionId => {
+    window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'earned.access.status', value: {
+      protectionEnabled: 'true', shielding: 'false', allowanceActive: 'true', allowanceMinutes: '30',
+      allowanceRemainingMinutes: '20', allowanceRedemptionID: redemptionId, lastConsumedRedemptionID: '', morningGateEnabled: 'true',
+      morningFoundationCompleteToday: 'true', selectionCount: '3', essentialCount: '2', dailyResetScheduled: 'true', morningGateScheduled: 'true', notificationsAllowed: 'true'
+    } } }));
+    window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'health.summary', value: {
+      date: new Date().toISOString(), stepCount: 4800, sleepHours: 0, workoutCount: 0
+    } } }));
+  }, openedAfterFoundation.activeAllowance.id);
+  const extendedAutomaticAllowance = await automaticPage.evaluate(key => {
+    const settings = JSON.parse(localStorage.getItem('dailyRoutine.earnedAccess.device.v1'));
+    const nativeAllowance = [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'earned.access.allow');
+    return { bank: settings.bankByDate[key], activeAllowance: settings.activeAllowance, nativeAllowance };
+  }, today);
+  assert.equal(extendedAutomaticAllowance.bank, 0);
+  assert.equal(extendedAutomaticAllowance.activeAllowance.minutes, 26);
+  assert.notEqual(extendedAutomaticAllowance.activeAllowance.id, openedAfterFoundation.activeAllowance.id);
+  assert.equal(extendedAutomaticAllowance.nativeAllowance.value.minutes, 26);
+  assert.match(await automaticPage.locator('#earnedAccessBankStatus').textContent(), /26 of 60 minutes available/);
   await automaticPage.close();
 
   const exportedFiles = await page.evaluate(() => {

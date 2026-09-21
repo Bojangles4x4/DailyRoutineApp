@@ -189,6 +189,7 @@ final class EarnedAccessControlStore: ObservableObject {
             return
         }
 
+        let isReplacingActiveAllowance = allowanceActive && allowanceRedemptionID != redemptionID
         let safeMinutes = min(120, max(1, minutes))
         do {
             scheduleDailyReset()
@@ -244,7 +245,9 @@ final class EarnedAccessControlStore: ObservableObject {
             allowanceRedemptionID = redemptionID
             isShielding = false
             status = "\(safeMinutes) minutes of selected-app use are available. Unused minutes remain available."
-            notifyAllowanceOpened(minutes: safeMinutes, label: label)
+            if !isReplacingActiveAllowance {
+                notifyAllowanceOpened(minutes: safeMinutes, label: label)
+            }
         } catch {
             lockIfEnabled()
             status = "The usage allowance could not start: \(error.localizedDescription)"
