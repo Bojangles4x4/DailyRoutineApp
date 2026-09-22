@@ -8,6 +8,7 @@
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
   const APP_VERSION = '1.21.0';
+  const APP_BUILD = 23;
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const DEFAULT_BIBLE_APP_URL = 'https://bojangles4x4.github.io/Bible-Reading-Plan/';
@@ -131,7 +132,7 @@
     reflectionReviewCard: $('reflectionReviewCard'), toggleReflectionReviewButton: $('toggleReflectionReviewButton'), reflectionReviewStatus: $('reflectionReviewStatus'), reflectionReviewPanel: $('reflectionReviewPanel'), reflectionReviewLists: $('reflectionReviewLists'), reviewDueCount: $('reviewDueCount'), reviewActionCount: $('reviewActionCount'), reviewPrayerCount: $('reviewPrayerCount'), reviewMomentCount: $('reviewMomentCount'), weeklyReflectionInput: $('weeklyReflectionInput'), finishReflectionReviewButton: $('finishReflectionReviewButton'),
     noteDialog: $('noteDialog'), noteForm: $('noteForm'), noteDialogTitle: $('noteDialogTitle'), closeNoteDialogButton: $('closeNoteDialogButton'), editingNoteId: $('editingNoteId'), noteTextInput: $('noteTextInput'), noteTypeInput: $('noteTypeInput'), noteScriptureField: $('noteScriptureField'), noteScriptureInput: $('noteScriptureInput'), notePrayerStatusField: $('notePrayerStatusField'), notePrayerStatusInput: $('notePrayerStatusInput'), noteReviewAtInput: $('noteReviewAtInput'), noteSnoozeField: $('noteSnoozeField'), noteSnoozedUntilInput: $('noteSnoozedUntilInput'), noteOptionalDetails: $('noteOptionalDetails'), noteSourceInput: $('noteSourceInput'), notePinnedInput: $('notePinnedInput'), noteResurfaceField: $('noteResurfaceField'), noteResurfaceInput: $('noteResurfaceInput'), deleteNoteButton: $('deleteNoteButton'),
     medicationInsights: $('medicationInsights'), weeklyReviewLabel: $('weeklyReviewLabel'), weeklyReviewSummary: $('weeklyReviewSummary'), weeklyFocusInput: $('weeklyFocusInput'), saveWeeklyFocusButton: $('saveWeeklyFocusButton'), memoryDialog: $('memoryDialog'), memoryForm: $('memoryForm'), closeMemoryDialogButton: $('closeMemoryDialogButton'), memoryTextInput: $('memoryTextInput'), memoryCategoryCaptureInput: $('memoryCategoryCaptureInput'), memoryDateTimeInput: $('memoryDateTimeInput'),
-    createSnapshotButton: $('createSnapshotButton'), restoreSnapshotButton: $('restoreSnapshotButton'), snapshotStatus: $('snapshotStatus'), backupDownloadStatus: $('backupDownloadStatus'), appVersion: $('appVersion'), resurfacingFrequencyInput: $('resurfacingFrequencyInput'),
+    createSnapshotButton: $('createSnapshotButton'), restoreSnapshotButton: $('restoreSnapshotButton'), snapshotStatus: $('snapshotStatus'), backupDownloadStatus: $('backupDownloadStatus'), appVersion: $('appVersion'), openAccountabilityFromSetupButton: $('openAccountabilityFromSetupButton'), resurfacingFrequencyInput: $('resurfacingFrequencyInput'),
     privateSyncCard: $('privateSyncCard'), privateSyncBadge: $('privateSyncBadge'), privateSyncStatus: $('privateSyncStatus'), privateSyncDevice: $('privateSyncDevice'), privateSyncLastSync: $('privateSyncLastSync'), createSyncSnapshotButton: $('createSyncSnapshotButton'), privateSyncNowButton: $('privateSyncNowButton'), privateSyncSignIn: $('privateSyncSignIn'), privateSyncEmailInput: $('privateSyncEmailInput'), privateSyncPasswordInput: $('privateSyncPasswordInput'), privateSyncSendCodeButton: $('privateSyncSendCodeButton'), privateSyncVerifyButton: $('privateSyncVerifyButton'), privateSyncHelp: $('privateSyncHelp'), privateSyncAccount: $('privateSyncAccount'), privateSyncSignOutButton: $('privateSyncSignOutButton'), privateSyncDeleteCloudButton: $('privateSyncDeleteCloudButton'),
     connectionsCard: $('connectionsCard'), syncConnectionsButton: $('syncConnectionsButton'), bibleConnectionStatus: $('bibleConnectionStatus'), openBibleConnectionButton: $('openBibleConnectionButton'), bibleAppUrlInput: $('bibleAppUrlInput'), saveBibleConnectionButton: $('saveBibleConnectionButton'), testBibleConnectionButton: $('testBibleConnectionButton'), connectionTemplates: $('connectionTemplates'),
     appleNativeCard: $('appleNativeCard'), iphoneWidgetCard: $('iphoneWidgetCard'), appleWatchCard: $('appleWatchCard'), appleStepCount: $('appleStepCount'), appleSleepHours: $('appleSleepHours'), appleWorkoutCount: $('appleWorkoutCount'), appleHealthStatus: $('appleHealthStatus'), healthSourceSummary: $('healthSourceSummary'), healthSourceDetail: $('healthSourceDetail'), connectAppleHealthButton: $('connectAppleHealthButton'), refreshAppleHealthButton: $('refreshAppleHealthButton'), appleWatchStatus: $('appleWatchStatus'), appleStepsGoalInput: $('appleStepsGoalInput'), saveAppleStepsGoalButton: $('saveAppleStepsGoalButton'), appleWatchQuickActionInput: $('appleWatchQuickActionInput'),
@@ -588,6 +589,10 @@
 
   function bindProgressControls() {
     els.saveWeeklyFocusButton.addEventListener('click', saveWeeklyFocus);
+    els.openAccountabilityFromSetupButton.addEventListener('click', () => {
+      switchView('history');
+      requestAnimationFrame(() => els.accountabilitySharingCard?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    });
     els.openPrivateSyncForAccountabilityButton.addEventListener('click', () => {
       switchView('setup');
       openSetupCategory('data');
@@ -2789,7 +2794,7 @@
     els.themeInput.value = state.settings.theme || 'calm';
     els.handednessInput.value = state.settings.handedness === 'left' ? 'left' : 'right';
     els.resurfacingFrequencyInput.value = ['occasional', 'weekly', 'never'].includes(state.settings.resurfacingFrequency) ? state.settings.resurfacingFrequency : 'occasional';
-    els.appVersion.textContent = `v${APP_VERSION}`;
+    els.appVersion.textContent = `v${APP_VERSION} · Build ${APP_BUILD}`;
     els.bibleAppUrlInput.value = state.settings.bibleAppUrl || DEFAULT_BIBLE_APP_URL;
     renderSetupNavigation();
     renderAppleWatchQuickAction();

@@ -26,6 +26,8 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#truthHeroTitle').textContent(), 'Truth Before Tasks');
   assert.equal(await page.locator('#truthEnterDayButton').isDisabled(), true);
   assert.equal(await page.locator('#accountabilitySharingCard').count(), 1);
+  assert.equal(await page.locator('#appVersion').textContent(), 'v1.21.0 · Build 23');
+  assert.match(await page.locator('#openAccountabilityFromSetupButton').textContent(), /Open private accountability/);
   assert.equal(await page.locator('#accountabilitySharingSignedOut').evaluate(element => element.hidden), false);
   assert.match(await page.locator('#accountabilitySharingSignedOut').textContent(), /Connect Private Sync first/);
   assert.equal(await page.locator('#accountabilityDashboardCard').evaluate(element => element.hidden), true);
