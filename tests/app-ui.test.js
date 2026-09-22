@@ -26,7 +26,7 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#truthHeroTitle').textContent(), 'Truth Before Tasks');
   assert.equal(await page.locator('#truthEnterDayButton').isDisabled(), true);
   assert.equal(await page.locator('#accountabilitySharingCard').count(), 1);
-  assert.equal(await page.locator('#appVersion').textContent(), 'v1.22.0 · Build 24');
+  assert.equal(await page.locator('#appVersion').textContent(), 'v1.23.0 · Build 25');
   assert.match(await page.locator('#openAccountabilityFromSetupButton').textContent(), /Open private accountability/);
   assert.equal(await page.locator('#accountabilitySharingSignedOut').evaluate(element => element.hidden), false);
   assert.match(await page.locator('#accountabilitySharingSignedOut').textContent(), /Connect Private Sync first/);
@@ -51,17 +51,32 @@ function localDateKey(date = new Date()) {
       permissions: { progressTotals: true, routineNames: true, checkins: false, steps: true, medication: false },
       accepted_at: new Date().toISOString(), updated_at: new Date().toISOString()
     };
+    const secondRelationship = {
+      ...relationship,
+      id: 'relationship-2', owner_id: 'owner-2', owner_display_name: 'Jordan',
+      permissions: { progressTotals: true, routineNames: true, checkins: false, steps: false, medication: false }
+    };
     if (url.includes('/accountability_relationships?owner_id=')) return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
-    if (url.includes('/accountability_relationships?partner_id=')) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([relationship]) });
+    if (url.includes('/accountability_relationships?partner_id=')) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([relationship, secondRelationship]) });
     if (url.includes('/accountability_snapshots?relationship_id=')) {
+      const isSecond = url.includes('relationship-2');
+      const daily = Array.from({ length: 7 }, (_, index) => {
+        const date = new Date();
+        date.setDate(date.getDate() - (6 - index));
+        return { date: localDateKey(date), percent: isSecond ? 55 : 80 + (index % 3) * 5, completed: isSecond ? 4 : 7, total: 8, truthBeforeTasks: true };
+      });
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{
-        relationship_id: 'relationship-1', owner_id: 'owner-1', revision: 2, updated_at: new Date().toISOString(),
+        relationship_id: isSecond ? 'relationship-2' : 'relationship-1', owner_id: isSecond ? 'owner-2' : 'owner-1', revision: 2, updated_at: new Date().toISOString(),
         payload: {
-          member: { displayName: 'Taylor' },
-          today: { percent: 75, completed: 6, total: 8, truthBeforeTasks: true },
-          week: { percent: 82, strongDays: 4, trackedDays: 5 },
-          steps: { count: 6400, goal: 8000 },
-          routines: [{ name: 'Prayer', completed: true }, { name: 'Movement', completed: false }]
+          schemaVersion: 2,
+          member: { displayName: isSecond ? 'Jordan' : 'Taylor' },
+          generatedAt: new Date().toISOString(),
+          today: { percent: isSecond ? 55 : 75, completed: isSecond ? 4 : 6, total: 8, truthBeforeTasks: true },
+          week: { percent: isSecond ? 60 : 82, strongDays: isSecond ? 1 : 4, trackedDays: 5 },
+          daily,
+          ...(isSecond ? {} : { steps: { count: 6400, goal: 8000 } }),
+          routines: [{ name: 'Prayer', completed: true }, { name: 'Movement', completed: false }],
+          routineTrends: [{ name: 'Prayer', completed: 6, scheduled: 7, percent: 86, days: daily.map(day => ({ date: day.date, completed: true })) }]
         }
       }]) });
     }
@@ -74,9 +89,17 @@ function localDateKey(date = new Date()) {
   assert.equal((await partnerPage.locator('#pageContext').textContent()).trim(), 'Shared progress');
   assert.equal(await partnerPage.locator('#historyView').evaluate(element => element.classList.contains('active')), true);
   assert.equal(await partnerPage.locator('#accountabilityDashboardCard').isVisible(), true);
+  assert.equal(await partnerPage.locator('.accountability-roster-person').count(), 2);
   assert.match(await partnerPage.locator('#accountabilityPartnerDetail').textContent(), /Taylor/);
   assert.match(await partnerPage.locator('#accountabilityPartnerDetail').textContent(), /75%/);
-  assert.match(await partnerPage.locator('#accountabilityPartnerAccount').textContent(), /partner@example\.com/);
+  assert.match(await partnerPage.locator('#accountabilityPartnerDetail').textContent(), /Routine trends/);
+  assert.equal(await partnerPage.locator('.accountability-day').count(), 7);
+  assert.match(await partnerPage.locator('#accountabilityPartnerAccount').textContent(), /Signed in privately/);
+  assert.doesNotMatch(await partnerPage.locator('#accountabilityPartnerAccount').textContent(), /partner@example\.com/);
+  await partnerPage.locator('#accountabilityPartnerSearchInput').fill('Jordan');
+  assert.equal(await partnerPage.locator('.accountability-roster-person').count(), 1);
+  assert.match(await partnerPage.locator('.accountability-roster-person').textContent(), /Jordan/);
+  await partnerPage.locator('#accountabilityPartnerSearchInput').fill('');
   assert.equal(await partnerPage.locator('#accountabilityPartnerSignOutButton').isVisible(), true);
   assert.equal(await partnerPage.locator('.bottom-nav').evaluate(element => getComputedStyle(element).display), 'none');
   const partnerVisibleSections = await partnerPage.evaluate(() => [...document.querySelectorAll('#historyView > section')]

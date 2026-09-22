@@ -40,7 +40,7 @@ Highlights:
 - Apple Watch progress, quick actions, and complications
 - Optional, read-only Apple Health summaries
 - Earned Access step rounds that count movement after a personal app limit is reached
-- Manual accountability reports plus optional private partner sharing with category-level privacy controls
+- Manual accountability reports plus optional private partner sharing with category-level and individual-routine privacy controls
 - Local-first storage with manual backup and export
 
 Daily Routine contains no ads or analytics. Core routine tracking requires no account; Private Sync and private accountability sharing are optional. Your routine content remains on your devices unless you choose to synchronize, share, or export it.
@@ -55,6 +55,7 @@ Daily Routine is a personal organization tool and does not provide medical advic
 
 - Add optional private accountability connections with individual sharing choices, pause, resume, and revoke controls.
 - Give an accountability partner a read-only roster that can support one person or several.
+- Let partners search and sort that roster and review approved seven-day or 30-day completion trends without exposing client email addresses or private text.
 - Share only a filtered progress snapshot; notes, prayer text, written reflections, medication names/times, and raw Health data remain excluded.
 - Keep the existing on-device preview-and-share report as an offline alternative.
 

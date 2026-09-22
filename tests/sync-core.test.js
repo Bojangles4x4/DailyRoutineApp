@@ -90,18 +90,41 @@ test('builds a privacy-filtered accountability snapshot without private text', (
     today: '2026-08-25',
     generatedAt: '2026-08-25T14:00:00.000Z',
     displayName: 'Taylor',
-    permissions: { progressTotals: true, routineNames: true, checkins: true, steps: false, medication: true }
+    permissions: { progressTotals: true, routineNames: true, checkins: true, steps: false, medication: true, routineIds: ['prayer'] }
   });
   const serialized = JSON.stringify(snapshot);
   assert.equal(snapshot.member.displayName, 'Taylor');
   assert.equal(snapshot.today.truthBeforeTasks, true);
   assert.deepEqual(snapshot.medication, { completed: 1, total: 1 });
   assert.equal(snapshot.checkins[0].average, 7);
+  assert.equal(snapshot.schemaVersion, 2);
+  assert.equal(snapshot.daily.length, 1);
+  assert.equal(snapshot.routineTrends.length, 1);
+  assert.equal(snapshot.routineTrends[0].name, 'Prayer');
   assert.equal(serialized.includes('Private medication name'), false);
   assert.equal(serialized.includes('08:15'), false);
   assert.equal(serialized.includes('private prayer text'), false);
   assert.equal(serialized.includes('private memory text'), false);
   assert.equal(serialized.includes('private dose note'), false);
+});
+
+test('shares trends only for routines individually approved by the owner', () => {
+  const state = sampleState();
+  state.items.push(
+    { id: 'reading', name: 'Bible reading', kind: 'routine', type: 'checkbox', section: 'morning', frequency: 'daily' },
+    { id: 'reflection', name: 'Private reflection prompt', kind: 'routine', type: 'longtext', section: 'evening', frequency: 'daily' }
+  );
+  state.days['2026-08-25'].entries.reading = true;
+  state.days['2026-08-25'].entries.reflection = 'private response';
+  const snapshot = buildAccountabilitySnapshot(state, {
+    today: '2026-08-25',
+    permissions: { progressTotals: true, routineNames: true, routineIds: ['reading', 'reflection'] }
+  });
+  const serialized = JSON.stringify(snapshot);
+  assert.deepEqual(snapshot.routines.map(item => item.name), ['Bible reading']);
+  assert.deepEqual(snapshot.routineTrends.map(item => item.name), ['Bible reading']);
+  assert.equal(serialized.includes('Private reflection prompt'), false);
+  assert.equal(serialized.includes('private response'), false);
 });
 
 test('omits every optional accountability category when permission is off', () => {

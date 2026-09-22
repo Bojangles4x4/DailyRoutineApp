@@ -7,8 +7,8 @@
   const EARNED_ACCESS_DEVICE_KEY = 'dailyRoutine.earnedAccess.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.22.0';
-  const APP_BUILD = 24;
+  const APP_VERSION = '1.23.0';
+  const APP_BUILD = 25;
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const DEFAULT_BIBLE_APP_URL = 'https://bojangles4x4.github.io/Bible-Reading-Plan/';
@@ -28,7 +28,7 @@
       },
       accountabilitySharing: {
         ownerDisplayName: '',
-        permissions: { progressTotals: true, routineNames: true, checkins: false, steps: false, medication: false }
+        permissions: { progressTotals: true, routineNames: true, checkins: false, steps: false, medication: false, routineIds: null }
       }
     },
     items: [
@@ -97,6 +97,7 @@
   let accountabilitySharingBusy = false;
   let accountabilitySnapshotTimer = null;
   let accountabilityPartnerOnlyMode = false;
+  let accountabilityPartnerRange = 7;
   let actualTimesExpanded = false;
   const syncCoordinator = window.DailyRoutineSync?.createCoordinator({ storage: localStorage }) || null;
   const syncCloud = window.DailyRoutineCloud?.createClient({
@@ -141,7 +142,7 @@
     healthSleepSuggestion: $('healthSleepSuggestion'), healthSleepSuggestionText: $('healthSleepSuggestionText'), applyHealthSleepButton: $('applyHealthSleepButton'),
     linkedActionFields: $('linkedActionFields'), linkedTemplateInput: $('linkedTemplateInput'), linkedCompletionInput: $('linkedCompletionInput'), linkedUrlField: $('linkedUrlField'), linkedUrlInput: $('linkedUrlInput'), linkedInternalField: $('linkedInternalField'), linkedInternalTargetInput: $('linkedInternalTargetInput'), linkedButtonLabelInput: $('linkedButtonLabelInput'), timeWindowFields: $('timeWindowFields'), timeWindowStartInput: $('timeWindowStartInput'), timeWindowEndInput: $('timeWindowEndInput'),
     medicationProgressCard: $('medicationProgressCard'), weeklyReviewCard: $('weeklyReviewCard'), memoryBankCard: $('memoryBankCard'), dataBackupCard: $('dataBackupCard'),
-    accountabilitySharingCard: $('accountabilitySharingCard'), accountabilitySharingBadge: $('accountabilitySharingBadge'), accountabilitySharingSignedOut: $('accountabilitySharingSignedOut'), accountabilitySharingOwner: $('accountabilitySharingOwner'), openPrivateSyncForAccountabilityButton: $('openPrivateSyncForAccountabilityButton'), accountabilityConnectionsList: $('accountabilityConnectionsList'), accountabilityConnectionEditor: $('accountabilityConnectionEditor'), accountabilityEditorTitle: $('accountabilityEditorTitle'), accountabilityEditorStatus: $('accountabilityEditorStatus'), accountabilityOwnerNameInput: $('accountabilityOwnerNameInput'), accountabilityPartnerNameInput: $('accountabilityPartnerNameInput'), accountabilityPartnerEmailInput: $('accountabilityPartnerEmailInput'), accountabilityShareProgressInput: $('accountabilityShareProgressInput'), accountabilityShareRoutinesInput: $('accountabilityShareRoutinesInput'), accountabilityShareCheckinsInput: $('accountabilityShareCheckinsInput'), accountabilityShareStepsInput: $('accountabilityShareStepsInput'), accountabilityShareMedicationInput: $('accountabilityShareMedicationInput'), accountabilitySnapshotPreview: $('accountabilitySnapshotPreview'), saveAccountabilityConnectionButton: $('saveAccountabilityConnectionButton'), refreshAccountabilitySnapshotButton: $('refreshAccountabilitySnapshotButton'), pauseAccountabilityConnectionButton: $('pauseAccountabilityConnectionButton'), revokeAccountabilityConnectionButton: $('revokeAccountabilityConnectionButton'), accountabilityDashboardCard: $('accountabilityDashboardCard'), accountabilityRosterCount: $('accountabilityRosterCount'), accountabilityPartnerRoster: $('accountabilityPartnerRoster'), accountabilityPartnerDetail: $('accountabilityPartnerDetail'), accountabilityPartnerAccount: $('accountabilityPartnerAccount'), accountabilityPartnerSignOutButton: $('accountabilityPartnerSignOutButton'),
+    accountabilitySharingCard: $('accountabilitySharingCard'), accountabilitySharingBadge: $('accountabilitySharingBadge'), accountabilitySharingSignedOut: $('accountabilitySharingSignedOut'), accountabilitySharingOwner: $('accountabilitySharingOwner'), openPrivateSyncForAccountabilityButton: $('openPrivateSyncForAccountabilityButton'), accountabilityConnectionsList: $('accountabilityConnectionsList'), accountabilityConnectionEditor: $('accountabilityConnectionEditor'), accountabilityEditorTitle: $('accountabilityEditorTitle'), accountabilityEditorStatus: $('accountabilityEditorStatus'), accountabilityOwnerNameInput: $('accountabilityOwnerNameInput'), accountabilityPartnerNameInput: $('accountabilityPartnerNameInput'), accountabilityPartnerEmailInput: $('accountabilityPartnerEmailInput'), accountabilityShareProgressInput: $('accountabilityShareProgressInput'), accountabilityShareRoutinesInput: $('accountabilityShareRoutinesInput'), accountabilityShareCheckinsInput: $('accountabilityShareCheckinsInput'), accountabilityShareStepsInput: $('accountabilityShareStepsInput'), accountabilityShareMedicationInput: $('accountabilityShareMedicationInput'), accountabilityRoutineChooser: $('accountabilityRoutineChooser'), accountabilityRoutineChoices: $('accountabilityRoutineChoices'), accountabilitySnapshotPreview: $('accountabilitySnapshotPreview'), saveAccountabilityConnectionButton: $('saveAccountabilityConnectionButton'), refreshAccountabilitySnapshotButton: $('refreshAccountabilitySnapshotButton'), pauseAccountabilityConnectionButton: $('pauseAccountabilityConnectionButton'), revokeAccountabilityConnectionButton: $('revokeAccountabilityConnectionButton'), accountabilityDashboardCard: $('accountabilityDashboardCard'), accountabilityRosterCount: $('accountabilityRosterCount'), accountabilityPartnerRoster: $('accountabilityPartnerRoster'), accountabilityPartnerDetail: $('accountabilityPartnerDetail'), accountabilityPartnerAccount: $('accountabilityPartnerAccount'), accountabilityPartnerSignOutButton: $('accountabilityPartnerSignOutButton'), accountabilityPartnerSearchInput: $('accountabilityPartnerSearchInput'), accountabilityPartnerFilterInput: $('accountabilityPartnerFilterInput'), accountabilityPartnerSortInput: $('accountabilityPartnerSortInput'),
     accountabilityReportCard: $('accountabilityReportCard'), accountabilityPeriodInput: $('accountabilityPeriodInput'), accountabilityRoutineInput: $('accountabilityRoutineInput'), accountabilityMedicationInput: $('accountabilityMedicationInput'), accountabilityMedicationTimesField: $('accountabilityMedicationTimesField'), accountabilityMedicationTimesInput: $('accountabilityMedicationTimesInput'), accountabilityCheckinsInput: $('accountabilityCheckinsInput'), accountabilityHealthField: $('accountabilityHealthField'), accountabilityHealthInput: $('accountabilityHealthInput'), accountabilityReflectionInput: $('accountabilityReflectionInput'), accountabilitySupportInput: $('accountabilitySupportInput'), previewAccountabilityButton: $('previewAccountabilityButton'), accountabilityPreviewPanel: $('accountabilityPreviewPanel'), accountabilityPreviewText: $('accountabilityPreviewText'), copyAccountabilityButton: $('copyAccountabilityButton'), shareAccountabilityButton: $('shareAccountabilityButton'),
     medicationConfirmDialog: $('medicationConfirmDialog'), medicationConfirmMessage: $('medicationConfirmMessage'), medicationConfirmCancel: $('medicationConfirmCancel'), medicationConfirmContinue: $('medicationConfirmContinue'),
     deleteItemButton: $('deleteItemButton'), closeDialogButton: $('closeDialogButton'), installButton: $('installButton'), toast: $('toast')
@@ -608,6 +609,13 @@
       els.accountabilityShareProgressInput, els.accountabilityShareRoutinesInput, els.accountabilityShareCheckinsInput,
       els.accountabilityShareStepsInput, els.accountabilityShareMedicationInput]
       .forEach(input => input.addEventListener('input', renderAccountabilitySnapshotPreview));
+    els.accountabilityShareRoutinesInput.addEventListener('change', () => {
+      renderAccountabilityRoutineChoices();
+      renderAccountabilitySnapshotPreview();
+    });
+    els.accountabilityRoutineChoices.addEventListener('change', renderAccountabilitySnapshotPreview);
+    [els.accountabilityPartnerSearchInput, els.accountabilityPartnerFilterInput, els.accountabilityPartnerSortInput]
+      .forEach(input => input.addEventListener('input', renderAccountabilityPartnerDashboard));
     const invalidateAccountabilityPreview = () => {
       accountabilityPreview = '';
       accountabilityPreviewSignature = '';
@@ -3962,8 +3970,30 @@
       routineNames: els.accountabilityShareRoutinesInput.checked,
       checkins: els.accountabilityShareCheckinsInput.checked,
       steps: els.accountabilityShareStepsInput.checked,
-      medication: els.accountabilityShareMedicationInput.checked
+      medication: els.accountabilityShareMedicationInput.checked,
+      routineIds: els.accountabilityShareRoutinesInput.checked
+        ? [...els.accountabilityRoutineChoices.querySelectorAll('input[type="checkbox"]:checked')].map(input => input.value)
+        : []
     };
+  }
+
+  function accountabilityShareableRoutines() {
+    return state.items.filter(item => item && item.kind !== 'checkin' && item.type !== 'medication' && !['text', 'longtext', 'memory'].includes(item.type));
+  }
+
+  function renderAccountabilityRoutineChoices(permissionsInput = null) {
+    if (!els.accountabilityRoutineChooser || !els.accountabilityRoutineChoices) return;
+    const enabled = els.accountabilityShareRoutinesInput.checked;
+    const relationship = currentAccountabilityRelationship();
+    const normalized = window.DailyRoutineSync?.normalizeAccountabilityPermissions(
+      permissionsInput || relationship?.permissions || accountabilitySharingSettings().permissions
+    ) || { routineIds: null };
+    const selectedIds = Array.isArray(normalized.routineIds) ? new Set(normalized.routineIds) : null;
+    const routines = accountabilityShareableRoutines();
+    els.accountabilityRoutineChooser.hidden = !enabled;
+    els.accountabilityRoutineChoices.innerHTML = routines.length
+      ? routines.map(item => `<label><input type="checkbox" value="${escapeHtml(item.id)}" ${!selectedIds || selectedIds.has(item.id) ? 'checked' : ''}/><span><b>${escapeHtml(item.name)}</b><small>${escapeHtml(sectionLabels[item.section]?.[0] || 'Throughout the day')}</small></span></label>`).join('')
+      : '<p class="muted micro-copy">No non-sensitive routines are available to share.</p>';
   }
 
   function currentAccountabilityRelationship() {
@@ -4045,6 +4075,7 @@
     els.accountabilityShareCheckinsInput.checked = permissions.checkins;
     els.accountabilityShareStepsInput.checked = permissions.steps;
     els.accountabilityShareMedicationInput.checked = permissions.medication;
+    renderAccountabilityRoutineChoices(permissions);
     els.saveAccountabilityConnectionButton.textContent = relationship?.status === 'pending' ? 'Save & resend invitation' : relationship ? 'Save sharing choices' : 'Send private invitation';
     els.saveAccountabilityConnectionButton.disabled = accountabilitySharingBusy;
     els.refreshAccountabilitySnapshotButton.hidden = !relationship || relationship.status === 'revoked';
@@ -4116,7 +4147,7 @@
           permissions
         });
         if (!relationship?.id) throw new Error('The invitation could not be created.');
-        await syncCloud.pushAccountabilitySnapshot({ relationshipId: relationship.id, snapshot: buildCurrentAccountabilitySnapshot(relationship), session: privateSyncSession });
+        await syncCloud.pushAccountabilitySnapshot({ relationshipId: relationship.id, snapshot: buildCurrentAccountabilitySnapshot(relationship), schemaVersion: window.DailyRoutineSync.ACCOUNTABILITY_SCHEMA_VERSION, session: privateSyncSession });
         await syncCloud.requestEmailLink(partnerEmail, true, accountabilityRedirectUrl(relationship.id));
         selectedAccountabilityRelationshipId = relationship.id;
         showToast('Private invitation sent');
@@ -4228,28 +4259,51 @@
   }
 
   function renderAccountabilityPartnerDashboard() {
-    const relationships = accountabilityPartnerRelationships;
+    const search = String(els.accountabilityPartnerSearchInput?.value || '').trim().toLowerCase();
+    const filter = els.accountabilityPartnerFilterInput?.value || 'all';
+    const sort = els.accountabilityPartnerSortInput?.value || 'attention';
+    const rosterEntries = accountabilityPartnerRelationships.map(relationship => {
+      const record = accountabilityPartnerSnapshots.get(relationship.id) || {};
+      const snapshot = record.payload || {};
+      const name = relationship.owner_display_name || snapshot.member?.displayName || 'Routine member';
+      const updatedAt = record.updated_at || snapshot.generatedAt || relationship.updated_at || '';
+      const updatedTime = new Date(updatedAt).getTime();
+      const stale = !Number.isFinite(updatedTime) || Date.now() - updatedTime > 36 * 60 * 60 * 1000;
+      const percent = Number(snapshot.week?.percent);
+      const attention = !stale && Number.isFinite(percent) && percent < 65;
+      return { relationship, snapshot, updatedAt, updatedTime, name, stale, attention, percent };
+    });
+    const relationships = rosterEntries.filter(entry => {
+      if (search && !entry.name.toLowerCase().includes(search)) return false;
+      if (filter === 'stale') return entry.stale;
+      if (filter === 'attention') return entry.stale || entry.attention;
+      return true;
+    }).sort((left, right) => {
+      if (sort === 'name') return left.name.localeCompare(right.name);
+      if (sort === 'updated') return (right.updatedTime || 0) - (left.updatedTime || 0);
+      const leftRank = left.stale ? 0 : left.attention ? 1 : 2;
+      const rightRank = right.stale ? 0 : right.attention ? 1 : 2;
+      return leftRank - rightRank || left.name.localeCompare(right.name);
+    });
     els.accountabilityPartnerSignOutButton.hidden = !accountabilityPartnerOnlyMode;
     els.accountabilityPartnerAccount.hidden = !accountabilityPartnerOnlyMode;
-    els.accountabilityPartnerAccount.textContent = accountabilityPartnerOnlyMode && privateSyncSession?.user?.email
-      ? `Signed in as ${privateSyncSession.user.email}`
-      : '';
-    els.accountabilityDashboardCard.hidden = !relationships.length;
-    if (!relationships.length) return;
-    if (!relationships.some(item => item.id === selectedPartnerRelationshipId)) selectedPartnerRelationshipId = relationships[0].id;
-    els.accountabilityRosterCount.textContent = `${relationships.length} ${relationships.length === 1 ? 'person' : 'people'}`;
-    els.accountabilityPartnerRoster.innerHTML = relationships.map(relationship => {
-      const snapshot = accountabilityPartnerSnapshots.get(relationship.id)?.payload || {};
-      const name = relationship.owner_display_name || snapshot.member?.displayName || 'Routine member';
-      const percent = snapshot.today?.percent;
-      return `<button type="button" class="accountability-roster-person${relationship.id === selectedPartnerRelationshipId ? ' selected' : ''}" data-partner-relationship="${escapeHtml(relationship.id)}"><span class="accountability-avatar">${escapeHtml(name.slice(0, 1).toUpperCase())}</span><span><strong>${escapeHtml(name)}</strong><small>${Number.isFinite(percent) ? `${percent}% today` : 'Waiting for progress'}</small></span></button>`;
-    }).join('');
+    els.accountabilityPartnerAccount.textContent = accountabilityPartnerOnlyMode ? 'Signed in privately · read-only access' : '';
+    els.accountabilityDashboardCard.hidden = !accountabilityPartnerRelationships.length;
+    if (!accountabilityPartnerRelationships.length) return;
+    els.accountabilityRosterCount.textContent = `${accountabilityPartnerRelationships.length} ${accountabilityPartnerRelationships.length === 1 ? 'person' : 'people'}`;
+    if (!relationships.some(entry => entry.relationship.id === selectedPartnerRelationshipId)) selectedPartnerRelationshipId = relationships[0]?.relationship.id || '';
+    els.accountabilityPartnerRoster.innerHTML = relationships.length ? relationships.map(entry => {
+      const status = entry.stale ? 'No recent update' : entry.attention ? 'Check-in may help' : 'On track this week';
+      const statusClass = entry.stale ? ' stale' : entry.attention ? ' attention' : '';
+      return `<button type="button" class="accountability-roster-person${entry.relationship.id === selectedPartnerRelationshipId ? ' selected' : ''}" data-partner-relationship="${escapeHtml(entry.relationship.id)}"><span class="accountability-avatar">${escapeHtml(entry.name.slice(0, 1).toUpperCase())}</span><span><strong>${escapeHtml(entry.name)}</strong><small>${Number.isFinite(entry.percent) ? `${entry.percent}% this week` : 'Waiting for progress'}</small><em class="accountability-roster-status${statusClass}">${escapeHtml(status)}</em></span></button>`;
+    }).join('')
+      : '<div class="analytics-empty">No people match this view.</div>';
     els.accountabilityPartnerRoster.querySelectorAll('[data-partner-relationship]').forEach(button => button.addEventListener('click', () => {
       selectedPartnerRelationshipId = button.dataset.partnerRelationship;
       renderAccountabilityPartnerDashboard();
     }));
-    const relationship = relationships.find(item => item.id === selectedPartnerRelationshipId);
-    renderAccountabilityPartnerDetail(relationship, accountabilityPartnerSnapshots.get(relationship?.id)?.payload || null, accountabilityPartnerSnapshots.get(relationship?.id)?.updated_at || '');
+    const selected = relationships.find(entry => entry.relationship.id === selectedPartnerRelationshipId);
+    renderAccountabilityPartnerDetail(selected?.relationship, selected?.snapshot || null, selected?.updatedAt || '');
   }
 
   function renderAccountabilityPartnerDetail(relationship, snapshot, updatedAt) {
@@ -4259,19 +4313,46 @@
     }
     const name = relationship.owner_display_name || snapshot.member?.displayName || 'Routine member';
     const metrics = [];
+    const daily = (Array.isArray(snapshot.daily) ? snapshot.daily : []).filter(day => /^\d{4}-\d{2}-\d{2}$/.test(String(day?.date || '')));
+    const recentDays = daily.slice(-accountabilityPartnerRange);
+    const historyCompleted = recentDays.reduce((sum, day) => sum + Math.max(0, Number(day.completed) || 0), 0);
+    const historyTotal = recentDays.reduce((sum, day) => sum + Math.max(0, Number(day.total) || 0), 0);
+    const historyPercent = historyTotal ? Math.round(historyCompleted / historyTotal * 100) : null;
     if (snapshot.today) metrics.push(['Today', `${snapshot.today.percent}%`, `${snapshot.today.completed}/${snapshot.today.total} complete`]);
     if (snapshot.week) metrics.push(['This week', `${snapshot.week.percent}%`, `${snapshot.week.strongDays}/${snapshot.week.trackedDays} strong days`]);
+    if (daily.length) metrics.push(['30 days', `${Math.round(daily.reduce((sum, day) => sum + (Number(day.completed) || 0), 0) / Math.max(1, daily.reduce((sum, day) => sum + (Number(day.total) || 0), 0)) * 100)}%`, `${daily.filter(day => Number(day.total) > 0).length} tracked days`]);
     if (snapshot.steps) metrics.push(['Steps', Number(snapshot.steps.count).toLocaleString(), `${Number(snapshot.steps.goal).toLocaleString()} goal`]);
     if (snapshot.medication) metrics.push(['Medication', `${snapshot.medication.completed}/${snapshot.medication.total}`, 'completion only']);
     const routines = Array.isArray(snapshot.routines) ? snapshot.routines : [];
+    const routineTrends = Array.isArray(snapshot.routineTrends) ? snapshot.routineTrends : [];
     const checkins = Array.isArray(snapshot.checkins) ? snapshot.checkins : [];
     const updated = updatedAt ? new Date(updatedAt).toLocaleString() : 'Not available';
+    const dailyGrid = recentDays.length ? `<div class="accountability-daily-grid" role="img" aria-label="${escapeHtml(`${accountabilityPartnerRange}-day completion history`)}">${recentDays.map(day => {
+      const date = new Date(`${day.date}T12:00:00`);
+      const label = date.toLocaleDateString(undefined, { weekday: 'narrow' });
+      const percent = Math.max(0, Math.min(100, Number(day.percent) || 0));
+      const strength = percent >= 80 ? ' strong' : percent >= 65 ? ' steady' : ' low';
+      return `<div class="accountability-day${strength}" title="${escapeHtml(day.date)}: ${percent}%"><small>${escapeHtml(label)}</small><strong>${percent}</strong><span>%</span></div>`;
+    }).join('')}</div>` : '';
+    const trendRows = routineTrends.map(trend => {
+      const trendDays = (Array.isArray(trend.days) ? trend.days : []).slice(-accountabilityPartnerRange);
+      const scheduled = trendDays.length || Number(trend.scheduled) || 0;
+      const completed = trendDays.length ? trendDays.filter(day => day.completed).length : Number(trend.completed) || 0;
+      const percent = scheduled ? Math.round(completed / scheduled * 100) : 0;
+      return `<div class="accountability-trend-row"><div><strong>${escapeHtml(trend.name || 'Routine')}</strong><small>${completed} of ${scheduled} scheduled days</small></div><span>${percent}%</span><div class="accountability-trend-track"><i style="width:${percent}%"></i></div></div>`;
+    }).join('');
     els.accountabilityPartnerDetail.innerHTML = `
       <div class="accountability-partner-header"><div><p class="eyebrow">Shared progress</p><h3>${escapeHtml(name)}</h3></div><span>${snapshot.today?.truthBeforeTasks ? 'Truth Before Tasks complete' : 'Foundation not yet complete'}</span></div>
       <div class="accountability-partner-metrics">${metrics.map(([label, value, detail]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(detail)}</small></div>`).join('')}</div>
-      ${routines.length ? `<div class="accountability-shared-routines"><strong>Shared routines</strong><div>${routines.map(item => `<span class="${item.completed ? 'complete' : ''}">${item.completed ? '✓' : '○'} ${escapeHtml(item.name)}</span>`).join('')}</div></div>` : ''}
+      ${dailyGrid ? `<section class="accountability-partner-section"><div class="accountability-partner-section-heading"><div><strong>Daily completion</strong><small>${accountabilityPartnerRange} day view${historyPercent === null ? '' : ` · ${historyPercent}% overall`}</small></div><div class="accountability-range-buttons"><button type="button" data-accountability-range="7" class="${accountabilityPartnerRange === 7 ? 'active' : ''}">7D</button><button type="button" data-accountability-range="30" class="${accountabilityPartnerRange === 30 ? 'active' : ''}">30D</button></div></div>${dailyGrid}</section>` : ''}
+      ${routines.length ? `<section class="accountability-partner-section accountability-shared-routines"><strong>Today’s shared routines</strong><div>${routines.map(item => `<span class="${item.completed ? 'complete' : ''}">${item.completed ? '✓' : '○'} ${escapeHtml(item.name)}</span>`).join('')}</div></section>` : ''}
+      ${trendRows ? `<section class="accountability-partner-section"><div class="accountability-partner-section-heading"><div><strong>Routine trends</strong><small>Only routines ${escapeHtml(name)} approved</small></div></div><div class="accountability-trend-list">${trendRows}</div></section>` : ''}
       ${checkins.length ? `<div class="accountability-shared-checkins"><strong>Rating averages</strong><div>${checkins.map(item => `<span>${escapeHtml(item.name)} <b>${escapeHtml(item.average)}</b></span>`).join('')}</div></div>` : ''}
-      <p class="muted micro-copy">Last refreshed ${escapeHtml(updated)}. Only categories chosen by ${escapeHtml(name)} appear here.</p>`;
+      <p class="muted micro-copy">Last refreshed ${escapeHtml(updated)}. Only approved results appear here—never notes, journal text, or raw Health records.</p>`;
+    els.accountabilityPartnerDetail.querySelectorAll('[data-accountability-range]').forEach(button => button.addEventListener('click', () => {
+      accountabilityPartnerRange = Number(button.dataset.accountabilityRange) === 30 ? 30 : 7;
+      renderAccountabilityPartnerDetail(relationship, snapshot, updatedAt);
+    }));
   }
 
   function accountabilitySharingErrorMessage(error) {

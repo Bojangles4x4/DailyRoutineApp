@@ -8,7 +8,7 @@
   const SYNC_SCHEMA_VERSION = 1;
   const METADATA_KEY = 'dailyRoutine.sync.metadata.v1';
   const CONFLICTS_KEY = 'dailyRoutine.sync.conflicts.v1';
-  const ACCOUNTABILITY_SCHEMA_VERSION = 1;
+  const ACCOUNTABILITY_SCHEMA_VERSION = 2;
   const MISSING = Symbol('missing');
 
   function clone(value) {
@@ -177,15 +177,20 @@
     routineNames: true,
     checkins: false,
     steps: false,
-    medication: false
+    medication: false,
+    routineIds: null
   });
 
   function normalizeAccountabilityPermissions(input) {
     const source = isPlainObject(input) ? input : {};
-    return Object.keys(DEFAULT_ACCOUNTABILITY_PERMISSIONS).reduce((result, key) => {
-      result[key] = source[key] === undefined ? DEFAULT_ACCOUNTABILITY_PERMISSIONS[key] : Boolean(source[key]);
-      return result;
+    const result = ['progressTotals', 'routineNames', 'checkins', 'steps', 'medication'].reduce((normalized, key) => {
+      normalized[key] = source[key] === undefined ? DEFAULT_ACCOUNTABILITY_PERMISSIONS[key] : Boolean(source[key]);
+      return normalized;
     }, {});
+    result.routineIds = Array.isArray(source.routineIds)
+      ? [...new Set(source.routineIds.map(value => String(value || '').trim()).filter(Boolean))].slice(0, 100)
+      : null;
+    return result;
   }
 
   function accountabilityDateKey(value) {
@@ -242,6 +247,12 @@
     return { key, entries, items, completed, total: items.length, percent: items.length ? Math.round(completed / items.length * 100) : 0 };
   }
 
+  function accountabilityShareableRoutines(state) {
+    return (Array.isArray(state?.items) ? state.items : []).filter(item =>
+      item && item.kind !== 'checkin' && item.type !== 'medication' && !['text', 'longtext', 'memory'].includes(item.type)
+    );
+  }
+
   function buildAccountabilitySnapshot(stateInput, options = {}) {
     const state = isPlainObject(stateInput) ? stateInput : {};
     const permissions = normalizeAccountabilityPermissions(options.permissions);
@@ -252,7 +263,11 @@
     const weekStart = accountabilityShiftDate(todayDate, dayOfWeek === 0 ? -6 : 1 - dayOfWeek);
     const dates = [];
     for (let cursor = weekStart; accountabilityDateKey(cursor) <= today.key; cursor = accountabilityShiftDate(cursor, 1)) dates.push(cursor);
-    const metrics = dates.map(date => accountabilityDayMetrics(state, date));
+    const metrics = dates.map(date => accountabilityDayMetrics(state, date))
+      .filter(metric => metric.key === today.key || isPlainObject(state?.days?.[metric.key]));
+    const historyDates = Array.from({ length: 30 }, (_, index) => accountabilityShiftDate(todayDate, index - 29));
+    const trackedHistoryDates = historyDates.filter(date => accountabilityDateKey(date) === today.key || isPlainObject(state?.days?.[accountabilityDateKey(date)]));
+    const historyMetrics = trackedHistoryDates.map(date => accountabilityDayMetrics(state, date));
     const completed = metrics.reduce((sum, metric) => sum + metric.completed, 0);
     const total = metrics.reduce((sum, metric) => sum + metric.total, 0);
     const truthCompletions = isPlainObject(state?.settings?.truthBeforeTasks?.completions) ? state.settings.truthBeforeTasks.completions : {};
@@ -279,16 +294,41 @@
         trackedDays: metrics.filter(metric => metric.total > 0).length,
         strongDays: metrics.filter(metric => metric.total > 0 && metric.percent >= 80).length
       };
+      snapshot.daily = historyMetrics.map(metric => ({
+        date: metric.key,
+        completed: metric.completed,
+        total: metric.total,
+        percent: metric.percent,
+        truthBeforeTasks: Boolean(truthCompletions[metric.key])
+      }));
     }
 
     if (permissions.routineNames) {
-      snapshot.routines = today.items
-        .filter(item => item.type !== 'medication' && item.kind !== 'checkin')
+      const allowedIds = Array.isArray(permissions.routineIds) ? new Set(permissions.routineIds) : null;
+      const sharedRoutines = accountabilityShareableRoutines(state).filter(item => !allowedIds || allowedIds.has(String(item.id || '')));
+      snapshot.routines = sharedRoutines
+        .filter(item => accountabilityItemScheduled(item, todayDate))
         .map(item => ({
           name: String(item.name || 'Routine').slice(0, 100),
           section: ['morning', 'day', 'evening'].includes(item.section) ? item.section : 'day',
           completed: accountabilityEntryComplete(item, today.entries[item.id])
         }));
+      snapshot.routineTrends = sharedRoutines.map(item => {
+        const itemDays = trackedHistoryDates.filter(date => accountabilityItemScheduled(item, date)).map(date => {
+          const key = accountabilityDateKey(date);
+          const entries = isPlainObject(state?.days?.[key]?.entries) ? state.days[key].entries : {};
+          return { date: key, completed: accountabilityEntryComplete(item, entries[item.id]) };
+        });
+        const completedCount = itemDays.filter(day => day.completed).length;
+        return {
+          name: String(item.name || 'Routine').slice(0, 100),
+          section: ['morning', 'day', 'evening'].includes(item.section) ? item.section : 'day',
+          completed: completedCount,
+          scheduled: itemDays.length,
+          percent: itemDays.length ? Math.round(completedCount / itemDays.length * 100) : 0,
+          days: itemDays
+        };
+      });
     }
 
     if (permissions.checkins) {

@@ -267,6 +267,11 @@
                   <label class="toggle-field"><input id="accountabilityShareMedicationInput" type="checkbox" /><span><b>Medication completion</b><small>A completed count only—never names, doses, or times.</small></span></label>
                 </fieldset>
 
+                <div id="accountabilityRoutineChooser" class="accountability-routine-chooser">
+                  <div><strong>Choose shared routines</strong><small>Only checked routine names and completion trends will appear. Written-response routines stay private.</small></div>
+                  <div id="accountabilityRoutineChoices" class="accountability-routine-choices"></div>
+                </div>
+
                 <div id="accountabilitySnapshotPreview" class="accountability-snapshot-preview"></div>
                 <p class="accountability-privacy-note"><strong>Always private:</strong> notes, prayer text, reflections, medication names and times, and raw Apple Health data are never placed in the shared snapshot.</p>
 
@@ -291,6 +296,11 @@
           </div>
           <p class="muted accountability-intro">A calm, read-only view of the progress each person chose to share.</p>
           <p id="accountabilityPartnerAccount" class="muted micro-copy accountability-partner-account" hidden></p>
+          <div class="accountability-dashboard-tools">
+            <label class="notes-search-field"><span class="sr-only">Find a person</span><input id="accountabilityPartnerSearchInput" type="search" placeholder="Find a person…" /></label>
+            <label><span class="sr-only">Filter people</span><select id="accountabilityPartnerFilterInput"><option value="all">All people</option><option value="attention">May need check-in</option><option value="stale">No recent update</option></select></label>
+            <label><span class="sr-only">Sort people</span><select id="accountabilityPartnerSortInput"><option value="attention">Needs attention</option><option value="updated">Recently updated</option><option value="name">Name</option></select></label>
+          </div>
           <div class="accountability-dashboard-layout">
             <div id="accountabilityPartnerRoster" class="accountability-partner-roster"></div>
             <div id="accountabilityPartnerDetail" class="accountability-partner-detail"></div>

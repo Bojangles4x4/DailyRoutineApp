@@ -4,6 +4,8 @@ Build 23 adds relationship-based accountability sharing without granting access 
 
 Build 24 adds a dedicated partner experience. A partner-only account lands on a read-only results dashboard and does not receive the routine owner interface, Truth Before Tasks, notes, setup controls, personal analytics, or routine editing tools. Partner sign-in also skips routine-document synchronization entirely.
 
+Build 25 adds exact routine selection for each relationship and a calmer multi-person dashboard with search, attention filters, sorting, weekly completion, 30-day completion, and per-routine trends. The additional history remains inside the same whitelist-only snapshot and does not grant access to the owner’s full routine document.
+
 ## Roles and access
 
 - A routine owner may invite one or more accountability partners.
@@ -20,11 +22,14 @@ The app builds a separate whitelist-only snapshot. Depending on the owner’s sw
 - today and week completion totals;
 - Truth Before Tasks completion status;
 - names and completion states for non-sensitive routine items;
+- up to 30 days of completion totals and owner-selected routine completion trends;
 - numeric rating averages;
 - today’s step total and goal; or
 - a medication-completion count.
 
 The snapshot never contains notes, prayer text, memories, written check-ins, medication names, doses or times, raw Apple Health records, Screen Time selections, or the full `routine_documents` record.
+
+Only preferred display names are shown in the partner roster. Client email addresses, clinical notes, diagnoses, contact details, and treatment information are not part of the partner dashboard.
 
 ## Database controls
 
