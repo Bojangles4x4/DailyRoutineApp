@@ -1,4 +1,4 @@
-const CACHE_NAME = 'daily-routine-v1-21-0-build-23-accountability-shortcut-fix';
+const CACHE_NAME = 'daily-routine-v1-22-0-build-24-partner-dashboard';
 const ASSETS = ['./','./index.html','./styles.css','./sync-core.js','./sync-cloud.js','./app.js','./manifest.webmanifest','./icon-192.png','./icon-512.png','./privacy.html','./support.html','./legal.css'];
 
 self.addEventListener('install', event => {

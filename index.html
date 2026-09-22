@@ -282,8 +282,15 @@
         </section>
 
         <section class="card accountability-dashboard-card" id="accountabilityDashboardCard" hidden>
-          <div class="section-heading"><div><p class="eyebrow">Partner dashboard</p><h2>People sharing with you</h2></div><span id="accountabilityRosterCount" class="privacy-pill">0 people</span></div>
+          <div class="section-heading accountability-partner-dashboard-heading">
+            <div><p class="eyebrow">Partner dashboard</p><h2>People sharing with you</h2></div>
+            <div class="accountability-partner-account-actions">
+              <span id="accountabilityRosterCount" class="privacy-pill">0 people</span>
+              <button id="accountabilityPartnerSignOutButton" class="small-button" type="button" hidden>Sign out</button>
+            </div>
+          </div>
           <p class="muted accountability-intro">A calm, read-only view of the progress each person chose to share.</p>
+          <p id="accountabilityPartnerAccount" class="muted micro-copy accountability-partner-account" hidden></p>
           <div class="accountability-dashboard-layout">
             <div id="accountabilityPartnerRoster" class="accountability-partner-roster"></div>
             <div id="accountabilityPartnerDetail" class="accountability-partner-detail"></div>
@@ -423,7 +430,7 @@
         </section>
 
         <section class="card iphone-widget-card" id="iphoneWidgetCard" data-setup-category="health" hidden>
-          <div class="section-heading"><div><p class="eyebrow">Home Screen</p><h2>Today’s Rhythm widget</h2></div><span class="native-badge">Build 23</span></div>
+          <div class="section-heading"><div><p class="eyebrow">Home Screen</p><h2>Today’s Rhythm widget</h2></div><span class="native-badge">Build 24</span></div>
           <p class="muted setup-help">See your Morning Foundation and today’s progress without opening the app. The large widget can also complete eligible, non-sensitive checkbox routines.</p>
           <div class="widget-size-options" aria-label="Available iPhone widget sizes">
             <div><span class="widget-size-shape large" aria-hidden="true"></span><strong>Large</strong><small>Progress, earned time, and up to three routine actions</small></div>
@@ -431,7 +438,7 @@
             <div><span class="widget-size-shape small" aria-hidden="true"></span><strong>Small</strong><small>Foundation and progress at a glance</small></div>
           </div>
           <details class="widget-install-guide">
-            <summary>How to add it after installing Build 23</summary>
+            <summary>How to add it after installing Build 24</summary>
             <ol>
               <li>Touch and hold an empty area of your iPhone Home Screen.</li>
               <li>Tap <b>Edit</b>, then <b>Add Widget</b>.</li>
@@ -632,7 +639,7 @@
             <a href="privacy.html">Privacy Policy</a>
             <a href="support.html">Support</a>
           </div>
-          <p class="app-version">Daily Routine <b id="appVersion">v1.21.0 · Build 23</b></p>
+          <p class="app-version">Daily Routine <b id="appVersion">v1.22.0 · Build 24</b></p>
         </section>
 
 
@@ -676,7 +683,7 @@
         </section>
 
         <section class="card private-sharing-card" data-setup-category="data">
-          <div class="section-heading"><div><p class="eyebrow">Available in Build 23</p><h2>Private accountability</h2></div></div>
+          <div class="section-heading"><div><p class="eyebrow">Private sharing</p><h2>Private accountability</h2></div></div>
           <p>Invite one accountability partner or support several people from the private sharing area in Progress.</p>
           <button id="openAccountabilityFromSetupButton" class="primary-button" type="button">Open private accountability</button>
         </section>

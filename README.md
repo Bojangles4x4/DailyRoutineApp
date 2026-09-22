@@ -2,8 +2,11 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.21.0 development features
+## Version 1.22.0 development features
 
+- Build 24 gives accountability partners a focused, read-only results dashboard instead of a second copy of the routine app
+- Partner accounts bypass Truth Before Tasks and hide Today, Notes, Setup, personal analytics, editing tools, and the routine navigation footer
+- Invitation links now land on the correct internal Progress view, and partner sign-in never creates or synchronizes a separate routine document
 - Build 23 adds a privacy-filtered accountability foundation with one-to-one sharing and a many-person partner roster
 - Every owner-to-partner connection has independent permissions and pending, active, paused, or revoked access
 - Partners receive a small read-only progress snapshot rather than the owner’s full routine document

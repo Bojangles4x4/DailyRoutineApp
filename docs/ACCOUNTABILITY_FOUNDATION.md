@@ -2,6 +2,8 @@
 
 Build 23 adds relationship-based accountability sharing without granting access to an owner’s synchronized routine document.
 
+Build 24 adds a dedicated partner experience. A partner-only account lands on a read-only results dashboard and does not receive the routine owner interface, Truth Before Tasks, notes, setup controls, personal analytics, or routine editing tools. Partner sign-in also skips routine-document synchronization entirely.
+
 ## Roles and access
 
 - A routine owner may invite one or more accountability partners.
@@ -9,6 +11,7 @@ Build 23 adds relationship-based accountability sharing without granting access 
 - Each relationship has independent permissions and a `pending`, `active`, `paused`, or `revoked` status.
 - The invited person must authenticate with the exact invited email address before the relationship becomes active.
 - Paused and revoked relationships cannot read a snapshot.
+- Accounts that only serve as accountability partners see only their authorized roster and shared snapshots.
 
 ## Shared data boundary
 

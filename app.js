@@ -7,8 +7,8 @@
   const EARNED_ACCESS_DEVICE_KEY = 'dailyRoutine.earnedAccess.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.21.0';
-  const APP_BUILD = 23;
+  const APP_VERSION = '1.22.0';
+  const APP_BUILD = 24;
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const DEFAULT_BIBLE_APP_URL = 'https://bojangles4x4.github.io/Bible-Reading-Plan/';
@@ -96,6 +96,7 @@
   let selectedPartnerRelationshipId = '';
   let accountabilitySharingBusy = false;
   let accountabilitySnapshotTimer = null;
+  let accountabilityPartnerOnlyMode = false;
   let actualTimesExpanded = false;
   const syncCoordinator = window.DailyRoutineSync?.createCoordinator({ storage: localStorage }) || null;
   const syncCloud = window.DailyRoutineCloud?.createClient({
@@ -140,7 +141,7 @@
     healthSleepSuggestion: $('healthSleepSuggestion'), healthSleepSuggestionText: $('healthSleepSuggestionText'), applyHealthSleepButton: $('applyHealthSleepButton'),
     linkedActionFields: $('linkedActionFields'), linkedTemplateInput: $('linkedTemplateInput'), linkedCompletionInput: $('linkedCompletionInput'), linkedUrlField: $('linkedUrlField'), linkedUrlInput: $('linkedUrlInput'), linkedInternalField: $('linkedInternalField'), linkedInternalTargetInput: $('linkedInternalTargetInput'), linkedButtonLabelInput: $('linkedButtonLabelInput'), timeWindowFields: $('timeWindowFields'), timeWindowStartInput: $('timeWindowStartInput'), timeWindowEndInput: $('timeWindowEndInput'),
     medicationProgressCard: $('medicationProgressCard'), weeklyReviewCard: $('weeklyReviewCard'), memoryBankCard: $('memoryBankCard'), dataBackupCard: $('dataBackupCard'),
-    accountabilitySharingCard: $('accountabilitySharingCard'), accountabilitySharingBadge: $('accountabilitySharingBadge'), accountabilitySharingSignedOut: $('accountabilitySharingSignedOut'), accountabilitySharingOwner: $('accountabilitySharingOwner'), openPrivateSyncForAccountabilityButton: $('openPrivateSyncForAccountabilityButton'), accountabilityConnectionsList: $('accountabilityConnectionsList'), accountabilityConnectionEditor: $('accountabilityConnectionEditor'), accountabilityEditorTitle: $('accountabilityEditorTitle'), accountabilityEditorStatus: $('accountabilityEditorStatus'), accountabilityOwnerNameInput: $('accountabilityOwnerNameInput'), accountabilityPartnerNameInput: $('accountabilityPartnerNameInput'), accountabilityPartnerEmailInput: $('accountabilityPartnerEmailInput'), accountabilityShareProgressInput: $('accountabilityShareProgressInput'), accountabilityShareRoutinesInput: $('accountabilityShareRoutinesInput'), accountabilityShareCheckinsInput: $('accountabilityShareCheckinsInput'), accountabilityShareStepsInput: $('accountabilityShareStepsInput'), accountabilityShareMedicationInput: $('accountabilityShareMedicationInput'), accountabilitySnapshotPreview: $('accountabilitySnapshotPreview'), saveAccountabilityConnectionButton: $('saveAccountabilityConnectionButton'), refreshAccountabilitySnapshotButton: $('refreshAccountabilitySnapshotButton'), pauseAccountabilityConnectionButton: $('pauseAccountabilityConnectionButton'), revokeAccountabilityConnectionButton: $('revokeAccountabilityConnectionButton'), accountabilityDashboardCard: $('accountabilityDashboardCard'), accountabilityRosterCount: $('accountabilityRosterCount'), accountabilityPartnerRoster: $('accountabilityPartnerRoster'), accountabilityPartnerDetail: $('accountabilityPartnerDetail'),
+    accountabilitySharingCard: $('accountabilitySharingCard'), accountabilitySharingBadge: $('accountabilitySharingBadge'), accountabilitySharingSignedOut: $('accountabilitySharingSignedOut'), accountabilitySharingOwner: $('accountabilitySharingOwner'), openPrivateSyncForAccountabilityButton: $('openPrivateSyncForAccountabilityButton'), accountabilityConnectionsList: $('accountabilityConnectionsList'), accountabilityConnectionEditor: $('accountabilityConnectionEditor'), accountabilityEditorTitle: $('accountabilityEditorTitle'), accountabilityEditorStatus: $('accountabilityEditorStatus'), accountabilityOwnerNameInput: $('accountabilityOwnerNameInput'), accountabilityPartnerNameInput: $('accountabilityPartnerNameInput'), accountabilityPartnerEmailInput: $('accountabilityPartnerEmailInput'), accountabilityShareProgressInput: $('accountabilityShareProgressInput'), accountabilityShareRoutinesInput: $('accountabilityShareRoutinesInput'), accountabilityShareCheckinsInput: $('accountabilityShareCheckinsInput'), accountabilityShareStepsInput: $('accountabilityShareStepsInput'), accountabilityShareMedicationInput: $('accountabilityShareMedicationInput'), accountabilitySnapshotPreview: $('accountabilitySnapshotPreview'), saveAccountabilityConnectionButton: $('saveAccountabilityConnectionButton'), refreshAccountabilitySnapshotButton: $('refreshAccountabilitySnapshotButton'), pauseAccountabilityConnectionButton: $('pauseAccountabilityConnectionButton'), revokeAccountabilityConnectionButton: $('revokeAccountabilityConnectionButton'), accountabilityDashboardCard: $('accountabilityDashboardCard'), accountabilityRosterCount: $('accountabilityRosterCount'), accountabilityPartnerRoster: $('accountabilityPartnerRoster'), accountabilityPartnerDetail: $('accountabilityPartnerDetail'), accountabilityPartnerAccount: $('accountabilityPartnerAccount'), accountabilityPartnerSignOutButton: $('accountabilityPartnerSignOutButton'),
     accountabilityReportCard: $('accountabilityReportCard'), accountabilityPeriodInput: $('accountabilityPeriodInput'), accountabilityRoutineInput: $('accountabilityRoutineInput'), accountabilityMedicationInput: $('accountabilityMedicationInput'), accountabilityMedicationTimesField: $('accountabilityMedicationTimesField'), accountabilityMedicationTimesInput: $('accountabilityMedicationTimesInput'), accountabilityCheckinsInput: $('accountabilityCheckinsInput'), accountabilityHealthField: $('accountabilityHealthField'), accountabilityHealthInput: $('accountabilityHealthInput'), accountabilityReflectionInput: $('accountabilityReflectionInput'), accountabilitySupportInput: $('accountabilitySupportInput'), previewAccountabilityButton: $('previewAccountabilityButton'), accountabilityPreviewPanel: $('accountabilityPreviewPanel'), accountabilityPreviewText: $('accountabilityPreviewText'), copyAccountabilityButton: $('copyAccountabilityButton'), shareAccountabilityButton: $('shareAccountabilityButton'),
     medicationConfirmDialog: $('medicationConfirmDialog'), medicationConfirmMessage: $('medicationConfirmMessage'), medicationConfirmCancel: $('medicationConfirmCancel'), medicationConfirmContinue: $('medicationConfirmContinue'),
     deleteItemButton: $('deleteItemButton'), closeDialogButton: $('closeDialogButton'), installButton: $('installButton'), toast: $('toast')
@@ -602,6 +603,7 @@
     els.refreshAccountabilitySnapshotButton.addEventListener('click', () => publishAccountabilitySnapshot(selectedAccountabilityRelationshipId));
     els.pauseAccountabilityConnectionButton.addEventListener('click', toggleAccountabilityConnectionPause);
     els.revokeAccountabilityConnectionButton.addEventListener('click', revokeAccountabilityConnection);
+    els.accountabilityPartnerSignOutButton.addEventListener('click', disconnectPrivateSync);
     [els.accountabilityOwnerNameInput, els.accountabilityPartnerNameInput, els.accountabilityPartnerEmailInput,
       els.accountabilityShareProgressInput, els.accountabilityShareRoutinesInput, els.accountabilityShareCheckinsInput,
       els.accountabilityShareStepsInput, els.accountabilityShareMedicationInput]
@@ -683,7 +685,11 @@
   }
 
   function bindInstall() {
-    window.addEventListener('beforeinstallprompt', event => { event.preventDefault(); deferredInstallPrompt = event; els.installButton.hidden = false; });
+    window.addEventListener('beforeinstallprompt', event => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      els.installButton.hidden = accountabilityPartnerOnlyMode;
+    });
     els.installButton.addEventListener('click', async () => {
       if (!deferredInstallPrompt) return;
       deferredInstallPrompt.prompt();
@@ -2868,6 +2874,34 @@
     renderPrivateSyncStatus();
   }
 
+  function shouldUseAccountabilityPartnerMode() {
+    return Boolean(privateSyncSession && accountabilityPartnerRelationships.length && !accountabilityRelationships.length);
+  }
+
+  function setAccountabilityPartnerMode(active) {
+    const next = Boolean(active);
+    const changed = accountabilityPartnerOnlyMode !== next;
+    accountabilityPartnerOnlyMode = next;
+    document.body.classList.toggle('accountability-partner-mode', next);
+    els.accountabilityPartnerSignOutButton.hidden = !next;
+    els.accountabilityPartnerAccount.hidden = !next;
+    els.accountabilityPartnerAccount.textContent = next && privateSyncSession?.user?.email
+      ? `Signed in as ${privateSyncSession.user.email}`
+      : '';
+    if (next) {
+      els.pageTitle.textContent = 'Accountability';
+      els.installButton.hidden = true;
+      switchView('history', { scrollToTop: false });
+      els.pageContext.textContent = 'Shared progress';
+      requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
+    } else if (changed) {
+      els.pageTitle.textContent = 'Daily Routine';
+      els.installButton.hidden = !deferredInstallPrompt;
+      els.pageContext.textContent = 'Today';
+    }
+    if (changed) document.dispatchEvent(new CustomEvent('dailyRoutine:accountability-partner-mode', { detail: { active: next } }));
+  }
+
   async function refreshPrivateSyncSession() {
     if (!syncCloud) return;
     try {
@@ -2877,7 +2911,9 @@
       if (privateSyncSession) {
         const acceptedInvite = await acceptAccountabilityInvitationFromUrl();
         await loadAccountabilityData();
-        if (acceptedInvite || new URLSearchParams(window.location.search).get('accountability') === 'partner') switchView('progress');
+        const partnerMode = shouldUseAccountabilityPartnerMode();
+        setAccountabilityPartnerMode(partnerMode);
+        if (!partnerMode && (acceptedInvite || new URLSearchParams(window.location.search).get('accountability') === 'partner')) switchView('history');
       }
     } catch (error) {
       privateSyncSession = null;
@@ -2928,6 +2964,13 @@
     try {
       privateSyncSession = await syncCloud.signInWithPassword(email, password);
       els.privateSyncPasswordInput.value = '';
+      await loadAccountabilityData();
+      if (shouldUseAccountabilityPartnerMode()) {
+        els.privateSyncSignIn.hidden = true;
+        setAccountabilityPartnerMode(true);
+        showToast('Accountability access connected');
+        return;
+      }
       createLocalSnapshot('Before first cloud sync', true);
       els.privateSyncSignIn.hidden = true;
       await performPrivateSync({ keepBusy: true });
@@ -2993,7 +3036,10 @@
   }
 
   async function disconnectPrivateSync() {
-    if (!confirm('Disconnect private sync on this device? Your local routine data will remain here.')) return;
+    const message = accountabilityPartnerOnlyMode
+      ? 'Sign out of the accountability dashboard on this device?'
+      : 'Disconnect private sync on this device? Your local routine data will remain here.';
+    if (!confirm(message)) return;
     setPrivateSyncBusy(true);
     try {
       await syncCloud.signOut();
@@ -3001,6 +3047,7 @@
       accountabilityRelationships = [];
       accountabilityPartnerRelationships = [];
       accountabilityPartnerSnapshots = new Map();
+      setAccountabilityPartnerMode(false);
       syncCoordinator?.disconnect();
       els.privateSyncPasswordInput.value = '';
       els.privateSyncHelp.textContent = 'New registrations are closed. Only the owner account created during private setup can connect.';
@@ -4182,6 +4229,11 @@
 
   function renderAccountabilityPartnerDashboard() {
     const relationships = accountabilityPartnerRelationships;
+    els.accountabilityPartnerSignOutButton.hidden = !accountabilityPartnerOnlyMode;
+    els.accountabilityPartnerAccount.hidden = !accountabilityPartnerOnlyMode;
+    els.accountabilityPartnerAccount.textContent = accountabilityPartnerOnlyMode && privateSyncSession?.user?.email
+      ? `Signed in as ${privateSyncSession.user.email}`
+      : '';
     els.accountabilityDashboardCard.hidden = !relationships.length;
     if (!relationships.length) return;
     if (!relationships.some(item => item.id === selectedPartnerRelationshipId)) selectedPartnerRelationshipId = relationships[0].id;
@@ -4774,6 +4826,7 @@
     }
 
     function showTruth() {
+      if (document.body.classList.contains('accountability-partner-mode')) return;
       activeDateKey = todayKey();
       api.syncMorningFoundation(false, activeDateKey);
       const session = getSession(activeDateKey);
@@ -4925,6 +4978,10 @@
     }
 
     function tick() {
+      if (document.body.classList.contains('accountability-partner-mode')) {
+        unlock();
+        return;
+      }
       if (isComplete()) unlock();
       else updateProgress();
     }
@@ -5201,12 +5258,17 @@
     normalizeConfig();
     bindGate();
     bindSettings();
+    document.addEventListener('dailyRoutine:accountability-partner-mode', event => {
+      if (event.detail?.active) unlock();
+      else if (!isComplete()) showTruth();
+    });
     renderSettings();
     if (isComplete()) {
       unlock();
       api.syncMorningFoundation(true, todayKey());
     } else showTruth();
     window.setInterval(() => {
+      if (document.body.classList.contains('accountability-partner-mode')) return;
       const key = todayKey();
       if (!isComplete(key) && (!document.body.classList.contains('truth-locked') || key !== activeDateKey)) showTruth();
     }, 60000);

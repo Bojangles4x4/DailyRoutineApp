@@ -26,11 +26,64 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#truthHeroTitle').textContent(), 'Truth Before Tasks');
   assert.equal(await page.locator('#truthEnterDayButton').isDisabled(), true);
   assert.equal(await page.locator('#accountabilitySharingCard').count(), 1);
-  assert.equal(await page.locator('#appVersion').textContent(), 'v1.21.0 · Build 23');
+  assert.equal(await page.locator('#appVersion').textContent(), 'v1.22.0 · Build 24');
   assert.match(await page.locator('#openAccountabilityFromSetupButton').textContent(), /Open private accountability/);
   assert.equal(await page.locator('#accountabilitySharingSignedOut').evaluate(element => element.hidden), false);
   assert.match(await page.locator('#accountabilitySharingSignedOut').textContent(), /Connect Private Sync first/);
   assert.equal(await page.locator('#accountabilityDashboardCard').evaluate(element => element.hidden), true);
+
+  const partnerPage = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+  const partnerCloudRequests = [];
+  await partnerPage.addInitScript(() => {
+    localStorage.setItem('dailyRoutine.sync.session.v1', JSON.stringify({
+      access_token: 'partner-access',
+      refresh_token: 'partner-refresh',
+      expires_at: Math.floor(Date.now() / 1000) + 3600,
+      user: { id: 'partner-1', email: 'partner@example.com' }
+    }));
+  });
+  await partnerPage.route('https://shmvxujnlbolgcjwwewe.supabase.co/**', async route => {
+    const url = route.request().url();
+    partnerCloudRequests.push(url);
+    const relationship = {
+      id: 'relationship-1', owner_id: 'owner-1', owner_display_name: 'Taylor', partner_id: 'partner-1',
+      partner_email: 'partner@example.com', partner_display_name: 'Accountability Partner', status: 'active',
+      permissions: { progressTotals: true, routineNames: true, checkins: false, steps: true, medication: false },
+      accepted_at: new Date().toISOString(), updated_at: new Date().toISOString()
+    };
+    if (url.includes('/accountability_relationships?owner_id=')) return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+    if (url.includes('/accountability_relationships?partner_id=')) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([relationship]) });
+    if (url.includes('/accountability_snapshots?relationship_id=')) {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{
+        relationship_id: 'relationship-1', owner_id: 'owner-1', revision: 2, updated_at: new Date().toISOString(),
+        payload: {
+          member: { displayName: 'Taylor' },
+          today: { percent: 75, completed: 6, total: 8, truthBeforeTasks: true },
+          week: { percent: 82, strongDays: 4, trackedDays: 5 },
+          steps: { count: 6400, goal: 8000 },
+          routines: [{ name: 'Prayer', completed: true }, { name: 'Movement', completed: false }]
+        }
+      }]) });
+    }
+    return route.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify({ message: 'Unexpected test request' }) });
+  });
+  await partnerPage.goto(`${baseURL}?accountability=partner`, { waitUntil: 'networkidle' });
+  await partnerPage.waitForFunction(() => document.body.classList.contains('accountability-partner-mode'));
+  assert.equal(await partnerPage.locator('body').evaluate(element => element.classList.contains('truth-locked')), false);
+  assert.equal((await partnerPage.locator('#pageTitle').textContent()).trim(), 'Accountability');
+  assert.equal((await partnerPage.locator('#pageContext').textContent()).trim(), 'Shared progress');
+  assert.equal(await partnerPage.locator('#historyView').evaluate(element => element.classList.contains('active')), true);
+  assert.equal(await partnerPage.locator('#accountabilityDashboardCard').isVisible(), true);
+  assert.match(await partnerPage.locator('#accountabilityPartnerDetail').textContent(), /Taylor/);
+  assert.match(await partnerPage.locator('#accountabilityPartnerDetail').textContent(), /75%/);
+  assert.match(await partnerPage.locator('#accountabilityPartnerAccount').textContent(), /partner@example\.com/);
+  assert.equal(await partnerPage.locator('#accountabilityPartnerSignOutButton').isVisible(), true);
+  assert.equal(await partnerPage.locator('.bottom-nav').evaluate(element => getComputedStyle(element).display), 'none');
+  const partnerVisibleSections = await partnerPage.evaluate(() => [...document.querySelectorAll('#historyView > section')]
+    .filter(section => getComputedStyle(section).display !== 'none').map(section => section.id));
+  assert.deepEqual(partnerVisibleSections, ['accountabilityDashboardCard']);
+  assert.equal(partnerCloudRequests.some(url => url.includes('/routine_documents')), false);
+  await partnerPage.close();
 
   const today = localDateKey();
   const lockedCommandResult = await page.evaluate(key => {
