@@ -530,7 +530,7 @@
     document.querySelectorAll('.nav-button').forEach(button => button.addEventListener('click', () => switchView(button.dataset.view)));
   }
 
-  function switchView(view) {
+  function switchView(view, { scrollToTop = true } = {}) {
     const contexts = { today: 'Today', notes: 'Notes', history: 'Progress', setup: 'Setup' };
     document.querySelectorAll('.nav-button').forEach(button => {
       const active = button.dataset.view === view;
@@ -547,7 +547,7 @@
     if (view === 'history') renderHistory();
     if (view === 'setup') renderSetup();
     $('appMain').focus({ preventScroll: true });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (scrollToTop) window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function bindTodayControls() {
@@ -590,7 +590,7 @@
   function bindProgressControls() {
     els.saveWeeklyFocusButton.addEventListener('click', saveWeeklyFocus);
     els.openAccountabilityFromSetupButton.addEventListener('click', () => {
-      switchView('history');
+      switchView('history', { scrollToTop: false });
       requestAnimationFrame(() => els.accountabilitySharingCard?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
     });
     els.openPrivateSyncForAccountabilityButton.addEventListener('click', () => {
