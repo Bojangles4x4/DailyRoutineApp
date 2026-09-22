@@ -6,6 +6,8 @@ Build 24 adds a dedicated partner experience. A partner-only account lands on a 
 
 Build 25 adds exact routine selection for each relationship and a calmer multi-person dashboard with search, attention filters, sorting, weekly completion, 30-day completion, and per-routine trends. The additional history remains inside the same whitelist-only snapshot and does not grant access to the owner’s full routine document.
 
+Build 26 adds a clear selected-routine count plus select-all and clear controls. Memory-style routines may now share only their routine name and completion state; the remembered text and memory identifier remain excluded from the snapshot.
+
 ## Roles and access
 
 - A routine owner may invite one or more accountability partners.

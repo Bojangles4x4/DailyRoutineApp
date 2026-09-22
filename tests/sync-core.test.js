@@ -127,6 +127,22 @@ test('shares trends only for routines individually approved by the owner', () =>
   assert.equal(serialized.includes('private response'), false);
 });
 
+test('shares completion for memory routines without sharing remembered text', () => {
+  const state = sampleState();
+  state.items.push({ id: 'remember', name: 'Remember this God moment', kind: 'routine', type: 'memory', section: 'day', frequency: 'daily' });
+  state.days['2026-08-25'].entries.remember = { memoryId: 'private-memory', reflected: true };
+  state.memories = [{ id: 'private-memory', text: 'private remembered text' }];
+  const snapshot = buildAccountabilitySnapshot(state, {
+    today: '2026-08-25',
+    permissions: { progressTotals: true, routineNames: true, routineIds: ['remember'] }
+  });
+  const serialized = JSON.stringify(snapshot);
+  assert.deepEqual(snapshot.routines, [{ name: 'Remember this God moment', section: 'day', completed: true }]);
+  assert.equal(snapshot.routineTrends[0].completed, 1);
+  assert.equal(serialized.includes('private-memory'), false);
+  assert.equal(serialized.includes('private remembered text'), false);
+});
+
 test('omits every optional accountability category when permission is off', () => {
   const snapshot = buildAccountabilitySnapshot(sampleState(), {
     today: '2026-08-25',

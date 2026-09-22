@@ -227,6 +227,7 @@
   function accountabilityEntryComplete(item, value) {
     if (value === undefined || value === null || value === '') return false;
     if (item?.type === 'number') return Number(value) >= Number(item.target || 1);
+    if (item?.type === 'memory') return isPlainObject(value) ? Boolean(value.reflected) : Boolean(value);
     if (item?.type === 'medication') {
       if (isPlainObject(value)) return Boolean(value.taken || value.completed || value.time || value.takenAt);
       return Boolean(value);
@@ -249,7 +250,7 @@
 
   function accountabilityShareableRoutines(state) {
     return (Array.isArray(state?.items) ? state.items : []).filter(item =>
-      item && item.kind !== 'checkin' && item.type !== 'medication' && !['text', 'longtext', 'memory'].includes(item.type)
+      item && item.kind !== 'checkin' && item.type !== 'medication' && !['text', 'longtext'].includes(item.type)
     );
   }
 

@@ -268,7 +268,14 @@
                 </fieldset>
 
                 <div id="accountabilityRoutineChooser" class="accountability-routine-chooser">
-                  <div><strong>Choose shared routines</strong><small>Only checked routine names and completion trends will appear. Written-response routines stay private.</small></div>
+                  <div class="accountability-routine-chooser-heading">
+                    <div><strong>Choose shared routines</strong><small>Checked routines share only their name and completion. Written answers, remembered text, medication details, and check-in text stay private.</small></div>
+                    <div class="accountability-routine-selection-tools">
+                      <span id="accountabilityRoutineSelectionCount">0 selected</span>
+                      <button id="selectAllAccountabilityRoutinesButton" type="button">Select all</button>
+                      <button id="clearAccountabilityRoutinesButton" type="button">Clear</button>
+                    </div>
+                  </div>
                   <div id="accountabilityRoutineChoices" class="accountability-routine-choices"></div>
                 </div>
 
@@ -854,6 +861,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="sync-core.js" defer></script>
   <script src="sync-cloud.js" defer></script>
-  <script src="app.js?v=1.23.0-build25-agent-local-bridge" defer></script>
+  <script src="app.js?v=1.24.0-build26-accountability-routine-selection" defer></script>
 </body>
 </html>

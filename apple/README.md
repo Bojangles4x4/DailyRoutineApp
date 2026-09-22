@@ -47,6 +47,8 @@ Build 23 adds the privacy-filtered accountability foundation to the bundled web 
 
 Build 25 extends that snapshot with owner-selected routine trends and 30-day completion totals. Partner-only accounts receive a searchable, read-only roster and seven/30-day views without client email addresses, notes, written reflections, medication details, or raw Health records.
 
+Build 26 clarifies routine sharing with a selected count and select-all/clear controls. Memory-style tasks can share their name and completion state while remembered text remains private.
+
 Tapping a checkbox or medication row updates that exact routine; tapping a completed row reopens it. Medication taps record the current time, with an AM/PM confirmation on Watch when the time does not match the routine section. Linked-app routines remain on iPhone. All Watch actions remain locked until the Morning Foundation is completed on the iPhone for the local calendar day. If personal convictions are configured, they are part of that foundation. If the Watch companion is not installed yet, the iPhone keeps the latest routine context ready and sends it when Watch Connectivity reports the companion is available.
 
 The Watch app writes its latest received routine summary to an App Group shared with the WidgetKit extension. This lets complications show current progress without exposing the full routine database or Health information.

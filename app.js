@@ -7,8 +7,8 @@
   const EARNED_ACCESS_DEVICE_KEY = 'dailyRoutine.earnedAccess.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.23.0';
-  const APP_BUILD = 25;
+  const APP_VERSION = '1.24.0';
+  const APP_BUILD = 26;
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const ROUTINE_AGENT_DB_NAME = 'dailyRoutine.agentBridge.v1';
@@ -152,7 +152,7 @@
     healthSleepSuggestion: $('healthSleepSuggestion'), healthSleepSuggestionText: $('healthSleepSuggestionText'), applyHealthSleepButton: $('applyHealthSleepButton'),
     linkedActionFields: $('linkedActionFields'), linkedTemplateInput: $('linkedTemplateInput'), linkedCompletionInput: $('linkedCompletionInput'), linkedUrlField: $('linkedUrlField'), linkedUrlInput: $('linkedUrlInput'), linkedInternalField: $('linkedInternalField'), linkedInternalTargetInput: $('linkedInternalTargetInput'), linkedButtonLabelInput: $('linkedButtonLabelInput'), timeWindowFields: $('timeWindowFields'), timeWindowStartInput: $('timeWindowStartInput'), timeWindowEndInput: $('timeWindowEndInput'),
     medicationProgressCard: $('medicationProgressCard'), weeklyReviewCard: $('weeklyReviewCard'), memoryBankCard: $('memoryBankCard'), dataBackupCard: $('dataBackupCard'),
-    accountabilitySharingCard: $('accountabilitySharingCard'), accountabilitySharingBadge: $('accountabilitySharingBadge'), accountabilitySharingSignedOut: $('accountabilitySharingSignedOut'), accountabilitySharingOwner: $('accountabilitySharingOwner'), openPrivateSyncForAccountabilityButton: $('openPrivateSyncForAccountabilityButton'), accountabilityConnectionsList: $('accountabilityConnectionsList'), accountabilityConnectionEditor: $('accountabilityConnectionEditor'), accountabilityEditorTitle: $('accountabilityEditorTitle'), accountabilityEditorStatus: $('accountabilityEditorStatus'), accountabilityOwnerNameInput: $('accountabilityOwnerNameInput'), accountabilityPartnerNameInput: $('accountabilityPartnerNameInput'), accountabilityPartnerEmailInput: $('accountabilityPartnerEmailInput'), accountabilityShareProgressInput: $('accountabilityShareProgressInput'), accountabilityShareRoutinesInput: $('accountabilityShareRoutinesInput'), accountabilityShareCheckinsInput: $('accountabilityShareCheckinsInput'), accountabilityShareStepsInput: $('accountabilityShareStepsInput'), accountabilityShareMedicationInput: $('accountabilityShareMedicationInput'), accountabilityRoutineChooser: $('accountabilityRoutineChooser'), accountabilityRoutineChoices: $('accountabilityRoutineChoices'), accountabilitySnapshotPreview: $('accountabilitySnapshotPreview'), saveAccountabilityConnectionButton: $('saveAccountabilityConnectionButton'), refreshAccountabilitySnapshotButton: $('refreshAccountabilitySnapshotButton'), pauseAccountabilityConnectionButton: $('pauseAccountabilityConnectionButton'), revokeAccountabilityConnectionButton: $('revokeAccountabilityConnectionButton'), accountabilityDashboardCard: $('accountabilityDashboardCard'), accountabilityRosterCount: $('accountabilityRosterCount'), accountabilityPartnerRoster: $('accountabilityPartnerRoster'), accountabilityPartnerDetail: $('accountabilityPartnerDetail'), accountabilityPartnerAccount: $('accountabilityPartnerAccount'), accountabilityPartnerSignOutButton: $('accountabilityPartnerSignOutButton'), accountabilityPartnerSearchInput: $('accountabilityPartnerSearchInput'), accountabilityPartnerFilterInput: $('accountabilityPartnerFilterInput'), accountabilityPartnerSortInput: $('accountabilityPartnerSortInput'),
+    accountabilitySharingCard: $('accountabilitySharingCard'), accountabilitySharingBadge: $('accountabilitySharingBadge'), accountabilitySharingSignedOut: $('accountabilitySharingSignedOut'), accountabilitySharingOwner: $('accountabilitySharingOwner'), openPrivateSyncForAccountabilityButton: $('openPrivateSyncForAccountabilityButton'), accountabilityConnectionsList: $('accountabilityConnectionsList'), accountabilityConnectionEditor: $('accountabilityConnectionEditor'), accountabilityEditorTitle: $('accountabilityEditorTitle'), accountabilityEditorStatus: $('accountabilityEditorStatus'), accountabilityOwnerNameInput: $('accountabilityOwnerNameInput'), accountabilityPartnerNameInput: $('accountabilityPartnerNameInput'), accountabilityPartnerEmailInput: $('accountabilityPartnerEmailInput'), accountabilityShareProgressInput: $('accountabilityShareProgressInput'), accountabilityShareRoutinesInput: $('accountabilityShareRoutinesInput'), accountabilityShareCheckinsInput: $('accountabilityShareCheckinsInput'), accountabilityShareStepsInput: $('accountabilityShareStepsInput'), accountabilityShareMedicationInput: $('accountabilityShareMedicationInput'), accountabilityRoutineChooser: $('accountabilityRoutineChooser'), accountabilityRoutineSelectionCount: $('accountabilityRoutineSelectionCount'), selectAllAccountabilityRoutinesButton: $('selectAllAccountabilityRoutinesButton'), clearAccountabilityRoutinesButton: $('clearAccountabilityRoutinesButton'), accountabilityRoutineChoices: $('accountabilityRoutineChoices'), accountabilitySnapshotPreview: $('accountabilitySnapshotPreview'), saveAccountabilityConnectionButton: $('saveAccountabilityConnectionButton'), refreshAccountabilitySnapshotButton: $('refreshAccountabilitySnapshotButton'), pauseAccountabilityConnectionButton: $('pauseAccountabilityConnectionButton'), revokeAccountabilityConnectionButton: $('revokeAccountabilityConnectionButton'), accountabilityDashboardCard: $('accountabilityDashboardCard'), accountabilityRosterCount: $('accountabilityRosterCount'), accountabilityPartnerRoster: $('accountabilityPartnerRoster'), accountabilityPartnerDetail: $('accountabilityPartnerDetail'), accountabilityPartnerAccount: $('accountabilityPartnerAccount'), accountabilityPartnerSignOutButton: $('accountabilityPartnerSignOutButton'), accountabilityPartnerSearchInput: $('accountabilityPartnerSearchInput'), accountabilityPartnerFilterInput: $('accountabilityPartnerFilterInput'), accountabilityPartnerSortInput: $('accountabilityPartnerSortInput'),
     accountabilityReportCard: $('accountabilityReportCard'), accountabilityPeriodInput: $('accountabilityPeriodInput'), accountabilityRoutineInput: $('accountabilityRoutineInput'), accountabilityMedicationInput: $('accountabilityMedicationInput'), accountabilityMedicationTimesField: $('accountabilityMedicationTimesField'), accountabilityMedicationTimesInput: $('accountabilityMedicationTimesInput'), accountabilityCheckinsInput: $('accountabilityCheckinsInput'), accountabilityHealthField: $('accountabilityHealthField'), accountabilityHealthInput: $('accountabilityHealthInput'), accountabilityReflectionInput: $('accountabilityReflectionInput'), accountabilitySupportInput: $('accountabilitySupportInput'), previewAccountabilityButton: $('previewAccountabilityButton'), accountabilityPreviewPanel: $('accountabilityPreviewPanel'), accountabilityPreviewText: $('accountabilityPreviewText'), copyAccountabilityButton: $('copyAccountabilityButton'), shareAccountabilityButton: $('shareAccountabilityButton'),
     medicationConfirmDialog: $('medicationConfirmDialog'), medicationConfirmMessage: $('medicationConfirmMessage'), medicationConfirmCancel: $('medicationConfirmCancel'), medicationConfirmContinue: $('medicationConfirmContinue'),
     deleteItemButton: $('deleteItemButton'), closeDialogButton: $('closeDialogButton'), installButton: $('installButton'), toast: $('toast')
@@ -821,7 +821,20 @@
       renderAccountabilityRoutineChoices();
       renderAccountabilitySnapshotPreview();
     });
-    els.accountabilityRoutineChoices.addEventListener('change', renderAccountabilitySnapshotPreview);
+    els.accountabilityRoutineChoices.addEventListener('change', () => {
+      updateAccountabilityRoutineSelectionCount();
+      renderAccountabilitySnapshotPreview();
+    });
+    els.selectAllAccountabilityRoutinesButton.addEventListener('click', () => {
+      els.accountabilityRoutineChoices.querySelectorAll('input[type="checkbox"]').forEach(input => { input.checked = true; });
+      updateAccountabilityRoutineSelectionCount();
+      renderAccountabilitySnapshotPreview();
+    });
+    els.clearAccountabilityRoutinesButton.addEventListener('click', () => {
+      els.accountabilityRoutineChoices.querySelectorAll('input[type="checkbox"]').forEach(input => { input.checked = false; });
+      updateAccountabilityRoutineSelectionCount();
+      renderAccountabilitySnapshotPreview();
+    });
     [els.accountabilityPartnerSearchInput, els.accountabilityPartnerFilterInput, els.accountabilityPartnerSortInput]
       .forEach(input => input.addEventListener('input', renderAccountabilityPartnerDashboard));
     const invalidateAccountabilityPreview = () => {
@@ -4187,7 +4200,14 @@
   }
 
   function accountabilityShareableRoutines() {
-    return state.items.filter(item => item && item.kind !== 'checkin' && item.type !== 'medication' && !['text', 'longtext', 'memory'].includes(item.type));
+    return state.items.filter(item => item && item.kind !== 'checkin' && item.type !== 'medication' && !['text', 'longtext'].includes(item.type));
+  }
+
+  function updateAccountabilityRoutineSelectionCount() {
+    if (!els.accountabilityRoutineSelectionCount || !els.accountabilityRoutineChoices) return;
+    const total = els.accountabilityRoutineChoices.querySelectorAll('input[type="checkbox"]').length;
+    const selected = els.accountabilityRoutineChoices.querySelectorAll('input[type="checkbox"]:checked').length;
+    els.accountabilityRoutineSelectionCount.textContent = `${selected} of ${total} selected`;
   }
 
   function renderAccountabilityRoutineChoices(permissionsInput = null) {
@@ -4203,6 +4223,7 @@
     els.accountabilityRoutineChoices.innerHTML = routines.length
       ? routines.map(item => `<label><input type="checkbox" value="${escapeHtml(item.id)}" ${!selectedIds || selectedIds.has(item.id) ? 'checked' : ''}/><span><b>${escapeHtml(item.name)}</b><small>${escapeHtml(sectionLabels[item.section]?.[0] || 'Throughout the day')}</small></span></label>`).join('')
       : '<p class="muted micro-copy">No non-sensitive routines are available to share.</p>';
+    updateAccountabilityRoutineSelectionCount();
   }
 
   function currentAccountabilityRelationship() {
