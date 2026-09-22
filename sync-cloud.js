@@ -220,6 +220,82 @@
         throw error;
       }
     }
+
+    requireSession(session, message = 'Sign in before using accountability sharing.') {
+      if (!session?.access_token || !session?.user?.id) throw new CloudRequestError(message, 401, 'not_signed_in');
+      return session;
+    }
+
+    async listOwnedAccountabilityRelationships(sessionInput) {
+      const session = this.requireSession(sessionInput || await this.session());
+      const select = 'id,owner_id,owner_display_name,partner_id,partner_email,partner_display_name,status,permissions,invited_at,accepted_at,updated_at,revoked_at';
+      const rows = await this.request(`/rest/v1/accountability_relationships?owner_id=eq.${encodeURIComponent(session.user.id)}&select=${select}&order=updated_at.desc`, { token: session.access_token });
+      return Array.isArray(rows) ? rows : [];
+    }
+
+    async listPartnerAccountabilityRelationships(sessionInput) {
+      const session = this.requireSession(sessionInput || await this.session());
+      const select = 'id,owner_id,owner_display_name,partner_id,partner_email,partner_display_name,status,permissions,invited_at,accepted_at,updated_at';
+      const rows = await this.request(`/rest/v1/accountability_relationships?partner_id=eq.${encodeURIComponent(session.user.id)}&status=eq.active&select=${select}&order=updated_at.desc`, { token: session.access_token });
+      return Array.isArray(rows) ? rows : [];
+    }
+
+    async createAccountabilityRelationship({ session: sessionInput, ownerDisplayName = '', partnerEmail, partnerDisplayName = '', permissions = {} }) {
+      const session = this.requireSession(sessionInput || await this.session());
+      const email = String(partnerEmail || '').trim().toLowerCase();
+      if (!email) throw new CloudRequestError('Enter the accountability partner’s email address.', 400, 'partner_email_required');
+      const rows = await this.request('/rest/v1/accountability_relationships', {
+        method: 'POST',
+        token: session.access_token,
+        body: {
+          owner_id: session.user.id,
+          owner_display_name: String(ownerDisplayName || '').trim().slice(0, 80),
+          partner_email: email,
+          partner_display_name: String(partnerDisplayName || '').trim().slice(0, 80),
+          permissions
+        },
+        headers: { Prefer: 'return=representation' }
+      });
+      return Array.isArray(rows) ? rows[0] || null : null;
+    }
+
+    async updateAccountabilityRelationship(id, changes, sessionInput) {
+      const session = this.requireSession(sessionInput || await this.session());
+      const safe = {};
+      ['owner_display_name', 'partner_display_name', 'permissions', 'status'].forEach(key => {
+        if (changes && Object.prototype.hasOwnProperty.call(changes, key)) safe[key] = changes[key];
+      });
+      safe.updated_at = new Date().toISOString();
+      if (safe.status === 'revoked') safe.revoked_at = safe.updated_at;
+      const rows = await this.request(`/rest/v1/accountability_relationships?id=eq.${encodeURIComponent(id)}&owner_id=eq.${encodeURIComponent(session.user.id)}`, {
+        method: 'PATCH', token: session.access_token, body: safe, headers: { Prefer: 'return=representation' }
+      });
+      return Array.isArray(rows) ? rows[0] || null : null;
+    }
+
+    async acceptAccountabilityInvitation(id, sessionInput) {
+      const session = this.requireSession(sessionInput || await this.session());
+      return this.request('/rest/v1/rpc/accept_accountability_invitation', {
+        method: 'POST', token: session.access_token, body: { invitation_id: id }
+      });
+    }
+
+    async pushAccountabilitySnapshot({ relationshipId, snapshot, schemaVersion = 1, session: sessionInput }) {
+      const session = this.requireSession(sessionInput || await this.session());
+      const rows = await this.request('/rest/v1/accountability_snapshots?on_conflict=relationship_id', {
+        method: 'POST',
+        token: session.access_token,
+        body: { relationship_id: relationshipId, owner_id: session.user.id, schema_version: schemaVersion, payload: snapshot },
+        headers: { Prefer: 'resolution=merge-duplicates,return=representation' }
+      });
+      return Array.isArray(rows) ? rows[0] || null : null;
+    }
+
+    async fetchAccountabilitySnapshot(relationshipId, sessionInput) {
+      const session = this.requireSession(sessionInput || await this.session());
+      const rows = await this.request(`/rest/v1/accountability_snapshots?relationship_id=eq.${encodeURIComponent(relationshipId)}&select=relationship_id,owner_id,schema_version,revision,payload,updated_at&limit=1`, { token: session.access_token });
+      return Array.isArray(rows) ? rows[0] || null : null;
+    }
   }
 
   function createClient(options) {

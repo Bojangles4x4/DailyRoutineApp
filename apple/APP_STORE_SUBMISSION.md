@@ -1,6 +1,6 @@
 # App Store submission package
 
-This document records the planned TestFlight submission behavior for Daily Routine 1.20.0 (build 22). Apple has approved the Family Controls distribution entitlement for this app.
+This document records the planned TestFlight submission behavior for Daily Routine 1.21.0 (build 23). Apple has approved the Family Controls distribution entitlement for this app.
 
 ## URLs
 
@@ -40,10 +40,10 @@ Highlights:
 - Apple Watch progress, quick actions, and complications
 - Optional, read-only Apple Health summaries
 - Earned Access step rounds that count movement after a personal app limit is reached
-- Manual accountability reports with exact previews and category-level privacy controls
+- Manual accountability reports plus optional private partner sharing with category-level privacy controls
 - Local-first storage with manual backup and export
 
-Daily Routine contains no ads, analytics, or account requirement. Your routine content remains on your devices unless you choose to export it.
+Daily Routine contains no ads or analytics. Core routine tracking requires no account; Private Sync and private accountability sharing are optional. Your routine content remains on your devices unless you choose to synchronize, share, or export it.
 
 Daily Routine is a personal organization tool and does not provide medical advice, diagnosis, or treatment.
 
@@ -51,7 +51,12 @@ Daily Routine is a personal organization tool and does not provide medical advic
 
 `routine,habits,planner,journal,prayer,reflection,checklist,wellness,private,watch`
 
-### Version 1.20.0 draft release notes
+### Version 1.21.0 draft release notes
+
+- Add optional private accountability connections with individual sharing choices, pause, resume, and revoke controls.
+- Give an accountability partner a read-only roster that can support one person or several.
+- Share only a filtered progress snapshot; notes, prayer text, written reflections, medication names/times, and raw Health data remain excluded.
+- Keep the existing on-device preview-and-share report as an offline alternative.
 
 - Continue automatic Earned Access through newly earned routine and walking minutes without relocking at an obsolete internal allowance boundary.
 - Clarify usage notifications so they report the shared remaining balance across all selected earned apps.
@@ -98,7 +103,7 @@ Daily Routine is a personal organization tool and does not provide medical advic
 
 Before a public App Store submission, update the App Privacy questionnaire for the optional Private sync implementation. When Private sync is enabled, the sign-in email address and synchronized user content are transmitted to the owner-only Supabase account row. Disclose the applicable contact-information and user-content categories as linked to the user, not used for tracking, and used only for app functionality.
 
-The following remains true for the planned build 15:
+The following remains true for the planned build 23:
 
 - No analytics, advertising, tracking, or third-party SDKs
 - Routine, reflection, medication, prayer, and note data is local-first and is transmitted only when the owner connects Private sync
@@ -107,7 +112,8 @@ The following remains true for the planned build 15:
 - Family Controls authorization, opaque selection tokens, and Managed Settings shield state remain on the device and are excluded from Private sync
 - Watch routine snapshots remain within the iPhone/Watch apps and their shared App Group
 - Backup and export files leave the app only through an explicit user action
-- Accountability reports remain on device until the user previews and explicitly copies or shares them to a chosen destination
+- Manual accountability reports remain on device until the user previews and explicitly copies or shares them to a chosen destination
+- Private accountability sends only the owner-approved filtered snapshot to Supabase; partner access is relationship-scoped and can be paused or revoked
 - Truth-reminder text and pictures stay in the native app’s private local storage and are used only for local notifications
 
 Revisit these answers before submission if networking, cloud sync, crash reporting, analytics, or another SDK is added.
@@ -133,6 +139,7 @@ Please test the first-run flow and verify that existing routine data remains int
 5. Connect Apple Health, add an 8,000-step routine goal, refresh Health, and verify the item completes automatically at the target.
 6. In Setup → Health & Watch, select morning and later earning routines. Complete them one at a time and verify each task adds its configured minutes automatically, only once per day, without exceeding the daily limit. Also start an optional movement round and confirm progress begins at zero rather than using the day's total steps.
 7. Turn on Screen Time protection, choose a nonessential test app, and earn time from more than one source. Confirm automatic access combines the rewards into one continuous balance, remains available across idle time, and shields itself after the shared foreground-use balance is exhausted. Also verify manual mode still redeems 15-minute allowances.
+8. Connect Private Sync, create an accountability invitation, and confirm the snapshot preview excludes notes, prayer text, medication names/times, and raw Health data. Accept with the invited email, verify the read-only partner roster, then pause and revoke access.
 8. Leave banked or active minutes unused overnight. After midnight, confirm selected apps are shielded, yesterday’s minutes are gone, and no allowance opens until the new day’s Truth Before Tasks and configured convictions are complete.
 9. Review a Health sleep suggestion and confirm bedtime is saved to the date it occurred while wake time is saved to the following morning. Confirm existing entries are not selected for replacement automatically.
 10. Confirm automatic Health step values and Earned Access progress do not appear on a second device through Private sync.

@@ -7,7 +7,7 @@
   const EARNED_ACCESS_DEVICE_KEY = 'dailyRoutine.earnedAccess.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.20.0';
+  const APP_VERSION = '1.21.0';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const DEFAULT_BIBLE_APP_URL = 'https://bojangles4x4.github.io/Bible-Reading-Plan/';
@@ -24,6 +24,10 @@
       accountabilityReport: {
         period: 'week', includeRoutine: true, includeMedication: false, includeMedicationTimes: false,
         includeCheckins: false, includeHealth: false, reflection: '', support: ''
+      },
+      accountabilitySharing: {
+        ownerDisplayName: '',
+        permissions: { progressTotals: true, routineNames: true, checkins: false, steps: false, medication: false }
       }
     },
     items: [
@@ -84,6 +88,13 @@
   let activeSetupCategory = '';
   let accountabilityPreview = '';
   let accountabilityPreviewSignature = '';
+  let accountabilityRelationships = [];
+  let accountabilityPartnerRelationships = [];
+  let accountabilityPartnerSnapshots = new Map();
+  let selectedAccountabilityRelationshipId = '';
+  let selectedPartnerRelationshipId = '';
+  let accountabilitySharingBusy = false;
+  let accountabilitySnapshotTimer = null;
   let actualTimesExpanded = false;
   const syncCoordinator = window.DailyRoutineSync?.createCoordinator({ storage: localStorage }) || null;
   const syncCloud = window.DailyRoutineCloud?.createClient({
@@ -128,6 +139,7 @@
     healthSleepSuggestion: $('healthSleepSuggestion'), healthSleepSuggestionText: $('healthSleepSuggestionText'), applyHealthSleepButton: $('applyHealthSleepButton'),
     linkedActionFields: $('linkedActionFields'), linkedTemplateInput: $('linkedTemplateInput'), linkedCompletionInput: $('linkedCompletionInput'), linkedUrlField: $('linkedUrlField'), linkedUrlInput: $('linkedUrlInput'), linkedInternalField: $('linkedInternalField'), linkedInternalTargetInput: $('linkedInternalTargetInput'), linkedButtonLabelInput: $('linkedButtonLabelInput'), timeWindowFields: $('timeWindowFields'), timeWindowStartInput: $('timeWindowStartInput'), timeWindowEndInput: $('timeWindowEndInput'),
     medicationProgressCard: $('medicationProgressCard'), weeklyReviewCard: $('weeklyReviewCard'), memoryBankCard: $('memoryBankCard'), dataBackupCard: $('dataBackupCard'),
+    accountabilitySharingCard: $('accountabilitySharingCard'), accountabilitySharingBadge: $('accountabilitySharingBadge'), accountabilitySharingSignedOut: $('accountabilitySharingSignedOut'), accountabilitySharingOwner: $('accountabilitySharingOwner'), openPrivateSyncForAccountabilityButton: $('openPrivateSyncForAccountabilityButton'), accountabilityConnectionsList: $('accountabilityConnectionsList'), accountabilityConnectionEditor: $('accountabilityConnectionEditor'), accountabilityEditorTitle: $('accountabilityEditorTitle'), accountabilityEditorStatus: $('accountabilityEditorStatus'), accountabilityOwnerNameInput: $('accountabilityOwnerNameInput'), accountabilityPartnerNameInput: $('accountabilityPartnerNameInput'), accountabilityPartnerEmailInput: $('accountabilityPartnerEmailInput'), accountabilityShareProgressInput: $('accountabilityShareProgressInput'), accountabilityShareRoutinesInput: $('accountabilityShareRoutinesInput'), accountabilityShareCheckinsInput: $('accountabilityShareCheckinsInput'), accountabilityShareStepsInput: $('accountabilityShareStepsInput'), accountabilityShareMedicationInput: $('accountabilityShareMedicationInput'), accountabilitySnapshotPreview: $('accountabilitySnapshotPreview'), saveAccountabilityConnectionButton: $('saveAccountabilityConnectionButton'), refreshAccountabilitySnapshotButton: $('refreshAccountabilitySnapshotButton'), pauseAccountabilityConnectionButton: $('pauseAccountabilityConnectionButton'), revokeAccountabilityConnectionButton: $('revokeAccountabilityConnectionButton'), accountabilityDashboardCard: $('accountabilityDashboardCard'), accountabilityRosterCount: $('accountabilityRosterCount'), accountabilityPartnerRoster: $('accountabilityPartnerRoster'), accountabilityPartnerDetail: $('accountabilityPartnerDetail'),
     accountabilityReportCard: $('accountabilityReportCard'), accountabilityPeriodInput: $('accountabilityPeriodInput'), accountabilityRoutineInput: $('accountabilityRoutineInput'), accountabilityMedicationInput: $('accountabilityMedicationInput'), accountabilityMedicationTimesField: $('accountabilityMedicationTimesField'), accountabilityMedicationTimesInput: $('accountabilityMedicationTimesInput'), accountabilityCheckinsInput: $('accountabilityCheckinsInput'), accountabilityHealthField: $('accountabilityHealthField'), accountabilityHealthInput: $('accountabilityHealthInput'), accountabilityReflectionInput: $('accountabilityReflectionInput'), accountabilitySupportInput: $('accountabilitySupportInput'), previewAccountabilityButton: $('previewAccountabilityButton'), accountabilityPreviewPanel: $('accountabilityPreviewPanel'), accountabilityPreviewText: $('accountabilityPreviewText'), copyAccountabilityButton: $('copyAccountabilityButton'), shareAccountabilityButton: $('shareAccountabilityButton'),
     medicationConfirmDialog: $('medicationConfirmDialog'), medicationConfirmMessage: $('medicationConfirmMessage'), medicationConfirmCancel: $('medicationConfirmCancel'), medicationConfirmContinue: $('medicationConfirmContinue'),
     deleteItemButton: $('deleteItemButton'), closeDialogButton: $('closeDialogButton'), installButton: $('installButton'), toast: $('toast')
@@ -287,6 +299,7 @@
     renderPrivateSyncStatus();
     maybeAutoSnapshot();
     syncWatchContext();
+    scheduleAccountabilitySnapshotRefresh();
   }
 
   function snapshotPayload() {
@@ -575,6 +588,19 @@
 
   function bindProgressControls() {
     els.saveWeeklyFocusButton.addEventListener('click', saveWeeklyFocus);
+    els.openPrivateSyncForAccountabilityButton.addEventListener('click', () => {
+      switchView('setup');
+      openSetupCategory('data');
+      els.privateSyncCard?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    els.saveAccountabilityConnectionButton.addEventListener('click', saveAccountabilityConnection);
+    els.refreshAccountabilitySnapshotButton.addEventListener('click', () => publishAccountabilitySnapshot(selectedAccountabilityRelationshipId));
+    els.pauseAccountabilityConnectionButton.addEventListener('click', toggleAccountabilityConnectionPause);
+    els.revokeAccountabilityConnectionButton.addEventListener('click', revokeAccountabilityConnection);
+    [els.accountabilityOwnerNameInput, els.accountabilityPartnerNameInput, els.accountabilityPartnerEmailInput,
+      els.accountabilityShareProgressInput, els.accountabilityShareRoutinesInput, els.accountabilityShareCheckinsInput,
+      els.accountabilityShareStepsInput, els.accountabilityShareMedicationInput]
+      .forEach(input => input.addEventListener('input', renderAccountabilitySnapshotPreview));
     const invalidateAccountabilityPreview = () => {
       accountabilityPreview = '';
       accountabilityPreviewSignature = '';
@@ -2337,7 +2363,7 @@
     return hash;
   }
 
-  function renderAll() { renderToday(); renderNotes(); renderHistory(); renderSetup(); }
+  function renderAll() { renderToday(); renderNotes(); renderHistory(); renderSetup(); renderAccountabilitySharing(); }
 
   function renderToday() {
     const day = state.days[dateKey(selectedDate)] || { entries: {} };
@@ -2565,6 +2591,7 @@
     renderMedicationTiming();
     renderPatternInsights();
     renderWeeklyReview();
+    renderAccountabilitySharing();
     renderAccountabilityReport();
     renderRecentHistory();
   }
@@ -2842,6 +2869,11 @@
       const redirectedSession = await syncCloud.consumeAuthRedirect();
       privateSyncSession = redirectedSession || await syncCloud.session();
       if (redirectedSession) showToast('Private account connected. Open Setup to approve the first sync.');
+      if (privateSyncSession) {
+        const acceptedInvite = await acceptAccountabilityInvitationFromUrl();
+        await loadAccountabilityData();
+        if (acceptedInvite || new URLSearchParams(window.location.search).get('accountability') === 'partner') switchView('progress');
+      }
     } catch (error) {
       privateSyncSession = null;
       syncCoordinator?.recordFailure(error);
@@ -2894,6 +2926,7 @@
       createLocalSnapshot('Before first cloud sync', true);
       els.privateSyncSignIn.hidden = true;
       await performPrivateSync({ keepBusy: true });
+      await loadAccountabilityData();
       showToast('Private sync connected');
     } catch (error) {
       syncCoordinator?.recordFailure(error);
@@ -2960,6 +2993,9 @@
     try {
       await syncCloud.signOut();
       privateSyncSession = null;
+      accountabilityRelationships = [];
+      accountabilityPartnerRelationships = [];
+      accountabilityPartnerSnapshots = new Map();
       syncCoordinator?.disconnect();
       els.privateSyncPasswordInput.value = '';
       els.privateSyncHelp.textContent = 'New registrations are closed. Only the owner account created during private setup can connect.';
@@ -3857,6 +3893,335 @@
     ];
     els.weeklyReviewSummary.innerHTML = cards.map(([label,value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('');
     els.weeklyFocusInput.value = state.weeklyReviews?.[nextWeekKey()]?.focus || '';
+  }
+
+  function accountabilitySharingSettings() {
+    const defaults = DEFAULT_STATE.settings.accountabilitySharing;
+    const stored = state.settings.accountabilitySharing || {};
+    return {
+      ownerDisplayName: String(stored.ownerDisplayName || ''),
+      permissions: window.DailyRoutineSync?.normalizeAccountabilityPermissions(stored.permissions || defaults.permissions) || { ...defaults.permissions }
+    };
+  }
+
+  function accountabilityPermissionsFromInputs() {
+    return {
+      progressTotals: els.accountabilityShareProgressInput.checked,
+      routineNames: els.accountabilityShareRoutinesInput.checked,
+      checkins: els.accountabilityShareCheckinsInput.checked,
+      steps: els.accountabilityShareStepsInput.checked,
+      medication: els.accountabilityShareMedicationInput.checked
+    };
+  }
+
+  function currentAccountabilityRelationship() {
+    return accountabilityRelationships.find(relationship => relationship.id === selectedAccountabilityRelationshipId) || null;
+  }
+
+  function buildCurrentAccountabilitySnapshot(relationship = currentAccountabilityRelationship()) {
+    const permissions = relationship?.permissions || accountabilityPermissionsFromInputs();
+    const displayName = relationship?.owner_display_name || els.accountabilityOwnerNameInput.value || accountabilitySharingSettings().ownerDisplayName;
+    return window.DailyRoutineSync?.buildAccountabilitySnapshot(state, {
+      permissions,
+      displayName,
+      today: dateKey(startOfToday()),
+      generatedAt: new Date().toISOString()
+    }) || null;
+  }
+
+  function accountabilityStatusLabel(status) {
+    return ({ pending: 'Invitation sent', active: 'Connected', paused: 'Paused', revoked: 'Revoked' })[status] || 'Not connected';
+  }
+
+  function renderAccountabilitySnapshotPreview() {
+    if (!els.accountabilitySnapshotPreview || !window.DailyRoutineSync) return;
+    const snapshot = buildCurrentAccountabilitySnapshot(null);
+    if (!snapshot) return;
+    const cards = [];
+    if (snapshot.today) cards.push(`<div><span>Today</span><strong>${snapshot.today.percent}%</strong><small>${snapshot.today.completed}/${snapshot.today.total} complete</small></div>`);
+    if (snapshot.week) cards.push(`<div><span>This week</span><strong>${snapshot.week.percent}%</strong><small>${snapshot.week.strongDays}/${snapshot.week.trackedDays} strong days</small></div>`);
+    if (snapshot.routines) cards.push(`<div><span>Routine names</span><strong>${snapshot.routines.length}</strong><small>Non-sensitive items</small></div>`);
+    if (snapshot.checkins) cards.push(`<div><span>Check-ins</span><strong>${snapshot.checkins.length}</strong><small>Numeric averages</small></div>`);
+    if (snapshot.steps) cards.push(`<div><span>Steps</span><strong>${snapshot.steps.count.toLocaleString()}</strong><small>of ${snapshot.steps.goal.toLocaleString()}</small></div>`);
+    if (snapshot.medication) cards.push(`<div><span>Medication</span><strong>${snapshot.medication.completed}/${snapshot.medication.total}</strong><small>Names hidden</small></div>`);
+    els.accountabilitySnapshotPreview.innerHTML = cards.length
+      ? `<p class="eyebrow">Shared snapshot preview</p><div>${cards.join('')}</div>`
+      : '<p class="accountability-preview-empty">Turn on at least one category to share a progress snapshot.</p>';
+  }
+
+  function renderAccountabilityConnections() {
+    if (!accountabilityRelationships.length) {
+      els.accountabilityConnectionsList.innerHTML = '<div class="analytics-empty">No accountability partners yet. Add the first person below.</div>';
+      return;
+    }
+    els.accountabilityConnectionsList.innerHTML = accountabilityRelationships.map(relationship => {
+      const selected = relationship.id === selectedAccountabilityRelationshipId;
+      const name = relationship.partner_display_name || relationship.partner_email;
+      return `<button type="button" class="accountability-connection${selected ? ' selected' : ''}" data-accountability-relationship="${escapeHtml(relationship.id)}"><span class="accountability-avatar">${escapeHtml(name.slice(0, 1).toUpperCase())}</span><span><strong>${escapeHtml(name)}</strong><small>${escapeHtml(accountabilityStatusLabel(relationship.status))} · ${escapeHtml(relationship.partner_email)}</small></span><i>›</i></button>`;
+    }).join('') + '<button type="button" class="accountability-add-connection" data-accountability-relationship="">＋ Add another person</button>';
+    els.accountabilityConnectionsList.querySelectorAll('[data-accountability-relationship]').forEach(button => button.addEventListener('click', () => {
+      selectedAccountabilityRelationshipId = button.dataset.accountabilityRelationship || '';
+      renderAccountabilitySharing();
+      els.accountabilityConnectionEditor.open = true;
+    }));
+  }
+
+  function renderAccountabilitySharing() {
+    if (!els.accountabilitySharingCard) return;
+    const signedIn = Boolean(privateSyncSession);
+    els.accountabilitySharingSignedOut.hidden = signedIn;
+    els.accountabilitySharingOwner.hidden = !signedIn;
+    els.accountabilitySharingBadge.textContent = signedIn ? (accountabilityRelationships.some(item => item.status === 'active') ? 'Sharing privately' : 'Ready to connect') : 'Sign in needed';
+    els.accountabilitySharingCard.classList.toggle('is-busy', accountabilitySharingBusy);
+    if (!signedIn) {
+      els.accountabilityDashboardCard.hidden = true;
+      return;
+    }
+
+    renderAccountabilityConnections();
+    const relationship = currentAccountabilityRelationship();
+    const defaults = accountabilitySharingSettings();
+    const permissions = window.DailyRoutineSync?.normalizeAccountabilityPermissions(relationship?.permissions || defaults.permissions) || defaults.permissions;
+    els.accountabilityEditorTitle.textContent = relationship ? (relationship.partner_display_name || relationship.partner_email) : 'Add an accountability partner';
+    els.accountabilityEditorStatus.textContent = relationship ? accountabilityStatusLabel(relationship.status) : 'Private invitation';
+    els.accountabilityOwnerNameInput.value = relationship?.owner_display_name || defaults.ownerDisplayName;
+    els.accountabilityPartnerNameInput.value = relationship?.partner_display_name || '';
+    els.accountabilityPartnerEmailInput.value = relationship?.partner_email || '';
+    els.accountabilityPartnerEmailInput.disabled = Boolean(relationship);
+    els.accountabilityShareProgressInput.checked = permissions.progressTotals;
+    els.accountabilityShareRoutinesInput.checked = permissions.routineNames;
+    els.accountabilityShareCheckinsInput.checked = permissions.checkins;
+    els.accountabilityShareStepsInput.checked = permissions.steps;
+    els.accountabilityShareMedicationInput.checked = permissions.medication;
+    els.saveAccountabilityConnectionButton.textContent = relationship?.status === 'pending' ? 'Save & resend invitation' : relationship ? 'Save sharing choices' : 'Send private invitation';
+    els.saveAccountabilityConnectionButton.disabled = accountabilitySharingBusy;
+    els.refreshAccountabilitySnapshotButton.hidden = !relationship || relationship.status === 'revoked';
+    els.pauseAccountabilityConnectionButton.hidden = !relationship || !['active', 'paused'].includes(relationship.status);
+    els.pauseAccountabilityConnectionButton.textContent = relationship?.status === 'paused' ? 'Resume sharing' : 'Pause sharing';
+    els.revokeAccountabilityConnectionButton.hidden = !relationship || relationship.status === 'revoked';
+    renderAccountabilitySnapshotPreview();
+    renderAccountabilityPartnerDashboard();
+  }
+
+  function setAccountabilitySharingBusy(busy) {
+    accountabilitySharingBusy = Boolean(busy);
+    renderAccountabilitySharing();
+  }
+
+  function accountabilityRedirectUrl(invitationId) {
+    const base = /^https?:$/.test(window.location.protocol)
+      ? new URL(window.location.href)
+      : new URL('https://bojangles4x4.github.io/DailyRoutineApp/');
+    base.hash = '';
+    base.search = '';
+    base.searchParams.set('accountability_invite', invitationId);
+    base.searchParams.set('accountability', 'partner');
+    return base.toString();
+  }
+
+  async function saveAccountabilityConnection() {
+    if (!privateSyncSession || !syncCloud) {
+      showToast('Connect Private Sync first');
+      return;
+    }
+    const ownerDisplayName = els.accountabilityOwnerNameInput.value.trim();
+    const partnerDisplayName = els.accountabilityPartnerNameInput.value.trim();
+    const partnerEmail = els.accountabilityPartnerEmailInput.value.trim().toLowerCase();
+    const permissions = accountabilityPermissionsFromInputs();
+    if (!ownerDisplayName) {
+      showToast('Enter the name your partner should see');
+      els.accountabilityOwnerNameInput.focus();
+      return;
+    }
+    if (!partnerEmail || !els.accountabilityPartnerEmailInput.checkValidity()) {
+      showToast('Enter a valid partner email');
+      els.accountabilityPartnerEmailInput.focus();
+      return;
+    }
+    state.settings.accountabilitySharing = { ownerDisplayName, permissions };
+    saveState();
+    setAccountabilitySharingBusy(true);
+    try {
+      let relationship = currentAccountabilityRelationship();
+      if (relationship) {
+        relationship = await syncCloud.updateAccountabilityRelationship(relationship.id, {
+          owner_display_name: ownerDisplayName,
+          partner_display_name: partnerDisplayName,
+          permissions
+        }, privateSyncSession);
+        if (relationship?.status === 'pending') {
+          await syncCloud.requestEmailLink(partnerEmail, true, accountabilityRedirectUrl(relationship.id));
+          showToast('Sharing choices saved and invitation resent');
+        } else {
+          showToast('Sharing choices saved');
+        }
+      } else {
+        relationship = await syncCloud.createAccountabilityRelationship({
+          session: privateSyncSession,
+          ownerDisplayName,
+          partnerEmail,
+          partnerDisplayName,
+          permissions
+        });
+        if (!relationship?.id) throw new Error('The invitation could not be created.');
+        await syncCloud.pushAccountabilitySnapshot({ relationshipId: relationship.id, snapshot: buildCurrentAccountabilitySnapshot(relationship), session: privateSyncSession });
+        await syncCloud.requestEmailLink(partnerEmail, true, accountabilityRedirectUrl(relationship.id));
+        selectedAccountabilityRelationshipId = relationship.id;
+        showToast('Private invitation sent');
+      }
+      await loadAccountabilityData();
+      if (relationship?.id && relationship.status !== 'revoked') await publishAccountabilitySnapshot(relationship.id, true);
+    } catch (error) {
+      showToast(accountabilitySharingErrorMessage(error));
+    } finally {
+      setAccountabilitySharingBusy(false);
+    }
+  }
+
+  async function publishAccountabilitySnapshot(relationshipId, quiet = false) {
+    const relationship = accountabilityRelationships.find(item => item.id === relationshipId);
+    if (!relationship || relationship.status === 'revoked' || !privateSyncSession || !syncCloud) return;
+    if (!quiet) setAccountabilitySharingBusy(true);
+    try {
+      const snapshot = buildCurrentAccountabilitySnapshot(relationship);
+      await syncCloud.pushAccountabilitySnapshot({ relationshipId, snapshot, schemaVersion: window.DailyRoutineSync.ACCOUNTABILITY_SCHEMA_VERSION, session: privateSyncSession });
+      if (!quiet) showToast('Shared progress refreshed');
+    } catch (error) {
+      if (!quiet) showToast(accountabilitySharingErrorMessage(error));
+    } finally {
+      if (!quiet) setAccountabilitySharingBusy(false);
+    }
+  }
+
+  function scheduleAccountabilitySnapshotRefresh() {
+    clearTimeout(accountabilitySnapshotTimer);
+    if (!privateSyncSession || !accountabilityRelationships.some(item => item.status === 'active')) return;
+    accountabilitySnapshotTimer = setTimeout(() => {
+      accountabilityRelationships.filter(item => item.status === 'active').forEach(item => publishAccountabilitySnapshot(item.id, true));
+    }, 1500);
+  }
+
+  async function toggleAccountabilityConnectionPause() {
+    const relationship = currentAccountabilityRelationship();
+    if (!relationship) return;
+    setAccountabilitySharingBusy(true);
+    try {
+      const status = relationship.status === 'paused' ? 'active' : 'paused';
+      await syncCloud.updateAccountabilityRelationship(relationship.id, { status }, privateSyncSession);
+      await loadAccountabilityData();
+      showToast(status === 'paused' ? 'Sharing paused immediately' : 'Sharing resumed');
+    } catch (error) {
+      showToast(accountabilitySharingErrorMessage(error));
+    } finally {
+      setAccountabilitySharingBusy(false);
+    }
+  }
+
+  async function revokeAccountabilityConnection() {
+    const relationship = currentAccountabilityRelationship();
+    if (!relationship || !confirm(`Revoke ${relationship.partner_display_name || relationship.partner_email}’s access? They will immediately lose access to the shared snapshot.`)) return;
+    setAccountabilitySharingBusy(true);
+    try {
+      await syncCloud.updateAccountabilityRelationship(relationship.id, { status: 'revoked' }, privateSyncSession);
+      selectedAccountabilityRelationshipId = '';
+      await loadAccountabilityData();
+      showToast('Accountability access revoked');
+    } catch (error) {
+      showToast(accountabilitySharingErrorMessage(error));
+    } finally {
+      setAccountabilitySharingBusy(false);
+    }
+  }
+
+  async function acceptAccountabilityInvitationFromUrl() {
+    if (!privateSyncSession || !syncCloud) return false;
+    const params = new URLSearchParams(window.location.search);
+    const invitationId = params.get('accountability_invite');
+    if (!invitationId) return false;
+    await syncCloud.acceptAccountabilityInvitation(invitationId, privateSyncSession);
+    params.delete('accountability_invite');
+    params.set('accountability', 'partner');
+    history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
+    showToast('Accountability invitation accepted');
+    return true;
+  }
+
+  async function loadAccountabilityData() {
+    if (!privateSyncSession || !syncCloud) {
+      accountabilityRelationships = [];
+      accountabilityPartnerRelationships = [];
+      accountabilityPartnerSnapshots = new Map();
+      renderAccountabilitySharing();
+      return;
+    }
+    try {
+      const [owned, partner] = await Promise.all([
+        syncCloud.listOwnedAccountabilityRelationships(privateSyncSession),
+        syncCloud.listPartnerAccountabilityRelationships(privateSyncSession)
+      ]);
+      accountabilityRelationships = owned;
+      accountabilityPartnerRelationships = partner;
+      if (selectedAccountabilityRelationshipId && !owned.some(item => item.id === selectedAccountabilityRelationshipId)) selectedAccountabilityRelationshipId = '';
+      if (!selectedPartnerRelationshipId && partner.length) selectedPartnerRelationshipId = partner[0].id;
+      const snapshots = await Promise.all(partner.map(async relationship => [relationship.id, await syncCloud.fetchAccountabilitySnapshot(relationship.id, privateSyncSession)]));
+      accountabilityPartnerSnapshots = new Map(snapshots);
+      renderAccountabilitySharing();
+    } catch (error) {
+      accountabilityRelationships = [];
+      accountabilityPartnerRelationships = [];
+      accountabilityPartnerSnapshots = new Map();
+      renderAccountabilitySharing();
+      if (error?.status !== 404) console.warn('Accountability sharing is not ready:', error);
+    }
+  }
+
+  function renderAccountabilityPartnerDashboard() {
+    const relationships = accountabilityPartnerRelationships;
+    els.accountabilityDashboardCard.hidden = !relationships.length;
+    if (!relationships.length) return;
+    if (!relationships.some(item => item.id === selectedPartnerRelationshipId)) selectedPartnerRelationshipId = relationships[0].id;
+    els.accountabilityRosterCount.textContent = `${relationships.length} ${relationships.length === 1 ? 'person' : 'people'}`;
+    els.accountabilityPartnerRoster.innerHTML = relationships.map(relationship => {
+      const snapshot = accountabilityPartnerSnapshots.get(relationship.id)?.payload || {};
+      const name = relationship.owner_display_name || snapshot.member?.displayName || 'Routine member';
+      const percent = snapshot.today?.percent;
+      return `<button type="button" class="accountability-roster-person${relationship.id === selectedPartnerRelationshipId ? ' selected' : ''}" data-partner-relationship="${escapeHtml(relationship.id)}"><span class="accountability-avatar">${escapeHtml(name.slice(0, 1).toUpperCase())}</span><span><strong>${escapeHtml(name)}</strong><small>${Number.isFinite(percent) ? `${percent}% today` : 'Waiting for progress'}</small></span></button>`;
+    }).join('');
+    els.accountabilityPartnerRoster.querySelectorAll('[data-partner-relationship]').forEach(button => button.addEventListener('click', () => {
+      selectedPartnerRelationshipId = button.dataset.partnerRelationship;
+      renderAccountabilityPartnerDashboard();
+    }));
+    const relationship = relationships.find(item => item.id === selectedPartnerRelationshipId);
+    renderAccountabilityPartnerDetail(relationship, accountabilityPartnerSnapshots.get(relationship?.id)?.payload || null, accountabilityPartnerSnapshots.get(relationship?.id)?.updated_at || '');
+  }
+
+  function renderAccountabilityPartnerDetail(relationship, snapshot, updatedAt) {
+    if (!relationship || !snapshot) {
+      els.accountabilityPartnerDetail.innerHTML = '<div class="analytics-empty">This person has not shared their first progress snapshot yet.</div>';
+      return;
+    }
+    const name = relationship.owner_display_name || snapshot.member?.displayName || 'Routine member';
+    const metrics = [];
+    if (snapshot.today) metrics.push(['Today', `${snapshot.today.percent}%`, `${snapshot.today.completed}/${snapshot.today.total} complete`]);
+    if (snapshot.week) metrics.push(['This week', `${snapshot.week.percent}%`, `${snapshot.week.strongDays}/${snapshot.week.trackedDays} strong days`]);
+    if (snapshot.steps) metrics.push(['Steps', Number(snapshot.steps.count).toLocaleString(), `${Number(snapshot.steps.goal).toLocaleString()} goal`]);
+    if (snapshot.medication) metrics.push(['Medication', `${snapshot.medication.completed}/${snapshot.medication.total}`, 'completion only']);
+    const routines = Array.isArray(snapshot.routines) ? snapshot.routines : [];
+    const checkins = Array.isArray(snapshot.checkins) ? snapshot.checkins : [];
+    const updated = updatedAt ? new Date(updatedAt).toLocaleString() : 'Not available';
+    els.accountabilityPartnerDetail.innerHTML = `
+      <div class="accountability-partner-header"><div><p class="eyebrow">Shared progress</p><h3>${escapeHtml(name)}</h3></div><span>${snapshot.today?.truthBeforeTasks ? 'Truth Before Tasks complete' : 'Foundation not yet complete'}</span></div>
+      <div class="accountability-partner-metrics">${metrics.map(([label, value, detail]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(detail)}</small></div>`).join('')}</div>
+      ${routines.length ? `<div class="accountability-shared-routines"><strong>Shared routines</strong><div>${routines.map(item => `<span class="${item.completed ? 'complete' : ''}">${item.completed ? '✓' : '○'} ${escapeHtml(item.name)}</span>`).join('')}</div></div>` : ''}
+      ${checkins.length ? `<div class="accountability-shared-checkins"><strong>Rating averages</strong><div>${checkins.map(item => `<span>${escapeHtml(item.name)} <b>${escapeHtml(item.average)}</b></span>`).join('')}</div></div>` : ''}
+      <p class="muted micro-copy">Last refreshed ${escapeHtml(updated)}. Only categories chosen by ${escapeHtml(name)} appear here.</p>`;
+  }
+
+  function accountabilitySharingErrorMessage(error) {
+    const message = String(error?.message || 'Accountability sharing could not be updated.');
+    if (error?.status === 404 || /relation .* does not exist/i.test(message)) return 'Accountability sharing needs its secure database update first.';
+    if (error?.status === 409 || /duplicate/i.test(message)) return 'That partner already has an open or active invitation.';
+    return message;
   }
 
   function accountabilitySettings() {

@@ -3,6 +3,7 @@ const {
   syncableState,
   applySyncableState,
   mergeRoutineStates,
+  buildAccountabilitySnapshot,
   createCoordinator
 } = require('../sync-core.js');
 
@@ -72,6 +73,48 @@ test('preserves local Apple Health entries when applying a cloud document', () =
   const applied = applySyncableState(current, remote);
   assert.equal(applied.days['2026-08-25'].entries.steps, 8421);
   assert.equal(applied.settings.theme, 'dusk');
+});
+
+test('builds a privacy-filtered accountability snapshot without private text', () => {
+  const state = sampleState();
+  state.settings.truthBeforeTasks = { completions: { '2026-08-25': true } };
+  state.items.push(
+    { id: 'meds', name: 'Private medication name', type: 'medication', section: 'morning', frequency: 'daily' },
+    { id: 'mood', name: 'Morning mood', kind: 'checkin', type: 'scale', section: 'morning', frequency: 'daily' }
+  );
+  state.days['2026-08-25'].entries.meds = { taken: true, time: '08:15', note: 'private dose note' };
+  state.days['2026-08-25'].entries.mood = 7;
+  state.notes = [{ id: 'secret', type: 'prayer', text: 'private prayer text' }];
+  state.memories = [{ id: 'memory', text: 'private memory text' }];
+  const snapshot = buildAccountabilitySnapshot(state, {
+    today: '2026-08-25',
+    generatedAt: '2026-08-25T14:00:00.000Z',
+    displayName: 'Taylor',
+    permissions: { progressTotals: true, routineNames: true, checkins: true, steps: false, medication: true }
+  });
+  const serialized = JSON.stringify(snapshot);
+  assert.equal(snapshot.member.displayName, 'Taylor');
+  assert.equal(snapshot.today.truthBeforeTasks, true);
+  assert.deepEqual(snapshot.medication, { completed: 1, total: 1 });
+  assert.equal(snapshot.checkins[0].average, 7);
+  assert.equal(serialized.includes('Private medication name'), false);
+  assert.equal(serialized.includes('08:15'), false);
+  assert.equal(serialized.includes('private prayer text'), false);
+  assert.equal(serialized.includes('private memory text'), false);
+  assert.equal(serialized.includes('private dose note'), false);
+});
+
+test('omits every optional accountability category when permission is off', () => {
+  const snapshot = buildAccountabilitySnapshot(sampleState(), {
+    today: '2026-08-25',
+    permissions: { progressTotals: false, routineNames: false, checkins: false, steps: false, medication: false }
+  });
+  assert.equal(snapshot.today, undefined);
+  assert.equal(snapshot.week, undefined);
+  assert.equal(snapshot.routines, undefined);
+  assert.equal(snapshot.checkins, undefined);
+  assert.equal(snapshot.steps, undefined);
+  assert.equal(snapshot.medication, undefined);
 });
 
 test('merges changes made to different days without conflicts', () => {

@@ -2,8 +2,12 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.20.0 development features
+## Version 1.21.0 development features
 
+- Build 23 adds a privacy-filtered accountability foundation with one-to-one sharing and a many-person partner roster
+- Every owner-to-partner connection has independent permissions and pending, active, paused, or revoked access
+- Partners receive a small read-only progress snapshot rather than the owner’s full routine document
+- Notes, prayer text, written reflections, medication names/times, and raw Apple Health data are always excluded from private accountability snapshots
 - Build 22 combines new routine and walking rewards with the active automatic allowance so selected apps do not relock at an obsolete internal boundary
 - Earned-app notifications now describe the shared remaining balance instead of showing cumulative use inside an internal allowance
 - Build 21 refreshes visible Health and walking progress automatically when new step samples arrive while Daily Routine is open
@@ -119,18 +123,18 @@ Open the GitHub Pages URL in Safari → Share → **Add to Home Screen** → ena
 
 ## Privacy note
 
-Data is stored locally first. If private sync is connected, routine definitions, daily entries, notes, memories, weekly reviews, and ordinary preferences are also stored in the owner's Supabase account row. Apple Health summaries, automatic Health-based step values, Earned Access baselines and progress, Screen Time authorization and opaque app-selection tokens, background photos, local snapshots, downloaded backups, and conflict archives remain device-only. Sleep suggestions become ordinary routine history only after the user applies them. Clearing browser storage can erase the local copy, so use Download backup periodically.
+Data is stored locally first. If private sync is connected, routine definitions, daily entries, notes, memories, weekly reviews, and ordinary preferences are also stored in the owner's Supabase account row. If the owner separately enables private accountability, each active partner can read only that relationship’s filtered snapshot. Apple Health summaries, automatic Health-based step values, Earned Access baselines and progress, Screen Time authorization and opaque app-selection tokens, background photos, local snapshots, downloaded backups, and conflict archives remain device-only. Sleep suggestions become ordinary routine history only after the user applies them. Clearing browser storage can erase the local copy, so use Download backup periodically.
 
 - [Privacy Policy](privacy.html)
 - [Support](support.html)
 
-## Owner-only private sync
+## Private sync and accountability
 
 The current manual report intentionally shares only after the user previews and chooses a destination. Private sync uses:
 
 - Front end: this GitHub Pages PWA and its bundled iPhone web view
 - Authentication + database: Supabase Auth and Postgres
-- Row-level security: each owner can access only their own routine document
+- Row-level security: each owner can access only their own routine document; an active accountability partner can read only the filtered snapshot for that specific relationship
 - Local-first behavior: offline changes remain pending until the server acknowledges a matching revision
 - Privacy boundary: Health summaries, background photos, local backups, and conflict archives remain device-only
 
@@ -141,6 +145,6 @@ node tests/sync-core.test.js
 node tests/sync-cloud.test.js
 ```
 
-See `docs/PRIVATE_SYNC_FOUNDATION.md` and `supabase/migrations/202608250001_private_sync_foundation.sql` for the design and database policy.
+See `docs/PRIVATE_SYNC_FOUNDATION.md`, `docs/ACCOUNTABILITY_FOUNDATION.md`, and the files under `supabase/migrations/` for the design and database policies.
 
 Do not publish personal routine/mood data directly into the GitHub repository or a public Google Sheet.

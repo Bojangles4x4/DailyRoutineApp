@@ -8,6 +8,7 @@
   const SYNC_SCHEMA_VERSION = 1;
   const METADATA_KEY = 'dailyRoutine.sync.metadata.v1';
   const CONFLICTS_KEY = 'dailyRoutine.sync.conflicts.v1';
+  const ACCOUNTABILITY_SCHEMA_VERSION = 1;
   const MISSING = Symbol('missing');
 
   function clone(value) {
@@ -171,6 +172,158 @@
     return { state: result, conflicts };
   }
 
+  const DEFAULT_ACCOUNTABILITY_PERMISSIONS = Object.freeze({
+    progressTotals: true,
+    routineNames: true,
+    checkins: false,
+    steps: false,
+    medication: false
+  });
+
+  function normalizeAccountabilityPermissions(input) {
+    const source = isPlainObject(input) ? input : {};
+    return Object.keys(DEFAULT_ACCOUNTABILITY_PERMISSIONS).reduce((result, key) => {
+      result[key] = source[key] === undefined ? DEFAULT_ACCOUNTABILITY_PERMISSIONS[key] : Boolean(source[key]);
+      return result;
+    }, {});
+  }
+
+  function accountabilityDateKey(value) {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function accountabilityDateFromKey(key) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(key || ''));
+    if (!match) return null;
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  }
+
+  function accountabilityShiftDate(date, days) {
+    const next = new Date(date);
+    next.setDate(next.getDate() + days);
+    next.setHours(0, 0, 0, 0);
+    return next;
+  }
+
+  function accountabilityItemScheduled(item, date) {
+    const frequency = String(item?.frequency || 'daily');
+    const day = date.getDay();
+    if (frequency === 'weekdays') return day >= 1 && day <= 5;
+    if (frequency === 'weekends') return day === 0 || day === 6;
+    if (frequency === 'custom') return (Array.isArray(item.days) ? item.days : []).map(Number).includes(day);
+    return true;
+  }
+
+  function accountabilityEntryComplete(item, value) {
+    if (value === undefined || value === null || value === '') return false;
+    if (item?.type === 'number') return Number(value) >= Number(item.target || 1);
+    if (item?.type === 'medication') {
+      if (isPlainObject(value)) return Boolean(value.taken || value.completed || value.time || value.takenAt);
+      return Boolean(value);
+    }
+    if (item?.type === 'scale') return Number.isFinite(Number(value));
+    if (item?.type === 'text' || item?.type === 'longtext') return Boolean(String(value).trim());
+    return Boolean(value);
+  }
+
+  function accountabilityDayMetrics(state, date) {
+    const key = accountabilityDateKey(date);
+    const day = isPlainObject(state?.days?.[key]) ? state.days[key] : {};
+    const entries = isPlainObject(day.entries) ? day.entries : {};
+    const items = (Array.isArray(state?.items) ? state.items : []).filter(item =>
+      item && item.kind !== 'checkin' && !item.optional && accountabilityItemScheduled(item, date)
+    );
+    const completed = items.filter(item => accountabilityEntryComplete(item, entries[item.id])).length;
+    return { key, entries, items, completed, total: items.length, percent: items.length ? Math.round(completed / items.length * 100) : 0 };
+  }
+
+  function buildAccountabilitySnapshot(stateInput, options = {}) {
+    const state = isPlainObject(stateInput) ? stateInput : {};
+    const permissions = normalizeAccountabilityPermissions(options.permissions);
+    const generatedAt = String(options.generatedAt || new Date().toISOString());
+    const todayDate = accountabilityDateFromKey(options.today) || accountabilityDateFromKey(generatedAt.slice(0, 10)) || new Date();
+    const today = accountabilityDayMetrics(state, todayDate);
+    const dayOfWeek = todayDate.getDay();
+    const weekStart = accountabilityShiftDate(todayDate, dayOfWeek === 0 ? -6 : 1 - dayOfWeek);
+    const dates = [];
+    for (let cursor = weekStart; accountabilityDateKey(cursor) <= today.key; cursor = accountabilityShiftDate(cursor, 1)) dates.push(cursor);
+    const metrics = dates.map(date => accountabilityDayMetrics(state, date));
+    const completed = metrics.reduce((sum, metric) => sum + metric.completed, 0);
+    const total = metrics.reduce((sum, metric) => sum + metric.total, 0);
+    const truthCompletions = isPlainObject(state?.settings?.truthBeforeTasks?.completions) ? state.settings.truthBeforeTasks.completions : {};
+    const snapshot = {
+      schemaVersion: ACCOUNTABILITY_SCHEMA_VERSION,
+      generatedAt,
+      member: { displayName: String(options.displayName || '').trim().slice(0, 80) },
+      permissions,
+      period: { start: accountabilityDateKey(weekStart), end: today.key }
+    };
+
+    if (permissions.progressTotals) {
+      snapshot.today = {
+        date: today.key,
+        completed: today.completed,
+        total: today.total,
+        percent: today.percent,
+        truthBeforeTasks: Boolean(truthCompletions[today.key])
+      };
+      snapshot.week = {
+        completed,
+        total,
+        percent: total ? Math.round(completed / total * 100) : 0,
+        trackedDays: metrics.filter(metric => metric.total > 0).length,
+        strongDays: metrics.filter(metric => metric.total > 0 && metric.percent >= 80).length
+      };
+    }
+
+    if (permissions.routineNames) {
+      snapshot.routines = today.items
+        .filter(item => item.type !== 'medication' && item.kind !== 'checkin')
+        .map(item => ({
+          name: String(item.name || 'Routine').slice(0, 100),
+          section: ['morning', 'day', 'evening'].includes(item.section) ? item.section : 'day',
+          completed: accountabilityEntryComplete(item, today.entries[item.id])
+        }));
+    }
+
+    if (permissions.checkins) {
+      snapshot.checkins = (Array.isArray(state.items) ? state.items : [])
+        .filter(item => item?.kind === 'checkin' && item.type === 'scale')
+        .map(item => {
+          const values = metrics.map(metric => Number(metric.entries[item.id])).filter(Number.isFinite);
+          return values.length ? {
+            name: String(item.name || 'Check-in').slice(0, 100),
+            average: Math.round(values.reduce((sum, value) => sum + value, 0) / values.length * 10) / 10,
+            count: values.length
+          } : null;
+        }).filter(Boolean);
+    }
+
+    if (permissions.steps) {
+      const stepItem = (Array.isArray(state.items) ? state.items : []).find(item => String(item?.healthSource || '') === 'apple-health-steps');
+      if (stepItem) {
+        const count = Math.max(0, Number(today.entries[stepItem.id]) || 0);
+        const goal = Math.max(1, Number(stepItem.target) || 8000);
+        snapshot.steps = { count: Math.round(count), goal: Math.round(goal), percent: Math.min(100, Math.round(count / goal * 100)) };
+      }
+    }
+
+    if (permissions.medication) {
+      const medicationItems = (Array.isArray(state.items) ? state.items : []).filter(item => item?.type === 'medication' && accountabilityItemScheduled(item, todayDate));
+      snapshot.medication = {
+        completed: medicationItems.filter(item => accountabilityEntryComplete(item, today.entries[item.id])).length,
+        total: medicationItems.length
+      };
+    }
+
+    return snapshot;
+  }
+
   class SyncCoordinator {
     constructor({ storage, metadataKey = METADATA_KEY, conflictsKey = CONFLICTS_KEY } = {}) {
       this.storage = storage;
@@ -322,11 +475,15 @@
 
   return {
     SYNC_SCHEMA_VERSION,
+    ACCOUNTABILITY_SCHEMA_VERSION,
+    DEFAULT_ACCOUNTABILITY_PERMISSIONS,
     METADATA_KEY,
     CONFLICTS_KEY,
     syncableState,
     applySyncableState,
     mergeRoutineStates,
+    normalizeAccountabilityPermissions,
+    buildAccountabilitySnapshot,
     createCoordinator,
     SyncCoordinator
   };

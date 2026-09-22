@@ -102,6 +102,58 @@ test('reports an optimistic revision conflict when no row updates', async () => 
   );
 });
 
+test('creates an owner-scoped accountability relationship', async () => {
+  let requestUrl = '';
+  let submitted = null;
+  const client = createClient({ url: 'https://example.supabase.co', publishableKey: 'publishable', storage: storage(), fetchImpl: async (url, options) => {
+    requestUrl = url;
+    submitted = JSON.parse(options.body);
+    return response(201, [{ id: 'relationship-1', ...submitted }]);
+  } });
+  const relationship = await client.createAccountabilityRelationship({
+    session: { access_token: 'access', user: { id: 'owner-1' } },
+    ownerDisplayName: 'Taylor',
+    partnerEmail: 'PARTNER@example.com',
+    partnerDisplayName: 'Partner',
+    permissions: { progressTotals: true }
+  });
+  assert.ok(requestUrl.endsWith('/rest/v1/accountability_relationships'));
+  assert.equal(submitted.owner_id, 'owner-1');
+  assert.equal(submitted.partner_email, 'partner@example.com');
+  assert.equal(relationship.id, 'relationship-1');
+});
+
+test('publishes only the supplied filtered snapshot to one relationship', async () => {
+  let submitted = null;
+  let prefer = '';
+  const client = createClient({ url: 'https://example.supabase.co', publishableKey: 'publishable', storage: storage(), fetchImpl: async (_url, options) => {
+    submitted = JSON.parse(options.body);
+    prefer = options.headers.Prefer;
+    return response(201, [{ relationship_id: submitted.relationship_id, revision: 1 }]);
+  } });
+  await client.pushAccountabilitySnapshot({
+    session: { access_token: 'access', user: { id: 'owner-1' } },
+    relationshipId: 'relationship-1',
+    snapshot: { today: { percent: 80 } }
+  });
+  assert.deepEqual(submitted, { relationship_id: 'relationship-1', owner_id: 'owner-1', schema_version: 1, payload: { today: { percent: 80 } } });
+  assert.equal(prefer, 'resolution=merge-duplicates,return=representation');
+});
+
+test('accepts an invitation through the email-verified database function', async () => {
+  let requestUrl = '';
+  let submitted = null;
+  const client = createClient({ url: 'https://example.supabase.co', publishableKey: 'publishable', storage: storage(), fetchImpl: async (url, options) => {
+    requestUrl = url;
+    submitted = JSON.parse(options.body);
+    return response(200, { id: 'relationship-1', status: 'active' });
+  } });
+  const accepted = await client.acceptAccountabilityInvitation('relationship-1', { access_token: 'partner-access', user: { id: 'partner-1' } });
+  assert.ok(requestUrl.endsWith('/rest/v1/rpc/accept_accountability_invitation'));
+  assert.deepEqual(submitted, { invitation_id: 'relationship-1' });
+  assert.equal(accepted.status, 'active');
+});
+
 (async () => {
   for (const { name, run } of tests) {
     try { await run(); }

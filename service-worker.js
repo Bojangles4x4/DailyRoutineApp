@@ -1,4 +1,4 @@
-const CACHE_NAME = 'daily-routine-v1-20-0-build-22-earned-access-continuity';
+const CACHE_NAME = 'daily-routine-v1-21-0-build-23-accountability-foundation';
 const ASSETS = ['./','./index.html','./styles.css','./sync-core.js','./sync-cloud.js','./app.js','./manifest.webmanifest','./icon-192.png','./icon-512.png','./privacy.html','./support.html','./legal.css'];
 
 self.addEventListener('install', event => {

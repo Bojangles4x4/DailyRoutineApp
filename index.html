@@ -233,6 +233,63 @@
           <button id="saveWeeklyFocusButton" class="primary-button weekly-focus-save" type="button">Save weekly focus</button>
         </section>
 
+        <section class="card accountability-sharing-card" id="accountabilitySharingCard">
+          <div class="section-heading accountability-sharing-heading">
+            <div><p class="eyebrow">Private accountability</p><h2>Share progress, not private details</h2></div>
+            <span id="accountabilitySharingBadge" class="privacy-pill">Sign in needed</span>
+          </div>
+          <p class="muted accountability-intro">Connect one person or several. Each connection receives only the progress categories you turn on.</p>
+
+          <div id="accountabilitySharingSignedOut" class="accountability-sharing-notice">
+            <strong>Connect Private Sync first</strong>
+            <span>Your private account confirms who owns a snapshot and who may read it.</span>
+            <button id="openPrivateSyncForAccountabilityButton" class="secondary-button" type="button">Open Private Sync</button>
+          </div>
+
+          <div id="accountabilitySharingOwner" hidden>
+            <div id="accountabilityConnectionsList" class="accountability-connection-list"></div>
+
+            <details id="accountabilityConnectionEditor" class="accountability-editor" open>
+              <summary><span id="accountabilityEditorTitle">Add an accountability partner</span><small id="accountabilityEditorStatus">Private invitation</small></summary>
+              <div class="accountability-editor-body">
+                <div class="two-column-fields">
+                  <label class="text-field compact"><span>Your display name</span><input id="accountabilityOwnerNameInput" type="text" maxlength="80" placeholder="Taylor" /></label>
+                  <label class="text-field compact"><span>Partner name</span><input id="accountabilityPartnerNameInput" type="text" maxlength="80" placeholder="Pastor, friend, counselor…" /></label>
+                </div>
+                <label class="text-field compact"><span>Partner email</span><input id="accountabilityPartnerEmailInput" type="email" maxlength="320" autocomplete="email" placeholder="partner@example.com" /></label>
+
+                <fieldset class="accountability-options accountability-sharing-options">
+                  <legend>Choose what this person can see</legend>
+                  <label class="toggle-field"><input id="accountabilityShareProgressInput" type="checkbox" checked /><span><b>Progress totals</b><small>Today and week completion, plus Truth Before Tasks status.</small></span></label>
+                  <label class="toggle-field"><input id="accountabilityShareRoutinesInput" type="checkbox" checked /><span><b>Routine names</b><small>Completion for non-sensitive routines. Medication and check-in names stay separate.</small></span></label>
+                  <label class="toggle-field"><input id="accountabilityShareCheckinsInput" type="checkbox" /><span><b>Rating check-ins</b><small>Weekly numeric averages only—never written reflections.</small></span></label>
+                  <label class="toggle-field"><input id="accountabilityShareStepsInput" type="checkbox" /><span><b>Step goal</b><small>Today’s step total and goal, not raw Health records.</small></span></label>
+                  <label class="toggle-field"><input id="accountabilityShareMedicationInput" type="checkbox" /><span><b>Medication completion</b><small>A completed count only—never names, doses, or times.</small></span></label>
+                </fieldset>
+
+                <div id="accountabilitySnapshotPreview" class="accountability-snapshot-preview"></div>
+                <p class="accountability-privacy-note"><strong>Always private:</strong> notes, prayer text, reflections, medication names and times, and raw Apple Health data are never placed in the shared snapshot.</p>
+
+                <div class="accountability-builder-actions accountability-relationship-actions">
+                  <button id="saveAccountabilityConnectionButton" class="primary-button" type="button">Send private invitation</button>
+                  <button id="refreshAccountabilitySnapshotButton" class="secondary-button" type="button" hidden>Refresh shared progress</button>
+                  <button id="pauseAccountabilityConnectionButton" class="secondary-button" type="button" hidden>Pause sharing</button>
+                  <button id="revokeAccountabilityConnectionButton" class="danger-button" type="button" hidden>Revoke</button>
+                </div>
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <section class="card accountability-dashboard-card" id="accountabilityDashboardCard" hidden>
+          <div class="section-heading"><div><p class="eyebrow">Partner dashboard</p><h2>People sharing with you</h2></div><span id="accountabilityRosterCount" class="privacy-pill">0 people</span></div>
+          <p class="muted accountability-intro">A calm, read-only view of the progress each person chose to share.</p>
+          <div class="accountability-dashboard-layout">
+            <div id="accountabilityPartnerRoster" class="accountability-partner-roster"></div>
+            <div id="accountabilityPartnerDetail" class="accountability-partner-detail"></div>
+          </div>
+        </section>
+
         <section class="card accountability-report-card" id="accountabilityReportCard">
           <div class="section-heading"><div><p class="eyebrow">Accountability</p><h2>Share a progress report</h2></div><span class="privacy-pill">On device</span></div>
           <p class="muted accountability-intro">Choose what to include, then preview the exact report before sharing it. Nothing is sent automatically.</p>
@@ -366,7 +423,7 @@
         </section>
 
         <section class="card iphone-widget-card" id="iphoneWidgetCard" data-setup-category="health" hidden>
-          <div class="section-heading"><div><p class="eyebrow">Home Screen</p><h2>Today’s Rhythm widget</h2></div><span class="native-badge">Build 22</span></div>
+          <div class="section-heading"><div><p class="eyebrow">Home Screen</p><h2>Today’s Rhythm widget</h2></div><span class="native-badge">Build 23</span></div>
           <p class="muted setup-help">See your Morning Foundation and today’s progress without opening the app. The large widget can also complete eligible, non-sensitive checkbox routines.</p>
           <div class="widget-size-options" aria-label="Available iPhone widget sizes">
             <div><span class="widget-size-shape large" aria-hidden="true"></span><strong>Large</strong><small>Progress, earned time, and up to three routine actions</small></div>
@@ -374,7 +431,7 @@
             <div><span class="widget-size-shape small" aria-hidden="true"></span><strong>Small</strong><small>Foundation and progress at a glance</small></div>
           </div>
           <details class="widget-install-guide">
-            <summary>How to add it after installing Build 22</summary>
+            <summary>How to add it after installing Build 23</summary>
             <ol>
               <li>Touch and hold an empty area of your iPhone Home Screen.</li>
               <li>Tap <b>Edit</b>, then <b>Add Widget</b>.</li>
@@ -575,7 +632,7 @@
             <a href="privacy.html">Privacy Policy</a>
             <a href="support.html">Support</a>
           </div>
-          <p class="app-version">Daily Routine <b id="appVersion">v1.20.0</b></p>
+          <p class="app-version">Daily Routine <b id="appVersion">v1.21.0</b></p>
         </section>
 
 
