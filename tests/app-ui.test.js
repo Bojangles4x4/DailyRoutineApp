@@ -31,6 +31,9 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#accountabilitySharingSignedOut').evaluate(element => element.hidden), false);
   assert.match(await page.locator('#accountabilitySharingSignedOut').textContent(), /Connect Private Sync first/);
   assert.equal(await page.locator('#accountabilityDashboardCard').evaluate(element => element.hidden), true);
+  assert.equal(await page.locator('#connectRoutineAgentButton').count(), 1);
+  assert.match(await page.locator('#dataBackupCard').textContent(), /routine definitions and daily completion history/);
+  assert.match(await page.locator('#routineAgentFileStatus').textContent(), /Not connected|not supported|Reconnect|Connected/);
 
   const partnerPage = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
   const partnerCloudRequests = [];

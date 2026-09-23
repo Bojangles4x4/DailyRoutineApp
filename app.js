@@ -11,6 +11,9 @@
   const APP_BUILD = 25;
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
+  const ROUTINE_AGENT_DB_NAME = 'dailyRoutine.agentBridge.v1';
+  const ROUTINE_AGENT_STORE_NAME = 'connections';
+  const ROUTINE_AGENT_HANDLE_KEY = 'liveSnapshotFile';
   const DEFAULT_BIBLE_APP_URL = 'https://bojangles4x4.github.io/Bible-Reading-Plan/';
   const PRIVATE_SYNC_URL = 'https://shmvxujnlbolgcjwwewe.supabase.co';
   const PRIVATE_SYNC_PUBLISHABLE_KEY = 'sb_publishable_mEmMzinbOkd2FGpmSqPlmg_S6tUfqzh';
@@ -99,6 +102,10 @@
   let accountabilityPartnerOnlyMode = false;
   let accountabilityPartnerRange = 7;
   let actualTimesExpanded = false;
+  let routineAgentFileHandle = null;
+  let routineAgentFileLastWriteAt = null;
+  let routineAgentFileStatus = '';
+  let routineAgentFileWriteTimer = null;
   const syncCoordinator = window.DailyRoutineSync?.createCoordinator({ storage: localStorage }) || null;
   const syncCloud = window.DailyRoutineCloud?.createClient({
     url: PRIVATE_SYNC_URL,
@@ -121,7 +128,7 @@
     setupView: $('setupView'), setupOverview: $('setupOverview'), setupCategoryBar: $('setupCategoryBar'), setupCategoryTitle: $('setupCategoryTitle'), setupBackButton: $('setupBackButton'), setupScheduleSummary: $('setupScheduleSummary'), setupAppearanceSummary: $('setupAppearanceSummary'), setupFaithSummary: $('setupFaithSummary'), setupHealthSummary: $('setupHealthSummary'), setupDataSummary: $('setupDataSummary'),
     wakeTimeInput: $('wakeTimeInput'), bedTimeInput: $('bedTimeInput'), streakThresholdInput: $('streakThresholdInput'), streakModeInput: $('streakModeInput'), streakWeekdaysOnlyInput: $('streakWeekdaysOnlyInput'), themeInput: $('themeInput'), handednessInput: $('handednessInput'), backgroundImageInput: $('backgroundImageInput'), clearBackgroundButton: $('clearBackgroundButton'),
     routineEditor: $('routineEditor'), checkinEditor: $('checkinEditor'), addItemButton: $('addItemButton'), addCheckinButton: $('addCheckinButton'),
-    exportCsvButton: $('exportCsvButton'), exportJsonButton: $('exportJsonButton'), importJsonInput: $('importJsonInput'), resetDataButton: $('resetDataButton'),
+    exportCsvButton: $('exportCsvButton'), exportJsonButton: $('exportJsonButton'), importJsonInput: $('importJsonInput'), resetDataButton: $('resetDataButton'), connectRoutineAgentButton: $('connectRoutineAgentButton'), routineAgentFileStatus: $('routineAgentFileStatus'),
     itemDialog: $('itemDialog'), itemForm: $('itemForm'), builderEyebrow: $('builderEyebrow'), dialogTitle: $('dialogTitle'), editingItemId: $('editingItemId'), editingItemKind: $('editingItemKind'),
     itemNameInput: $('itemNameInput'), itemSectionInput: $('itemSectionInput'), itemTypeInput: $('itemTypeInput'), itemFrequencyInput: $('itemFrequencyInput'), customDaysField: $('customDaysField'),
     numberGoalFields: $('numberGoalFields'), itemTargetInput: $('itemTargetInput'), itemUnitInput: $('itemUnitInput'), scaleFields: $('scaleFields'), scaleMinInput: $('scaleMinInput'), scaleMaxInput: $('scaleMaxInput'), scaleStepInput: $('scaleStepInput'), scaleLowLabelInput: $('scaleLowLabelInput'), scaleHighLabelInput: $('scaleHighLabelInput'),
@@ -180,6 +187,7 @@
     bindIntegrationEvents();
     applyPersonalization();
     renderAll();
+    initializeRoutineAgentFileConnection();
     consumeQuickCapture();
     maybeAutoSnapshot();
     refreshPrivateSyncSession();
@@ -303,6 +311,7 @@
     maybeAutoSnapshot();
     syncWatchContext();
     scheduleAccountabilitySnapshotRefresh();
+    scheduleRoutineAgentSnapshotWrite();
   }
 
   function snapshotPayload() {
@@ -346,6 +355,165 @@
     els.backupDownloadStatus.textContent = last && !Number.isNaN(last.getTime())
       ? `Last downloaded backup: ${last.toLocaleString()}`
       : 'No downloaded backup recorded yet. Local snapshots do not replace a downloaded backup.';
+    renderRoutineAgentFileStatus();
+  }
+
+  function renderRoutineAgentFileStatus() {
+    if (!els.connectRoutineAgentButton || !els.routineAgentFileStatus) return;
+    const supported = 'showSaveFilePicker' in window && 'indexedDB' in window;
+    els.connectRoutineAgentButton.disabled = !supported;
+    els.connectRoutineAgentButton.textContent = routineAgentFileHandle ? 'Reconnect or choose another file' : 'Connect Personal Systems Agent';
+    if (!supported) {
+      els.routineAgentFileStatus.textContent = 'Automatic live snapshots are not supported in this browser. Download a backup below as the manual fallback.';
+    } else if (routineAgentFileStatus) {
+      els.routineAgentFileStatus.textContent = routineAgentFileStatus;
+    } else if (routineAgentFileHandle) {
+      els.routineAgentFileStatus.textContent = `Connected to ${routineAgentFileHandle.name || 'the approved snapshot file'}. Daily Routine will update it after your data changes.`;
+    } else {
+      els.routineAgentFileStatus.textContent = 'Not connected. You will choose one JSON file; the browser cannot browse other files.';
+    }
+  }
+
+  function routineAgentSnapshotPayload() {
+    return {
+      version: APP_VERSION,
+      build: APP_BUILD,
+      exportedAt: new Date().toISOString(),
+      scope: 'routine-definitions-and-daily-history',
+      state: {
+        items: structuredClone(state.items),
+        days: structuredClone(state.days)
+      }
+    };
+  }
+
+  function openRoutineAgentDatabase() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(ROUTINE_AGENT_DB_NAME, 1);
+      request.onupgradeneeded = () => {
+        if (!request.result.objectStoreNames.contains(ROUTINE_AGENT_STORE_NAME)) request.result.createObjectStore(ROUTINE_AGENT_STORE_NAME);
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error('Could not open the local connection store.'));
+    });
+  }
+
+  async function readRoutineAgentFileHandle() {
+    const database = await openRoutineAgentDatabase();
+    try {
+      return await new Promise((resolve, reject) => {
+        const request = database.transaction(ROUTINE_AGENT_STORE_NAME, 'readonly').objectStore(ROUTINE_AGENT_STORE_NAME).get(ROUTINE_AGENT_HANDLE_KEY);
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = () => reject(request.error || new Error('Could not read the local file connection.'));
+      });
+    } finally {
+      database.close();
+    }
+  }
+
+  async function storeRoutineAgentFileHandle(handle) {
+    const database = await openRoutineAgentDatabase();
+    try {
+      await new Promise((resolve, reject) => {
+        const request = database.transaction(ROUTINE_AGENT_STORE_NAME, 'readwrite').objectStore(ROUTINE_AGENT_STORE_NAME).put(handle, ROUTINE_AGENT_HANDLE_KEY);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error || new Error('Could not save the local file connection.'));
+      });
+    } finally {
+      database.close();
+    }
+  }
+
+  async function routineAgentFilePermission(handle, shouldRequest = false) {
+    if (!handle) return 'denied';
+    const options = { mode: 'readwrite' };
+    const current = await handle.queryPermission(options);
+    return current === 'prompt' && shouldRequest ? handle.requestPermission(options) : current;
+  }
+
+  async function writeRoutineAgentSnapshot() {
+    if (!routineAgentFileHandle) return false;
+    try {
+      const permission = await routineAgentFilePermission(routineAgentFileHandle);
+      if (permission !== 'granted') {
+        routineAgentFileStatus = `Reconnect ${routineAgentFileHandle.name || 'the snapshot file'} to resume automatic updates.`;
+        renderRoutineAgentFileStatus();
+        return false;
+      }
+      const writable = await routineAgentFileHandle.createWritable();
+      await writable.write(JSON.stringify(routineAgentSnapshotPayload(), null, 2));
+      await writable.close();
+      routineAgentFileLastWriteAt = new Date();
+      routineAgentFileStatus = `Connected to ${routineAgentFileHandle.name || 'the approved snapshot file'} · updated ${routineAgentFileLastWriteAt.toLocaleString()}.`;
+      renderRoutineAgentFileStatus();
+      return true;
+    } catch (error) {
+      routineAgentFileStatus = `The snapshot could not be updated${error?.message ? `: ${error.message}` : '.'}`;
+      renderRoutineAgentFileStatus();
+      return false;
+    }
+  }
+
+  function scheduleRoutineAgentSnapshotWrite() {
+    if (!routineAgentFileHandle) return;
+    clearTimeout(routineAgentFileWriteTimer);
+    routineAgentFileWriteTimer = setTimeout(() => { writeRoutineAgentSnapshot(); }, 750);
+  }
+
+  async function connectRoutineAgentFile() {
+    if (!('showSaveFilePicker' in window)) return;
+    try {
+      if (routineAgentFileHandle && await routineAgentFilePermission(routineAgentFileHandle) !== 'granted') {
+        if (await routineAgentFilePermission(routineAgentFileHandle, true) === 'granted') {
+          await writeRoutineAgentSnapshot();
+          showToast('Personal Systems Agent snapshot reconnected');
+        } else {
+          routineAgentFileStatus = 'File access was not granted. Automatic updates remain paused.';
+          renderRoutineAgentFileStatus();
+        }
+        return;
+      }
+      const handle = await window.showSaveFilePicker({
+        suggestedName: 'daily-routine-agent-live.json',
+        types: [{ description: 'Daily Routine Agent snapshot', accept: { 'application/json': ['.json'] } }]
+      });
+      if (await routineAgentFilePermission(handle, true) !== 'granted') {
+        routineAgentFileStatus = 'File access was not granted. No connection was saved.';
+        renderRoutineAgentFileStatus();
+        return;
+      }
+      await storeRoutineAgentFileHandle(handle);
+      routineAgentFileHandle = handle;
+      await writeRoutineAgentSnapshot();
+      showToast('Personal Systems Agent snapshot connected');
+    } catch (error) {
+      if (error?.name === 'AbortError') return;
+      routineAgentFileStatus = `The file connection could not be completed${error?.message ? `: ${error.message}` : '.'}`;
+      renderRoutineAgentFileStatus();
+    }
+  }
+
+  async function initializeRoutineAgentFileConnection() {
+    if (!('showSaveFilePicker' in window) || !('indexedDB' in window)) {
+      renderRoutineAgentFileStatus();
+      return;
+    }
+    try {
+      routineAgentFileHandle = await readRoutineAgentFileHandle();
+      if (!routineAgentFileHandle) {
+        renderRoutineAgentFileStatus();
+        return;
+      }
+      const permission = await routineAgentFilePermission(routineAgentFileHandle);
+      if (permission === 'granted') await writeRoutineAgentSnapshot();
+      else {
+        routineAgentFileStatus = `Reconnect ${routineAgentFileHandle.name || 'the snapshot file'} to resume automatic updates.`;
+        renderRoutineAgentFileStatus();
+      }
+    } catch (error) {
+      routineAgentFileStatus = `The saved file connection could not be restored${error?.message ? `: ${error.message}` : '.'}`;
+      renderRoutineAgentFileStatus();
+    }
   }
 
   function restoreLatestSnapshot() {
@@ -675,6 +843,7 @@
     els.memoryFavoritesOnlyInput.addEventListener('change', renderMemoryArchive);
     els.exportCsvButton.addEventListener('click', exportCsv);
     els.exportJsonButton.addEventListener('click', exportJson);
+    els.connectRoutineAgentButton.addEventListener('click', connectRoutineAgentFile);
     els.importJsonInput.addEventListener('change', importJson);
     els.createSnapshotButton.addEventListener('click', () => createLocalSnapshot('Manual snapshot'));
     els.restoreSnapshotButton.addEventListener('click', restoreLatestSnapshot);
