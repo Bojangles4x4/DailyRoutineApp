@@ -703,6 +703,10 @@
             <button id="saveConvictionsButton" class="primary-button" type="button">Save convictions</button>
           </div>
           <p class="muted micro-copy">Removing every conviction turns this second phase off and keeps the three-minute Truth Before Tasks opening.</p>
+          <div id="convictionRecoveryPanel" class="sync-recovery-panel" hidden>
+            <p id="convictionRecoveryStatus" class="muted micro-copy"></p>
+            <button id="restoreRecoveredConvictionsButton" class="secondary-button" type="button">Restore pre-sync convictions</button>
+          </div>
         </section>
 
         <section class="card private-sharing-card" data-setup-category="data">
@@ -861,6 +865,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="sync-core.js" defer></script>
   <script src="sync-cloud.js" defer></script>
-  <script src="app.js?v=1.24.0-build26-accountability-routine-selection" defer></script>
+  <script src="app.js?v=1.25.0-build27-history-sync-safety" defer></script>
 </body>
 </html>

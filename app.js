@@ -3,12 +3,13 @@
 
   const STORAGE_KEY = 'dailyRoutineApp.v1';
   const SNAPSHOT_KEY = 'dailyRoutineApp.snapshots.v1';
+  const CONVICTION_RECOVERY_KEY = 'dailyRoutineApp.convictionRecovery.v1';
   const HEALTH_DEVICE_KEY = 'dailyRoutine.health.device.v1';
   const EARNED_ACCESS_DEVICE_KEY = 'dailyRoutine.earnedAccess.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.24.0';
-  const APP_BUILD = 26;
+  const APP_VERSION = '1.25.0';
+  const APP_BUILD = 27;
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const ROUTINE_AGENT_DB_NAME = 'dailyRoutine.agentBridge.v1';
@@ -43,7 +44,7 @@
       { id: 'morning-reading', name: '10-Chapter Bible Reading', kind: 'routine', section: 'morning', type: 'linked', frequency: 'daily', days: [], optional: false, linkedTemplate: 'bible', linkedCompletion: 'sync', linkedUrl: DEFAULT_BIBLE_APP_URL, linkedButtonLabel: 'Continue reading', linkedInternalTarget: '', timeWindowStart: '', timeWindowEnd: '', unit: '', target: null },
       { id: 'morning-sleep', name: 'Sleep quality', kind: 'checkin', section: 'morning', type: 'scale', frequency: 'daily', days: [], optional: true, scale: { min: 0, max: 10, step: 1, lowLabel: 'Poor', highLabel: 'Excellent' } },
       { id: 'morning-mood', name: 'Morning mood', kind: 'checkin', section: 'morning', type: 'scale', frequency: 'daily', days: [], optional: true, scale: { min: 0, max: 10, step: 1, lowLabel: 'Low', highLabel: 'Great' } },
-      { id: 'day-water', name: 'Water', kind: 'routine', section: 'day', type: 'number', frequency: 'daily', days: [], optional: false, unit: 'cups', target: 8 },
+      { id: 'day-water', name: 'Water', kind: 'routine', section: 'day', type: 'number', frequency: 'daily', days: [], optional: false, unit: 'cups', target: 6 },
       { id: 'day-movement', name: 'Movement / exercise', kind: 'routine', section: 'day', type: 'checkbox', frequency: 'daily', days: [], optional: false, unit: '', target: null },
       { id: 'day-remember', name: 'Remember a blessing', kind: 'routine', section: 'day', type: 'memory', frequency: 'daily', days: [], optional: true, memoryCategory: 'blessing', unit: '', target: null },
       { id: 'day-focus', name: 'Focus / productivity', kind: 'checkin', section: 'day', type: 'scale', frequency: 'weekdays', days: [], optional: true, scale: { min: 0, max: 10, step: 1, lowLabel: 'Scattered', highLabel: 'Locked in' } },
@@ -168,6 +169,8 @@
     routineSharedSnapshot,
     handleRoutineSharedCommand,
     buildAccountabilityReport,
+    getConvictionRecoveries: () => structuredClone(readConvictionRecoveries()),
+    saveConvictionRecoveries: recoveries => writeConvictionRecoveries(structuredClone(recoveries)),
     syncStatus: () => syncCoordinator?.status() || null,
     dateKey,
     startOfToday
@@ -338,6 +341,41 @@
     writeSnapshots(snapshots);
     renderSnapshotStatus();
     if (!quiet) showToast('Local snapshot created');
+  }
+
+  function convictionConfig(source) {
+    const convictions = source?.settings?.truthBeforeTasks?.convictions;
+    if (!convictions || typeof convictions !== 'object') return { intro: '', items: [] };
+    const items = Array.isArray(convictions.items)
+      ? convictions.items
+      : Array.isArray(convictions.points)
+        ? convictions.points.map((text, index) => ({ id: `legacy-conviction-${index + 1}`, text, scripture: '' }))
+        : [];
+    return { intro: String(convictions.intro || ''), items: structuredClone(items) };
+  }
+
+  function readConvictionRecoveries() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(CONVICTION_RECOVERY_KEY) || '[]');
+      return Array.isArray(parsed) ? parsed : [];
+    } catch { return []; }
+  }
+
+  function writeConvictionRecoveries(recoveries) {
+    try { localStorage.setItem(CONVICTION_RECOVERY_KEY, JSON.stringify(recoveries.slice(0, 5))); }
+    catch { /* best-effort device-only recovery */ }
+  }
+
+  function preserveConvictionsBeforeSync(currentState, nextState, label = 'Before private sync changed convictions') {
+    const current = convictionConfig(currentState);
+    const next = convictionConfig(nextState);
+    if (!current.items.length || JSON.stringify(current) === JSON.stringify(next)) return false;
+    const recoveries = readConvictionRecoveries();
+    if (JSON.stringify(recoveries[0]?.convictions) === JSON.stringify(current)) return false;
+    recoveries.unshift({ createdAt: new Date().toISOString(), label, convictions: current });
+    writeConvictionRecoveries(recoveries);
+    createLocalSnapshot(label, true);
+    return true;
   }
 
   function maybeAutoSnapshot() {
@@ -575,7 +613,23 @@
   function fromDateKey(key) { const [y, m, d] = key.split('-').map(Number); return new Date(y, m - 1, d, 12, 0, 0, 0); }
   function shiftDate(date, days) { const d = new Date(date); d.setDate(d.getDate() + days); return d; }
   function isSameDay(a, b) { return dateKey(a) === dateKey(b); }
-  function ensureDay(key) { if (!state.days[key]) state.days[key] = { entries: {}, skippedItems: {}, mode: 'normal' }; if (!state.days[key].entries) state.days[key].entries = {}; if (!state.days[key].skippedItems) state.days[key].skippedItems = {}; if (!state.days[key].mode) state.days[key].mode = 'normal'; return state.days[key]; }
+  function captureDayTargets(day, key) {
+    if (!day.targets || typeof day.targets !== 'object' || Array.isArray(day.targets)) day.targets = {};
+    const scheduledIds = new Set(scheduledItemsForDate(fromDateKey(key)).map(item => item.id));
+    state.items.filter(item => scheduledIds.has(item.id) || Object.prototype.hasOwnProperty.call(day.entries || {}, item.id)).forEach(item => {
+      if (item.type !== 'number' || !Number.isFinite(Number(item.target)) || Object.prototype.hasOwnProperty.call(day.targets, item.id)) return;
+      day.targets[item.id] = Number(item.target);
+    });
+    return day;
+  }
+
+  function ensureDay(key) {
+    if (!state.days[key]) state.days[key] = { entries: {}, skippedItems: {}, mode: 'normal', targets: {} };
+    if (!state.days[key].entries) state.days[key].entries = {};
+    if (!state.days[key].skippedItems) state.days[key].skippedItems = {};
+    if (!state.days[key].mode) state.days[key].mode = 'normal';
+    return captureDayTargets(state.days[key], key);
+  }
 
   function ensureFirstUseDate() {
     let changed = false;
@@ -612,6 +666,16 @@
       Object.assign(item, normalized);
       if (!item.createdDate) { item.createdDate = state.settings.firstUseDate; changed = true; }
     });
+    if (!state.settings.build27HistoricalTargetsMigrated) {
+      const water = state.items.find(item => item.id === 'day-water');
+      if (water && Number(water.target) === 8) water.target = 6;
+      Object.keys(state.days || {}).filter(key => /^\d{4}-\d{2}-\d{2}$/.test(key)).forEach(key => {
+        if (!state.days[key] || typeof state.days[key] !== 'object') state.days[key] = { entries: {}, skippedItems: {}, mode: 'normal' };
+        captureDayTargets(state.days[key], key);
+      });
+      state.settings.build27HistoricalTargetsMigrated = true;
+      changed = true;
+    }
     if (!state.settings.v14Seeded) {
       if (!state.items.some(item => item.type === 'memory')) {
         const maxOrder = state.items.filter(item => item.section === 'day' && item.kind === 'routine').reduce((max, item) => Math.max(max, Number(item.order) || 0), -1);
@@ -699,11 +763,17 @@
     return value !== undefined && value !== null && String(value).trim() !== '';
   }
 
-  function hasTarget(item) { return item.type === 'number' && item.target !== null && item.target !== '' && item.target !== undefined && Number.isFinite(Number(item.target)); }
+  function targetForDay(item, day) {
+    const targets = day?.targets && typeof day.targets === 'object' ? day.targets : {};
+    return Object.prototype.hasOwnProperty.call(targets, item.id) ? targets[item.id] : item.target;
+  }
 
-  function entryMeetsTarget(item, value) {
+  function hasTarget(item, target = item.target) { return item.type === 'number' && target !== null && target !== '' && target !== undefined && Number.isFinite(Number(target)); }
+
+  function entryMeetsTarget(item, value, day = null) {
     if (!entryIsLogged(item, value)) return false;
-    if (hasTarget(item)) return Number(value) >= Number(item.target);
+    const target = targetForDay(item, day);
+    if (hasTarget(item, target)) return Number(value) >= Number(target);
     return true;
   }
 
@@ -712,7 +782,7 @@
     const required = items.filter(item => !item.optional);
     const optional = items.filter(item => item.optional);
     const day = state.days[dateKey(date)] || { entries: {} };
-    const completed = required.filter(item => entryMeetsTarget(item, day.entries?.[item.id])).length;
+    const completed = required.filter(item => entryMeetsTarget(item, day.entries?.[item.id], day)).length;
     const optionalLogged = optional.filter(item => entryIsLogged(item, day.entries?.[item.id])).length;
     return { completed, total: required.length, optionalLogged, optionalTotal: optional.length, percent: required.length ? Math.round(completed / required.length * 100) : 100, excused: dayIsExcused(date) };
   }
@@ -1219,7 +1289,7 @@
   function earnedStageState(stage, settings = earnedAccessDeviceSettings()) {
     const items = earnedStageItems(stage, settings);
     const day = state.days[dateKey(startOfToday())] || { entries: {} };
-    const completed = items.filter(item => entryMeetsTarget(item, day.entries?.[item.id])).length;
+    const completed = items.filter(item => entryMeetsTarget(item, day.entries?.[item.id], day)).length;
     return { items, completed, eligible: items.length > 0 && completed === items.length };
   }
 
@@ -1268,7 +1338,7 @@
     selectedIds.forEach(id => {
       if (credits[id]) return;
       const item = state.items.find(candidate => candidate.id === id);
-      if (!item || !entryMeetsTarget(item, day.entries?.[id])) return;
+      if (!item || !entryMeetsTarget(item, day.entries?.[id], day)) return;
       const minutes = Math.min(settings.taskRewardMinutes, Math.max(0, settings.dailyLimitMinutes - earned));
       credits[id] = { creditedAt: new Date().toISOString(), minutes };
       bank += minutes;
@@ -2033,7 +2103,7 @@
       return finish('rejected', 'The requested completion value was invalid.');
     }
     const completed = rawCompleted === 'true' || rawCompleted === true;
-    const currentlyCompleted = entryMeetsTarget(item, day.entries?.[item.id]);
+    const currentlyCompleted = entryMeetsTarget(item, day.entries?.[item.id], day);
     if (completed !== currentlyCompleted) {
       if (completed) day.entries[item.id] = true;
       else delete day.entries[item.id];
@@ -2051,7 +2121,7 @@
   function watchActionableItems(date, day) {
     const sectionOrder = { morning: 0, day: 1, evening: 2 };
     return scheduledItemsForDate(date)
-      .filter(item => item.kind === 'routine' && item.type === 'checkbox' && !entryMeetsTarget(item, day.entries?.[item.id]))
+      .filter(item => item.kind === 'routine' && item.type === 'checkbox' && !entryMeetsTarget(item, day.entries?.[item.id], day))
       .sort((a, b) => (sectionOrder[a.section] ?? 9) - (sectionOrder[b.section] ?? 9) || (a.order ?? 0) - (b.order ?? 0));
   }
 
@@ -2098,7 +2168,7 @@
         id: item.id,
         name: item.name,
         section: item.section,
-        completed: entryMeetsTarget(item, day.entries?.[item.id]),
+        completed: entryMeetsTarget(item, day.entries?.[item.id], day),
         action: item.type === 'medication' ? 'takeMedication' : 'toggleRoutine'
       })),
       customAction: watchCustomAction(today, day)
@@ -2200,7 +2270,7 @@
     if (event.action === 'toggleRoutine') {
       item = scheduled.find(candidate => candidate.id === event.itemId && candidate.kind === 'routine' && candidate.type === 'checkbox');
       if (!item) return;
-      if (entryMeetsTarget(item, day.entries?.[item.id])) clearWatchEntry(item, `${item.name} reopened from Apple Watch`);
+      if (entryMeetsTarget(item, day.entries?.[item.id], day)) clearWatchEntry(item, `${item.name} reopened from Apple Watch`);
       else saveWatchEntry(item, true, `${item.name} completed from Apple Watch`);
       return;
     }
@@ -2208,7 +2278,7 @@
     if (event.action === 'takeMedication') {
       item = scheduled.find(candidate => candidate.id === event.itemId && candidate.kind === 'routine' && candidate.type === 'medication');
       if (!item) return;
-      if (entryMeetsTarget(item, day.entries?.[item.id])) {
+      if (entryMeetsTarget(item, day.entries?.[item.id], day)) {
         clearWatchEntry(item, `${item.name} reopened from Apple Watch`);
       } else {
         const time = currentTimeValue();
@@ -2642,7 +2712,7 @@
     ['morning', 'day', 'evening'].forEach(section => {
       const items = scheduled.filter(item => item.section === section).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
       const required = items.filter(item => !item.optional);
-      const logged = required.filter(item => entryMeetsTarget(item, day.entries?.[item.id])).length;
+      const logged = required.filter(item => entryMeetsTarget(item, day.entries?.[item.id], day)).length;
       const routineItems = items.filter(item => item.kind !== 'checkin');
       const checkinItems = items.filter(item => item.kind === 'checkin');
       const [title] = sectionLabels[section];
@@ -2656,7 +2726,8 @@
       const checkinSlot = wrapper.querySelector('.checkin-slot');
       if (!routineItems.length) routineList.innerHTML = '<div class="empty-state compact-empty">No routine items scheduled.</div>';
       else routineItems.forEach(item => {
-        routineList.appendChild(buildTaskRow(item, day.entries?.[item.id]));
+        const displayItem = item.type === 'number' ? { ...item, target: targetForDay(item, day) } : item;
+        routineList.appendChild(buildTaskRow(displayItem, day.entries?.[item.id], day));
       });
       if (checkinItems.length) {
         const panel = document.createElement('div');
@@ -2692,9 +2763,9 @@
     return bits.join(' · ');
   }
 
-  function buildTaskRow(item, value) {
+  function buildTaskRow(item, value, day = null) {
     const row = document.createElement('div');
-    row.className = `task-row${entryMeetsTarget(item, value) ? ' done' : ''}`;
+    row.className = `task-row${entryMeetsTarget(item, value, day) ? ' done' : ''}`;
     if (item.type === 'linked') return buildLinkedRow(row, item, value);
     if (item.type === 'medication') return buildMedicationRow(row, item, value);
     if (item.type === 'memory') return buildMemoryRow(row, item, value);
@@ -2895,7 +2966,7 @@
       dates.forEach(date => {
         if (dayIsExcused(date)) return;
         const day = state.days[dateKey(date)] || { entries: {} };
-        scoredItemsForDate(date).filter(item => item.section === section && !item.optional).forEach(item => { total += 1; if (entryMeetsTarget(item, day.entries?.[item.id])) completed += 1; });
+        scoredItemsForDate(date).filter(item => item.section === section && !item.optional).forEach(item => { total += 1; if (entryMeetsTarget(item, day.entries?.[item.id], day)) completed += 1; });
       });
       const percent = total ? Math.round(completed / total * 100) : null;
       return progressRowMarkup(sectionLabels[section][0], percent, total ? `${completed}/${total} completed` : 'No required items');
@@ -2913,7 +2984,7 @@
         if (dayIsExcused(date) || !scoredItemsForDate(date).some(candidate => candidate.id === item.id)) return;
         opportunities += 1;
         const day = state.days[dateKey(date)] || { entries: {} };
-        if (entryMeetsTarget(item, day.entries?.[item.id])) successes += 1;
+        if (entryMeetsTarget(item, day.entries?.[item.id], day)) successes += 1;
       });
       return { item, opportunities, successes, percent: opportunities ? Math.round(successes / opportunities * 100) : null };
     }).filter(metric => metric.opportunities > 0);
@@ -2988,7 +3059,7 @@
           const day = state.days[dateKey(date)] || { entries: {} };
           const rating = scaleValueForDay(scaleItem, day);
           if (rating === null) return;
-          if (entryMeetsTarget(habit, day.entries?.[habit.id])) withHabit.push(rating); else withoutHabit.push(rating);
+          if (entryMeetsTarget(habit, day.entries?.[habit.id], day)) withHabit.push(rating); else withoutHabit.push(rating);
         });
         if (withHabit.length < 2 || withoutHabit.length < 2) return;
         const withAvg = average(withHabit), withoutAvg = average(withoutHabit), delta = withAvg - withoutAvg;
@@ -3225,7 +3296,9 @@
         const remote = await syncCloud.fetchRoutine(privateSyncSession);
         const decision = syncCoordinator.reconcile(state, remote);
         if (decision.action === 'adopt') {
-          state = window.DailyRoutineSync.applySyncableState(state, decision.state);
+          const nextState = window.DailyRoutineSync.applySyncableState(state, decision.state);
+          preserveConvictionsBeforeSync(state, nextState);
+          state = nextState;
           saveState({ trackSync: false });
           syncCoordinator.commitRemote(state, decision.remoteRevision, 'supabase', privateSyncSession.user.id);
           renderAll();
@@ -3244,7 +3317,9 @@
             deviceId: syncCoordinator.status().deviceId,
             schemaVersion: window.DailyRoutineSync.SYNC_SCHEMA_VERSION
           });
-          state = window.DailyRoutineSync.applySyncableState(state, decision.state);
+          const nextState = window.DailyRoutineSync.applySyncableState(state, decision.state);
+          preserveConvictionsBeforeSync(state, nextState);
+          state = nextState;
           saveState({ trackSync: false });
           syncCoordinator.commitRemote(state, saved.revision, 'supabase', privateSyncSession.user.id);
           renderAll();
@@ -4149,7 +4224,7 @@
     const completion = aggregateCompletion(scoredDates);
     const sectionStats = ['morning', 'day', 'evening'].map(section => {
       let done = 0, total = 0;
-      scoredDates.forEach(date => { const day = state.days[dateKey(date)] || { entries:{} }; scoredItemsForDate(date).filter(item => item.section === section && !item.optional).forEach(item => { total += 1; if (entryMeetsTarget(item, day.entries?.[item.id])) done += 1; }); });
+      scoredDates.forEach(date => { const day = state.days[dateKey(date)] || { entries:{} }; scoredItemsForDate(date).filter(item => item.section === section && !item.optional).forEach(item => { total += 1; if (entryMeetsTarget(item, day.entries?.[item.id], day)) done += 1; }); });
       return { section, percent: total ? Math.round(done / total * 100) : null };
     }).filter(row => row.percent !== null);
     const bestSection = sectionStats.sort((a,b) => b.percent - a.percent)[0];
@@ -4663,7 +4738,7 @@
         const day = state.days[dateKey(date)] || { entries: {} };
         scoredItemsForDate(date).filter(item => item.section === section && !item.optional).forEach(item => {
           total += 1;
-          if (entryMeetsTarget(item, day.entries?.[item.id])) completed += 1;
+          if (entryMeetsTarget(item, day.entries?.[item.id], day)) completed += 1;
         });
       });
       return { section, completed, total, percent: total ? Math.round(completed / total * 100) : null };
@@ -5451,6 +5526,11 @@
       el('truthPrayerInput').value = config().openingPrayer;
       el('truthCoreInput').value = config().coreTruths.join('\n');
       el('convictionStatus').textContent = convictionItems().length ? `${convictionItems().length} active` : 'Not configured';
+      const recovery = api.getConvictionRecoveries()[0];
+      el('convictionRecoveryPanel').hidden = !recovery?.convictions?.items?.length;
+      if (recovery?.convictions?.items?.length) {
+        el('convictionRecoveryStatus').textContent = `A pre-sync copy of ${recovery.convictions.items.length} conviction${recovery.convictions.items.length === 1 ? '' : 's'} was saved ${new Date(recovery.createdAt).toLocaleString()}.`;
+      }
       renderThemeList();
       renderConvictionEditor();
     }
@@ -5563,6 +5643,21 @@
         api.saveState();
         renderSettings();
         api.showToast(items.length ? 'Convictions will join tomorrow’s opening.' : 'Convictions phase is turned off.');
+      });
+      el('restoreRecoveredConvictionsButton').addEventListener('click', () => {
+        const recoveries = api.getConvictionRecoveries();
+        const recovery = recoveries[0];
+        if (!recovery?.convictions?.items?.length) return;
+        if (!confirm(`Restore ${recovery.convictions.items.length} convictions from ${new Date(recovery.createdAt).toLocaleString()}?`)) return;
+        const current = clone(config().convictions || { intro: '', items: [] });
+        if (current.items.length && JSON.stringify(current) !== JSON.stringify(recovery.convictions)) {
+          recoveries.unshift({ createdAt: new Date().toISOString(), label: 'Before restoring recovered convictions', convictions: current });
+          api.saveConvictionRecoveries(recoveries);
+        }
+        config().convictions = clone(recovery.convictions);
+        api.saveState();
+        renderSettings();
+        api.showToast('Recovered convictions restored.');
       });
     }
 

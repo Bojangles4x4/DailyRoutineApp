@@ -180,6 +180,41 @@ test('merges separate note edits by id', () => {
   assert.equal(merged.conflicts.length, 0);
 });
 
+test('merges convictions individually by stable id', () => {
+  const base = sampleState();
+  base.settings.truthBeforeTasks = { convictions: { items: [
+    { id: 'grace', text: 'Grace is sufficient.', scripture: '' },
+    { id: 'next-thing', text: 'Do the next thing.', scripture: '' }
+  ] } };
+  const local = copy(base);
+  const remote = copy(base);
+  local.settings.truthBeforeTasks.convictions.items[0].scripture = '2 Corinthians 12:9';
+  remote.settings.truthBeforeTasks.convictions.items[1].text = 'Do the next thing in faith.';
+  remote.settings.truthBeforeTasks.convictions.items.push({ id: 'custom', text: 'A custom conviction.', scripture: '' });
+  const merged = mergeRoutineStates(base, local, remote);
+  assert.deepEqual(merged.state.settings.truthBeforeTasks.convictions.items, [
+    { id: 'grace', text: 'Grace is sufficient.', scripture: '2 Corinthians 12:9' },
+    { id: 'next-thing', text: 'Do the next thing in faith.', scripture: '' },
+    { id: 'custom', text: 'A custom conviction.', scripture: '' }
+  ]);
+  assert.equal(merged.conflicts.length, 0);
+});
+
+test('uses the saved daily target in accountability history', () => {
+  const state = sampleState();
+  state.items.push({ id: 'water', name: 'Water', kind: 'routine', type: 'number', section: 'day', frequency: 'daily', optional: false, target: 8 });
+  state.days['2026-08-25'].entries.water = 6;
+  state.days['2026-08-25'].targets = { water: 6 };
+  const snapshot = buildAccountabilitySnapshot(state, {
+    today: '2026-08-25',
+    generatedAt: '2026-08-25T14:00:00.000Z',
+    permissions: { progressTotals: true, routineNames: true, routineIds: ['water'] }
+  });
+  assert.equal(snapshot.today.completed, 2);
+  assert.equal(snapshot.routines[0].completed, true);
+  assert.equal(snapshot.routineTrends[0].completed, 1);
+});
+
 test('keeps the local value and records a recoverable conflict for simultaneous edits', () => {
   const base = sampleState();
   const local = copy(base);

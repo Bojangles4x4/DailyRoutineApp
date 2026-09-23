@@ -26,7 +26,7 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#truthHeroTitle').textContent(), 'Truth Before Tasks');
   assert.equal(await page.locator('#truthEnterDayButton').isDisabled(), true);
   assert.equal(await page.locator('#accountabilitySharingCard').count(), 1);
-  assert.equal(await page.locator('#appVersion').textContent(), 'v1.24.0 · Build 26');
+  assert.equal(await page.locator('#appVersion').textContent(), 'v1.25.0 · Build 27');
   assert.match(await page.locator('#openAccountabilityFromSetupButton').textContent(), /Open private accountability/);
   assert.equal(await page.locator('#accountabilitySharingSignedOut').evaluate(element => element.hidden), false);
   assert.match(await page.locator('#accountabilitySharingSignedOut').textContent(), /Connect Private Sync first/);
@@ -153,6 +153,7 @@ function localDateKey(date = new Date()) {
     }));
   }, { key: yesterday, startedAt: `${yesterday}T18:00:00.000Z` });
   await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForFunction(() => Boolean(window.DailyRoutineApp?.getState()?.settings?.truthBeforeTasks));
   const rolloverProtection = await page.evaluate(() => ({
     activeAllowance: JSON.parse(localStorage.getItem('dailyRoutine.earnedAccess.device.v1')).activeAllowance,
     lastDirective: [...window.__dailyRoutineNativeMessages].reverse().find(message => ['earned.access.lock', 'earned.access.allow'].includes(message.action))?.action
@@ -681,6 +682,40 @@ function localDateKey(date = new Date()) {
   assert.match(exportedFiles[0].value.content, /^Date,Day Mode,Actual Wake/);
   assert.match(exportedFiles[1].value.filename, /^daily-routine-backup-\d{4}-\d{2}-\d{2}\.json$/);
   assert.match(exportedFiles[1].value.content, /"state"/);
+
+  const migrationContext = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+  const migrationPage = await migrationContext.newPage();
+  await migrationPage.goto(baseURL, { waitUntil: 'networkidle' });
+  const historicalDate = await migrationPage.evaluate(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - 2);
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const state = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
+    delete state.settings.build27HistoricalTargetsMigrated;
+    state.settings.firstUseDate = key;
+    state.items.find(item => item.id === 'day-water').target = 8;
+    state.days[key] = { entries: { 'day-water': 6 }, skippedItems: {}, mode: 'normal' };
+    localStorage.setItem('dailyRoutineApp.v1', JSON.stringify(state));
+    localStorage.setItem('dailyRoutineApp.convictionRecovery.v1', JSON.stringify([{
+      createdAt: new Date().toISOString(),
+      label: 'Before private sync changed convictions',
+      convictions: { intro: '', items: [{ id: 'recovered', text: 'Recovered conviction', scripture: '' }] }
+    }]));
+    return key;
+  });
+  await migrationPage.reload({ waitUntil: 'networkidle' });
+  const migratedHistory = await migrationPage.evaluate(key => {
+    const state = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
+    return {
+      currentWaterTarget: state.items.find(item => item.id === 'day-water').target,
+      historicalWaterTarget: state.days[key].targets['day-water'],
+      migrated: state.settings.build27HistoricalTargetsMigrated
+    };
+  }, historicalDate);
+  assert.deepEqual(migratedHistory, { currentWaterTarget: 6, historicalWaterTarget: 6, migrated: true });
+  assert.equal(await migrationPage.locator('#convictionRecoveryPanel').evaluate(element => element.hidden), false);
+  assert.match(await migrationPage.locator('#convictionRecoveryStatus').textContent(), /pre-sync copy of 1 conviction/);
+  await migrationContext.close();
 
   assert.deepEqual(errors, []);
   await browser.close();

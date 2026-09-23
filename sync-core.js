@@ -89,6 +89,17 @@
     if (same(local, base)) return clone(remote);
     if (same(remote, base)) return clone(local);
 
+    if (path === 'settings.truthBeforeTasks.convictions.items'
+      && [base, local, remote].every(value => value === MISSING || Array.isArray(value))) {
+      return mergeEntityArray(
+        base === MISSING ? [] : base,
+        local === MISSING ? [] : local,
+        remote === MISSING ? [] : remote,
+        path,
+        conflicts
+      );
+    }
+
     const valuesAreObjects = [base, local, remote].every(value => value === MISSING || isPlainObject(value));
     if (valuesAreObjects && local !== MISSING && remote !== MISSING) {
       const output = {};
@@ -224,9 +235,13 @@
     return true;
   }
 
-  function accountabilityEntryComplete(item, value) {
+  function accountabilityEntryComplete(item, value, day = {}) {
     if (value === undefined || value === null || value === '') return false;
-    if (item?.type === 'number') return Number(value) >= Number(item.target || 1);
+    if (item?.type === 'number') {
+      const savedTargets = isPlainObject(day.targets) ? day.targets : {};
+      const target = Object.prototype.hasOwnProperty.call(savedTargets, item.id) ? savedTargets[item.id] : item.target;
+      return Number(value) >= Number(target || 1);
+    }
     if (item?.type === 'memory') return isPlainObject(value) ? Boolean(value.reflected) : Boolean(value);
     if (item?.type === 'medication') {
       if (isPlainObject(value)) return Boolean(value.taken || value.completed || value.time || value.takenAt);
@@ -244,7 +259,7 @@
     const items = (Array.isArray(state?.items) ? state.items : []).filter(item =>
       item && item.kind !== 'checkin' && !item.optional && accountabilityItemScheduled(item, date)
     );
-    const completed = items.filter(item => accountabilityEntryComplete(item, entries[item.id])).length;
+    const completed = items.filter(item => accountabilityEntryComplete(item, entries[item.id], day)).length;
     return { key, entries, items, completed, total: items.length, percent: items.length ? Math.round(completed / items.length * 100) : 0 };
   }
 
@@ -312,13 +327,14 @@
         .map(item => ({
           name: String(item.name || 'Routine').slice(0, 100),
           section: ['morning', 'day', 'evening'].includes(item.section) ? item.section : 'day',
-          completed: accountabilityEntryComplete(item, today.entries[item.id])
+          completed: accountabilityEntryComplete(item, today.entries[item.id], state?.days?.[today.key])
         }));
       snapshot.routineTrends = sharedRoutines.map(item => {
         const itemDays = trackedHistoryDates.filter(date => accountabilityItemScheduled(item, date)).map(date => {
           const key = accountabilityDateKey(date);
-          const entries = isPlainObject(state?.days?.[key]?.entries) ? state.days[key].entries : {};
-          return { date: key, completed: accountabilityEntryComplete(item, entries[item.id]) };
+          const itemDay = isPlainObject(state?.days?.[key]) ? state.days[key] : {};
+          const entries = isPlainObject(itemDay.entries) ? itemDay.entries : {};
+          return { date: key, completed: accountabilityEntryComplete(item, entries[item.id], itemDay) };
         });
         const completedCount = itemDays.filter(day => day.completed).length;
         return {
@@ -349,7 +365,8 @@
       const stepItem = (Array.isArray(state.items) ? state.items : []).find(item => String(item?.healthSource || '') === 'apple-health-steps');
       if (stepItem) {
         const count = Math.max(0, Number(today.entries[stepItem.id]) || 0);
-        const goal = Math.max(1, Number(stepItem.target) || 8000);
+        const savedTargets = isPlainObject(state?.days?.[today.key]?.targets) ? state.days[today.key].targets : {};
+        const goal = Math.max(1, Number(Object.prototype.hasOwnProperty.call(savedTargets, stepItem.id) ? savedTargets[stepItem.id] : stepItem.target) || 8000);
         snapshot.steps = { count: Math.round(count), goal: Math.round(goal), percent: Math.min(100, Math.round(count / goal * 100)) };
       }
     }
