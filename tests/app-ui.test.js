@@ -33,7 +33,7 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#accountabilityDashboardCard').evaluate(element => element.hidden), true);
   assert.equal(await page.locator('#connectRoutineAgentButton').count(), 1);
   assert.match(await page.locator('#dataBackupCard').textContent(), /routine definitions and daily completion history/);
-  assert.match(await page.locator('#routineAgentFileStatus').textContent(), /Not connected|not supported|Reconnect|Connected/);
+  assert.match(await page.locator('#routineAgentFileStatus').textContent(), /Not connected|Brave will connect|Reconnect|Connected/);
 
   const partnerPage = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
   const partnerCloudRequests = [];

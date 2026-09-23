@@ -637,7 +637,7 @@
           <p class="muted setup-help">Your information is stored locally first. If you connect Private sync above, the approved sync copy is also stored in your owner-only account.</p>
           <div class="setup-subsection">
             <h3>Personal Systems Agent</h3>
-            <p class="muted micro-copy">Connect one file on this Mac. Daily Routine will keep only routine definitions and daily completion history current in that file. Notes, memories, backgrounds, browser history, and other browser data are not included.</p>
+            <p class="muted micro-copy">Connect one protected local snapshot on this Mac. Daily Routine will keep only routine definitions and daily completion history current. Notes, memories, backgrounds, browser history, and other browser data are not included.</p>
             <button id="connectRoutineAgentButton" class="secondary-button" type="button">Connect Personal Systems Agent</button>
             <p id="routineAgentFileStatus" class="muted micro-copy" aria-live="polite"></p>
           </div>
@@ -854,6 +854,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="sync-core.js" defer></script>
   <script src="sync-cloud.js" defer></script>
-  <script src="app.js?v=1.23.0-build25-agent-live-snapshot" defer></script>
+  <script src="app.js?v=1.23.0-build25-agent-local-bridge" defer></script>
 </body>
 </html>

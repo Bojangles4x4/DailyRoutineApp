@@ -1,5 +1,5 @@
-const CACHE_NAME = 'daily-routine-v1-23-0-build-25-agent-live-snapshot';
-const ASSETS = ['./','./index.html','./styles.css','./sync-core.js','./sync-cloud.js','./app.js?v=1.23.0-build25-agent-live-snapshot','./manifest.webmanifest','./icon-192.png','./icon-512.png','./privacy.html','./support.html','./legal.css'];
+const CACHE_NAME = 'daily-routine-v1-23-0-build-25-agent-local-bridge';
+const ASSETS = ['./','./index.html','./styles.css','./sync-core.js','./sync-cloud.js','./app.js?v=1.23.0-build25-agent-local-bridge','./manifest.webmanifest','./icon-192.png','./icon-512.png','./privacy.html','./support.html','./legal.css'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));

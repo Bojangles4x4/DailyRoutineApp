@@ -14,6 +14,8 @@
   const ROUTINE_AGENT_DB_NAME = 'dailyRoutine.agentBridge.v1';
   const ROUTINE_AGENT_STORE_NAME = 'connections';
   const ROUTINE_AGENT_HANDLE_KEY = 'liveSnapshotFile';
+  const ROUTINE_AGENT_LOCAL_KEY = 'dailyRoutine.agentBridge.local.v1';
+  const ROUTINE_AGENT_LOCAL_URL = 'http://127.0.0.1:48765/v1/snapshot';
   const DEFAULT_BIBLE_APP_URL = 'https://bojangles4x4.github.io/Bible-Reading-Plan/';
   const PRIVATE_SYNC_URL = 'https://shmvxujnlbolgcjwwewe.supabase.co';
   const PRIVATE_SYNC_PUBLISHABLE_KEY = 'sb_publishable_mEmMzinbOkd2FGpmSqPlmg_S6tUfqzh';
@@ -106,6 +108,7 @@
   let routineAgentFileLastWriteAt = null;
   let routineAgentFileStatus = '';
   let routineAgentFileWriteTimer = null;
+  let routineAgentLocalBridgeEnabled = localStorage.getItem(ROUTINE_AGENT_LOCAL_KEY) === 'true';
   const syncCoordinator = window.DailyRoutineSync?.createCoordinator({ storage: localStorage }) || null;
   const syncCloud = window.DailyRoutineCloud?.createClient({
     url: PRIVATE_SYNC_URL,
@@ -360,15 +363,19 @@
 
   function renderRoutineAgentFileStatus() {
     if (!els.connectRoutineAgentButton || !els.routineAgentFileStatus) return;
-    const supported = 'showSaveFilePicker' in window && 'indexedDB' in window;
-    els.connectRoutineAgentButton.disabled = !supported;
-    els.connectRoutineAgentButton.textContent = routineAgentFileHandle ? 'Reconnect or choose another file' : 'Connect Personal Systems Agent';
-    if (!supported) {
-      els.routineAgentFileStatus.textContent = 'Automatic live snapshots are not supported in this browser. Download a backup below as the manual fallback.';
-    } else if (routineAgentFileStatus) {
+    const filePickerSupported = 'showSaveFilePicker' in window && 'indexedDB' in window;
+    els.connectRoutineAgentButton.disabled = false;
+    els.connectRoutineAgentButton.textContent = routineAgentFileHandle
+      ? 'Reconnect or choose another file'
+      : routineAgentLocalBridgeEnabled ? 'Reconnect Personal Systems Agent' : 'Connect Personal Systems Agent';
+    if (routineAgentFileStatus) {
       els.routineAgentFileStatus.textContent = routineAgentFileStatus;
     } else if (routineAgentFileHandle) {
       els.routineAgentFileStatus.textContent = `Connected to ${routineAgentFileHandle.name || 'the approved snapshot file'}. Daily Routine will update it after your data changes.`;
+    } else if (routineAgentLocalBridgeEnabled) {
+      els.routineAgentFileStatus.textContent = 'Connected through the local Agent bridge. Routine definitions and daily history stay on this Mac.';
+    } else if (!filePickerSupported) {
+      els.routineAgentFileStatus.textContent = 'Brave will connect through the local Agent bridge. No browser-profile access is required.';
     } else {
       els.routineAgentFileStatus.textContent = 'Not connected. You will choose one JSON file; the browser cannot browse other files.';
     }
@@ -432,6 +439,7 @@
   }
 
   async function writeRoutineAgentSnapshot() {
+    if (!routineAgentFileHandle && routineAgentLocalBridgeEnabled) return writeRoutineAgentBridgeSnapshot();
     if (!routineAgentFileHandle) return false;
     try {
       const permission = await routineAgentFilePermission(routineAgentFileHandle);
@@ -455,13 +463,40 @@
   }
 
   function scheduleRoutineAgentSnapshotWrite() {
-    if (!routineAgentFileHandle) return;
+    if (!routineAgentFileHandle && !routineAgentLocalBridgeEnabled) return;
     clearTimeout(routineAgentFileWriteTimer);
     routineAgentFileWriteTimer = setTimeout(() => { writeRoutineAgentSnapshot(); }, 750);
   }
 
+  async function writeRoutineAgentBridgeSnapshot({ connecting = false } = {}) {
+    try {
+      const response = await fetch(ROUTINE_AGENT_LOCAL_URL, {
+        method: 'POST',
+        mode: 'cors',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(routineAgentSnapshotPayload())
+      });
+      if (!response.ok) throw new Error(`Local bridge returned ${response.status}`);
+      routineAgentLocalBridgeEnabled = true;
+      localStorage.setItem(ROUTINE_AGENT_LOCAL_KEY, 'true');
+      routineAgentFileLastWriteAt = new Date();
+      routineAgentFileStatus = `Connected through the local Agent bridge · updated ${routineAgentFileLastWriteAt.toLocaleString()}.`;
+      renderRoutineAgentFileStatus();
+      if (connecting) showToast('Personal Systems Agent connected locally');
+      return true;
+    } catch {
+      routineAgentFileStatus = 'The local Agent bridge is not available. Keep the Mac Agent running, then choose Connect again.';
+      renderRoutineAgentFileStatus();
+      return false;
+    }
+  }
+
   async function connectRoutineAgentFile() {
-    if (!('showSaveFilePicker' in window)) return;
+    if (!('showSaveFilePicker' in window)) {
+      await writeRoutineAgentBridgeSnapshot({ connecting: true });
+      return;
+    }
     try {
       if (routineAgentFileHandle && await routineAgentFilePermission(routineAgentFileHandle) !== 'granted') {
         if (await routineAgentFilePermission(routineAgentFileHandle, true) === 'granted') {
@@ -494,7 +529,12 @@
   }
 
   async function initializeRoutineAgentFileConnection() {
-    if (!('showSaveFilePicker' in window) || !('indexedDB' in window)) {
+    if (!('showSaveFilePicker' in window)) {
+      if (routineAgentLocalBridgeEnabled) await writeRoutineAgentBridgeSnapshot();
+      else renderRoutineAgentFileStatus();
+      return;
+    }
+    if (!('indexedDB' in window)) {
       renderRoutineAgentFileStatus();
       return;
     }
