@@ -2,6 +2,8 @@
 
 This folder is the native foundation for turning Daily Routine into an iPhone app with HealthKit support and an Apple Watch companion.
 
+It also contains a native macOS **Daily Routine Agent** companion for the local-first Personal Systems Agent MVP plus a separately signed **Daily Routine Messages Importer**. Only the narrow importer should receive Full Disk Access; it opens the Messages database read-only and replaces one owner-only local snapshot. The main Agent remains unprivileged, combines that snapshot with Calendar, foreground-app activity, and Daily Routine history in local SQLite, runs quiet observation/recommendation jobs, and presents a recommendation inbox plus diagnostics. See [Personal Systems Agent MVP](../docs/PERSONAL_SYSTEMS_AGENT_MVP.md) for setup, privacy boundaries, limitations, and tests.
+
 ## Architecture
 
 - The iPhone target is a SwiftUI app that hosts the existing offline web interface in `WKWebView`.
