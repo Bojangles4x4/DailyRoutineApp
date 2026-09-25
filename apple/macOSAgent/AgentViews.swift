@@ -181,6 +181,8 @@ struct DiagnosticsView: View {
                 Text("Connection health, local event counts, and recent background jobs.")
                     .foregroundStyle(.secondary)
 
+                privateSyncBridge
+
                 Text("Data sources").font(.headline)
                 ForEach(model.diagnostics) { diagnostic in
                     VStack(alignment: .leading, spacing: 5) {
@@ -238,6 +240,72 @@ struct DiagnosticsView: View {
         .navigationTitle("Diagnostics")
     }
 
+    private var privateSyncBridge: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Label("iPhone Private Sync bridge", systemImage: "iphone.and.arrow.forward")
+                            .font(.headline)
+                        Text("Uses the same owner account as Daily Routine on your iPhone. The Agent receives only routine definitions and completion/skip signals.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Text(model.privateSyncConnected ? "CONNECTED" : "NOT CONNECTED")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(model.privateSyncConnected ? .green : .secondary)
+                }
+
+                Text(model.privateSyncStatus)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if model.privateSyncConnected {
+                    if !model.privateSyncEmail.isEmpty {
+                        Text(model.privateSyncEmail)
+                            .font(.caption.monospaced())
+                            .textSelection(.enabled)
+                    }
+                    if let date = model.privateSyncLastRead {
+                        Text("Last iPhone snapshot read \(date.formatted(date: .abbreviated, time: .shortened))")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    HStack {
+                        Button("Refresh from iPhone") {
+                            Task { await model.refreshPrivateSyncRoutineBridge() }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(model.isWorking)
+                        Button("Disconnect") {
+                            Task { await model.disconnectPrivateSyncRoutineBridge() }
+                        }
+                        .disabled(model.isWorking)
+                    }
+                } else {
+                    TextField("Private Sync email", text: $model.privateSyncEmail)
+                        .textFieldStyle(.roundedBorder)
+                    SecureField("Private Sync password", text: $model.privateSyncPassword)
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit { Task { await model.connectPrivateSyncRoutineBridge() } }
+                    HStack {
+                        Button(model.isWorking ? "Connecting…" : "Connect to iPhone data") {
+                            Task { await model.connectPrivateSyncRoutineBridge() }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(model.isWorking)
+                        Text("Your password is used for sign-in and is not stored. The session is kept in Keychain.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .padding(6)
+        }
+    }
+
     @ViewBuilder
     private func sourceActions(for diagnostic: SourceDiagnostic) -> some View {
         switch diagnostic.source {
@@ -259,10 +327,10 @@ struct DiagnosticsView: View {
             }
         case .dailyRoutine:
             HStack {
-                if diagnostic.enabled {
-                    Button("Refresh Daily Routine") { Task { await model.refreshRoutineSnapshot() } }
+                if model.routineFallbackConnected {
+                    Button("Refresh fallback file") { Task { await model.refreshRoutineSnapshot() } }
                 }
-                Button(diagnostic.enabled ? "Choose another file…" : "Choose Daily Routine snapshot…") {
+                Button(model.routineFallbackConnected ? "Choose another fallback file…" : "Choose fallback snapshot…") {
                     Task { await model.chooseRoutineSnapshot() }
                 }
             }
@@ -351,14 +419,16 @@ struct PrivacyBoundaryView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 Text("Privacy boundaries").font(.largeTitle.bold())
-                Text("The MVP is deliberately local-first. It does not contain a network client or model API integration.")
+                Text("The Agent is local-first. Its optional Private Sync bridge downloads a privacy-limited routine snapshot from your owner account; it has no model API integration.")
                     .font(.title3)
-                privacyRow("Raw data stays on this Mac", "The separate Messages importer writes one owner-only local snapshot. The Agent stores imported Messages, calendar details, app activity, and Daily Routine history only in local SQLite.", "externaldrive.badge.lock")
+                privacyRow("Raw Mac data stays on this Mac", "Messages, calendar details, foreground app activity, observations, and recommendations remain in local SQLite. They are never uploaded by the iPhone bridge.", "externaldrive.badge.lock")
+                privacyRow("The iPhone bridge is minimized", "Private Sync carries only routine names, schedules, and completion/skip signals. Notes, memories, written responses, medication routines, and raw Health values are excluded before upload.", "iphone.and.arrow.forward")
+                privacyRow("Credentials are handled narrowly", "Your password is used only to sign in to your existing Private Sync account and is not stored. Refresh and access tokens are stored in macOS Keychain for background reads.", "key.fill")
                 privacyRow("Sources are opt-in", "Messages, app activity, Calendar, and the Daily Routine snapshot remain off until you explicitly connect each one.", "checkmark.shield")
                 privacyRow("Full Disk Access is isolated", "Only Daily Routine Messages Importer should receive Full Disk Access. The main Agent reads the helper snapshot and remains unprivileged.", "lock.shield")
                 privacyRow("No surveillance claims", "App activity means foreground application switches. This MVP does not read Screen Time, browser URLs, window titles, keystrokes, or screen contents.", "eye.slash")
                 privacyRow("No external changes", "Recommendation buttons can stage an action, but the MVP never sends a message, edits a calendar event, creates a cloud project, or changes the iPhone app automatically.", "hand.raised")
-                privacyRow("Derived-only model boundary", "If a model layer is added later, the integration point is the observation and recommendation layer—not raw Messages or browsing/activity rows—and it must require separate approval.", "brain.head.profile")
+                privacyRow("Derived-only outbound boundary", "Returning observations or recommendations to iPhone is not enabled yet. A later model or return bridge must use derived data—not raw Messages, calendar, or activity rows—and require separate approval.", "brain.head.profile")
                 Divider()
                 Text("Sensitivity levels").font(.headline)
                 Text("Low: operational metadata · Personal: routine/app patterns · Sensitive: calendar details · Restricted: message content. Sensitivity is stored with every event so future export or model policies can enforce the boundary.")

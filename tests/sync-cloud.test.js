@@ -102,6 +102,43 @@ test('reports an optimistic revision conflict when no row updates', async () => 
   );
 });
 
+test('publishes one owner-scoped Personal Systems Agent snapshot', async () => {
+  let requestUrl = '';
+  let submitted = null;
+  let prefer = '';
+  const client = createClient({ url: 'https://example.supabase.co', publishableKey: 'publishable', storage: storage(), fetchImpl: async (url, options) => {
+    requestUrl = url;
+    submitted = JSON.parse(options.body);
+    prefer = options.headers.Prefer;
+    return response(201, [{ owner_id: 'owner-1', revision: 1 }]);
+  } });
+  await client.pushAgentSnapshot({
+    session: { access_token: 'access', user: { id: 'owner-1' } },
+    snapshot: { scope: 'routine-definitions-and-completion-signals', state: { items: [], days: {} } },
+    schemaVersion: 1,
+    deviceId: 'iphone-1'
+  });
+  assert.ok(requestUrl.endsWith('/rest/v1/agent_snapshots?on_conflict=owner_id'));
+  assert.deepEqual(submitted, {
+    owner_id: 'owner-1',
+    schema_version: 1,
+    payload: { scope: 'routine-definitions-and-completion-signals', state: { items: [], days: {} } },
+    updated_by: 'iphone-1'
+  });
+  assert.equal(prefer, 'resolution=merge-duplicates,return=representation');
+});
+
+test('reads only the signed-in owner Personal Systems Agent snapshot', async () => {
+  let requestUrl = '';
+  const client = createClient({ url: 'https://example.supabase.co', publishableKey: 'publishable', storage: storage(), fetchImpl: async (url) => {
+    requestUrl = url;
+    return response(200, [{ owner_id: 'owner-1', revision: 3, payload: { state: { items: [], days: {} } } }]);
+  } });
+  const snapshot = await client.fetchAgentSnapshot({ access_token: 'access', user: { id: 'owner-1' } });
+  assert.ok(requestUrl.includes('/rest/v1/agent_snapshots?owner_id=eq.owner-1'));
+  assert.equal(snapshot.revision, 3);
+});
+
 test('creates an owner-scoped accountability relationship', async () => {
   let requestUrl = '';
   let submitted = null;

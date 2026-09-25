@@ -9,8 +9,8 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
     CODE_SIGN_STYLE: Automatic
-    MARKETING_VERSION: "1.25.0"
-    CURRENT_PROJECT_VERSION: "27"
+    MARKETING_VERSION: "1.26.0"
+    CURRENT_PROJECT_VERSION: "28"
 schemes:
   DailyRoutine:
     build:
@@ -279,6 +279,7 @@ targets:
     dependencies:
       - sdk: libsqlite3.tbd
       - sdk: EventKit.framework
+      - sdk: Security.framework
       - sdk: ServiceManagement.framework
   DailyRoutineAgentTests:
     type: bundle.unit-test

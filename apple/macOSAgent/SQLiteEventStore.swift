@@ -32,9 +32,25 @@ final class SQLiteEventStore {
         try execute("PRAGMA journal_mode=WAL;")
         try execute("PRAGMA foreign_keys=ON;")
         try migrate()
+        try hardenFilePermissions()
     }
 
     deinit { sqlite3_close(database) }
+
+    private func hardenFilePermissions() throws {
+        let fileManager = FileManager.default
+        try fileManager.setAttributes(
+            [.posixPermissions: 0o700],
+            ofItemAtPath: databaseURL.deletingLastPathComponent().path
+        )
+        for url in [
+            databaseURL,
+            URL(fileURLWithPath: databaseURL.path + "-wal"),
+            URL(fileURLWithPath: databaseURL.path + "-shm")
+        ] where fileManager.fileExists(atPath: url.path) {
+            try fileManager.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
+        }
+    }
 
     private func migrate() throws {
         try execute("""

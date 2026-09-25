@@ -2,8 +2,9 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.25.0 development features
+## Version 1.26.0 development features
 
+- Build 28 adds the owner-only, privacy-minimized iPhone Private Sync bridge for Daily Routine Agent while keeping all Mac-local Messages, Calendar, app activity, observations, and recommendations on the Mac
 - Build 27 restores the six-cup water goal, preserves each recorded day’s numeric targets, merges convictions individually during Private Sync, and keeps a device-only recovery copy before synced convictions change
 - Build 26 makes the sharing boundary clearer, adds select-all and selection counts, and allows memory-style routines to share their name and completion while keeping remembered text private
 - Build 25 lets each owner choose the exact non-sensitive routines a partner may see, adds 30-day completion history and routine trends to the privacy-filtered snapshot, and gives multi-person partners search, attention filters, sorting, and seven/30-day views

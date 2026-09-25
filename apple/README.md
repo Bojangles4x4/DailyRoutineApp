@@ -2,7 +2,7 @@
 
 This folder is the native foundation for turning Daily Routine into an iPhone app with HealthKit support and an Apple Watch companion.
 
-It also contains a native macOS **Daily Routine Agent** companion for the local-first Personal Systems Agent MVP plus a separately signed **Daily Routine Messages Importer**. Only the narrow importer should receive Full Disk Access; it opens the Messages database read-only and replaces one owner-only local snapshot. The main Agent remains unprivileged, combines that snapshot with Calendar, foreground-app activity, and Daily Routine history in local SQLite, runs quiet observation/recommendation jobs, and presents a recommendation inbox plus diagnostics. See [Personal Systems Agent MVP](../docs/PERSONAL_SYSTEMS_AGENT_MVP.md) for setup, privacy boundaries, limitations, and tests.
+It also contains a native macOS **Daily Routine Agent** companion for the local-first Personal Systems Agent MVP plus a separately signed **Daily Routine Messages Importer**. Only the narrow importer should receive Full Disk Access; it opens the Messages database read-only and replaces one owner-only local snapshot. The main Agent remains unprivileged, combines that snapshot with Calendar, foreground-app activity, and privacy-minimized Daily Routine history from the owner's iPhone Private Sync account in local SQLite, runs quiet observation/recommendation jobs, and presents a recommendation inbox plus diagnostics. The older single-file Daily Routine bridge remains a fallback. See [Personal Systems Agent MVP](../docs/PERSONAL_SYSTEMS_AGENT_MVP.md) for setup, privacy boundaries, limitations, and tests.
 
 ## Architecture
 
@@ -52,6 +52,8 @@ Build 25 extends that snapshot with owner-selected routine trends and 30-day com
 Build 26 clarifies routine sharing with a selected count and select-all/clear controls. Memory-style tasks can share their name and completion state while remembered text remains private.
 
 Build 27 restores the six-cup water goal and freezes numeric targets with each recorded day so later goal edits do not rewrite history. Private Sync merges convictions by stable item ID and saves a device-only recovery copy before any synced conviction change.
+
+Build 28 lets the iPhone/web app publish a separate owner-only Personal Systems Agent snapshot through Private Sync. The snapshot carries routine definitions and completion/skip signals only; notes, memories, written responses, medication routines, check-ins, and raw Health values are removed before upload. Daily Routine Agent stores its session in Keychain, downloads the protected snapshot during collection, and leaves all Mac-local source data on the Mac.
 
 Tapping a checkbox or medication row updates that exact routine; tapping a completed row reopens it. Medication taps record the current time, with an AM/PM confirmation on Watch when the time does not match the routine section. Linked-app routines remain on iPhone. All Watch actions remain locked until the Morning Foundation is completed on the iPhone for the local calendar day. If personal convictions are configured, they are part of that foundation. If the Watch companion is not installed yet, the iPhone keeps the latest routine context ready and sends it when Watch Connectivity reports the companion is available.
 

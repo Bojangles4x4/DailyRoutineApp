@@ -6,7 +6,7 @@ Daily Routine now includes a native macOS companion target named **Daily Routine
 
 The existing product is an iPhone `WKWebView` wrapper around the offline PWA, plus Watch and widget extensions. Apple Messages and Mac foreground-app activity are Mac-local sources that an iPhone target cannot read. Keeping the collector in the same Xcode project provides a clean product boundary without pretending the iPhone process can cross it.
 
-The MVP keeps the recommendation inbox in the Mac companion, beside the data that produced it. A later bridge can publish only approved derived observations or recommendations to Daily Routine private sync. Raw Messages, calendar details, and activity events must not cross that bridge by default.
+The MVP keeps the recommendation inbox in the Mac companion, beside the data that produced it. Because the iPhone app is the owner's normal Daily Routine interface, an owner-only Private Sync bridge now lets the Mac pull a separate privacy-minimized routine snapshot. Raw Messages, calendar details, foreground-app activity, observations, and recommendations do not cross that bridge.
 
 ## Vertical slice
 
@@ -31,7 +31,7 @@ Every event contains a timestamp, source, category, title, summary, metadata, an
 - **Apple Messages:** opt-in through a separate app target named **Daily Routine Messages Importer**. Only this narrowly scoped helper should receive Full Disk Access. It opens `~/Library/Messages/chat.db` with SQLite read-only mode, replaces one owner-only local snapshot, and contains no network client. The main Agent imports that snapshot without Full Disk Access. Ordinary text rows from the last 14 days are included; attachments and some newer rich/attributed bodies are skipped.
 - **App activity:** opt-in, prospective foreground-application switches from `NSWorkspace`. It does not read browser URLs, browsing history, window titles, keystrokes, screen contents, or Apple's private Screen Time database.
 - **Calendar:** opt-in EventKit full read access. The app fetches event titles/times for the analysis window and never writes calendar data.
-- **Daily Routine:** a one-time, single-file connection from the web app writes a privacy-limited local JSON snapshot containing only routine definitions and daily completion history. The Mac agent reads that file without modifying it or uploading it. Manual backup import remains available as a fallback.
+- **Daily Routine:** the preferred path is an owner-only Private Sync Agent snapshot published by the iPhone/web app and pulled by the Mac. It contains routine names/schedules plus completion and skip booleans for a rolling 90-day window. Notes, memories, written responses, medication routines, and raw Health values are excluded before upload. The one-file local bridge remains available as a fallback.
 - **Test mode:** generates a small synthetic set of routine misses, follow-up messages, and repeated app revisits, then runs the full pipeline. Diagnostics can remove the synthetic events and their derived recommendations before real sources are connected.
 
 Gmail, GitHub, Drive, Health, Finances, Teams/SharePoint, Notes, Reminders, browser URLs, and a cloud model are intentionally outside this milestone.
@@ -54,7 +54,7 @@ The 72-hour pass selects at most three recommendations and always fills these fi
 4. Where it belongs
 5. Expected benefit
 
-No network client is linked into the target. A future model adapter should accept only derived observations by default, enforce sensitivity policy, and require a separately enabled setting.
+The Mac target contains one narrow network client for the optional owner-only Private Sync routine snapshot. It does not upload the Mac event database or any Messages, Calendar, activity, observation, or recommendation row. A future model adapter should accept only derived observations by default, enforce sensitivity policy, and require a separately enabled setting.
 
 ## Recommendation actions
 
@@ -106,11 +106,20 @@ No special macOS permission is needed for foreground application activation noti
 
 ### Daily Routine history
 
-1. In Daily Routine, open **Setup → Data → Backup & export**.
-2. Choose **Connect Personal Systems Agent** and save the suggested `daily-routine-agent-live.json` file somewhere permanent on this Mac.
-3. In the Mac agent, open **Diagnostics**, choose **Daily Routine snapshot**, and select that same file once.
+Preferred iPhone path:
 
-After that, Daily Routine rewrites only that approved file whenever routine state changes, and the Mac agent rereads it during its collection pass (target: every three hours). The browser cannot browse other files through this connection. Notes, memories, backgrounds, and browser activity are excluded from the snapshot. If browser/site data is reset or the browser revokes the saved file permission, Daily Routine will show **Reconnect**; choose the same file again. A downloaded full backup remains the manual fallback.
+1. Connect Private Sync in Daily Routine on iPhone and open the updated app once so it publishes the privacy-minimized Agent snapshot.
+2. On the Mac, open **Daily Routine Agent → Diagnostics → iPhone Private Sync bridge**.
+3. Sign in with the same owner email and password. The password is used for sign-in and discarded; the resulting session is stored in macOS Keychain.
+4. Choose **Refresh from iPhone** or run a review. The Agent automatically refreshes this snapshot during later collection passes.
+
+Local-file fallback:
+
+1. In the web Daily Routine interface, open **Setup → Data → Backup & export**.
+2. Choose **Connect Personal Systems Agent** and save the suggested `daily-routine-agent-live.json` file somewhere permanent on this Mac.
+3. In the Mac agent, open **Diagnostics**, choose **fallback snapshot**, and select that same file once.
+
+For the preferred path, the cloud table is protected by Supabase Row Level Security and can be read only by the signed-in owner. The local copy is mode `0600` under Application Support, and imported events remain in local SQLite. For the fallback path, Daily Routine rewrites only the approved file whenever routine state changes. The browser cannot browse other files through that connection. A downloaded full backup remains the last-resort manual fallback.
 
 ### Background operation
 
@@ -127,11 +136,11 @@ xcodebuild -project DailyRoutineApple.xcodeproj \
   CODE_SIGNING_ALLOWED=NO test
 ```
 
-The tests cover SQLite event round-tripping and deduplication, the synthetic end-to-end event → observation → recommendation slice, the three-recommendation cap, and staged action persistence.
+The tests cover SQLite event round-tripping and deduplication, privacy-limited Private Sync snapshots and protected local storage, rejection of broader backups at the cloud-bridge boundary, the synthetic event → observation → recommendation slice, the three-recommendation cap, and staged action persistence.
 
 ## Phase 2
 
-- Define an encrypted, derived-only recommendation bridge into the iPhone/PWA inbox, with per-item approval and no raw-event sync.
+- Add a derived-only recommendation return bridge into the iPhone/PWA inbox, with per-item approval and no raw-event sync.
 - Package and notarize the Agent and Messages Importer with stable Developer ID signatures so privacy grants survive normal upgrades.
 - Add an optional file watcher for faster ingestion than the scheduled three-hour reread.
 - Add optional Notes/Reminders and browser-history adapters with separate permissions and clear browser-specific support.

@@ -3,6 +3,7 @@ const {
   syncableState,
   applySyncableState,
   mergeRoutineStates,
+  buildAgentSnapshot,
   buildAccountabilitySnapshot,
   createCoordinator
 } = require('../sync-core.js');
@@ -73,6 +74,58 @@ test('preserves local Apple Health entries when applying a cloud document', () =
   const applied = applySyncableState(current, remote);
   assert.equal(applied.days['2026-08-25'].entries.steps, 8421);
   assert.equal(applied.settings.theme, 'dusk');
+});
+
+test('builds an agent snapshot with completion signals but no private response values', () => {
+  const state = sampleState();
+  state.items.push(
+    { id: 'journal', name: 'Private journal prompt', kind: 'routine', type: 'longtext', section: 'evening', frequency: 'daily' },
+    { id: 'meds', name: 'Evening medicine', kind: 'routine', type: 'medication', section: 'evening', frequency: 'daily' },
+    { id: 'mood', name: 'Mood details', kind: 'checkin', type: 'longtext', section: 'evening', frequency: 'daily' },
+    { id: 'steps', name: 'Steps', kind: 'routine', type: 'number', target: 8000, healthSource: 'apple-health-steps' }
+  );
+  state.days['2026-08-25'].entries.journal = 'private journal response';
+  state.days['2026-08-25'].entries.meds = { taken: true, time: '20:15', note: 'private medication note' };
+  state.days['2026-08-25'].entries.mood = 'private check-in response';
+  state.days['2026-08-25'].entries.steps = 9132;
+  state.notes = [{ id: 'secret', text: 'private note' }];
+  state.memories = [{ id: 'memory', text: 'private memory' }];
+
+  const snapshot = buildAgentSnapshot(state, {
+    generatedAt: '2026-08-25T14:00:00.000Z',
+    appVersion: '1.25.0',
+    build: 27,
+    windowDays: 90
+  });
+  const serialized = JSON.stringify(snapshot);
+
+  assert.equal(snapshot.scope, 'routine-definitions-and-completion-signals');
+  assert.equal(snapshot.schemaVersion, 1);
+  assert.equal(snapshot.state.days['2026-08-25'].entries.journal, true);
+  assert.equal(snapshot.state.items.some(item => item.id === 'meds'), false);
+  assert.equal(snapshot.state.days['2026-08-25'].entries.meds, undefined);
+  assert.equal(snapshot.state.items.some(item => item.id === 'steps'), false);
+  assert.equal(snapshot.state.days['2026-08-25'].entries.steps, undefined);
+  assert.equal(snapshot.state.items.some(item => item.id === 'mood'), false);
+  assert.equal(serialized.includes('private journal response'), false);
+  assert.equal(serialized.includes('20:15'), false);
+  assert.equal(serialized.includes('private medication note'), false);
+  assert.equal(serialized.includes('Evening medicine'), false);
+  assert.equal(serialized.includes('private check-in response'), false);
+  assert.equal(serialized.includes('private note'), false);
+  assert.equal(serialized.includes('private memory'), false);
+  assert.equal(serialized.includes('9132'), false);
+});
+
+test('limits the agent snapshot history window', () => {
+  const state = sampleState();
+  state.days['2026-05-01'] = { entries: { prayer: true } };
+  const snapshot = buildAgentSnapshot(state, {
+    generatedAt: '2026-08-25T14:00:00.000Z',
+    windowDays: 30
+  });
+  assert.equal(snapshot.state.days['2026-05-01'], undefined);
+  assert.ok(snapshot.state.days['2026-08-25']);
 });
 
 test('builds a privacy-filtered accountability snapshot without private text', () => {

@@ -37,6 +37,21 @@ final class PersonalSystemsAgentTests: XCTestCase {
         XCTAssertEqual(restored.sensitivity, .restricted)
     }
 
+    func testStoreUsesOwnerOnlyFilePermissions() throws {
+        let directoryAttributes = try FileManager.default.attributesOfItem(atPath: directoryURL.path)
+        let databaseAttributes = try FileManager.default.attributesOfItem(atPath: store.databaseURL.path)
+
+        XCTAssertEqual((directoryAttributes[.posixPermissions] as? NSNumber)?.intValue, 0o700)
+        XCTAssertEqual((databaseAttributes[.posixPermissions] as? NSNumber)?.intValue, 0o600)
+        for suffix in ["-wal", "-shm"] {
+            let path = store.databaseURL.path + suffix
+            if FileManager.default.fileExists(atPath: path) {
+                let attributes = try FileManager.default.attributesOfItem(atPath: path)
+                XCTAssertEqual((attributes[.posixPermissions] as? NSNumber)?.intValue, 0o600)
+            }
+        }
+    }
+
     func testDailyRoutineCollectorAcceptsPrivacyLimitedLiveSnapshot() async throws {
         let dayFormatter = DateFormatter()
         dayFormatter.locale = Locale(identifier: "en_US_POSIX")
@@ -71,6 +86,55 @@ final class PersonalSystemsAgentTests: XCTestCase {
         XCTAssertEqual(events.first?.title, "Drink water")
         XCTAssertEqual(events.first?.summary, "Completed")
         XCTAssertEqual(events.first?.source, .dailyRoutine)
+    }
+
+    func testPrivateSyncSnapshotStoreWritesProtectedCollectorInput() async throws {
+        let dayFormatter = DateFormatter()
+        dayFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dayFormatter.dateFormat = "yyyy-MM-dd"
+        let dayKey = dayFormatter.string(from: Date())
+        let snapshot: [String: Any] = [
+            "schemaVersion": 1,
+            "scope": "routine-definitions-and-completion-signals",
+            "state": [
+                "items": [[
+                    "id": "morning-water",
+                    "name": "Drink water",
+                    "kind": "routine",
+                    "section": "morning",
+                    "type": "checkbox",
+                    "frequency": "daily"
+                ]],
+                "days": [dayKey: [
+                    "entries": ["morning-water": true],
+                    "skippedItems": [:]
+                ]]
+            ]
+        ]
+        let fileURL = directoryURL.appendingPathComponent("private-sync-agent-snapshot.json")
+        let fileStore = PrivateSyncSnapshotFileStore(fileURL: fileURL)
+
+        try fileStore.write(JSONSerialization.data(withJSONObject: snapshot))
+
+        let attributes = try FileManager.default.attributesOfItem(atPath: fileURL.path)
+        XCTAssertEqual((attributes[.posixPermissions] as? NSNumber)?.intValue, 0o600)
+        let events = try await DailyRoutineBackupCollector(fileURL: fileURL)
+            .collect(since: Date().addingTimeInterval(-86_400))
+        XCTAssertEqual(events.count, 1)
+        XCTAssertEqual(events.first?.summary, "Completed")
+    }
+
+    func testPrivateSyncSnapshotStoreRejectsBroaderRoutineBackup() throws {
+        let fileURL = directoryURL.appendingPathComponent("private-sync-agent-snapshot.json")
+        let fileStore = PrivateSyncSnapshotFileStore(fileURL: fileURL)
+        let broaderBackup: [String: Any] = [
+            "scope": "routine-definitions-and-daily-history",
+            "state": ["items": [], "days": [:]],
+            "notes": [["text": "private"]]
+        ]
+
+        XCTAssertThrowsError(try fileStore.write(JSONSerialization.data(withJSONObject: broaderBackup)))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: fileURL.path))
     }
 
     func testMessagesCollectorReadsOnlyTheHelperSnapshot() async throws {

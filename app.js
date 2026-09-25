@@ -8,8 +8,8 @@
   const EARNED_ACCESS_DEVICE_KEY = 'dailyRoutine.earnedAccess.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.25.0';
-  const APP_BUILD = 27;
+  const APP_VERSION = '1.26.0';
+  const APP_BUILD = 28;
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const ROUTINE_AGENT_DB_NAME = 'dailyRoutine.agentBridge.v1';
@@ -109,6 +109,7 @@
   let routineAgentFileLastWriteAt = null;
   let routineAgentFileStatus = '';
   let routineAgentFileWriteTimer = null;
+  let routineAgentCloudWriteTimer = null;
   let routineAgentLocalBridgeEnabled = localStorage.getItem(ROUTINE_AGENT_LOCAL_KEY) === 'true';
   const syncCoordinator = window.DailyRoutineSync?.createCoordinator({ storage: localStorage }) || null;
   const syncCloud = window.DailyRoutineCloud?.createClient({
@@ -318,6 +319,7 @@
     syncWatchContext();
     scheduleAccountabilitySnapshotRefresh();
     scheduleRoutineAgentSnapshotWrite();
+    scheduleRoutineAgentCloudSnapshotWrite();
   }
 
   function snapshotPayload() {
@@ -420,16 +422,12 @@
   }
 
   function routineAgentSnapshotPayload() {
-    return {
-      version: APP_VERSION,
+    return window.DailyRoutineSync.buildAgentSnapshot(state, {
+      appVersion: APP_VERSION,
       build: APP_BUILD,
-      exportedAt: new Date().toISOString(),
-      scope: 'routine-definitions-and-daily-history',
-      state: {
-        items: structuredClone(state.items),
-        days: structuredClone(state.days)
-      }
-    };
+      generatedAt: new Date().toISOString(),
+      windowDays: 90
+    });
   }
 
   function openRoutineAgentDatabase() {
@@ -504,6 +502,29 @@
     if (!routineAgentFileHandle && !routineAgentLocalBridgeEnabled) return;
     clearTimeout(routineAgentFileWriteTimer);
     routineAgentFileWriteTimer = setTimeout(() => { writeRoutineAgentSnapshot(); }, 750);
+  }
+
+  function scheduleRoutineAgentCloudSnapshotWrite() {
+    if (!privateSyncSession || !syncCloud || accountabilityPartnerOnlyMode) return;
+    clearTimeout(routineAgentCloudWriteTimer);
+    routineAgentCloudWriteTimer = setTimeout(() => { publishRoutineAgentCloudSnapshot(); }, 1500);
+  }
+
+  async function publishRoutineAgentCloudSnapshot() {
+    if (!syncCloud || accountabilityPartnerOnlyMode) return false;
+    try {
+      privateSyncSession = privateSyncSession || await syncCloud.session();
+      if (!privateSyncSession) return false;
+      await syncCloud.pushAgentSnapshot({
+        session: privateSyncSession,
+        snapshot: routineAgentSnapshotPayload(),
+        schemaVersion: window.DailyRoutineSync.AGENT_SNAPSHOT_SCHEMA_VERSION,
+        deviceId: syncCoordinator?.status().deviceId || 'daily-routine'
+      });
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async function writeRoutineAgentBridgeSnapshot({ connecting = false } = {}) {
@@ -3214,6 +3235,7 @@
         await loadAccountabilityData();
         const partnerMode = shouldUseAccountabilityPartnerMode();
         setAccountabilityPartnerMode(partnerMode);
+        if (!partnerMode) scheduleRoutineAgentCloudSnapshotWrite();
         if (!partnerMode && (acceptedInvite || new URLSearchParams(window.location.search).get('accountability') === 'partner')) switchView('history');
       }
     } catch (error) {
@@ -3301,11 +3323,13 @@
           state = nextState;
           saveState({ trackSync: false });
           syncCoordinator.commitRemote(state, decision.remoteRevision, 'supabase', privateSyncSession.user.id);
+          await publishRoutineAgentCloudSnapshot();
           renderAll();
           return;
         }
         if (decision.action === 'none') {
           syncCoordinator.commitRemote(state, remote?.revision || decision.remoteRevision, 'supabase', privateSyncSession.user.id);
+          await publishRoutineAgentCloudSnapshot();
           renderPrivateSyncStatus();
           return;
         }
@@ -3322,6 +3346,7 @@
           state = nextState;
           saveState({ trackSync: false });
           syncCoordinator.commitRemote(state, saved.revision, 'supabase', privateSyncSession.user.id);
+          await publishRoutineAgentCloudSnapshot();
           renderAll();
           return;
         } catch (error) {

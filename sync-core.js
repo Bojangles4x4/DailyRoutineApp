@@ -6,6 +6,7 @@
   'use strict';
 
   const SYNC_SCHEMA_VERSION = 1;
+  const AGENT_SNAPSHOT_SCHEMA_VERSION = 1;
   const METADATA_KEY = 'dailyRoutine.sync.metadata.v1';
   const CONFLICTS_KEY = 'dailyRoutine.sync.conflicts.v1';
   const ACCOUNTABILITY_SCHEMA_VERSION = 2;
@@ -57,6 +58,79 @@
       deviceHealthIds.forEach(id => delete day.entries[id]);
     });
     return safe;
+  }
+
+  function agentSnapshotCompletion(item, value, day = {}) {
+    if (value === undefined || value === null || value === '') return false;
+    if (item?.type === 'number') {
+      const savedTargets = isPlainObject(day.targets) ? day.targets : {};
+      const target = Object.prototype.hasOwnProperty.call(savedTargets, item.id) ? savedTargets[item.id] : item.target;
+      return Number(value) >= Number(target || 1);
+    }
+    if (item?.type === 'memory') return isPlainObject(value) ? Boolean(value.reflected) : Boolean(value);
+    if (item?.type === 'medication') {
+      if (isPlainObject(value)) return Boolean(value.taken || value.completed || value.time || value.takenAt);
+      return Boolean(value);
+    }
+    if (item?.type === 'scale') return Number.isFinite(Number(value));
+    if (item?.type === 'text' || item?.type === 'longtext') return Boolean(String(value).trim());
+    if (isPlainObject(value)) return Boolean(value.completed || value.taken || value.reflected);
+    return Boolean(value);
+  }
+
+  function buildAgentSnapshot(stateInput, options = {}) {
+    const state = isPlainObject(stateInput) ? stateInput : {};
+    const generatedAt = String(options.generatedAt || new Date().toISOString());
+    const windowDays = Math.min(365, Math.max(14, Number(options.windowDays) || 90));
+    const routineItems = (Array.isArray(state.items) ? state.items : [])
+      .filter(item => item
+        && String(item.kind || 'routine') === 'routine'
+        && item.id
+        && String(item.type || '') !== 'medication'
+        && !String(item.healthSource || '').startsWith('apple-health-'))
+      .map(item => ({
+        id: String(item.id),
+        name: String(item.name || 'Routine item').slice(0, 160),
+        kind: 'routine',
+        section: String(item.section || '').slice(0, 40),
+        type: String(item.type || 'checkbox').slice(0, 40),
+        frequency: String(item.frequency || 'daily').slice(0, 40),
+        days: Array.isArray(item.days) ? item.days.map(Number).filter(Number.isFinite).slice(0, 7) : [],
+        optional: Boolean(item.optional),
+        ...(Number.isFinite(Number(item.target)) ? { target: Number(item.target) } : {})
+      }));
+    const itemByID = new Map(routineItems.map(item => [item.id, item]));
+    const earliest = new Date(generatedAt);
+    earliest.setUTCDate(earliest.getUTCDate() - windowDays + 1);
+    const earliestKey = Number.isNaN(earliest.getTime()) ? '' : earliest.toISOString().slice(0, 10);
+    const days = {};
+
+    Object.entries(isPlainObject(state.days) ? state.days : {}).forEach(([dayKey, rawDay]) => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dayKey) || (earliestKey && dayKey < earliestKey) || !isPlainObject(rawDay)) return;
+      const rawEntries = isPlainObject(rawDay.entries) ? rawDay.entries : {};
+      const rawSkipped = isPlainObject(rawDay.skippedItems) ? rawDay.skippedItems : {};
+      const entries = {};
+      const skippedItems = {};
+      itemByID.forEach((item, id) => {
+        if (agentSnapshotCompletion(item, rawEntries[id], rawDay)) entries[id] = true;
+        if (Boolean(rawSkipped[id])) skippedItems[id] = true;
+      });
+      days[dayKey] = {
+        entries,
+        skippedItems,
+        mode: String(rawDay.mode || 'normal').slice(0, 30)
+      };
+    });
+
+    return {
+      schemaVersion: AGENT_SNAPSHOT_SCHEMA_VERSION,
+      version: String(options.appVersion || ''),
+      build: Number(options.build) || 0,
+      exportedAt: generatedAt,
+      scope: 'routine-definitions-and-completion-signals',
+      windowDays,
+      state: { items: routineItems, days }
+    };
   }
 
   function applySyncableState(current, incoming) {
@@ -533,6 +607,7 @@
 
   return {
     SYNC_SCHEMA_VERSION,
+    AGENT_SNAPSHOT_SCHEMA_VERSION,
     ACCOUNTABILITY_SCHEMA_VERSION,
     DEFAULT_ACCOUNTABILITY_PERMISSIONS,
     METADATA_KEY,
@@ -540,6 +615,7 @@
     syncableState,
     applySyncableState,
     mergeRoutineStates,
+    buildAgentSnapshot,
     normalizeAccountabilityPermissions,
     buildAccountabilitySnapshot,
     createCoordinator,

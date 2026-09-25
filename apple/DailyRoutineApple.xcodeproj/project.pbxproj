@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0418704B0A3FC5589793A6D2 /* ServiceManagement.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 37B777330380F6A156DEBA04 /* ServiceManagement.framework */; };
 		0500D84ACCED224BEFA8BB37 /* WidgetSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8096AA8C4DC525F750013EEC /* WidgetSnapshotStore.swift */; };
 		059C8124E19621D2E1602BF0 /* RoutineSharedStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9F755FFA4F84C96051EB74 /* RoutineSharedStateStore.swift */; };
 		05F62511934122D09C2E3D93 /* PhoneWatchSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17CD184FE3D8B6273C7708A1 /* PhoneWatchSessionManager.swift */; };
@@ -16,37 +17,58 @@
 		1BE1148D092D96B6E29FE3B4 /* RoutineSharedStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9F755FFA4F84C96051EB74 /* RoutineSharedStateStore.swift */; };
 		1DF54C8BD1F12B189E0AA449 /* privacy.html in Resources */ = {isa = PBXBuildFile; fileRef = 54A52939EF96C0A39ED93B88 /* privacy.html */; };
 		1FF0013841AEEB50932E2802 /* EarnedAccessControlStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A254A0C436333190AAE1F9 /* EarnedAccessControlStore.swift */; };
+		266DDDFBCD58B078AA96A1A8 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 061AD33BAA68D45054B82664 /* libsqlite3.tbd */; };
 		27949F733E0D9FAD11666B58 /* WebAppView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84999DD0051D68587AD4C817 /* WebAppView.swift */; };
 		2A0B28034B74C079F17D2613 /* EarnedAccessShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ADA9A9017CC72866A35325C /* EarnedAccessShared.swift */; };
+		2A6E790413B315523CB3D9DC /* SQLiteEventStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D593F360C19E4C2FC177871 /* SQLiteEventStore.swift */; };
+		30AF465EBC3B09FFC0C1B33F /* ObservationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D39585B2BA7F3CFA9D812B3 /* ObservationEngine.swift */; };
+		3321ECEE558479E925C52A7B /* MessagesImportEnvelope.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3195660630DC3C9A6FE56F /* MessagesImportEnvelope.swift */; };
 		345A54E8F5834A6C41D8B9BA /* icon-192.png in Resources */ = {isa = PBXBuildFile; fileRef = 6CA6D716AE01116903574E34 /* icon-192.png */; };
+		3B14C2F00315957506D62119 /* MessagesImporterViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEFFE7CCFBF6D86C65648EEE /* MessagesImporterViews.swift */; };
 		3C8EFB710A7D9E291A35C98A /* app.js in Resources */ = {isa = PBXBuildFile; fileRef = 10E6F55D19A361D999DC14D5 /* app.js */; };
+		451F81DD9A7D7E83FCD3B394 /* DailyRoutineAgentApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F360646BD5C7602E2B5EFA31 /* DailyRoutineAgentApp.swift */; };
+		4644BD9317B02A6FC43DFF83 /* AgentModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1F91F91C291D50F00CAFF6 /* AgentModels.swift */; };
 		4B8D7EA7155D3CAE8DF8F463 /* styles.css in Resources */ = {isa = PBXBuildFile; fileRef = D1A95175FAC3CC1E05F33E56 /* styles.css */; };
 		4D6B1C691FEAB9C754AFBD5A /* TruthReminderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E6A317C9BFEF78DE19E0CA3 /* TruthReminderView.swift */; };
 		4E6EBEE2B91E9754E0961107 /* support.html in Resources */ = {isa = PBXBuildFile; fileRef = 29D48B7899D205C684D78E69 /* support.html */; };
 		4FB72872BDAE84DB76087AB4 /* RoutineWidgetAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79F87834C14ABD05F5A7A313 /* RoutineWidgetAction.swift */; };
 		511D28A1D71EC3B77E7982A5 /* RoutineSharedStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9F755FFA4F84C96051EB74 /* RoutineSharedStateStore.swift */; };
+		531D04FF1933D2C61D1A02D6 /* AgentViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDD1E6BE45758BDE055B71AA /* AgentViews.swift */; };
 		533867D4846CD9BDDE2E3C5A /* EarnedAccessShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ADA9A9017CC72866A35325C /* EarnedAccessShared.swift */; };
 		57A2803AE41C5623F47EBE1B /* RoutineWidgetAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79F87834C14ABD05F5A7A313 /* RoutineWidgetAction.swift */; };
 		591486D40F0612C6EF229E7A /* BridgeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23CF6F479542799A7E80F4BA /* BridgeModels.swift */; };
 		6231E4C1EC4CBE5BCE6827DE /* WidgetSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8096AA8C4DC525F750013EEC /* WidgetSnapshotStore.swift */; };
+		661156E069A7D36E43812D46 /* ServiceManagement.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 37B777330380F6A156DEBA04 /* ServiceManagement.framework */; };
+		6696A3E2ED6D96F944030F93 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 061AD33BAA68D45054B82664 /* libsqlite3.tbd */; };
 		6DB5696CC84C1AAFD9DA5E93 /* sync-cloud.js in Resources */ = {isa = PBXBuildFile; fileRef = BCEC7CC90AB78046ACE9E4DE /* sync-cloud.js */; };
+		6E16307325593FC5A6E44057 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 061AD33BAA68D45054B82664 /* libsqlite3.tbd */; };
 		6F2D687C7D464A6EB537B0CE /* TruthReminderStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 466E9DBD54A5F0EAD61C7BD6 /* TruthReminderStore.swift */; };
 		716A1BB63BE760F86E893CE1 /* DailyRoutineWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2189365ED52A585536004293 /* DailyRoutineWidget.swift */; };
+		721478151A0176AD688D84FF /* PersonalSystemsAgentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DCC52EDE03E2C359191E826 /* PersonalSystemsAgentTests.swift */; };
+		7F0F0FC1E1FED3F1EE7578DC /* PrivateSyncAgentClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41309301C6D45055E087765E /* PrivateSyncAgentClient.swift */; };
 		80D05D187A20118D1DFDDABA /* manifest.webmanifest in Resources */ = {isa = PBXBuildFile; fileRef = EEB6294F12C1A4CEA749044F /* manifest.webmanifest */; };
 		89F5D29C6CE2D8003158CD63 /* sync-core.js in Resources */ = {isa = PBXBuildFile; fileRef = 3528B0D809DB6811249C806C /* sync-core.js */; };
+		8BD142616C497B629AAFA2AC /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 52C62839CEF6225A8E0AB99E /* Security.framework */; };
 		8BEF776BB9C8787C12572ED3 /* icon-512.png in Resources */ = {isa = PBXBuildFile; fileRef = 08074A312C8759C6DAAC1741 /* icon-512.png */; };
 		8F637C761A7C038B19E9FDEB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EC6017F29444BD176EFFAEFB /* Assets.xcassets */; };
+		9530320DACF20BAF2C75EE75 /* MessagesImporterViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 059014AD953444834681D614 /* MessagesImporterViewModel.swift */; };
 		98066E79C8D743F157E7B63D /* DeviceActivityMonitorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C53E76796061F9D56006F1 /* DeviceActivityMonitorExtension.swift */; };
 		98C53A9C32B0A03EC5A4E4EA /* DailyRoutineActivityMonitor.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 23831502253973263D91E611 /* DailyRoutineActivityMonitor.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A574F7F679A3EA0E3F858505 /* BridgeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23CF6F479542799A7E80F4BA /* BridgeModels.swift */; };
 		A6D80EDB06CDBAA44BA621E1 /* DailyRoutineWatchWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 1A698DCFE06EF6EE4972D27A /* DailyRoutineWatchWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AB369BF51EEF5E46148EC206 /* MessagesImportEnvelope.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3195660630DC3C9A6FE56F /* MessagesImportEnvelope.swift */; };
+		B0CB8B174C09762840464327 /* MessagesReadOnlyImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 237D273A9B2A8ECA5B10A566 /* MessagesReadOnlyImporter.swift */; };
 		B74876584E2CE957D812E41D /* RoutineSharedStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9F755FFA4F84C96051EB74 /* RoutineSharedStateStore.swift */; };
+		B7BAA1E3FF2E2A100B6C5E3E /* EventKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 65C7F484C3799E7AF8956A0D /* EventKit.framework */; };
 		B927278D25BAE663428FC82A /* DailyRoutineHomeWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A50562153A4A48FB92A613CD /* DailyRoutineHomeWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		BA5E691F42F4B67659117DD4 /* DailyRoutineMessagesImporterApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C895863C9C70FAFD532B5FD4 /* DailyRoutineMessagesImporterApp.swift */; };
 		BE7F4621371B2407B8CC40ED /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A96EFF2B195E0DA4B5B9F18 /* AppModel.swift */; };
 		BED1C32113F663A3E1EB22FE /* WatchSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9CD412035E618B429C99C67 /* WatchSessionManager.swift */; };
 		C2F082AB129B354730706633 /* DailyRoutineAppleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A535F5FF0A19279B38B92EE /* DailyRoutineAppleApp.swift */; };
+		C49C4D24034205D679D3F6F3 /* MessagesImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BA4DE3A1D563AC3C881B41A /* MessagesImporterTests.swift */; };
 		C4F7D679B8058B05A75D5F3C /* legal.css in Resources */ = {isa = PBXBuildFile; fileRef = FFB952AA8A52DE0ED5759336 /* legal.css */; };
 		C660A33CA547ED518643AE7B /* DailyRoutineHomeWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7591D3033804AAD117388626 /* DailyRoutineHomeWidget.swift */; };
+		CC05166F3BB297A2F5E49CD6 /* EventCollectors.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2ED9C80271730EE0AA4563 /* EventCollectors.swift */; };
 		CFCE821CE0DB2762C2B923CD /* EarnedAccessControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 683CF8ED4655FDF4F2E96E9E /* EarnedAccessControlView.swift */; };
 		D22BC9E451CE3BE3C9A0F880 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7565018F737AC8FE68939BBB /* Assets.xcassets */; };
 		D6C211E2362593C25DD65D90 /* DailyRoutineWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 566ED5F8606B577FFAB6A93C /* DailyRoutineWatchApp.swift */; };
@@ -54,6 +76,7 @@
 		DDF7188BFC7F79DB0A7B68A7 /* WatchContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49322339D19B74F64851BBB8 /* WatchContentView.swift */; };
 		E275C54338CC184B37E7E4E0 /* DailyRoutineWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = B97BBECEFE2DF2727D5E833D /* DailyRoutineWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		E2A20CF11685E6E3FC7A9358 /* BridgeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23CF6F479542799A7E80F4BA /* BridgeModels.swift */; };
+		EA5424F15334061B1223A702 /* AgentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDD90C2EC915DAC000A30CF /* AgentViewModel.swift */; };
 		EA6BF0D94D6CBA96E16CD3F3 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 7227919A0E66411FE2CFB8A3 /* PrivacyInfo.xcprivacy */; };
 		EE185B74056E92A6704B7CBF /* index.html in Resources */ = {isa = PBXBuildFile; fileRef = EF24BE7890341E426ABE06A6 /* index.html */; };
 		FC778DDC1A9A853D18703028 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 835DD93356217FE2AC2C17DF /* PrivacyInfo.xcprivacy */; };
@@ -81,6 +104,13 @@
 			remoteGlobalIDString = E712BC7C30A186C498BDAA2B;
 			remoteInfo = DailyRoutineWatchWidgets;
 		};
+		6F5D3F85BBF5FBA7BE3DAC60 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CEC04297AF03A9EF036680FA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 67F95C8B04653EF2B5DFD766;
+			remoteInfo = DailyRoutineAgent;
+		};
 		750B5508D95A331752793962 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = CEC04297AF03A9EF036680FA /* Project object */;
@@ -101,6 +131,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 51C57D90B94AB7E22771B87D;
 			remoteInfo = DailyRoutine;
+		};
+		B5731D0AB6115C3847657134 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CEC04297AF03A9EF036680FA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D1AC1DB7C1107712E374523F;
+			remoteInfo = DailyRoutineMessagesImporter;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -142,25 +179,36 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		059014AD953444834681D614 /* MessagesImporterViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagesImporterViewModel.swift; sourceTree = "<group>"; };
+		061AD33BAA68D45054B82664 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 		08074A312C8759C6DAAC1741 /* icon-512.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon-512.png"; sourceTree = "<group>"; };
 		0AB50D90125AC93C7EB08335 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		10E6F55D19A361D999DC14D5 /* app.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = app.js; sourceTree = "<group>"; };
 		138B5200C630CA1BBDECBD89 /* HealthKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitService.swift; sourceTree = "<group>"; };
 		17CD184FE3D8B6273C7708A1 /* PhoneWatchSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneWatchSessionManager.swift; sourceTree = "<group>"; };
 		1A698DCFE06EF6EE4972D27A /* DailyRoutineWatchWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = DailyRoutineWatchWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		1DCC52EDE03E2C359191E826 /* PersonalSystemsAgentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalSystemsAgentTests.swift; sourceTree = "<group>"; };
 		2189365ED52A585536004293 /* DailyRoutineWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyRoutineWidget.swift; sourceTree = "<group>"; };
+		237D273A9B2A8ECA5B10A566 /* MessagesReadOnlyImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagesReadOnlyImporter.swift; sourceTree = "<group>"; };
 		23831502253973263D91E611 /* DailyRoutineActivityMonitor.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = DailyRoutineActivityMonitor.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		23CF6F479542799A7E80F4BA /* BridgeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeModels.swift; sourceTree = "<group>"; };
 		257F0F7544BC18F981B9B551 /* WatchQuickActionsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchQuickActionsUITests.swift; sourceTree = "<group>"; };
 		29A254A0C436333190AAE1F9 /* EarnedAccessControlStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarnedAccessControlStore.swift; sourceTree = "<group>"; };
 		29D48B7899D205C684D78E69 /* support.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = support.html; sourceTree = "<group>"; };
+		2A3195660630DC3C9A6FE56F /* MessagesImportEnvelope.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagesImportEnvelope.swift; sourceTree = "<group>"; };
 		3528B0D809DB6811249C806C /* sync-core.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "sync-core.js"; sourceTree = "<group>"; };
+		37B777330380F6A156DEBA04 /* ServiceManagement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ServiceManagement.framework; path = System/Library/Frameworks/ServiceManagement.framework; sourceTree = SDKROOT; };
+		41309301C6D45055E087765E /* PrivateSyncAgentClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivateSyncAgentClient.swift; sourceTree = "<group>"; };
+		449A969E5836E89BFEFA0E32 /* DailyRoutineMessagesImporterTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DailyRoutineMessagesImporterTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		466E9DBD54A5F0EAD61C7BD6 /* TruthReminderStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TruthReminderStore.swift; sourceTree = "<group>"; };
 		49322339D19B74F64851BBB8 /* WatchContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchContentView.swift; sourceTree = "<group>"; };
 		4A535F5FF0A19279B38B92EE /* DailyRoutineAppleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyRoutineAppleApp.swift; sourceTree = "<group>"; };
+		4D39585B2BA7F3CFA9D812B3 /* ObservationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservationEngine.swift; sourceTree = "<group>"; };
 		4E6A317C9BFEF78DE19E0CA3 /* TruthReminderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TruthReminderView.swift; sourceTree = "<group>"; };
+		52C62839CEF6225A8E0AB99E /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		54A52939EF96C0A39ED93B88 /* privacy.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = privacy.html; sourceTree = "<group>"; };
 		566ED5F8606B577FFAB6A93C /* DailyRoutineWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyRoutineWatchApp.swift; sourceTree = "<group>"; };
+		65C7F484C3799E7AF8956A0D /* EventKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = EventKit.framework; path = System/Library/Frameworks/EventKit.framework; sourceTree = SDKROOT; };
 		683CF8ED4655FDF4F2E96E9E /* EarnedAccessControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarnedAccessControlView.swift; sourceTree = "<group>"; };
 		6CA6D716AE01116903574E34 /* icon-192.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon-192.png"; sourceTree = "<group>"; };
 		7227919A0E66411FE2CFB8A3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -170,24 +218,67 @@
 		79F87834C14ABD05F5A7A313 /* RoutineWidgetAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineWidgetAction.swift; sourceTree = "<group>"; };
 		7A96EFF2B195E0DA4B5B9F18 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		7ADA9A9017CC72866A35325C /* EarnedAccessShared.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarnedAccessShared.swift; sourceTree = "<group>"; };
+		7E1F91F91C291D50F00CAFF6 /* AgentModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentModels.swift; sourceTree = "<group>"; };
 		801CDE97146E329ACBD3CC9B /* DailyRoutine.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = DailyRoutine.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8096AA8C4DC525F750013EEC /* WidgetSnapshotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshotStore.swift; sourceTree = "<group>"; };
 		82AC5D3C09C2F97C8180763C /* RoutineSharedStateStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineSharedStateStoreTests.swift; sourceTree = "<group>"; };
 		835DD93356217FE2AC2C17DF /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		84999DD0051D68587AD4C817 /* WebAppView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppView.swift; sourceTree = "<group>"; };
+		8BA4DE3A1D563AC3C881B41A /* MessagesImporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagesImporterTests.swift; sourceTree = "<group>"; };
+		8D593F360C19E4C2FC177871 /* SQLiteEventStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteEventStore.swift; sourceTree = "<group>"; };
+		9FDD90C2EC915DAC000A30CF /* AgentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentViewModel.swift; sourceTree = "<group>"; };
 		A214531B1B57E2408FAEA1CB /* DailyRoutineWatchUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DailyRoutineWatchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A50562153A4A48FB92A613CD /* DailyRoutineHomeWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = DailyRoutineHomeWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		A5F5DCA96C5F389CB3C36A85 /* DailyRoutineTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = DailyRoutineTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B5429C04014F82F6DCE6CAF0 /* DailyRoutineMessagesImporter.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DailyRoutineMessagesImporter.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B97BBECEFE2DF2727D5E833D /* DailyRoutineWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DailyRoutineWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B9CD412035E618B429C99C67 /* WatchSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSessionManager.swift; sourceTree = "<group>"; };
 		BCEC7CC90AB78046ACE9E4DE /* sync-cloud.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "sync-cloud.js"; sourceTree = "<group>"; };
+		BDD1E6BE45758BDE055B71AA /* AgentViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentViews.swift; sourceTree = "<group>"; };
+		C3D779349C35DE280D54C645 /* DailyRoutineAgent.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DailyRoutineAgent.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C895863C9C70FAFD532B5FD4 /* DailyRoutineMessagesImporterApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyRoutineMessagesImporterApp.swift; sourceTree = "<group>"; };
 		D1A95175FAC3CC1E05F33E56 /* styles.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = styles.css; sourceTree = "<group>"; };
+		DA2ED9C80271730EE0AA4563 /* EventCollectors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventCollectors.swift; sourceTree = "<group>"; };
 		DB9F755FFA4F84C96051EB74 /* RoutineSharedStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineSharedStateStore.swift; sourceTree = "<group>"; };
+		DEFFE7CCFBF6D86C65648EEE /* MessagesImporterViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagesImporterViews.swift; sourceTree = "<group>"; };
+		E9BC0D83E753B1DE4123AE3D /* DailyRoutineAgentTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DailyRoutineAgentTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		EC6017F29444BD176EFFAEFB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		EEB6294F12C1A4CEA749044F /* manifest.webmanifest */ = {isa = PBXFileReference; path = manifest.webmanifest; sourceTree = "<group>"; };
 		EF24BE7890341E426ABE06A6 /* index.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = index.html; sourceTree = "<group>"; };
+		F360646BD5C7602E2B5EFA31 /* DailyRoutineAgentApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyRoutineAgentApp.swift; sourceTree = "<group>"; };
 		FFB952AA8A52DE0ED5759336 /* legal.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = legal.css; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		074B69CD454C9E657ACF5884 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6E16307325593FC5A6E44057 /* libsqlite3.tbd in Frameworks */,
+				0418704B0A3FC5589793A6D2 /* ServiceManagement.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		28A87CB7A2E8D2FBE0C7EA35 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				266DDDFBCD58B078AA96A1A8 /* libsqlite3.tbd in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		68D4BE6D69675DEA0338ABAC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6696A3E2ED6D96F944030F93 /* libsqlite3.tbd in Frameworks */,
+				B7BAA1E3FF2E2A100B6C5E3E /* EventKit.framework in Frameworks */,
+				8BD142616C497B629AAFA2AC /* Security.framework in Frameworks */,
+				661156E069A7D36E43812D46 /* ServiceManagement.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		1FF4D0F9E2590182BC79860F /* iOSWidgetShared */ = {
@@ -205,6 +296,26 @@
 				0AB50D90125AC93C7EB08335 /* PrivacyInfo.xcprivacy */,
 			);
 			path = Widgets;
+			sourceTree = "<group>";
+		};
+		45E9BC8C03014512B12FE896 /* macOSAgent */ = {
+			isa = PBXGroup;
+			children = (
+				1DCC52EDE03E2C359191E826 /* PersonalSystemsAgentTests.swift */,
+			);
+			name = macOSAgent;
+			path = Tests/macOSAgent;
+			sourceTree = "<group>";
+		};
+		4CD502BE0A436605A2B43988 /* macOSMessagesImporter */ = {
+			isa = PBXGroup;
+			children = (
+				C895863C9C70FAFD532B5FD4 /* DailyRoutineMessagesImporterApp.swift */,
+				059014AD953444834681D614 /* MessagesImporterViewModel.swift */,
+				DEFFE7CCFBF6D86C65648EEE /* MessagesImporterViews.swift */,
+				237D273A9B2A8ECA5B10A566 /* MessagesReadOnlyImporter.swift */,
+			);
+			path = macOSMessagesImporter;
 			sourceTree = "<group>";
 		};
 		514737A0550AEC7E0EA34C88 /* ActivityMonitor */ = {
@@ -243,6 +354,26 @@
 			path = Shared;
 			sourceTree = "<group>";
 		};
+		6A301FC904388EC141D0FD44 /* macOSMessagesImporter */ = {
+			isa = PBXGroup;
+			children = (
+				8BA4DE3A1D563AC3C881B41A /* MessagesImporterTests.swift */,
+			);
+			name = macOSMessagesImporter;
+			path = Tests/macOSMessagesImporter;
+			sourceTree = "<group>";
+		};
+		76E924DE61630512E40077D5 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				65C7F484C3799E7AF8956A0D /* EventKit.framework */,
+				061AD33BAA68D45054B82664 /* libsqlite3.tbd */,
+				52C62839CEF6225A8E0AB99E /* Security.framework */,
+				37B777330380F6A156DEBA04 /* ServiceManagement.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		7B1A53F7AA82F6633BBAA6BD /* DailyRoutineApp */ = {
 			isa = PBXGroup;
 			children = (
@@ -267,7 +398,11 @@
 			children = (
 				801CDE97146E329ACBD3CC9B /* DailyRoutine.app */,
 				23831502253973263D91E611 /* DailyRoutineActivityMonitor.appex */,
+				C3D779349C35DE280D54C645 /* DailyRoutineAgent.app */,
+				E9BC0D83E753B1DE4123AE3D /* DailyRoutineAgentTests.xctest */,
 				A50562153A4A48FB92A613CD /* DailyRoutineHomeWidgets.appex */,
+				B5429C04014F82F6DCE6CAF0 /* DailyRoutineMessagesImporter.app */,
+				449A969E5836E89BFEFA0E32 /* DailyRoutineMessagesImporterTests.xctest */,
 				A5F5DCA96C5F389CB3C36A85 /* DailyRoutineTests.xctest */,
 				B97BBECEFE2DF2727D5E833D /* DailyRoutineWatch.app */,
 				A214531B1B57E2408FAEA1CB /* DailyRoutineWatchUITests.xctest */,
@@ -324,12 +459,33 @@
 				56D4BCA41F9B05787C167F71 /* iOS */,
 				5A4F1B13BC942FD3D3EE55C0 /* iOSWidgets */,
 				1FF4D0F9E2590182BC79860F /* iOSWidgetShared */,
+				EE111C29D63A4E06D0D3FCC9 /* macOSAgent */,
+				45E9BC8C03014512B12FE896 /* macOSAgent */,
+				4CD502BE0A436605A2B43988 /* macOSMessagesImporter */,
+				6A301FC904388EC141D0FD44 /* macOSMessagesImporter */,
 				5E27822F7E42F39A121F154B /* Shared */,
 				B1315ABBF92798A7B4910A00 /* watchOS */,
 				A42F6999BB642675A2504103 /* WatchUITests */,
 				32D42EF84D324DF71E65FF32 /* Widgets */,
+				76E924DE61630512E40077D5 /* Frameworks */,
 				856FBB1759486AC1E93F28DC /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		EE111C29D63A4E06D0D3FCC9 /* macOSAgent */ = {
+			isa = PBXGroup;
+			children = (
+				7E1F91F91C291D50F00CAFF6 /* AgentModels.swift */,
+				9FDD90C2EC915DAC000A30CF /* AgentViewModel.swift */,
+				BDD1E6BE45758BDE055B71AA /* AgentViews.swift */,
+				F360646BD5C7602E2B5EFA31 /* DailyRoutineAgentApp.swift */,
+				DA2ED9C80271730EE0AA4563 /* EventCollectors.swift */,
+				2A3195660630DC3C9A6FE56F /* MessagesImportEnvelope.swift */,
+				4D39585B2BA7F3CFA9D812B3 /* ObservationEngine.swift */,
+				41309301C6D45055E087765E /* PrivateSyncAgentClient.swift */,
+				8D593F360C19E4C2FC177871 /* SQLiteEventStore.swift */,
+			);
+			path = macOSAgent;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -414,6 +570,24 @@
 			productReference = A214531B1B57E2408FAEA1CB /* DailyRoutineWatchUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		67F95C8B04653EF2B5DFD766 /* DailyRoutineAgent */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5A58A95B8011EB515BBAA133 /* Build configuration list for PBXNativeTarget "DailyRoutineAgent" */;
+			buildPhases = (
+				DC26B641A3989729FFD3B180 /* Sources */,
+				68D4BE6D69675DEA0338ABAC /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = DailyRoutineAgent;
+			packageProductDependencies = (
+			);
+			productName = DailyRoutineAgent;
+			productReference = C3D779349C35DE280D54C645 /* DailyRoutineAgent.app */;
+			productType = "com.apple.product-type.application";
+		};
 		78807969049E7B22AD1805CB /* DailyRoutineTests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 848F9BEB87D73D1DA6F87567 /* Build configuration list for PBXNativeTarget "DailyRoutineTests" */;
@@ -432,6 +606,43 @@
 			productReference = A5F5DCA96C5F389CB3C36A85 /* DailyRoutineTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		9A8DCA7F95AFC5BEAFD18288 /* DailyRoutineAgentTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 801FA17CA6D133137B244818 /* Build configuration list for PBXNativeTarget "DailyRoutineAgentTests" */;
+			buildPhases = (
+				AF31137045DEBCE9AE359B96 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				26E6BE0F1502C3D187A99AF7 /* PBXTargetDependency */,
+			);
+			name = DailyRoutineAgentTests;
+			packageProductDependencies = (
+			);
+			productName = DailyRoutineAgentTests;
+			productReference = E9BC0D83E753B1DE4123AE3D /* DailyRoutineAgentTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		B0CB8D0FF7617C4A399741FC /* DailyRoutineMessagesImporterTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9281EFF889B6117D198AF9D4 /* Build configuration list for PBXNativeTarget "DailyRoutineMessagesImporterTests" */;
+			buildPhases = (
+				ECBF194A49955FE86B009767 /* Sources */,
+				28A87CB7A2E8D2FBE0C7EA35 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				693F2520B1DA0987DB0126F7 /* PBXTargetDependency */,
+			);
+			name = DailyRoutineMessagesImporterTests;
+			packageProductDependencies = (
+			);
+			productName = DailyRoutineMessagesImporterTests;
+			productReference = 449A969E5836E89BFEFA0E32 /* DailyRoutineMessagesImporterTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		C4B40EBD57CCFB475AB749D5 /* DailyRoutineActivityMonitor */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 2B38562C8C9F0ADA87C6C534 /* Build configuration list for PBXNativeTarget "DailyRoutineActivityMonitor" */;
@@ -448,6 +659,24 @@
 			productName = DailyRoutineActivityMonitor;
 			productReference = 23831502253973263D91E611 /* DailyRoutineActivityMonitor.appex */;
 			productType = "com.apple.product-type.app-extension";
+		};
+		D1AC1DB7C1107712E374523F /* DailyRoutineMessagesImporter */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EC099CC4F5EBD822E102F7E4 /* Build configuration list for PBXNativeTarget "DailyRoutineMessagesImporter" */;
+			buildPhases = (
+				B353B1F3D5D9314BFA044D50 /* Sources */,
+				074B69CD454C9E657ACF5884 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = DailyRoutineMessagesImporter;
+			packageProductDependencies = (
+			);
+			productName = DailyRoutineMessagesImporter;
+			productReference = B5429C04014F82F6DCE6CAF0 /* DailyRoutineMessagesImporter.app */;
+			productType = "com.apple.product-type.application";
 		};
 		E712BC7C30A186C498BDAA2B /* DailyRoutineWatchWidgets */ = {
 			isa = PBXNativeTarget;
@@ -492,10 +721,24 @@
 						ProvisioningStyle = Automatic;
 						TestTargetID = 056055C2D25CBC8EAD01665D;
 					};
+					67F95C8B04653EF2B5DFD766 = {
+						DevelopmentTeam = UQ7AURZ83A;
+						ProvisioningStyle = Automatic;
+					};
 					78807969049E7B22AD1805CB = {
 						ProvisioningStyle = Automatic;
 					};
+					9A8DCA7F95AFC5BEAFD18288 = {
+						ProvisioningStyle = Automatic;
+					};
+					B0CB8D0FF7617C4A399741FC = {
+						ProvisioningStyle = Automatic;
+					};
 					C4B40EBD57CCFB475AB749D5 = {
+						DevelopmentTeam = UQ7AURZ83A;
+						ProvisioningStyle = Automatic;
+					};
+					D1AC1DB7C1107712E374523F = {
 						DevelopmentTeam = UQ7AURZ83A;
 						ProvisioningStyle = Automatic;
 					};
@@ -526,6 +769,10 @@
 				E712BC7C30A186C498BDAA2B /* DailyRoutineWatchWidgets */,
 				638887474BA3B3E4A229D936 /* DailyRoutineWatchUITests */,
 				78807969049E7B22AD1805CB /* DailyRoutineTests */,
+				67F95C8B04653EF2B5DFD766 /* DailyRoutineAgent */,
+				9A8DCA7F95AFC5BEAFD18288 /* DailyRoutineAgentTests */,
+				D1AC1DB7C1107712E374523F /* DailyRoutineMessagesImporter */,
+				B0CB8D0FF7617C4A399741FC /* DailyRoutineMessagesImporterTests */,
 			);
 		};
 /* End PBXProject section */
@@ -616,6 +863,26 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AF31137045DEBCE9AE359B96 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				721478151A0176AD688D84FF /* PersonalSystemsAgentTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B353B1F3D5D9314BFA044D50 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BA5E691F42F4B67659117DD4 /* DailyRoutineMessagesImporterApp.swift in Sources */,
+				AB369BF51EEF5E46148EC206 /* MessagesImportEnvelope.swift in Sources */,
+				9530320DACF20BAF2C75EE75 /* MessagesImporterViewModel.swift in Sources */,
+				3B14C2F00315957506D62119 /* MessagesImporterViews.swift in Sources */,
+				B0CB8B174C09762840464327 /* MessagesReadOnlyImporter.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		BBF465677B8496EDC82E4FB1 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -657,6 +924,30 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		DC26B641A3989729FFD3B180 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4644BD9317B02A6FC43DFF83 /* AgentModels.swift in Sources */,
+				EA5424F15334061B1223A702 /* AgentViewModel.swift in Sources */,
+				531D04FF1933D2C61D1A02D6 /* AgentViews.swift in Sources */,
+				451F81DD9A7D7E83FCD3B394 /* DailyRoutineAgentApp.swift in Sources */,
+				CC05166F3BB297A2F5E49CD6 /* EventCollectors.swift in Sources */,
+				3321ECEE558479E925C52A7B /* MessagesImportEnvelope.swift in Sources */,
+				30AF465EBC3B09FFC0C1B33F /* ObservationEngine.swift in Sources */,
+				7F0F0FC1E1FED3F1EE7578DC /* PrivateSyncAgentClient.swift in Sources */,
+				2A6E790413B315523CB3D9DC /* SQLiteEventStore.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		ECBF194A49955FE86B009767 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C49C4D24034205D679D3F6F3 /* MessagesImporterTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -664,6 +955,11 @@
 			isa = PBXTargetDependency;
 			target = C4B40EBD57CCFB475AB749D5 /* DailyRoutineActivityMonitor */;
 			targetProxy = 19D6F58A51C65489880A9532 /* PBXContainerItemProxy */;
+		};
+		26E6BE0F1502C3D187A99AF7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 67F95C8B04653EF2B5DFD766 /* DailyRoutineAgent */;
+			targetProxy = 6F5D3F85BBF5FBA7BE3DAC60 /* PBXContainerItemProxy */;
 		};
 		273B83FF6A0AD503AF77F439 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -684,6 +980,11 @@
 			isa = PBXTargetDependency;
 			target = 056055C2D25CBC8EAD01665D /* DailyRoutineWatch */;
 			targetProxy = 06513CC11C9B3083B22A7C75 /* PBXContainerItemProxy */;
+		};
+		693F2520B1DA0987DB0126F7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D1AC1DB7C1107712E374523F /* DailyRoutineMessagesImporter */;
+			targetProxy = B5731D0AB6115C3847657134 /* PBXContainerItemProxy */;
 		};
 		90CD42CBF0EE56AF9D4C76D3 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -709,6 +1010,23 @@
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		2242BB158F068D696DFC02A5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.bojangles4x4.DailyRoutine.messages-importer.tests";
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Daily Routine Messages Importer.app/Contents/MacOS/Daily Routine Messages Importer";
 			};
 			name = Debug;
 		};
@@ -748,6 +1066,63 @@
 			};
 			name = Debug;
 		};
+		2F6012C8E471DAA85893CAB9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.bojangles4x4.DailyRoutine.messages-importer.tests";
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Daily Routine Messages Importer.app/Contents/MacOS/Daily Routine Messages Importer";
+			};
+			name = Release;
+		};
+		443E1A79F46CD3FF55DC393D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = UQ7AURZ83A;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Config/DailyRoutineAgent-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.bojangles4x4.DailyRoutine.agent;
+				PRODUCT_NAME = "Daily Routine Agent";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		5FA8B15658DA96A4E1C32528 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = UQ7AURZ83A;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Config/DailyRoutineMessagesImporter-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.bojangles4x4.DailyRoutine.messages-importer";
+				PRODUCT_NAME = "Daily Routine Messages Importer";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
 		66A5E57EDDFE6F74DC1B99EF /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -783,7 +1158,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 27;
+				CURRENT_PROJECT_VERSION = 28;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -796,7 +1171,8 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.25.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.26.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -804,6 +1180,43 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
 				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
+		75994E683A6D274A45F21907 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.bojangles4x4.DailyRoutine.agent.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Daily Routine Agent.app/Contents/MacOS/Daily Routine Agent";
+			};
+			name = Release;
+		};
+		790B1B882A886971B8C642BA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = UQ7AURZ83A;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Config/DailyRoutineMessagesImporter-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.bojangles4x4.DailyRoutine.messages-importer";
+				PRODUCT_NAME = "Daily Routine Messages Importer";
+				SDKROOT = macosx;
 			};
 			name = Release;
 		};
@@ -856,6 +1269,23 @@
 				TARGETED_DEVICE_FAMILY = 4;
 			};
 			name = Release;
+		};
+		861CA3B4E75FFB3086AECDA2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.bojangles4x4.DailyRoutine.agent.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Daily Routine Agent.app/Contents/MacOS/Daily Routine Agent";
+			};
+			name = Debug;
 		};
 		8D39980ACE4D2E593AE7ABF3 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -964,6 +1394,26 @@
 			};
 			name = Debug;
 		};
+		B9B3DDFC20098C506B4B152E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = UQ7AURZ83A;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Config/DailyRoutineAgent-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.bojangles4x4.DailyRoutine.agent;
+				PRODUCT_NAME = "Daily Routine Agent";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
 		C0DD087A8E0AAF08E76772C1 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1035,7 +1485,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 27;
+				CURRENT_PROJECT_VERSION = 28;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -1054,7 +1504,8 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.25.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.26.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1105,11 +1556,29 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
+		5A58A95B8011EB515BBAA133 /* Build configuration list for PBXNativeTarget "DailyRoutineAgent" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				443E1A79F46CD3FF55DC393D /* Debug */,
+				B9B3DDFC20098C506B4B152E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		63948913312BFEBBAF372498 /* Build configuration list for PBXNativeTarget "DailyRoutine" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A3D4308FE8783092B927BEDE /* Debug */,
 				9890C21C26CBF6DF2C325975 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		801FA17CA6D133137B244818 /* Build configuration list for PBXNativeTarget "DailyRoutineAgentTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				861CA3B4E75FFB3086AECDA2 /* Debug */,
+				75994E683A6D274A45F21907 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -1123,11 +1592,29 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
+		9281EFF889B6117D198AF9D4 /* Build configuration list for PBXNativeTarget "DailyRoutineMessagesImporterTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2242BB158F068D696DFC02A5 /* Debug */,
+				2F6012C8E471DAA85893CAB9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		9ED681E2549B2D6E47BBE234 /* Build configuration list for PBXNativeTarget "DailyRoutineWatchWidgets" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				2CD5E87F68421938B63EF681 /* Debug */,
 				798BBA272003D28FB42131A1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		EC099CC4F5EBD822E102F7E4 /* Build configuration list for PBXNativeTarget "DailyRoutineMessagesImporter" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5FA8B15658DA96A4E1C32528 /* Debug */,
+				790B1B882A886971B8C642BA /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

@@ -27,6 +27,15 @@ final class AgentViewModel: ObservableObject {
     @Published private(set) var isWorking = false
     @Published var banner: String?
     @Published private(set) var launchAtLoginEnabled = false
+    @Published var privateSyncEmail = ""
+    @Published var privateSyncPassword = ""
+    @Published private(set) var privateSyncConnected = false
+    @Published private(set) var privateSyncStatus = "Not connected. The local file bridge remains available as a fallback."
+    @Published private(set) var privateSyncLastRead: Date?
+
+    var routineFallbackConnected: Bool {
+        defaults.string(forKey: Setting.routineBackupPath) != nil
+    }
 
     let store: SQLiteEventStore
     let databaseURL: URL
@@ -37,6 +46,8 @@ final class AgentViewModel: ObservableObject {
     private var activityMonitor: WorkspaceActivityMonitor?
     private let observationEngine = ObservationEngine()
     private let recommendationEngine = RecommendationEngine()
+    private let privateSyncClient: PrivateSyncAgentClient
+    private let privateSyncSnapshotStore: PrivateSyncSnapshotFileStore
 
     private enum Setting {
         static let messagesEnabled = "agent.messages.enabled"
@@ -60,11 +71,23 @@ final class AgentViewModel: ObservableObject {
         }
     }
 
-    init(store: SQLiteEventStore, defaults: UserDefaults = .standard) throws {
+    init(
+        store: SQLiteEventStore,
+        defaults: UserDefaults = .standard,
+        privateSyncClient: PrivateSyncAgentClient = PrivateSyncAgentClient(),
+        privateSyncSnapshotStore: PrivateSyncSnapshotFileStore = PrivateSyncSnapshotFileStore()
+    ) throws {
         self.store = store
         self.databaseURL = store.databaseURL
         self.defaults = defaults
+        self.privateSyncClient = privateSyncClient
+        self.privateSyncSnapshotStore = privateSyncSnapshotStore
         self.launchAtLoginEnabled = SMAppService.mainApp.status == .enabled
+        self.privateSyncConnected = privateSyncClient.hasSavedSession
+        self.privateSyncEmail = privateSyncClient.savedAccountEmail ?? ""
+        if privateSyncConnected {
+            self.privateSyncStatus = "Connected securely. Only a reduced routine snapshot will be downloaded."
+        }
         self.activityMonitor = WorkspaceActivityMonitor { [weak self] event in
             guard let self else { return }
             do {
@@ -184,6 +207,49 @@ final class AgentViewModel: ObservableObject {
         refresh()
     }
 
+    func connectPrivateSyncRoutineBridge() async {
+        guard !isWorking else { return }
+        let email = privateSyncEmail.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !email.isEmpty, !privateSyncPassword.isEmpty else {
+            banner = "Enter the same Private Sync owner email and password used by Daily Routine."
+            return
+        }
+        isWorking = true
+        defer { isWorking = false; refresh() }
+        do {
+            let session = try await privateSyncClient.signIn(email: email, password: privateSyncPassword)
+            privateSyncPassword = ""
+            privateSyncEmail = session.email
+            privateSyncConnected = true
+            privateSyncStatus = "Connected. Waiting for the privacy-limited iPhone snapshot."
+            _ = await pullPrivateSyncRoutineSnapshot()
+        } catch {
+            privateSyncPassword = ""
+            privateSyncConnected = privateSyncClient.hasSavedSession
+            privateSyncStatus = error.localizedDescription
+            banner = error.localizedDescription
+        }
+    }
+
+    func refreshPrivateSyncRoutineBridge() async {
+        guard !isWorking else { return }
+        isWorking = true
+        defer { isWorking = false; refresh() }
+        _ = await pullPrivateSyncRoutineSnapshot()
+    }
+
+    func disconnectPrivateSyncRoutineBridge() async {
+        guard !isWorking else { return }
+        isWorking = true
+        await privateSyncClient.signOut()
+        privateSyncConnected = false
+        privateSyncPassword = ""
+        privateSyncLastRead = nil
+        privateSyncStatus = "Disconnected. Existing local events remain; the file bridge is still available as a fallback."
+        isWorking = false
+        refresh()
+    }
+
     func requestCalendarAccess() async {
         do {
             let granted = try await calendarCollector.requestAccess()
@@ -296,8 +362,17 @@ final class AgentViewModel: ObservableObject {
         if calendarCollector.authorizationStatus == .fullAccess {
             details.append(await collect(calendarCollector))
         }
-        if let path = defaults.string(forKey: Setting.routineBackupPath), FileManager.default.fileExists(atPath: path) {
-            details.append(await collectRoutineSnapshot(at: URL(fileURLWithPath: path)))
+        var collectedRoutineFromCloud = false
+        if privateSyncConnected {
+            collectedRoutineFromCloud = await pullPrivateSyncRoutineSnapshot()
+            details.append(collectedRoutineFromCloud
+                ? "Daily Routine: refreshed from the owner-only Private Sync Agent snapshot."
+                : "Daily Routine: Private Sync snapshot was unavailable; checking the local fallback.")
+        }
+        if !collectedRoutineFromCloud,
+           let path = defaults.string(forKey: Setting.routineBackupPath),
+           FileManager.default.fileExists(atPath: path) {
+            details.append((await collectRoutineSnapshot(at: URL(fileURLWithPath: path))).detail)
         }
         if defaults.bool(forKey: Setting.activityEnabled) {
             try? store.recordSource(.appActivity, enabled: true, permission: .connected, successfulAt: Date(), detail: "Foreground app switches are being recorded prospectively.")
@@ -323,17 +398,42 @@ final class AgentViewModel: ObservableObject {
         }
     }
 
-    private func collectRoutineSnapshot(at url: URL) async -> String {
+    private func collectRoutineSnapshot(at url: URL) async -> (detail: String, succeeded: Bool) {
         do {
             let events = try await DailyRoutineBackupCollector(fileURL: url).collect(since: Date().addingTimeInterval(-14 * 86_400))
             let inserted = try store.insert(events: events)
             let detail = "Read \(events.count) events from \(url.lastPathComponent); \(inserted) were new. This file is reread automatically during collection."
             try store.recordSource(.dailyRoutine, enabled: true, permission: .connected, successfulAt: Date(), detail: detail)
-            return "Daily Routine: \(detail)"
+            return ("Daily Routine: \(detail)", true)
         } catch {
             try? store.recordSource(.dailyRoutine, enabled: true, permission: .denied, successfulAt: nil, detail: error.localizedDescription)
             banner = error.localizedDescription
-            return "Daily Routine: \(error.localizedDescription)"
+            return ("Daily Routine: \(error.localizedDescription)", false)
+        }
+    }
+
+    @discardableResult
+    private func pullPrivateSyncRoutineSnapshot() async -> Bool {
+        do {
+            let fetched = try await privateSyncClient.fetchAgentSnapshot()
+            try privateSyncSnapshotStore.write(fetched.payload)
+            let result = await collectRoutineSnapshot(at: privateSyncSnapshotStore.fileURL)
+            guard result.succeeded else {
+                privateSyncStatus = "The iPhone snapshot downloaded but could not be imported."
+                return false
+            }
+            privateSyncConnected = true
+            privateSyncEmail = privateSyncClient.savedAccountEmail ?? privateSyncEmail
+            privateSyncLastRead = Date()
+            let published = fetched.updatedAt.map {
+                " · iPhone published \($0.formatted(date: .abbreviated, time: .shortened))"
+            } ?? ""
+            privateSyncStatus = "Connected to the owner-only Agent snapshot · revision \(fetched.revision)\(published). Raw notes, memories, Health values, medication details, and text responses are excluded."
+            return true
+        } catch {
+            privateSyncConnected = privateSyncClient.hasSavedSession
+            privateSyncStatus = error.localizedDescription
+            return false
         }
     }
 
@@ -375,8 +475,14 @@ final class AgentViewModel: ObservableObject {
                 enabled = calendarCollector.authorizationStatus == .fullAccess
                 detail = enabled ? "Calendar access is connected." : "Disabled until you explicitly connect it."
             case .dailyRoutine:
-                enabled = defaults.string(forKey: Setting.routineBackupPath) != nil
-                detail = enabled ? "A local live snapshot file is connected and will be reread automatically." : "Choose the local Daily Routine Agent snapshot file to import history."
+                enabled = privateSyncConnected || routineFallbackConnected
+                if privateSyncConnected {
+                    detail = "The owner-only iPhone Private Sync bridge is connected; a local snapshot file can remain as fallback."
+                } else if routineFallbackConnected {
+                    detail = "A local fallback snapshot file is connected and will be reread automatically."
+                } else {
+                    detail = "Connect the iPhone Private Sync bridge or choose a local fallback snapshot."
+                }
             case .testData:
                 enabled = false
                 detail = "Optional synthetic data for exercising the pipeline."

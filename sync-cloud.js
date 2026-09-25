@@ -221,6 +221,31 @@
       }
     }
 
+    async pushAgentSnapshot({ snapshot, schemaVersion = 1, deviceId = '', session: sessionInput }) {
+      const session = this.requireSession(sessionInput || await this.session(), 'Sign in before publishing the Personal Systems Agent snapshot.');
+      const rows = await this.request('/rest/v1/agent_snapshots?on_conflict=owner_id', {
+        method: 'POST',
+        token: session.access_token,
+        body: {
+          owner_id: session.user.id,
+          schema_version: Math.max(1, Number(schemaVersion) || 1),
+          payload: snapshot,
+          updated_by: String(deviceId || '').slice(0, 100)
+        },
+        headers: { Prefer: 'resolution=merge-duplicates,return=representation' }
+      });
+      return Array.isArray(rows) ? rows[0] || null : null;
+    }
+
+    async fetchAgentSnapshot(sessionInput) {
+      const session = this.requireSession(sessionInput || await this.session(), 'Sign in before reading the Personal Systems Agent snapshot.');
+      const select = 'owner_id,schema_version,revision,payload,updated_at,updated_by';
+      const rows = await this.request(`/rest/v1/agent_snapshots?owner_id=eq.${encodeURIComponent(session.user.id)}&select=${select}&limit=1`, {
+        token: session.access_token
+      });
+      return Array.isArray(rows) ? rows[0] || null : null;
+    }
+
     requireSession(session, message = 'Sign in before using accountability sharing.') {
       if (!session?.access_token || !session?.user?.id) throw new CloudRequestError(message, 401, 'not_signed_in');
       return session;
