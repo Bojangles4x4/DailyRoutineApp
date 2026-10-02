@@ -4,7 +4,8 @@ const {
   applySyncableState,
   mergeRoutineStates,
   buildAccountabilitySnapshot,
-  createCoordinator
+  createCoordinator,
+  CONFLICTS_KEY
 } = require('../sync-core.js');
 
 let passed = 0;
@@ -256,6 +257,24 @@ test('requests a three-way merge when remote and local revisions both changed', 
   assert.equal(decision.expectedRevision, 3);
   assert.equal(decision.state.days['2026-08-26'].entries.prayer, true);
   assert.equal(decision.state.days['2026-08-25'].entries.water, 5);
+});
+
+test('keeps sync previews side-effect free until the user approves them', () => {
+  const storage = new MemoryStorage();
+  const coordinator = createCoordinator({ storage });
+  const base = sampleState();
+  coordinator.ensureLocalState(base);
+  coordinator.commitRemote(base, 2, 'supabase', 'user-1');
+  const local = copy(base);
+  const remote = copy(base);
+  local.settings.theme = 'sunrise';
+  remote.settings.theme = 'midnight';
+  coordinator.markLocalChange(local);
+  const decision = coordinator.reconcile(local, { revision: 3, document: remote }, { persistConflicts: false });
+  assert.equal(decision.conflicts.length, 1);
+  assert.equal(storage.getItem(CONFLICTS_KEY), null);
+  coordinator.archiveConflicts(decision.conflicts, local, remote, 3);
+  assert.equal(JSON.parse(storage.getItem(CONFLICTS_KEY)).length, 1);
 });
 
 console.log(`Private sync foundation: ${passed} tests passed.`);

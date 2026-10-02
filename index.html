@@ -280,6 +280,7 @@
                 </div>
 
                 <div id="accountabilitySnapshotPreview" class="accountability-snapshot-preview"></div>
+                <p id="accountabilitySnapshotStatus" class="muted micro-copy accountability-snapshot-status">No shared snapshot has been published yet.</p>
                 <p class="accountability-privacy-note"><strong>Always private:</strong> notes, prayer text, reflections, medication names and times, and raw Apple Health data are never placed in the shared snapshot.</p>
 
                 <div class="accountability-builder-actions accountability-relationship-actions">
@@ -618,10 +619,20 @@
             <div><span>Device</span><strong id="privateSyncDevice">—</strong></div>
             <div><span>Last cloud sync</span><strong id="privateSyncLastSync">Not connected</strong></div>
           </div>
+          <details class="sync-health-disclosure" open>
+            <summary><span>Sync health</span><small id="privateSyncHealthBadge">Checking local data</small></summary>
+            <div class="sync-health-grid" aria-live="polite">
+              <div><span>Local history</span><strong id="privateSyncLocalDays">0 days</strong></div>
+              <div><span>Local records</span><strong id="privateSyncLocalRecords">0 entries</strong></div>
+              <div><span>Cloud copy</span><strong id="privateSyncCloudHealth">Not checked</strong></div>
+              <div><span>Pending</span><strong id="privateSyncPendingHealth">Checking</strong></div>
+            </div>
+            <p id="privateSyncHealthDetail" class="muted micro-copy">Cloud counts appear after a sync check. Health, Screen Time, and device-only recovery data are excluded.</p>
+          </details>
           <ul class="private-sync-privacy">
             <li>Apple Health summaries stay on this device.</li>
             <li>Background photos and local backups are never included.</li>
-            <li>Accountability partner access remains off.</li>
+            <li>Partners never receive your full Private Sync document; they can read only the separate categories you approve.</li>
           </ul>
           <div id="privateSyncSignIn" class="private-sync-sign-in" hidden>
             <label class="text-field compact"><span>Email for your private account</span><input id="privateSyncEmailInput" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" /></label>
@@ -657,6 +668,13 @@
             <button id="resetDataButton" class="danger-button" type="button">Reset app data</button>
           </div>
           <p id="snapshotStatus" class="muted micro-copy"></p>
+          <div id="snapshotList" class="snapshot-manager" aria-live="polite"></div>
+          <details class="history-audit-disclosure">
+            <summary><span>History audit</span><small id="historyAuditBadge">Checking</small></summary>
+            <div id="historyAuditSummary" class="history-audit-summary"></div>
+            <div id="historyAuditIssues" class="history-audit-issues"></div>
+            <p class="muted micro-copy">Unrecorded dates are shown separately because a blank day may be intentional. The audit never changes your data.</p>
+          </details>
           <p id="backupDownloadStatus" class="muted micro-copy"></p>
           <div class="legal-links" aria-label="Privacy and support">
             <a href="privacy.html">Privacy Policy</a>
@@ -738,6 +756,17 @@
       <label id="repairHealthBedField" class="toggle-field" hidden><input id="repairHealthBedInput" type="checkbox" /><span><b>Remove the matching bedtime from the wake date</b><small>A matching time was saved there by an earlier version. Select this only if it belongs to the prior night.</small></span></label>
       <p id="healthSleepReviewStatus" class="muted" aria-live="polite"></p>
       <div class="dialog-actions"><button class="primary-button" type="submit">Confirm selected times</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="syncPreviewDialog" class="item-dialog sync-preview-dialog">
+    <form method="dialog">
+      <div class="dialog-header"><div><p class="eyebrow">Private sync preview</p><h2 id="syncPreviewTitle">Review sync</h2></div><button id="closeSyncPreviewButton" class="icon-button" type="button" aria-label="Cancel sync">×</button></div>
+      <p id="syncPreviewDescription" class="muted"></p>
+      <div id="syncPreviewCounts" class="sync-preview-counts"></div>
+      <div id="syncPreviewChanges" class="sync-preview-changes"></div>
+      <p class="sync-preview-privacy"><strong>Always excluded:</strong> Apple Health summaries, Screen Time selections, app identities, backgrounds, and local recovery archives.</p>
+      <div class="dialog-actions"><button id="cancelSyncPreviewButton" class="secondary-button" type="button">Cancel</button><button id="confirmSyncPreviewButton" class="primary-button" type="button">Continue sync</button></div>
     </form>
   </dialog>
 
@@ -865,6 +894,7 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="sync-core.js" defer></script>
   <script src="sync-cloud.js" defer></script>
-  <script src="app.js?v=1.25.0-build27-history-sync-safety" defer></script>
+  <script src="data-health.js" defer></script>
+  <script src="app.js?v=1.26.0-build28-data-confidence" defer></script>
 </body>
 </html>

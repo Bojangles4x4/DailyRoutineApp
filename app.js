@@ -4,12 +4,13 @@
   const STORAGE_KEY = 'dailyRoutineApp.v1';
   const SNAPSHOT_KEY = 'dailyRoutineApp.snapshots.v1';
   const CONVICTION_RECOVERY_KEY = 'dailyRoutineApp.convictionRecovery.v1';
+  const ACCOUNTABILITY_PUBLISH_STATUS_KEY = 'dailyRoutine.accountability.publishStatus.v1';
   const HEALTH_DEVICE_KEY = 'dailyRoutine.health.device.v1';
   const EARNED_ACCESS_DEVICE_KEY = 'dailyRoutine.earnedAccess.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.25.0';
-  const APP_BUILD = 27;
+  const APP_VERSION = '1.26.0';
+  const APP_BUILD = 28;
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const ROUTINE_AGENT_DB_NAME = 'dailyRoutine.agentBridge.v1';
@@ -118,6 +119,8 @@
   }) || null;
   let privateSyncSession = null;
   let privateSyncBusy = false;
+  let privateSyncRemoteHealth = null;
+  let pendingSyncPreviewResolve = null;
   const processedWatchEventIds = new Set();
   const collapsedSections = new Set();
 
@@ -145,15 +148,15 @@
     reflectionReviewCard: $('reflectionReviewCard'), toggleReflectionReviewButton: $('toggleReflectionReviewButton'), reflectionReviewStatus: $('reflectionReviewStatus'), reflectionReviewPanel: $('reflectionReviewPanel'), reflectionReviewLists: $('reflectionReviewLists'), reviewDueCount: $('reviewDueCount'), reviewActionCount: $('reviewActionCount'), reviewPrayerCount: $('reviewPrayerCount'), reviewMomentCount: $('reviewMomentCount'), weeklyReflectionInput: $('weeklyReflectionInput'), finishReflectionReviewButton: $('finishReflectionReviewButton'),
     noteDialog: $('noteDialog'), noteForm: $('noteForm'), noteDialogTitle: $('noteDialogTitle'), closeNoteDialogButton: $('closeNoteDialogButton'), editingNoteId: $('editingNoteId'), noteTextInput: $('noteTextInput'), noteTypeInput: $('noteTypeInput'), noteScriptureField: $('noteScriptureField'), noteScriptureInput: $('noteScriptureInput'), notePrayerStatusField: $('notePrayerStatusField'), notePrayerStatusInput: $('notePrayerStatusInput'), noteReviewAtInput: $('noteReviewAtInput'), noteSnoozeField: $('noteSnoozeField'), noteSnoozedUntilInput: $('noteSnoozedUntilInput'), noteOptionalDetails: $('noteOptionalDetails'), noteSourceInput: $('noteSourceInput'), notePinnedInput: $('notePinnedInput'), noteResurfaceField: $('noteResurfaceField'), noteResurfaceInput: $('noteResurfaceInput'), deleteNoteButton: $('deleteNoteButton'),
     medicationInsights: $('medicationInsights'), weeklyReviewLabel: $('weeklyReviewLabel'), weeklyReviewSummary: $('weeklyReviewSummary'), weeklyFocusInput: $('weeklyFocusInput'), saveWeeklyFocusButton: $('saveWeeklyFocusButton'), memoryDialog: $('memoryDialog'), memoryForm: $('memoryForm'), closeMemoryDialogButton: $('closeMemoryDialogButton'), memoryTextInput: $('memoryTextInput'), memoryCategoryCaptureInput: $('memoryCategoryCaptureInput'), memoryDateTimeInput: $('memoryDateTimeInput'),
-    createSnapshotButton: $('createSnapshotButton'), restoreSnapshotButton: $('restoreSnapshotButton'), snapshotStatus: $('snapshotStatus'), backupDownloadStatus: $('backupDownloadStatus'), appVersion: $('appVersion'), openAccountabilityFromSetupButton: $('openAccountabilityFromSetupButton'), resurfacingFrequencyInput: $('resurfacingFrequencyInput'),
-    privateSyncCard: $('privateSyncCard'), privateSyncBadge: $('privateSyncBadge'), privateSyncStatus: $('privateSyncStatus'), privateSyncDevice: $('privateSyncDevice'), privateSyncLastSync: $('privateSyncLastSync'), createSyncSnapshotButton: $('createSyncSnapshotButton'), privateSyncNowButton: $('privateSyncNowButton'), privateSyncSignIn: $('privateSyncSignIn'), privateSyncEmailInput: $('privateSyncEmailInput'), privateSyncPasswordInput: $('privateSyncPasswordInput'), privateSyncSendCodeButton: $('privateSyncSendCodeButton'), privateSyncVerifyButton: $('privateSyncVerifyButton'), privateSyncHelp: $('privateSyncHelp'), privateSyncAccount: $('privateSyncAccount'), privateSyncSignOutButton: $('privateSyncSignOutButton'), privateSyncDeleteCloudButton: $('privateSyncDeleteCloudButton'),
+    createSnapshotButton: $('createSnapshotButton'), restoreSnapshotButton: $('restoreSnapshotButton'), snapshotStatus: $('snapshotStatus'), snapshotList: $('snapshotList'), historyAuditBadge: $('historyAuditBadge'), historyAuditSummary: $('historyAuditSummary'), historyAuditIssues: $('historyAuditIssues'), backupDownloadStatus: $('backupDownloadStatus'), appVersion: $('appVersion'), openAccountabilityFromSetupButton: $('openAccountabilityFromSetupButton'), resurfacingFrequencyInput: $('resurfacingFrequencyInput'),
+    privateSyncCard: $('privateSyncCard'), privateSyncBadge: $('privateSyncBadge'), privateSyncStatus: $('privateSyncStatus'), privateSyncDevice: $('privateSyncDevice'), privateSyncLastSync: $('privateSyncLastSync'), privateSyncHealthBadge: $('privateSyncHealthBadge'), privateSyncLocalDays: $('privateSyncLocalDays'), privateSyncLocalRecords: $('privateSyncLocalRecords'), privateSyncCloudHealth: $('privateSyncCloudHealth'), privateSyncPendingHealth: $('privateSyncPendingHealth'), privateSyncHealthDetail: $('privateSyncHealthDetail'), createSyncSnapshotButton: $('createSyncSnapshotButton'), privateSyncNowButton: $('privateSyncNowButton'), privateSyncSignIn: $('privateSyncSignIn'), privateSyncEmailInput: $('privateSyncEmailInput'), privateSyncPasswordInput: $('privateSyncPasswordInput'), privateSyncSendCodeButton: $('privateSyncSendCodeButton'), privateSyncVerifyButton: $('privateSyncVerifyButton'), privateSyncHelp: $('privateSyncHelp'), privateSyncAccount: $('privateSyncAccount'), privateSyncSignOutButton: $('privateSyncSignOutButton'), privateSyncDeleteCloudButton: $('privateSyncDeleteCloudButton'), syncPreviewDialog: $('syncPreviewDialog'), syncPreviewTitle: $('syncPreviewTitle'), syncPreviewDescription: $('syncPreviewDescription'), syncPreviewCounts: $('syncPreviewCounts'), syncPreviewChanges: $('syncPreviewChanges'), closeSyncPreviewButton: $('closeSyncPreviewButton'), cancelSyncPreviewButton: $('cancelSyncPreviewButton'), confirmSyncPreviewButton: $('confirmSyncPreviewButton'),
     connectionsCard: $('connectionsCard'), syncConnectionsButton: $('syncConnectionsButton'), bibleConnectionStatus: $('bibleConnectionStatus'), openBibleConnectionButton: $('openBibleConnectionButton'), bibleAppUrlInput: $('bibleAppUrlInput'), saveBibleConnectionButton: $('saveBibleConnectionButton'), testBibleConnectionButton: $('testBibleConnectionButton'), connectionTemplates: $('connectionTemplates'),
     appleNativeCard: $('appleNativeCard'), iphoneWidgetCard: $('iphoneWidgetCard'), appleWatchCard: $('appleWatchCard'), appleStepCount: $('appleStepCount'), appleSleepHours: $('appleSleepHours'), appleWorkoutCount: $('appleWorkoutCount'), appleHealthStatus: $('appleHealthStatus'), healthSourceSummary: $('healthSourceSummary'), healthSourceDetail: $('healthSourceDetail'), connectAppleHealthButton: $('connectAppleHealthButton'), refreshAppleHealthButton: $('refreshAppleHealthButton'), appleWatchStatus: $('appleWatchStatus'), appleStepsGoalInput: $('appleStepsGoalInput'), saveAppleStepsGoalButton: $('saveAppleStepsGoalButton'), appleWatchQuickActionInput: $('appleWatchQuickActionInput'),
     earnedAccessCard: $('earnedAccessCard'), earnedAccessBadge: $('earnedAccessBadge'), earnedAccessNativeStatus: $('earnedAccessNativeStatus'), earnedAccessGateStatus: $('earnedAccessGateStatus'), earnedAccessGateDetail: $('earnedAccessGateDetail'), earnedAccessAvailableNow: $('earnedAccessAvailableNow'), earnedAccessEarnedToday: $('earnedAccessEarnedToday'), earnedAccessStepMetric: $('earnedAccessStepMetric'), openEarnedAccessControlsButton: $('openEarnedAccessControlsButton'), earnedAccessLabelInput: $('earnedAccessLabelInput'), earnedAccessTaskMinutesInput: $('earnedAccessTaskMinutesInput'), earnedAccessDailyLimitInput: $('earnedAccessDailyLimitInput'), earnedAccessAutomaticStepsInput: $('earnedAccessAutomaticStepsInput'), earnedAccessAutomaticUseInput: $('earnedAccessAutomaticUseInput'), earnedAccessStepsInput: $('earnedAccessStepsInput'), earnedAccessMinutesInput: $('earnedAccessMinutesInput'), earnedAccessModeInput: $('earnedAccessModeInput'), earnedAccessBankStatus: $('earnedAccessBankStatus'), earnedAccessBankDetail: $('earnedAccessBankDetail'), useEarnedAccessButton: $('useEarnedAccessButton'), earnedAccessStatus: $('earnedAccessStatus'), earnedAccessDetail: $('earnedAccessDetail'), earnedAccessProgressBar: $('earnedAccessProgressBar'), startEarnedAccessButton: $('startEarnedAccessButton'), checkEarnedAccessButton: $('checkEarnedAccessButton'), cancelEarnedAccessButton: $('cancelEarnedAccessButton'), earnedAccessMorningTasks: $('earnedAccessMorningTasks'), earnedAccessLaterTasks: $('earnedAccessLaterTasks'), earnedAccessMorningStatus: $('earnedAccessMorningStatus'), earnedAccessLaterStatus: $('earnedAccessLaterStatus'), earnedAccessHealthSyncStatus: $('earnedAccessHealthSyncStatus'), earnedAccessStepSampleStatus: $('earnedAccessStepSampleStatus'), earnedAccessScreenTimeStatus: $('earnedAccessScreenTimeStatus'), earnedAccessScheduleStatus: $('earnedAccessScheduleStatus'), earnedAccessNotificationStatus: $('earnedAccessNotificationStatus'), earnedAccessWidgetStatus: $('earnedAccessWidgetStatus'),
     healthSleepSuggestion: $('healthSleepSuggestion'), healthSleepSuggestionText: $('healthSleepSuggestionText'), applyHealthSleepButton: $('applyHealthSleepButton'),
     linkedActionFields: $('linkedActionFields'), linkedTemplateInput: $('linkedTemplateInput'), linkedCompletionInput: $('linkedCompletionInput'), linkedUrlField: $('linkedUrlField'), linkedUrlInput: $('linkedUrlInput'), linkedInternalField: $('linkedInternalField'), linkedInternalTargetInput: $('linkedInternalTargetInput'), linkedButtonLabelInput: $('linkedButtonLabelInput'), timeWindowFields: $('timeWindowFields'), timeWindowStartInput: $('timeWindowStartInput'), timeWindowEndInput: $('timeWindowEndInput'),
     medicationProgressCard: $('medicationProgressCard'), weeklyReviewCard: $('weeklyReviewCard'), memoryBankCard: $('memoryBankCard'), dataBackupCard: $('dataBackupCard'),
-    accountabilitySharingCard: $('accountabilitySharingCard'), accountabilitySharingBadge: $('accountabilitySharingBadge'), accountabilitySharingSignedOut: $('accountabilitySharingSignedOut'), accountabilitySharingOwner: $('accountabilitySharingOwner'), openPrivateSyncForAccountabilityButton: $('openPrivateSyncForAccountabilityButton'), accountabilityConnectionsList: $('accountabilityConnectionsList'), accountabilityConnectionEditor: $('accountabilityConnectionEditor'), accountabilityEditorTitle: $('accountabilityEditorTitle'), accountabilityEditorStatus: $('accountabilityEditorStatus'), accountabilityOwnerNameInput: $('accountabilityOwnerNameInput'), accountabilityPartnerNameInput: $('accountabilityPartnerNameInput'), accountabilityPartnerEmailInput: $('accountabilityPartnerEmailInput'), accountabilityShareProgressInput: $('accountabilityShareProgressInput'), accountabilityShareRoutinesInput: $('accountabilityShareRoutinesInput'), accountabilityShareCheckinsInput: $('accountabilityShareCheckinsInput'), accountabilityShareStepsInput: $('accountabilityShareStepsInput'), accountabilityShareMedicationInput: $('accountabilityShareMedicationInput'), accountabilityRoutineChooser: $('accountabilityRoutineChooser'), accountabilityRoutineSelectionCount: $('accountabilityRoutineSelectionCount'), selectAllAccountabilityRoutinesButton: $('selectAllAccountabilityRoutinesButton'), clearAccountabilityRoutinesButton: $('clearAccountabilityRoutinesButton'), accountabilityRoutineChoices: $('accountabilityRoutineChoices'), accountabilitySnapshotPreview: $('accountabilitySnapshotPreview'), saveAccountabilityConnectionButton: $('saveAccountabilityConnectionButton'), refreshAccountabilitySnapshotButton: $('refreshAccountabilitySnapshotButton'), pauseAccountabilityConnectionButton: $('pauseAccountabilityConnectionButton'), revokeAccountabilityConnectionButton: $('revokeAccountabilityConnectionButton'), accountabilityDashboardCard: $('accountabilityDashboardCard'), accountabilityRosterCount: $('accountabilityRosterCount'), accountabilityPartnerRoster: $('accountabilityPartnerRoster'), accountabilityPartnerDetail: $('accountabilityPartnerDetail'), accountabilityPartnerAccount: $('accountabilityPartnerAccount'), accountabilityPartnerSignOutButton: $('accountabilityPartnerSignOutButton'), accountabilityPartnerSearchInput: $('accountabilityPartnerSearchInput'), accountabilityPartnerFilterInput: $('accountabilityPartnerFilterInput'), accountabilityPartnerSortInput: $('accountabilityPartnerSortInput'),
+    accountabilitySharingCard: $('accountabilitySharingCard'), accountabilitySharingBadge: $('accountabilitySharingBadge'), accountabilitySharingSignedOut: $('accountabilitySharingSignedOut'), accountabilitySharingOwner: $('accountabilitySharingOwner'), openPrivateSyncForAccountabilityButton: $('openPrivateSyncForAccountabilityButton'), accountabilityConnectionsList: $('accountabilityConnectionsList'), accountabilityConnectionEditor: $('accountabilityConnectionEditor'), accountabilityEditorTitle: $('accountabilityEditorTitle'), accountabilityEditorStatus: $('accountabilityEditorStatus'), accountabilityOwnerNameInput: $('accountabilityOwnerNameInput'), accountabilityPartnerNameInput: $('accountabilityPartnerNameInput'), accountabilityPartnerEmailInput: $('accountabilityPartnerEmailInput'), accountabilityShareProgressInput: $('accountabilityShareProgressInput'), accountabilityShareRoutinesInput: $('accountabilityShareRoutinesInput'), accountabilityShareCheckinsInput: $('accountabilityShareCheckinsInput'), accountabilityShareStepsInput: $('accountabilityShareStepsInput'), accountabilityShareMedicationInput: $('accountabilityShareMedicationInput'), accountabilityRoutineChooser: $('accountabilityRoutineChooser'), accountabilityRoutineSelectionCount: $('accountabilityRoutineSelectionCount'), selectAllAccountabilityRoutinesButton: $('selectAllAccountabilityRoutinesButton'), clearAccountabilityRoutinesButton: $('clearAccountabilityRoutinesButton'), accountabilityRoutineChoices: $('accountabilityRoutineChoices'), accountabilitySnapshotPreview: $('accountabilitySnapshotPreview'), accountabilitySnapshotStatus: $('accountabilitySnapshotStatus'), saveAccountabilityConnectionButton: $('saveAccountabilityConnectionButton'), refreshAccountabilitySnapshotButton: $('refreshAccountabilitySnapshotButton'), pauseAccountabilityConnectionButton: $('pauseAccountabilityConnectionButton'), revokeAccountabilityConnectionButton: $('revokeAccountabilityConnectionButton'), accountabilityDashboardCard: $('accountabilityDashboardCard'), accountabilityRosterCount: $('accountabilityRosterCount'), accountabilityPartnerRoster: $('accountabilityPartnerRoster'), accountabilityPartnerDetail: $('accountabilityPartnerDetail'), accountabilityPartnerAccount: $('accountabilityPartnerAccount'), accountabilityPartnerSignOutButton: $('accountabilityPartnerSignOutButton'), accountabilityPartnerSearchInput: $('accountabilityPartnerSearchInput'), accountabilityPartnerFilterInput: $('accountabilityPartnerFilterInput'), accountabilityPartnerSortInput: $('accountabilityPartnerSortInput'),
     accountabilityReportCard: $('accountabilityReportCard'), accountabilityPeriodInput: $('accountabilityPeriodInput'), accountabilityRoutineInput: $('accountabilityRoutineInput'), accountabilityMedicationInput: $('accountabilityMedicationInput'), accountabilityMedicationTimesField: $('accountabilityMedicationTimesField'), accountabilityMedicationTimesInput: $('accountabilityMedicationTimesInput'), accountabilityCheckinsInput: $('accountabilityCheckinsInput'), accountabilityHealthField: $('accountabilityHealthField'), accountabilityHealthInput: $('accountabilityHealthInput'), accountabilityReflectionInput: $('accountabilityReflectionInput'), accountabilitySupportInput: $('accountabilitySupportInput'), previewAccountabilityButton: $('previewAccountabilityButton'), accountabilityPreviewPanel: $('accountabilityPreviewPanel'), accountabilityPreviewText: $('accountabilityPreviewText'), copyAccountabilityButton: $('copyAccountabilityButton'), shareAccountabilityButton: $('shareAccountabilityButton'),
     medicationConfirmDialog: $('medicationConfirmDialog'), medicationConfirmMessage: $('medicationConfirmMessage'), medicationConfirmCancel: $('medicationConfirmCancel'), medicationConfirmContinue: $('medicationConfirmContinue'),
     deleteItemButton: $('deleteItemButton'), closeDialogButton: $('closeDialogButton'), installButton: $('installButton'), toast: $('toast')
@@ -332,15 +335,37 @@
   }
 
   function writeSnapshots(snapshots) {
-    try { localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshots.slice(0, 5))); } catch { /* local storage may be full */ }
+    const limited = snapshots.slice(0, 5);
+    try {
+      localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(limited));
+      const verified = JSON.parse(localStorage.getItem(SNAPSHOT_KEY) || '[]');
+      return Array.isArray(verified)
+        && verified[0]?.id === limited[0]?.id
+        && verified[0]?.createdAt === limited[0]?.createdAt
+        && Array.isArray(verified[0]?.state?.items)
+        && verified[0]?.state?.days && typeof verified[0].state.days === 'object'
+        && JSON.stringify(verified[0].state) === JSON.stringify(limited[0].state);
+    } catch { return false; }
   }
 
   function createLocalSnapshot(label = 'Manual snapshot', quiet = false) {
     const snapshots = readSnapshots();
-    snapshots.unshift({ createdAt: new Date().toISOString(), label, state: snapshotPayload() });
-    writeSnapshots(snapshots);
+    const snapshot = { id: `snapshot-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, createdAt: new Date().toISOString(), label, version: APP_VERSION, build: APP_BUILD, state: snapshotPayload() };
+    snapshots.unshift(snapshot);
+    const saved = writeSnapshots(snapshots);
     renderSnapshotStatus();
+    if (!saved) {
+      if (!quiet) showToast('Safety snapshot could not be saved. Download a backup before making changes.');
+      return null;
+    }
     if (!quiet) showToast('Local snapshot created');
+    return snapshot;
+  }
+
+  function requireSafetySnapshot(label) {
+    const snapshot = createLocalSnapshot(label, true);
+    if (!snapshot) throw new Error('A verified safety snapshot could not be saved, so no data was changed. Download a backup and free device storage before trying again.');
+    return snapshot;
   }
 
   function convictionConfig(source) {
@@ -388,6 +413,36 @@
     if (!els.snapshotStatus) return;
     const latest = readSnapshots()[0];
     els.snapshotStatus.textContent = latest ? `Latest local snapshot: ${new Date(latest.createdAt).toLocaleString()} · ${latest.label}` : 'No local snapshots yet.';
+    renderSnapshotManager();
+  }
+
+  function renderSnapshotManager() {
+    if (!els.snapshotList) return;
+    const snapshots = readSnapshots();
+    if (!snapshots.length) {
+      els.snapshotList.innerHTML = '<div class="analytics-empty">No local recovery snapshots yet.</div>';
+      return;
+    }
+    els.snapshotList.innerHTML = snapshots.map(snapshot => {
+      const summary = window.DailyRoutineDataHealth?.summarizeState(snapshot.state) || { dayCount: Object.keys(snapshot.state?.days || {}).length, itemCount: snapshot.state?.items?.length || 0 };
+      return `<div class="snapshot-row"><div><strong>${escapeHtml(snapshot.label || 'Local snapshot')}</strong><span>${escapeHtml(new Date(snapshot.createdAt).toLocaleString())}</span><small>${summary.dayCount} saved days · ${summary.itemCount} routine and check-in items${snapshot.version ? ` · v${escapeHtml(snapshot.version)}` : ''}</small></div><button class="small-button" type="button" data-snapshot-id="${escapeHtml(snapshot.id || snapshot.createdAt)}">Restore</button></div>`;
+    }).join('');
+    els.snapshotList.querySelectorAll('[data-snapshot-id]').forEach(button => button.addEventListener('click', () => restoreSnapshot(button.dataset.snapshotId)));
+  }
+
+  function renderHistoryAudit() {
+    if (!els.historyAuditSummary || !window.DailyRoutineDataHealth) return;
+    const audit = window.DailyRoutineDataHealth.auditHistory(state, dateKey(startOfToday()));
+    els.historyAuditBadge.textContent = audit.status === 'healthy' ? 'No structural problems' : audit.status === 'review' ? `${audit.issueCount} item${audit.issueCount === 1 ? '' : 's'} to review` : 'Attention needed';
+    els.historyAuditSummary.innerHTML = `<div><span>Saved days</span><strong>${audit.summary.dayCount}</strong></div><div><span>Saved entries</span><strong>${audit.summary.entryCount}</strong></div><div><span>Unrecorded dates</span><strong>${audit.unsavedDates.length}</strong></div><div><span>Frozen targets</span><strong>${audit.summary.targetDayCount}</strong></div>`;
+    const issues = [];
+    if (audit.invalidDateKeys.length) issues.push(`${audit.invalidDateKeys.length} invalid date key${audit.invalidDateKeys.length === 1 ? '' : 's'}`);
+    if (audit.malformedDays.length) issues.push(`${audit.malformedDays.length} malformed day record${audit.malformedDays.length === 1 ? '' : 's'}`);
+    if (audit.orphanEntries.length) issues.push(`${audit.orphanEntries.length} entr${audit.orphanEntries.length === 1 ? 'y references' : 'ies reference'} a deleted routine`);
+    if (audit.numericDaysWithoutTargets.length) issues.push(`${audit.numericDaysWithoutTargets.length} numeric day${audit.numericDaysWithoutTargets.length === 1 ? '' : 's'} still use legacy target behavior`);
+    if (audit.invalidEntries.length) issues.push(`${audit.invalidEntries.length} saved entr${audit.invalidEntries.length === 1 ? 'y has' : 'ies have'} a value that does not match its routine type`);
+    const drift = audit.targetDrift.length ? `<p><strong>Historical target note:</strong> ${audit.targetDrift.length} saved day target${audit.targetDrift.length === 1 ? '' : 's'} differ from the current goal. This is expected when a goal changes and preserves the original scoring.</p>` : '';
+    els.historyAuditIssues.innerHTML = `${issues.length ? `<strong>Review only—nothing was changed</strong><ul>${issues.map(issue => `<li>${escapeHtml(issue)}</li>`).join('')}</ul>` : '<p>No malformed dates, invalid entries, orphaned entries, or unfrozen numeric targets were found.</p>'}${drift}`;
   }
 
   function renderBackupDownloadStatus() {
@@ -597,8 +652,18 @@
   function restoreLatestSnapshot() {
     const latest = readSnapshots()[0];
     if (!latest?.state) { showToast('No local snapshot available'); return; }
-    if (!confirm(`Restore the snapshot from ${new Date(latest.createdAt).toLocaleString()}? Current local data will be replaced.`)) return;
-    state = {
+    restoreSnapshot(latest.id || latest.createdAt);
+  }
+
+  function restoreSnapshot(snapshotId) {
+    const latest = readSnapshots().find(snapshot => (snapshot.id || snapshot.createdAt) === snapshotId);
+    if (!latest?.state) { showToast('That local snapshot is no longer available'); return; }
+    if (!Array.isArray(latest.state.items) || !latest.state.days || typeof latest.state.days !== 'object') { showToast('That snapshot is not valid and was not restored'); return; }
+    if (!confirm(`Restore “${latest.label || 'Local snapshot'}” from ${new Date(latest.createdAt).toLocaleString()}? Current local data will be replaced after a new safety snapshot is verified.`)) return;
+    try { requireSafetySnapshot('Before restoring a local snapshot'); }
+    catch (error) { showToast(error.message); return; }
+    const previousState = state;
+    const restoredState = {
       settings: { ...DEFAULT_STATE.settings, ...(latest.state.settings || {}), backgroundImage: state.settings.backgroundImage || '' },
       items: Array.isArray(latest.state.items) ? latest.state.items.map(normalizeItem) : [],
       days: latest.state.days || {},
@@ -606,7 +671,19 @@
       notes: Array.isArray(latest.state.notes) ? latest.state.notes.map(normalizeNote).filter(note => note.text) : [],
       weeklyReviews: latest.state.weeklyReviews || {}
     };
-    ensureFirstUseDate(); saveState(); applyPersonalization(); renderAll(); showToast('Snapshot restored');
+    try {
+      state = restoredState;
+      ensureFirstUseDate();
+      saveState();
+      const persisted = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+      if (!persisted || JSON.stringify(persisted) !== JSON.stringify(state)) throw new Error('The restored data could not be verified on this device.');
+      privateSyncRemoteHealth = null;
+      applyPersonalization(); renderAll(); showToast('Snapshot restored. Review Sync Health before syncing it to the cloud.');
+    } catch (error) {
+      state = previousState;
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(previousState)); } catch { /* Existing stored data remains the recovery source. */ }
+      applyPersonalization(); renderAll(); showToast('Restore was not committed. Your previous data remains active; free device storage and try again.');
+    }
   }
   function startOfToday() { const d = new Date(); d.setHours(12, 0, 0, 0); return d; }
   function dateKey(date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`; }
@@ -976,6 +1053,10 @@
     els.privateSyncVerifyButton.addEventListener('click', signInPrivateSync);
     els.privateSyncSignOutButton.addEventListener('click', disconnectPrivateSync);
     els.privateSyncDeleteCloudButton.addEventListener('click', deletePrivateSyncCloudCopy);
+    els.closeSyncPreviewButton.addEventListener('click', () => finishSyncPreview(false));
+    els.cancelSyncPreviewButton.addEventListener('click', () => finishSyncPreview(false));
+    els.confirmSyncPreviewButton.addEventListener('click', () => finishSyncPreview(true));
+    els.syncPreviewDialog.addEventListener('cancel', event => { event.preventDefault(); finishSyncPreview(false); });
     els.syncConnectionsButton.addEventListener('click', () => { syncLinkedIntegrations(true); renderAll(); });
     els.saveBibleConnectionButton.addEventListener('click', saveBibleConnection);
     els.testBibleConnectionButton.addEventListener('click', () => openBibleApp(startOfToday()));
@@ -3109,6 +3190,7 @@
     renderEarnedAccess();
     renderPrivateSyncStatus();
     renderSnapshotStatus();
+    renderHistoryAudit();
     renderBackupDownloadStatus();
     els.routineEditor.innerHTML = '';
     els.checkinEditor.innerHTML = '';
@@ -3155,7 +3237,9 @@
     els.privateSyncStatus.textContent = status.lastError
       ? `Sync paused: ${status.lastError}`
       : privateSyncSession
-        ? status.dirty ? `${status.localChangeCount} local change${status.localChangeCount === 1 ? '' : 's'} waiting to sync.` : 'All local changes are synchronized.'
+        ? status.dirty
+          ? `${status.localChangeCount} local change${status.localChangeCount === 1 ? '' : 's'} waiting to sync.`
+          : privateSyncRemoteHealth ? 'No local changes are waiting. The cloud was checked this session.' : 'No local changes are waiting. Check the cloud for updates.'
         : `${Math.max(1, status.localChangeCount)} local change${Math.max(1, status.localChangeCount) === 1 ? '' : 's'} ready for first sync.`;
     els.privateSyncLastSync.textContent = status.lastSyncedAt ? new Date(status.lastSyncedAt).toLocaleString() : 'Not connected';
     els.privateSyncNowButton.textContent = privateSyncSession ? (status.dirty ? 'Sync now' : 'Check for updates') : 'Connect private sync';
@@ -3167,6 +3251,51 @@
     els.privateSyncSignOutButton.hidden = !privateSyncSession;
     els.privateSyncDeleteCloudButton.hidden = !privateSyncSession;
     if (privateSyncSession) els.privateSyncSignIn.hidden = true;
+    if (window.DailyRoutineDataHealth && els.privateSyncLocalDays) {
+      const local = window.DailyRoutineDataHealth.summarizeState(state);
+      const audit = window.DailyRoutineDataHealth.auditHistory(state, dateKey(startOfToday()));
+      els.privateSyncLocalDays.textContent = `${local.dayCount} saved day${local.dayCount === 1 ? '' : 's'}`;
+      els.privateSyncLocalRecords.textContent = `${local.entryCount} entr${local.entryCount === 1 ? 'y' : 'ies'}`;
+      els.privateSyncCloudHealth.textContent = privateSyncRemoteHealth
+        ? privateSyncRemoteHealth.exists
+          ? `Revision ${privateSyncRemoteHealth.revision} · ${privateSyncRemoteHealth.summary.dayCount} days`
+          : 'No cloud copy yet'
+        : privateSyncSession ? 'Not checked this session' : 'Not connected';
+      els.privateSyncPendingHealth.textContent = status.dirty ? `${status.localChangeCount} local change${status.localChangeCount === 1 ? '' : 's'}` : privateSyncSession ? 'No local changes' : 'Local only';
+      els.privateSyncHealthBadge.textContent = status.lastError ? 'Sync paused' : audit.status === 'attention' ? 'History needs attention' : status.dirty ? 'Changes waiting' : privateSyncSession && privateSyncRemoteHealth ? 'Checked' : 'Local data ready';
+      const checked = privateSyncRemoteHealth?.checkedAt ? new Date(privateSyncRemoteHealth.checkedAt).toLocaleString() : '';
+      const cloudUpdated = privateSyncRemoteHealth?.updatedAt ? new Date(privateSyncRemoteHealth.updatedAt).toLocaleString() : '';
+      els.privateSyncHealthDetail.textContent = privateSyncRemoteHealth
+        ? `Cloud checked ${checked}${cloudUpdated ? ` · last cloud update ${cloudUpdated}` : ''}. Health, Screen Time, backgrounds, and recovery archives remain device-only.`
+        : 'Cloud counts appear after a sync check. Health, Screen Time, backgrounds, and recovery archives remain device-only.';
+    }
+  }
+
+  function syncPreviewDescription(preview) {
+    if (preview.action === 'adopt') return 'The cloud copy is newer. Continuing will update this device with the reviewed cloud state.';
+    if (!preview.cloud) return 'No cloud document exists yet. Continuing will create an owner-only cloud copy from this device.';
+    return 'This device and the cloud both contain data. Continuing will upload the reviewed merged result.';
+  }
+
+  function showSyncPreview(preview) {
+    if (!els.syncPreviewDialog) return Promise.resolve(true);
+    if (pendingSyncPreviewResolve) pendingSyncPreviewResolve(false);
+    els.syncPreviewTitle.textContent = preview.title;
+    els.syncPreviewDescription.textContent = syncPreviewDescription(preview);
+    const cloud = preview.cloud || { dayCount: 0, itemCount: 0, noteCount: 0, memoryCount: 0 };
+    els.syncPreviewCounts.innerHTML = `<div><span>This device</span><strong>${preview.local.dayCount} days</strong><small>${preview.local.itemCount} items · ${preview.local.noteCount} notes · ${preview.local.memoryCount} memories</small></div><div><span>Cloud before sync</span><strong>${preview.cloud ? `${cloud.dayCount} days` : 'No copy'}</strong><small>${preview.cloud ? `Revision ${preview.remoteRevision}` : 'First upload'}</small></div><div><span>Result</span><strong>${preview.result.dayCount} days</strong><small>${preview.result.itemCount} items · ${preview.result.noteCount} notes · ${preview.result.memoryCount} memories</small></div>`;
+    const uploads = preview.uploadCategories.length ? preview.uploadCategories.join(', ') : 'none';
+    const downloads = preview.downloadCategories.length ? preview.downloadCategories.join(', ') : 'none';
+    els.syncPreviewChanges.innerHTML = `<p><strong>Sent to the private cloud:</strong> ${escapeHtml(uploads)}.</p><p><strong>Changed on this device:</strong> ${escapeHtml(downloads)}.</p>${preview.conflictCount ? `<p class="sync-preview-warning"><strong>${preview.conflictCount} conflict${preview.conflictCount === 1 ? '' : 's'}:</strong> the app will preserve its conflict archive locally.</p>` : '<p>No field conflicts were detected.</p>'}`;
+    els.syncPreviewDialog.showModal();
+    return new Promise(resolve => { pendingSyncPreviewResolve = resolve; });
+  }
+
+  function finishSyncPreview(confirmed) {
+    if (els.syncPreviewDialog?.open) els.syncPreviewDialog.close();
+    const resolve = pendingSyncPreviewResolve;
+    pendingSyncPreviewResolve = null;
+    resolve?.(Boolean(confirmed));
   }
 
   function setPrivateSyncBusy(busy) {
@@ -3272,7 +3401,6 @@
         showToast('Accountability access connected');
         return;
       }
-      createLocalSnapshot('Before first cloud sync', true);
       els.privateSyncSignIn.hidden = true;
       await performPrivateSync({ keepBusy: true });
       await loadAccountabilityData();
@@ -3292,9 +3420,48 @@
       privateSyncSession = privateSyncSession || await syncCloud.session();
       if (!privateSyncSession) throw new Error('Sign in before syncing.');
 
-      for (let attempt = 0; attempt < 2; attempt += 1) {
+      for (let attempt = 0; attempt < 3; attempt += 1) {
         const remote = await syncCloud.fetchRoutine(privateSyncSession);
-        const decision = syncCoordinator.reconcile(state, remote);
+        privateSyncRemoteHealth = {
+          exists: Boolean(remote?.document),
+          revision: Math.max(0, Number(remote?.revision) || 0),
+          summary: window.DailyRoutineDataHealth.summarizeState(remote?.document || {}),
+          checkedAt: new Date().toISOString(),
+          updatedAt: remote?.updated_at || ''
+        };
+        renderPrivateSyncStatus();
+        const decision = syncCoordinator.reconcile(state, remote, { persistConflicts: false });
+        if (decision.action === 'none') {
+          syncCoordinator.commitRemote(state, remote?.revision || decision.remoteRevision, 'supabase', privateSyncSession.user.id);
+          renderPrivateSyncStatus();
+          showToast('Private sync is already current');
+          return true;
+        }
+
+        const planDateKey = dateKey(startOfToday());
+        const planTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+        const localPlan = JSON.stringify(window.DailyRoutineSync.syncableState(state));
+        const preview = window.DailyRoutineDataHealth.buildSyncPreview(state, remote, decision);
+        const confirmed = await showSyncPreview(preview);
+        if (!confirmed) {
+          showToast('Sync canceled. No routine data changed.');
+          return false;
+        }
+
+        const currentDateKey = dateKey(startOfToday());
+        const currentTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+        const localChanged = localPlan !== JSON.stringify(window.DailyRoutineSync.syncableState(state));
+        const latestRemote = await syncCloud.fetchRoutine(privateSyncSession);
+        const latestRevision = Math.max(0, Number(latestRemote?.revision) || 0);
+        const remoteChanged = latestRevision !== Math.max(0, Number(remote?.revision) || 0)
+          || Boolean(latestRemote?.document) !== Boolean(remote?.document);
+        if (planDateKey !== currentDateKey || planTimeZone !== currentTimeZone || localChanged || remoteChanged) {
+          showToast('Data changed while the preview was open. Review the refreshed plan.');
+          continue;
+        }
+
+        requireSafetySnapshot(decision.action === 'adopt' ? 'Before downloading cloud changes' : 'Before private sync upload');
+        syncCoordinator.archiveConflicts(decision.conflicts, state, remote?.document || {}, Math.max(0, Number(remote?.revision) || 0));
         if (decision.action === 'adopt') {
           const nextState = window.DailyRoutineSync.applySyncableState(state, decision.state);
           preserveConvictionsBeforeSync(state, nextState);
@@ -3302,12 +3469,8 @@
           saveState({ trackSync: false });
           syncCoordinator.commitRemote(state, decision.remoteRevision, 'supabase', privateSyncSession.user.id);
           renderAll();
-          return;
-        }
-        if (decision.action === 'none') {
-          syncCoordinator.commitRemote(state, remote?.revision || decision.remoteRevision, 'supabase', privateSyncSession.user.id);
-          renderPrivateSyncStatus();
-          return;
+          showToast('Cloud changes downloaded safely');
+          return true;
         }
         try {
           const saved = await syncCloud.pushRoutine({
@@ -3322,10 +3485,21 @@
           state = nextState;
           saveState({ trackSync: false });
           syncCoordinator.commitRemote(state, saved.revision, 'supabase', privateSyncSession.user.id);
+          privateSyncRemoteHealth = {
+            exists: true,
+            revision: Math.max(0, Number(saved.revision) || 0),
+            summary: window.DailyRoutineDataHealth.summarizeState(decision.state),
+            checkedAt: new Date().toISOString(),
+            updatedAt: saved.updated_at || new Date().toISOString()
+          };
           renderAll();
-          return;
+          showToast('Private sync completed safely');
+          return true;
         } catch (error) {
-          if (error?.code === 'revision_conflict' && attempt === 0) continue;
+          if (error?.code === 'revision_conflict' && attempt < 2) {
+            showToast('Cloud changed during sync. Review the refreshed plan.');
+            continue;
+          }
           throw error;
         }
       }
@@ -3349,6 +3523,7 @@
     try {
       await syncCloud.signOut();
       privateSyncSession = null;
+      privateSyncRemoteHealth = null;
       accountabilityRelationships = [];
       accountabilityPartnerRelationships = [];
       accountabilityPartnerSnapshots = new Map();
@@ -3370,9 +3545,11 @@
     try {
       privateSyncSession = privateSyncSession || await syncCloud.session();
       if (!privateSyncSession) throw new Error('Sign in before deleting the cloud copy.');
+      requireSafetySnapshot('Before deleting private cloud copy');
       await syncCloud.deleteRoutine(privateSyncSession);
       await syncCloud.signOut();
       privateSyncSession = null;
+      privateSyncRemoteHealth = null;
       syncCoordinator?.disconnect();
       els.privateSyncPasswordInput.value = '';
       els.privateSyncHelp.textContent = 'New registrations are closed. Only the owner account created during private setup can connect.';
@@ -4320,6 +4497,48 @@
     return ({ pending: 'Invitation sent', active: 'Connected', paused: 'Paused', revoked: 'Revoked' })[status] || 'Not connected';
   }
 
+  function readAccountabilityPublishStatuses() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(ACCOUNTABILITY_PUBLISH_STATUS_KEY) || '{}');
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+    } catch { return {}; }
+  }
+
+  function recordAccountabilityPublishStatus(relationshipId, details) {
+    if (!relationshipId) return;
+    const statuses = readAccountabilityPublishStatuses();
+    statuses[relationshipId] = { ...(statuses[relationshipId] || {}), ...details };
+    try { localStorage.setItem(ACCOUNTABILITY_PUBLISH_STATUS_KEY, JSON.stringify(statuses)); }
+    catch { /* Device-only status; publishing itself remains authoritative. */ }
+  }
+
+  function renderAccountabilityPublishStatus(relationship, snapshot) {
+    if (!els.accountabilitySnapshotStatus) return;
+    if (!relationship) {
+      els.accountabilitySnapshotStatus.textContent = 'Choose or invite a partner to publish this preview.';
+      return;
+    }
+    const status = readAccountabilityPublishStatuses()[relationship.id];
+    const permissions = window.DailyRoutineSync?.normalizeAccountabilityPermissions(relationship.permissions) || {};
+    const selectedCount = permissions.routineNames
+      ? (Array.isArray(permissions.routineIds) ? permissions.routineIds.length : accountabilityShareableRoutines().length)
+      : 0;
+    const currentPublishedCount = Array.isArray(snapshot?.routineTrends) ? snapshot.routineTrends.length : 0;
+    if (status?.error) {
+      els.accountabilitySnapshotStatus.textContent = `Last publish failed: ${status.error}`;
+      return;
+    }
+    if (!status?.publishedAt) {
+      els.accountabilitySnapshotStatus.textContent = `${selectedCount} routine${selectedCount === 1 ? '' : 's'} selected · not yet published to this partner.`;
+      return;
+    }
+    const publishedAt = new Date(status.publishedAt);
+    const when = Number.isNaN(publishedAt.getTime()) ? 'recently' : publishedAt.toLocaleString();
+    const publishedCount = Number.isFinite(Number(status.publishedCount)) ? Number(status.publishedCount) : currentPublishedCount;
+    const revision = Number.isFinite(Number(status.revision)) && Number(status.revision) > 0 ? ` · revision ${Number(status.revision)}` : '';
+    els.accountabilitySnapshotStatus.textContent = `${selectedCount} selected · ${publishedCount} published${revision} · last refreshed ${when}.`;
+  }
+
   function renderAccountabilitySnapshotPreview() {
     if (!els.accountabilitySnapshotPreview || !window.DailyRoutineSync) return;
     const snapshot = buildCurrentAccountabilitySnapshot(null);
@@ -4388,6 +4607,7 @@
     els.pauseAccountabilityConnectionButton.textContent = relationship?.status === 'paused' ? 'Resume sharing' : 'Pause sharing';
     els.revokeAccountabilityConnectionButton.hidden = !relationship || relationship.status === 'revoked';
     renderAccountabilitySnapshotPreview();
+    renderAccountabilityPublishStatus(relationship, relationship ? buildCurrentAccountabilitySnapshot(relationship) : null);
     renderAccountabilityPartnerDashboard();
   }
 
@@ -4405,6 +4625,17 @@
     base.searchParams.set('accountability_invite', invitationId);
     base.searchParams.set('accountability', 'partner');
     return base.toString();
+  }
+
+  function accountabilityPermissionsReduced(previousInput, nextInput) {
+    const previous = window.DailyRoutineSync.normalizeAccountabilityPermissions(previousInput);
+    const next = window.DailyRoutineSync.normalizeAccountabilityPermissions(nextInput);
+    if (['progressTotals', 'routineNames', 'checkins', 'steps', 'medication'].some(key => previous[key] && !next[key])) return true;
+    if (!previous.routineNames || !next.routineNames) return false;
+    if (!Array.isArray(previous.routineIds)) return Array.isArray(next.routineIds);
+    if (!Array.isArray(next.routineIds)) return false;
+    const nextIds = new Set(next.routineIds);
+    return previous.routineIds.some(id => !nextIds.has(id));
   }
 
   async function saveAccountabilityConnection() {
@@ -4429,15 +4660,36 @@
     state.settings.accountabilitySharing = { ownerDisplayName, permissions };
     saveState();
     setAccountabilitySharingBusy(true);
+    let failClosedRelationshipId = '';
     try {
       let relationship = currentAccountabilityRelationship();
+      let snapshotPublished = false;
       if (relationship) {
+        const permissionReduction = relationship.status === 'active' && accountabilityPermissionsReduced(relationship.permissions, permissions);
+        if (permissionReduction) {
+          await syncCloud.updateAccountabilityRelationship(relationship.id, { status: 'paused' }, privateSyncSession);
+          failClosedRelationshipId = relationship.id;
+        }
         relationship = await syncCloud.updateAccountabilityRelationship(relationship.id, {
           owner_display_name: ownerDisplayName,
           partner_display_name: partnerDisplayName,
           permissions
         }, privateSyncSession);
-        if (relationship?.status === 'pending') {
+        if (permissionReduction) {
+          const snapshot = buildCurrentAccountabilitySnapshot(relationship);
+          const savedSnapshot = await syncCloud.pushAccountabilitySnapshot({ relationshipId: relationship.id, snapshot, schemaVersion: window.DailyRoutineSync.ACCOUNTABILITY_SCHEMA_VERSION, session: privateSyncSession });
+          recordAccountabilityPublishStatus(relationship.id, {
+            publishedAt: new Date().toISOString(),
+            selectedCount: permissions.routineNames ? (Array.isArray(permissions.routineIds) ? permissions.routineIds.length : accountabilityShareableRoutines().length) : 0,
+            publishedCount: Array.isArray(snapshot?.routineTrends) ? snapshot.routineTrends.length : 0,
+            revision: Math.max(0, Number(savedSnapshot?.revision) || 0),
+            error: ''
+          });
+          relationship = await syncCloud.updateAccountabilityRelationship(relationship.id, { status: 'active' }, privateSyncSession);
+          failClosedRelationshipId = '';
+          snapshotPublished = true;
+          showToast('Sharing choices safely reduced and refreshed');
+        } else if (relationship?.status === 'pending') {
           await syncCloud.requestEmailLink(partnerEmail, true, accountabilityRedirectUrl(relationship.id));
           showToast('Sharing choices saved and invitation resent');
         } else {
@@ -4458,9 +4710,15 @@
         showToast('Private invitation sent');
       }
       await loadAccountabilityData();
-      if (relationship?.id && relationship.status !== 'revoked') await publishAccountabilitySnapshot(relationship.id, true);
+      if (!snapshotPublished && relationship?.id && relationship.status !== 'revoked') await publishAccountabilitySnapshot(relationship.id, true);
     } catch (error) {
-      showToast(accountabilitySharingErrorMessage(error));
+      if (failClosedRelationshipId) {
+        try { await loadAccountabilityData(); } catch { /* The remote pause remains authoritative. */ }
+        recordAccountabilityPublishStatus(failClosedRelationshipId, { failedAt: new Date().toISOString(), error: 'Partner access paused because the reduced snapshot could not be verified.' });
+        showToast('Sharing stays paused because the reduced snapshot could not be verified. Try saving again.');
+      } else {
+        showToast(accountabilitySharingErrorMessage(error));
+      }
     } finally {
       setAccountabilitySharingBusy(false);
     }
@@ -4472,9 +4730,20 @@
     if (!quiet) setAccountabilitySharingBusy(true);
     try {
       const snapshot = buildCurrentAccountabilitySnapshot(relationship);
-      await syncCloud.pushAccountabilitySnapshot({ relationshipId, snapshot, schemaVersion: window.DailyRoutineSync.ACCOUNTABILITY_SCHEMA_VERSION, session: privateSyncSession });
+      const savedSnapshot = await syncCloud.pushAccountabilitySnapshot({ relationshipId, snapshot, schemaVersion: window.DailyRoutineSync.ACCOUNTABILITY_SCHEMA_VERSION, session: privateSyncSession });
+      const permissions = window.DailyRoutineSync.normalizeAccountabilityPermissions(relationship.permissions);
+      recordAccountabilityPublishStatus(relationshipId, {
+        publishedAt: new Date().toISOString(),
+        selectedCount: permissions.routineNames ? (Array.isArray(permissions.routineIds) ? permissions.routineIds.length : accountabilityShareableRoutines().length) : 0,
+        publishedCount: Array.isArray(snapshot?.routineTrends) ? snapshot.routineTrends.length : 0,
+        revision: Math.max(0, Number(savedSnapshot?.revision) || 0),
+        error: ''
+      });
+      if (relationshipId === selectedAccountabilityRelationshipId) renderAccountabilityPublishStatus(relationship, snapshot);
       if (!quiet) showToast('Shared progress refreshed');
     } catch (error) {
+      recordAccountabilityPublishStatus(relationshipId, { failedAt: new Date().toISOString(), error: accountabilitySharingErrorMessage(error) });
+      if (relationshipId === selectedAccountabilityRelationshipId) renderAccountabilityPublishStatus(relationship, null);
       if (!quiet) showToast(accountabilitySharingErrorMessage(error));
     } finally {
       if (!quiet) setAccountabilitySharingBusy(false);
@@ -4551,8 +4820,23 @@
       accountabilityPartnerRelationships = partner;
       if (selectedAccountabilityRelationshipId && !owned.some(item => item.id === selectedAccountabilityRelationshipId)) selectedAccountabilityRelationshipId = '';
       if (!selectedPartnerRelationshipId && partner.length) selectedPartnerRelationshipId = partner[0].id;
-      const snapshots = await Promise.all(partner.map(async relationship => [relationship.id, await syncCloud.fetchAccountabilitySnapshot(relationship.id, privateSyncSession)]));
-      accountabilityPartnerSnapshots = new Map(snapshots);
+      const [ownedSnapshots, partnerSnapshots] = await Promise.all([
+        Promise.all(owned.map(async relationship => [relationship.id, await syncCloud.fetchAccountabilitySnapshot(relationship.id, privateSyncSession)])),
+        Promise.all(partner.map(async relationship => [relationship.id, await syncCloud.fetchAccountabilitySnapshot(relationship.id, privateSyncSession)]))
+      ]);
+      ownedSnapshots.forEach(([relationshipId, record]) => {
+        if (!record) return;
+        const relationship = owned.find(item => item.id === relationshipId);
+        const permissions = window.DailyRoutineSync.normalizeAccountabilityPermissions(relationship?.permissions);
+        recordAccountabilityPublishStatus(relationshipId, {
+          publishedAt: record.updated_at || record.payload?.generatedAt || '',
+          selectedCount: permissions.routineNames ? (Array.isArray(permissions.routineIds) ? permissions.routineIds.length : accountabilityShareableRoutines().length) : 0,
+          publishedCount: Array.isArray(record.payload?.routineTrends) ? record.payload.routineTrends.length : 0,
+          revision: Math.max(0, Number(record.revision) || 0),
+          error: ''
+        });
+      });
+      accountabilityPartnerSnapshots = new Map(partnerSnapshots);
       renderAccountabilitySharing();
     } catch (error) {
       accountabilityRelationships = [];

@@ -26,7 +26,7 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#truthHeroTitle').textContent(), 'Truth Before Tasks');
   assert.equal(await page.locator('#truthEnterDayButton').isDisabled(), true);
   assert.equal(await page.locator('#accountabilitySharingCard').count(), 1);
-  assert.equal(await page.locator('#appVersion').textContent(), 'v1.25.0 · Build 27');
+  assert.equal(await page.locator('#appVersion').textContent(), 'v1.26.0 · Build 28');
   assert.match(await page.locator('#openAccountabilityFromSetupButton').textContent(), /Open private accountability/);
   assert.equal(await page.locator('#accountabilitySharingSignedOut').evaluate(element => element.hidden), false);
   assert.match(await page.locator('#accountabilitySharingSignedOut').textContent(), /Connect Private Sync first/);
@@ -34,6 +34,18 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#connectRoutineAgentButton').count(), 1);
   assert.match(await page.locator('#dataBackupCard').textContent(), /routine definitions and daily completion history/);
   assert.match(await page.locator('#routineAgentFileStatus').textContent(), /Not connected|Brave will connect|Reconnect|Connected/);
+  assert.equal(await page.locator('#privateSyncHealthBadge').count(), 1);
+  assert.equal(await page.locator('#historyAuditBadge').count(), 1);
+  assert.match(await page.locator('#historyAuditIssues').textContent(), /No malformed dates|Review only/);
+  assert.equal(await page.locator('#syncPreviewDialog').count(), 1);
+  assert.equal(await page.locator('#snapshotList').count(), 1);
+  const syncCancelHandled = await page.evaluate(() => {
+    const dialog = document.querySelector('#syncPreviewDialog');
+    dialog.showModal();
+    const prevented = !dialog.dispatchEvent(new Event('cancel', { cancelable: true }));
+    return { prevented, open: dialog.open };
+  });
+  assert.deepEqual(syncCancelHandled, { prevented: true, open: false });
 
   const partnerPage = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
   const partnerCloudRequests = [];
@@ -682,6 +694,28 @@ function localDateKey(date = new Date()) {
   assert.match(exportedFiles[0].value.content, /^Date,Day Mode,Actual Wake/);
   assert.match(exportedFiles[1].value.filename, /^daily-routine-backup-\d{4}-\d{2}-\d{2}\.json$/);
   assert.match(exportedFiles[1].value.content, /"state"/);
+
+  const safetyContext = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+  const safetyPage = await safetyContext.newPage();
+  await safetyPage.goto(baseURL, { waitUntil: 'networkidle' });
+  await safetyPage.evaluate(() => {
+    const state = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
+    state.settings.theme = 'dusk';
+    localStorage.setItem('dailyRoutineApp.v1', JSON.stringify(state));
+  });
+  await safetyPage.reload({ waitUntil: 'networkidle' });
+  await safetyPage.evaluate(() => {
+    const originalSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      if (key === 'dailyRoutineApp.snapshots.v1') throw new DOMException('Storage full', 'QuotaExceededError');
+      return originalSetItem.call(this, key, value);
+    };
+  });
+  safetyPage.once('dialog', dialog => dialog.accept());
+  await safetyPage.locator('#restoreSnapshotButton').evaluate(button => button.click());
+  assert.match(await safetyPage.locator('#toast').textContent(), /Restore was not|verified safety snapshot could not be saved/);
+  assert.equal(await safetyPage.evaluate(() => window.DailyRoutineApp.getState().settings.theme), 'dusk');
+  await safetyContext.close();
 
   const migrationContext = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
   const migrationPage = await migrationContext.newPage();

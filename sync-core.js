@@ -452,7 +452,7 @@
       };
     }
 
-    reconcile(currentState, remoteEnvelope) {
+    reconcile(currentState, remoteEnvelope, { persistConflicts = true } = {}) {
       const local = syncableState(currentState);
       if (!remoteEnvelope?.document) {
         return { action: 'upload', state: local, expectedRevision: 0, conflicts: [] };
@@ -463,7 +463,7 @@
       if (!this.metadata.baseState) {
         if (!this.metadata.dirty) return { action: 'adopt', state: remote, remoteRevision, conflicts: [] };
         const merged = mergeRoutineStates({}, local, remote);
-        this.saveConflicts(merged.conflicts, local, remote, remoteRevision);
+        if (persistConflicts) this.saveConflicts(merged.conflicts, local, remote, remoteRevision);
         return { action: 'upload', state: merged.state, expectedRevision: remoteRevision, conflicts: merged.conflicts };
       }
 
@@ -475,8 +475,12 @@
 
       if (!this.metadata.dirty) return { action: 'adopt', state: remote, remoteRevision, conflicts: [] };
       const merged = mergeRoutineStates(this.metadata.baseState, local, remote);
-      this.saveConflicts(merged.conflicts, local, remote, remoteRevision);
+      if (persistConflicts) this.saveConflicts(merged.conflicts, local, remote, remoteRevision);
       return { action: 'upload', state: merged.state, expectedRevision: remoteRevision, conflicts: merged.conflicts };
+    }
+
+    archiveConflicts(conflicts, local, remote, remoteRevision) {
+      this.saveConflicts(conflicts || [], local, remote, remoteRevision);
     }
 
     commitRemote(currentState, revision, provider = this.metadata.provider, accountId = this.metadata.accountId) {

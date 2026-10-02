@@ -49,6 +49,8 @@ Build 25 extends that snapshot with owner-selected routine trends and 30-day com
 
 Build 26 clarifies routine sharing with a selected count and select-all/clear controls. Memory-style tasks can share their name and completion state while remembered text remains private.
 
+Build 28 adds a review-before-sync plan, verified recovery snapshots that block unsafe sync or restore operations, visible local/cloud record counts, a non-destructive history audit, dated snapshot restores, and per-partner accountability publish status.
+
 Build 27 restores the six-cup water goal and freezes numeric targets with each recorded day so later goal edits do not rewrite history. Private Sync merges convictions by stable item ID and saves a device-only recovery copy before any synced conviction change.
 
 Tapping a checkbox or medication row updates that exact routine; tapping a completed row reopens it. Medication taps record the current time, with an AM/PM confirmation on Watch when the time does not match the routine section. Linked-app routines remain on iPhone. All Watch actions remain locked until the Morning Foundation is completed on the iPhone for the local calendar day. If personal convictions are configured, they are part of that foundation. If the Watch companion is not installed yet, the iPhone keeps the latest routine context ready and sends it when Watch Connectivity reports the companion is available.
