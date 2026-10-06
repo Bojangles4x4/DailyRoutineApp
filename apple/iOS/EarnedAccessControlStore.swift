@@ -462,9 +462,9 @@ final class EarnedAccessControlStore: ObservableObject {
         if isAuthorized {
             if protectionEnabled && allowanceActive {
                 if let allowanceRemainingMinutes {
-                    status = "About \(allowanceRemainingMinutes) of \(allowanceMinutes) selected-app minutes remain."
+                    status = "Currently open: about \(allowanceRemainingMinutes) of \(allowanceMinutes) selected-app minutes remain."
                 } else {
-                    status = "\(allowanceMinutes) minutes of selected-app use are available."
+                    status = "Currently open: \(allowanceMinutes) selected-app minutes."
                 }
             } else if protectionEnabled && isShielding {
                 status = "Earned Access is locked for \(selectedApplicationCount + selectedCategoryCount + selectedWebsiteCount) selection(s)."

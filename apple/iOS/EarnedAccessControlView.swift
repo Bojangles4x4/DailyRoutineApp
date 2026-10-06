@@ -37,6 +37,9 @@ struct EarnedAccessControlView: View {
                         LabeledContent("Morning schedule", value: store.morningGateScheduled ? "Scheduled" : "Needs attention")
                     }
                     LabeledContent("Usage notifications", value: store.notificationsAllowed ? "Allowed" : "Not allowed")
+                    if store.allowanceActive {
+                        LabeledContent("Currently open", value: store.allowanceRemainingMinutes.map { "About \($0) min" } ?? "Refreshing")
+                    }
                     if !store.notificationsAllowed {
                         if store.notificationsDenied {
                             Button("Open iPhone notification settings") {
@@ -162,8 +165,8 @@ struct EarnedAccessControlView: View {
         if !store.morningGateEnabled { return "Morning gate is off" }
         if !store.protectionEnabled { return "Earned-app protection is off" }
         if store.allowanceActive {
-            if let remaining = store.allowanceRemainingMinutes { return "About \(remaining) earned minutes available" }
-            return "Earned apps are available"
+            if let remaining = store.allowanceRemainingMinutes { return "Currently open: about \(remaining) min" }
+            return "Currently open: refreshing"
         }
         return store.isShielding ? "Earned apps are locked" : "Protection is ready"
     }
@@ -175,7 +178,7 @@ struct EarnedAccessControlView: View {
         }
         if !store.morningGateEnabled { return "Turn it on to protect the start of each day." }
         if !store.protectionEnabled { return "Turn it on before relying on the earned time bank." }
-        if store.allowanceActive { return "Only foreground use in selected apps reduces the shared balance." }
+        if store.allowanceActive { return "Only foreground use in selected apps reduces what is currently open. All selected apps share the same daily bank." }
         return "Complete a selected routine or keep walking to earn time."
     }
 

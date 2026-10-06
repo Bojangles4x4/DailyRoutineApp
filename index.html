@@ -505,8 +505,9 @@
               <div><span>Current protection</span><strong id="earnedAccessGateStatus">Checking Screen Time…</strong><small id="earnedAccessGateDetail">Confirming today’s foundation and app shields.</small></div>
             </div>
             <div class="earned-access-metrics">
-              <div><strong id="earnedAccessAvailableNow">0 min</strong><span>Available now</span></div>
-              <div><strong id="earnedAccessEarnedToday">0 min</strong><span>Earned today</span></div>
+              <div><strong id="earnedAccessAvailableNow">0 min</strong><span>Available today</span></div>
+              <div><strong id="earnedAccessEarnedToday">0 min</strong><span>Currently open</span></div>
+              <div><strong id="earnedAccessStillBanked">0 min</strong><span>Still banked</span></div>
               <div><strong id="earnedAccessStepMetric">0%</strong><span>Step goal</span></div>
             </div>
           </div>
@@ -515,7 +516,7 @@
           <p id="earnedAccessNativeStatus" class="muted micro-copy earned-access-native-status">Authorize Screen Time and privately choose the apps Daily Routine should manage.</p>
 
           <div class="earned-access-bank" aria-live="polite">
-            <div><span>Today’s shared bank</span><strong id="earnedAccessBankStatus">0 of 60 minutes available</strong><small id="earnedAccessBankDetail">Minutes reset at midnight and never roll into tomorrow.</small></div>
+            <div><span>Today’s shared bank</span><strong id="earnedAccessBankStatus">0 of 60 minutes available today</strong><small id="earnedAccessBankDetail">Currently open and still-banked minutes belong to this same balance. Minutes reset at midnight.</small></div>
             <button id="useEarnedAccessButton" class="primary-button" type="button" disabled>Use 15 minutes</button>
           </div>
 
@@ -807,8 +808,9 @@
 
       <div id="medicationFields" class="builder-subcard" hidden>
         <strong class="builder-note-title">Medication timing</strong>
-        <p class="muted setup-help">On Today, tap <b>Taken now</b> to save the time automatically. You can edit the recorded time afterward. The app asks for confirmation when an AM/PM time does not match the medication’s part of day.</p>
-        <label class="text-field compact"><span>Usual dose (optional)</span><input id="medicationDoseInput" type="text" maxlength="40" placeholder="Example: 50 mg" /></label>
+        <p class="muted setup-help">Today shows one completion for the whole medication routine. The list below is a reminder only—individual medications are never checked off separately.</p>
+        <label class="text-field compact"><span>Medication reminder list (optional)</span><textarea id="medicationListInput" rows="4" maxlength="1000" placeholder="One medication or instruction per line&#10;Example: Vitamin D · 1 capsule"></textarea><small class="field-help">This list is saved with that day’s history when you confirm the medication time.</small></label>
+        <input id="medicationDoseInput" type="hidden" />
       </div>
 
       <div id="linkedActionFields" class="builder-subcard" hidden>
@@ -895,6 +897,6 @@
   <script src="sync-core.js" defer></script>
   <script src="sync-cloud.js" defer></script>
   <script src="data-health.js" defer></script>
-  <script src="app.js?v=1.26.0-build28-data-confidence" defer></script>
+  <script src="app.js?v=1.27.0-build29-trustworthy-history" defer></script>
 </body>
 </html>

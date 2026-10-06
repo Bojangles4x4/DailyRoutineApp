@@ -26,7 +26,7 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#truthHeroTitle').textContent(), 'Truth Before Tasks');
   assert.equal(await page.locator('#truthEnterDayButton').isDisabled(), true);
   assert.equal(await page.locator('#accountabilitySharingCard').count(), 1);
-  assert.equal(await page.locator('#appVersion').textContent(), 'v1.26.0 · Build 28');
+  assert.equal(await page.locator('#appVersion').textContent(), 'v1.27.0 · Build 29');
   assert.match(await page.locator('#openAccountabilityFromSetupButton').textContent(), /Open private accountability/);
   assert.equal(await page.locator('#accountabilitySharingSignedOut').evaluate(element => element.hidden), false);
   assert.match(await page.locator('#accountabilitySharingSignedOut').textContent(), /Connect Private Sync first/);
@@ -282,6 +282,30 @@ function localDateKey(date = new Date()) {
   assert.doesNotMatch(await medicationRow.textContent(), /optional/i);
   assert.equal(await medicationRow.locator('.medication-now').count(), 1);
   assert.equal(await medicationRow.locator('.medication-manual').count(), 1);
+  assert.equal(await medicationRow.locator('.medication-expand').count(), 1);
+  await medicationRow.locator('.medication-now').click();
+  assert.equal(await medicationRow.locator('.medication-inline-confirm').isVisible(), true);
+  assert.equal(await page.evaluate(key => window.DailyRoutineApp.getState().days[key]?.entries?.['morning-meds'], today), undefined);
+  await medicationRow.locator('.medication-cancel').click();
+  assert.equal(await page.evaluate(key => window.DailyRoutineApp.getState().days[key]?.entries?.['morning-meds'], today), undefined);
+  await page.evaluate(() => {
+    const state = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
+    const list = ['Medication A · 10 mg', 'Vitamin D · 1 capsule'];
+    state.items.find(item => item.id === 'morning-meds').medicationList = list;
+    const today = Object.keys(state.days).sort().at(-1);
+    if (state.days[today]?.itemDefinitions?.['morning-meds']) state.days[today].itemDefinitions['morning-meds'].medicationList = list;
+    localStorage.setItem('dailyRoutineApp.v1', JSON.stringify(state));
+  });
+  await page.reload({ waitUntil: 'networkidle' });
+  await medicationRow.locator('.medication-expand').click();
+  assert.match(await medicationRow.locator('.medication-reminder-panel').textContent(), /Medication A · 10 mg/);
+  assert.match(await medicationRow.locator('.medication-reminder-panel').textContent(), /Reminder only/);
+  await medicationRow.locator('.medication-now').click();
+  await medicationRow.locator('.med-time-input').fill('08:30');
+  await medicationRow.locator('.medication-confirm').click();
+  await page.waitForFunction(key => Boolean(window.DailyRoutineApp.getState().days[key]?.entries?.['morning-meds']?.taken), today);
+  assert.deepEqual(await page.evaluate(key => window.DailyRoutineApp.getState().days[key].entries['morning-meds'].medications, today), ['Medication A · 10 mg', 'Vitamin D · 1 capsule']);
+  await medicationRow.locator('.medication-clear').click();
   const waterRow = page.locator('#todayView .water-task-row').first();
   assert.equal(await waterRow.isVisible(), true);
   assert.equal(await waterRow.locator('.number-step').count(), 2);
@@ -408,7 +432,7 @@ function localDateKey(date = new Date()) {
   await page.evaluate(() => {
     window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'health.summary', value: { date: new Date().toISOString(), stepCount: 5820, sleepHours: 0, workoutCount: 0 } } }));
   });
-  assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '25 of 60 minutes available');
+  assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '25 of 60 minutes available today');
   assert.equal(await page.locator('#useEarnedAccessButton').isDisabled(), false);
   await page.locator('#useEarnedAccessButton').click();
   assert.equal((await page.locator('#earnedAccessStatus').textContent()).trim(), '15 minutes available');
@@ -424,8 +448,10 @@ function localDateKey(date = new Date()) {
     } } }));
   }, nativeAllowance.value.redemptionId);
   assert.equal((await page.locator('#earnedAccessStatus').textContent()).trim(), 'About 9 of 15 minutes remaining');
-  assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '19 of 60 minutes available');
+  assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '19 of 60 minutes available today');
   assert.equal((await page.locator('#earnedAccessAvailableNow').textContent()).trim(), '19 min');
+  assert.equal((await page.locator('#earnedAccessEarnedToday').textContent()).trim(), '9 min');
+  assert.equal((await page.locator('#earnedAccessStillBanked').textContent()).trim(), '10 min');
   assert.match(await page.locator('#earnedAccessDetail').textContent(), /five-minute usage checkpoints/);
   const earnedWidgetSnapshot = await page.evaluate(() => [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'routine.snapshot.publish')?.value);
   assert.equal(earnedWidgetSnapshot.earnedAccessRemainingMinutes, 19);
@@ -541,11 +567,11 @@ function localDateKey(date = new Date()) {
   await page.locator('[data-view="setup"]').click();
   await page.locator('[data-setup-target="health"]').click();
   assert.equal((await page.locator('#earnedAccessMorningStatus').textContent()).trim(), '3 of 3 complete · 15 min added today');
-  assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '15 of 60 minutes available');
+  assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '15 of 60 minutes available today');
   await page.reload({ waitUntil: 'networkidle' });
   await page.locator('[data-view="setup"]').click();
   await page.locator('[data-setup-target="health"]').click();
-  assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '15 of 60 minutes available');
+  assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '15 of 60 minutes available today');
   assert.equal(await page.locator('#useEarnedAccessButton').isDisabled(), false);
   await page.locator('#useEarnedAccessButton').click();
   assert.equal((await page.locator('#earnedAccessStatus').textContent()).trim(), '15 minutes available');
@@ -564,18 +590,15 @@ function localDateKey(date = new Date()) {
   assert.equal(watchUpdates.note.type, 'prayer');
   assert.equal(watchUpdates.note.source, 'Apple Watch');
 
-  const medicationLayout = await page.locator('.medication-detail-grid').first().evaluate(node => {
-    const bounds = node.closest('.task-row').getBoundingClientRect();
-    const inputs = [...node.querySelectorAll('input')].map(input => input.getBoundingClientRect());
-    return { left: bounds.left, right: bounds.right, inputs: inputs.map(rect => ({ left: rect.left, right: rect.right, height: rect.height })) };
-  });
-  assert.equal(medicationLayout.inputs.length, 2);
-  assert.ok(medicationLayout.inputs[0].right <= medicationLayout.inputs[1].left);
-  medicationLayout.inputs.forEach(rect => {
-    assert.ok(rect.left >= medicationLayout.left);
-    assert.ok(rect.right <= medicationLayout.right);
-    assert.equal(Math.round(rect.height), 44);
-  });
+  const loggedMedicationRow = page.locator('#todayView .medication-row').first();
+  assert.equal(await loggedMedicationRow.locator('.medication-edit').count(), 1);
+  await loggedMedicationRow.locator('.medication-expand').click();
+  assert.equal(await loggedMedicationRow.locator('.medication-reminder-panel').isVisible(), true);
+  await loggedMedicationRow.locator('.medication-edit').click();
+  const medicationTimeInput = loggedMedicationRow.locator('.med-time-input');
+  assert.equal(await medicationTimeInput.isVisible(), true);
+  assert.equal(Math.round((await medicationTimeInput.boundingBox()).height), 44);
+  await loggedMedicationRow.locator('.medication-cancel').click();
 
   const sleepEnd = new Date();
   sleepEnd.setHours(6, 45, 0, 0);
@@ -680,7 +703,7 @@ function localDateKey(date = new Date()) {
   assert.equal(extendedAutomaticAllowance.activeAllowance.minutes, 26);
   assert.notEqual(extendedAutomaticAllowance.activeAllowance.id, openedAfterFoundation.activeAllowance.id);
   assert.equal(extendedAutomaticAllowance.nativeAllowance.value.minutes, 26);
-  assert.match(await automaticPage.locator('#earnedAccessBankStatus').textContent(), /26 of 60 minutes available/);
+  assert.match(await automaticPage.locator('#earnedAccessBankStatus').textContent(), /26 of 60 minutes available today/);
   await automaticPage.close();
 
   const exportedFiles = await page.evaluate(() => {
@@ -726,6 +749,8 @@ function localDateKey(date = new Date()) {
     const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     const state = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
     delete state.settings.build27HistoricalTargetsMigrated;
+    delete state.settings.build29HistoricalDefinitionsMigrated;
+    delete state.settings.build29HistoricalDefinitionsMigrationPending;
     state.settings.firstUseDate = key;
     state.items.find(item => item.id === 'day-water').target = 8;
     state.days[key] = { entries: { 'day-water': 6 }, skippedItems: {}, mode: 'normal' };
@@ -743,10 +768,35 @@ function localDateKey(date = new Date()) {
     return {
       currentWaterTarget: state.items.find(item => item.id === 'day-water').target,
       historicalWaterTarget: state.days[key].targets['day-water'],
-      migrated: state.settings.build27HistoricalTargetsMigrated
+      historicalDefinitionTarget: state.days[key].itemDefinitions['day-water'].target,
+      historicalDefinitionName: state.days[key].itemDefinitions['day-water'].name,
+      definitionSource: state.days[key].definitionSnapshotSource,
+      migrated: state.settings.build27HistoricalTargetsMigrated,
+      definitionsMigrated: state.settings.build29HistoricalDefinitionsMigrated
     };
   }, historicalDate);
-  assert.deepEqual(migratedHistory, { currentWaterTarget: 6, historicalWaterTarget: 6, migrated: true });
+  assert.deepEqual(migratedHistory, {
+    currentWaterTarget: 6,
+    historicalWaterTarget: 6,
+    historicalDefinitionTarget: 6,
+    historicalDefinitionName: 'Water',
+    definitionSource: 'legacy-current-definition',
+    migrated: true,
+    definitionsMigrated: true
+  });
+  await migrationPage.evaluate(() => {
+    const state = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
+    const water = state.items.find(item => item.id === 'day-water');
+    water.name = 'Hydration renamed later';
+    water.target = 9;
+    localStorage.setItem('dailyRoutineApp.v1', JSON.stringify(state));
+  });
+  await migrationPage.reload({ waitUntil: 'networkidle' });
+  const preservedHistoricalDefinition = await migrationPage.evaluate(key => {
+    const definition = window.DailyRoutineApp.getState().days[key].itemDefinitions['day-water'];
+    return { name: definition.name, target: definition.target };
+  }, historicalDate);
+  assert.deepEqual(preservedHistoricalDefinition, { name: 'Water', target: 6 });
   assert.equal(await migrationPage.locator('#convictionRecoveryPanel').evaluate(element => element.hidden), false);
   assert.match(await migrationPage.locator('#convictionRecoveryStatus').textContent(), /pre-sync copy of 1 conviction/);
   await migrationContext.close();

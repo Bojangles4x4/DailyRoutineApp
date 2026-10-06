@@ -31,6 +31,9 @@ struct TruthReminderView: View {
                         Text("2 hours").tag(120)
                     }
                     Toggle("Shuffle the whole library", isOn: $draft.shuffle)
+                    if store.settings.enabled {
+                        LabeledContent("Active schedule", value: store.scheduleSummary)
+                    }
                 } header: { Text("Daily schedule") } footer: {
                     Text("The end time is included. The schedule repeats daily, even while the app is closed. A shuffled mix refreshes when you open the app on a new day; otherwise the previous mix repeats.")
                 }
@@ -48,8 +51,11 @@ struct TruthReminderView: View {
                     }
                         .disabled(store.busy)
                     Text(store.status).font(.footnote).accessibilityIdentifier("truthReminderStatus")
+                    if let acknowledgedAt = store.settings.lastAcknowledgedAt {
+                        LabeledContent("Last acknowledged", value: acknowledgedAt.formatted(date: .abbreviated, time: .shortened))
+                    }
                 } footer: {
-                    Text("Reminder text and pictures may appear on your lock screen. Your library stays on this iPhone and is separate from routine backups and Private sync.")
+                    Text("Reminder text and pictures may appear on your lock screen. Use “I’ve read this” on the notification to record a private acknowledgement. Your library stays on this iPhone and is separate from routine backups and Private sync.")
                 }
                 Section {
                     ForEach(store.settings.entries) { entry in

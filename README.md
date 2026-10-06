@@ -2,7 +2,9 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.26.0 development features
+## Version 1.27.0 development features
+
+- Build 29 adds one-step medication logging with an expandable reminder list and explicit inline time confirmation, freezes routine definitions inside each day so later edits do not rewrite history, records private truth-reminder acknowledgements, and clarifies the shared Earned Access bank
 
 - Build 28 adds a review-before-sync plan, verified recovery snapshots that block unsafe sync or restore operations, visible local/cloud record counts, a non-destructive history audit, dated snapshot restores, and per-partner accountability publish status
 - Build 27 restores the six-cup water goal, preserves each recorded day’s numeric targets, merges convictions individually during Private Sync, and keeps a device-only recovery copy before synced convictions change

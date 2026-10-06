@@ -48,6 +48,17 @@ test('flags orphan entries and numeric history missing frozen targets', () => {
   assert.equal(audit.status, 'review');
 });
 
+test('treats a frozen historical definition as the owner of a deleted item entry', () => {
+  const state = sampleState();
+  state.days['2026-09-03'] = {
+    entries: { deletedItem: true },
+    itemDefinitions: { deletedItem: { id: 'deletedItem', name: 'Former task', type: 'checkbox', kind: 'routine', section: 'morning', optional: false } }
+  };
+  const audit = auditHistory(state, '2026-09-03');
+  assert.equal(audit.orphanEntries.length, 0);
+  assert.equal(audit.invalidEntries.length, 0);
+});
+
 test('separates expected historical target changes from invalid saved values', () => {
   const state = sampleState();
   state.items[1].target = 8;

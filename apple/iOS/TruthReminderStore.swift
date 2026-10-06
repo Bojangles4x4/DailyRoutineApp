@@ -17,6 +17,9 @@ struct TruthReminderSettings: Codable {
     var shuffle = false
     var entries: [TruthReminder] = []
     var scheduledDay = ""
+    var lastAcknowledgedAt: Date?
+    var acknowledgedDay: String?
+    var acknowledgedCount: Int?
 }
 
 @MainActor
@@ -26,6 +29,8 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
     @Published var busy = false
     private let center = UNUserNotificationCenter.current()
     private let prefix = "dailyRoutine.truth."
+    private let categoryIdentifier = "dailyRoutine.truth.category"
+    private let acknowledgeActionIdentifier = "dailyRoutine.truth.acknowledge"
     private var folder: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("TruthReminders", isDirectory: true)
@@ -36,6 +41,16 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         if let data = try? Data(contentsOf: folder.appendingPathComponent("settings.json")),
            let saved = try? JSONDecoder().decode(TruthReminderSettings.self, from: data) { settings = saved }
         center.delegate = self
+        let acknowledge = UNNotificationAction(identifier: acknowledgeActionIdentifier, title: "I’ve read this", options: [])
+        center.setNotificationCategories([UNNotificationCategory(identifier: categoryIdentifier, actions: [acknowledge], intentIdentifiers: [])])
+    }
+
+    var scheduleSummary: String {
+        let format: (Int) -> String = { minute in
+            let date = Calendar.current.date(bySettingHour: minute / 60, minute: minute % 60, second: 0, of: Date()) ?? Date()
+            return date.formatted(date: .omitted, time: .shortened)
+        }
+        return "\(format(settings.startMinute))–\(format(settings.endMinute)) · every \(settings.interval == 60 ? "hour" : settings.interval == 120 ? "2 hours" : "30 minutes")"
     }
 
     func imageURL(_ name: String) -> URL { folder.appendingPathComponent(name) }
@@ -138,6 +153,8 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
                 content.body = entry.text.isEmpty ? "Pause and reflect on your chosen picture." : entry.text
                 content.sound = .default
                 content.threadIdentifier = "truth-reminders"
+                content.categoryIdentifier = categoryIdentifier
+                content.userInfo = ["truthReminderID": entry.id.uuidString]
                 if let imageName = entry.imageName {
                     // Notification attachments may be moved by the system; keep the library original.
                     let attachmentURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".jpg")
@@ -160,7 +177,7 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
             center.removePendingNotificationRequests(withIdentifiers: old.map(\.identifier).filter { !ids.contains($0) })
             settings.scheduledDay = Calendar.current.startOfDay(for: Date()).description
             try persist()
-            status = "Scheduled \(requests.count) reminders per day. \(settings.shuffle ? "The mix refreshes when you open the app on a new day." : "Your selected entries repeat in library order.")"
+            status = "Scheduled \(requests.count) reminders each day from \(scheduleSummary). \(settings.shuffle ? "The mix refreshes when you open the app on a new day." : "Your selected entries repeat in library order.")"
         } catch { status = "Could not update reminders: \(error.localizedDescription)" }
     }
 
@@ -171,5 +188,18 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
 
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
         [.banner, .list, .sound]
+    }
+
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+        guard response.notification.request.identifier.hasPrefix("dailyRoutine.truth."),
+              response.actionIdentifier == "dailyRoutine.truth.acknowledge" || response.actionIdentifier == UNNotificationDefaultActionIdentifier else { return }
+        await MainActor.run {
+            let today = Calendar.current.startOfDay(for: Date()).description
+            settings.acknowledgedCount = settings.acknowledgedDay == today ? (settings.acknowledgedCount ?? 0) + 1 : 1
+            settings.acknowledgedDay = today
+            settings.lastAcknowledgedAt = Date()
+            try? persist()
+            status = "Acknowledged at \(Date().formatted(date: .omitted, time: .shortened))."
+        }
     }
 }

@@ -34,8 +34,9 @@
     dateKeys.forEach(key => {
       const day = object(days[key]);
       const entries = object(day.entries);
+      const historicalIds = new Set(Object.keys(object(day.itemDefinitions)).map(String));
       entryCount += Object.keys(entries).length;
-      orphanEntryCount += Object.keys(entries).filter(id => !itemIds.has(String(id))).length;
+      orphanEntryCount += Object.keys(entries).filter(id => !itemIds.has(String(id)) && !historicalIds.has(String(id))).length;
       if (Object.keys(object(day.targets)).length) targetDayCount += 1;
     });
     return {
@@ -56,7 +57,6 @@
     const state = object(input);
     const days = object(state.days);
     const items = Array.isArray(state.items) ? state.items : [];
-    const itemIds = new Set(items.map(item => String(item?.id || '')).filter(Boolean));
     const numericTargetIds = new Set(items
       .filter(item => item?.type === 'number' && Number.isFinite(Number(item.target)) && Number(item.target) > 0)
       .map(item => String(item.id)));
@@ -86,16 +86,22 @@
         return;
       }
       const entries = object(rawDay.entries);
+      const definitions = object(rawDay.itemDefinitions);
       Object.keys(entries).forEach(id => {
-        if (!itemIds.has(String(id))) orphanEntries.push({ date: key, itemId: String(id) });
-        const item = items.find(candidate => String(candidate?.id || '') === String(id));
+        const item = definitions[id] || items.find(candidate => String(candidate?.id || '') === String(id));
+        if (!item) orphanEntries.push({ date: key, itemId: String(id) });
         if (item && !entryValueIsValid(item, entries[id])) invalidEntries.push({ date: key, itemId: String(id), type: String(item.type || '') });
       });
       const targetIds = object(rawDay.targets);
-      const missing = Object.keys(entries).filter(id => numericTargetIds.has(String(id)) && !Object.prototype.hasOwnProperty.call(targetIds, id));
+      const missing = Object.keys(entries).filter(id => {
+        const definition = definitions[id];
+        const isNumeric = definition?.type === 'number' || numericTargetIds.has(String(id));
+        const hasFrozenDefinitionTarget = definition?.target !== null && definition?.target !== '' && definition?.target !== undefined && Number.isFinite(Number(definition.target));
+        return isNumeric && !hasFrozenDefinitionTarget && !Object.prototype.hasOwnProperty.call(targetIds, id);
+      });
       if (missing.length) numericDaysWithoutTargets.push({ date: key, itemIds: missing });
       Object.keys(targetIds).forEach(id => {
-        const item = items.find(candidate => String(candidate?.id || '') === String(id));
+        const item = definitions[id] || items.find(candidate => String(candidate?.id || '') === String(id));
         if (!item || item.type !== 'number' || !Number.isFinite(Number(targetIds[id])) || !Number.isFinite(Number(item.target))) return;
         if (Number(targetIds[id]) !== Number(item.target)) targetDrift.push({ date: key, itemId: String(id), savedTarget: Number(targetIds[id]), currentTarget: Number(item.target) });
       });

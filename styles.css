@@ -385,3 +385,21 @@ body.accountability-partner-mode .accountability-shared-routines span,body.accou
 .sync-preview-changes,.sync-preview-privacy{margin:0;padding:11px;border:1px solid var(--line);border-radius:12px;color:var(--muted);font-size:9px;line-height:1.5}.sync-preview-changes p{margin:0}.sync-preview-changes p+p{margin-top:6px}.sync-preview-changes strong,.sync-preview-privacy strong{color:var(--ink)}.sync-preview-warning{color:#8b6427}
 .accountability-snapshot-status{padding:8px 10px;border-radius:10px;background:color-mix(in srgb,var(--brand-soft) 24%,transparent)}
 @media(max-width:430px){.sync-preview-counts{grid-template-columns:1fr}.sync-preview-counts>div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px}.sync-preview-counts>div strong{grid-column:2;grid-row:1/3;margin:0;align-self:center}.sync-preview-counts>div small{grid-column:1}.snapshot-row{align-items:start}}
+
+/* Build 29: medication confirmation and historically accurate reminders */
+#todayView .medication-row,#todayView .medication-row:not(.done){display:grid;grid-template-columns:minmax(0,1fr);gap:0;padding:7px}
+#todayView .medication-row>.medication-main,#todayView .medication-row:not(.done)>.medication-main{display:grid;grid-template-columns:34px minmax(0,1fr) 42px auto;grid-column:1;align-items:center;gap:8px;min-height:48px}
+#todayView .medication-row .medication-icon{width:30px;height:30px;border-radius:9px}
+#todayView .medication-row .completion-badge{grid-column:4}
+.medication-expand{display:grid;width:42px;height:42px;place-items:center;border:0;border-radius:11px;background:color-mix(in srgb,var(--brand-soft) 66%,var(--surface-solid));color:var(--brand);font:inherit;font-size:15px;font-weight:900;cursor:pointer}
+.medication-expand:focus-visible{outline:3px solid color-mix(in srgb,var(--brand) 40%,transparent);outline-offset:2px}
+.medication-reminder-panel{margin:4px 2px 7px 42px;padding:10px 11px;border:1px solid color-mix(in srgb,var(--brand) 20%,var(--line));border-radius:12px;background:color-mix(in srgb,var(--brand-soft) 28%,var(--surface-solid))}
+.medication-reminder-panel[hidden]{display:none}.medication-reminder-panel>strong{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.08em}.medication-reminder-panel>small{display:block;margin-top:7px;color:var(--muted);font-size:8px;line-height:1.4}
+.medication-reminder-list{display:grid;gap:5px;margin:8px 0 0;padding:0;list-style:none}.medication-reminder-list li{position:relative;padding-left:12px;color:var(--ink);font-size:10px;line-height:1.35}.medication-reminder-list li::before{content:'•';position:absolute;left:0;color:var(--brand);font-weight:900}.medication-list-empty{margin:7px 0 0;color:var(--muted);font-size:9px}
+#todayView .medication-row>.medication-actions,#todayView .medication-row:not(.done)>.medication-actions{display:flex;grid-column:1;gap:6px;align-items:center;margin:5px 0 0 42px}
+#todayView .medication-row:not(.done)>.medication-actions>button{min-height:42px}
+.medication-inline-confirm{display:grid;width:100%;grid-template-columns:minmax(100px,1fr) auto;align-items:end;gap:7px;padding:9px;border:1px solid color-mix(in srgb,var(--brand) 20%,var(--line));border-radius:13px;background:color-mix(in srgb,var(--brand-soft) 20%,var(--surface-solid))}
+.medication-inline-confirm .med-time-edit{min-width:0}.medication-inline-confirm .med-time-input{height:44px}.medication-confirm-actions{display:flex;gap:6px}.medication-confirm-actions button{min-height:44px;padding-inline:10px;white-space:nowrap}
+.medication-finished{width:100%;margin:0}.medication-finished>div{display:flex;gap:5px}.medication-finished button{min-height:38px}
+#medicationListInput{display:block;width:100%;min-height:98px;resize:vertical}
+@media(max-width:390px){#todayView .medication-row>.medication-main,#todayView .medication-row:not(.done)>.medication-main{grid-template-columns:32px minmax(0,1fr) 42px}.medication-row .completion-badge{display:none}.medication-reminder-panel,#todayView .medication-row>.medication-actions,#todayView .medication-row:not(.done)>.medication-actions{margin-left:0}.medication-inline-confirm{grid-template-columns:1fr}.medication-confirm-actions{display:grid;grid-template-columns:1fr 1fr}.medication-confirm-actions button{width:100%}}

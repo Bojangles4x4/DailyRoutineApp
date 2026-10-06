@@ -9,8 +9,8 @@
   const EARNED_ACCESS_DEVICE_KEY = 'dailyRoutine.earnedAccess.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.26.0';
-  const APP_BUILD = 28;
+  const APP_VERSION = '1.27.0';
+  const APP_BUILD = 29;
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const ROUTINE_AGENT_DB_NAME = 'dailyRoutine.agentBridge.v1';
@@ -140,7 +140,7 @@
     itemNameInput: $('itemNameInput'), itemSectionInput: $('itemSectionInput'), itemTypeInput: $('itemTypeInput'), itemFrequencyInput: $('itemFrequencyInput'), customDaysField: $('customDaysField'),
     numberGoalFields: $('numberGoalFields'), itemTargetInput: $('itemTargetInput'), itemUnitInput: $('itemUnitInput'), scaleFields: $('scaleFields'), scaleMinInput: $('scaleMinInput'), scaleMaxInput: $('scaleMaxInput'), scaleStepInput: $('scaleStepInput'), scaleLowLabelInput: $('scaleLowLabelInput'), scaleHighLabelInput: $('scaleHighLabelInput'),
     promptField: $('promptField'), itemPlaceholderInput: $('itemPlaceholderInput'), optionalField: $('optionalField'), itemOptionalInput: $('itemOptionalInput'),
-    medicationFields: $('medicationFields'), medicationDoseInput: $('medicationDoseInput'), memoryFields: $('memoryFields'), memoryCategoryInput: $('memoryCategoryInput'), pauseUntilInput: $('pauseUntilInput'),
+    medicationFields: $('medicationFields'), medicationDoseInput: $('medicationDoseInput'), medicationListInput: $('medicationListInput'), memoryFields: $('memoryFields'), memoryCategoryInput: $('memoryCategoryInput'), pauseUntilInput: $('pauseUntilInput'),
     actualWakeInput: $('actualWakeInput'), actualBedInput: $('actualBedInput'), wakeNowButton: $('wakeNowButton'), bedNowButton: $('bedNowButton'), actualTimeSummary: $('actualTimeSummary'), actualTimeDetails: $('actualTimeDetails'), toggleActualTimeButton: $('toggleActualTimeButton'), badgeEnabledInput: $('badgeEnabledInput'),
     quickNoteButton: $('quickNoteButton'), quickMemoryButton: $('quickMemoryButton'), memoryTodayPreview: $('memoryTodayPreview'), addMemoryButton: $('addMemoryButton'), memoryCount: $('memoryCount'), memoryArchive: $('memoryArchive'), exportMemoriesButton: $('exportMemoriesButton'), memorySearchInput: $('memorySearchInput'), memoryFilterInput: $('memoryFilterInput'), memoryFavoritesOnlyInput: $('memoryFavoritesOnlyInput'),
     godMomentReminder: $('godMomentReminder'), godMomentReminderText: $('godMomentReminderText'), godMomentReminderDate: $('godMomentReminderDate'), openGodMomentsButton: $('openGodMomentsButton'), backupReminder: $('backupReminder'), backupReminderText: $('backupReminderText'), openBackupButton: $('openBackupButton'),
@@ -152,7 +152,7 @@
     privateSyncCard: $('privateSyncCard'), privateSyncBadge: $('privateSyncBadge'), privateSyncStatus: $('privateSyncStatus'), privateSyncDevice: $('privateSyncDevice'), privateSyncLastSync: $('privateSyncLastSync'), privateSyncHealthBadge: $('privateSyncHealthBadge'), privateSyncLocalDays: $('privateSyncLocalDays'), privateSyncLocalRecords: $('privateSyncLocalRecords'), privateSyncCloudHealth: $('privateSyncCloudHealth'), privateSyncPendingHealth: $('privateSyncPendingHealth'), privateSyncHealthDetail: $('privateSyncHealthDetail'), createSyncSnapshotButton: $('createSyncSnapshotButton'), privateSyncNowButton: $('privateSyncNowButton'), privateSyncSignIn: $('privateSyncSignIn'), privateSyncEmailInput: $('privateSyncEmailInput'), privateSyncPasswordInput: $('privateSyncPasswordInput'), privateSyncSendCodeButton: $('privateSyncSendCodeButton'), privateSyncVerifyButton: $('privateSyncVerifyButton'), privateSyncHelp: $('privateSyncHelp'), privateSyncAccount: $('privateSyncAccount'), privateSyncSignOutButton: $('privateSyncSignOutButton'), privateSyncDeleteCloudButton: $('privateSyncDeleteCloudButton'), syncPreviewDialog: $('syncPreviewDialog'), syncPreviewTitle: $('syncPreviewTitle'), syncPreviewDescription: $('syncPreviewDescription'), syncPreviewCounts: $('syncPreviewCounts'), syncPreviewChanges: $('syncPreviewChanges'), closeSyncPreviewButton: $('closeSyncPreviewButton'), cancelSyncPreviewButton: $('cancelSyncPreviewButton'), confirmSyncPreviewButton: $('confirmSyncPreviewButton'),
     connectionsCard: $('connectionsCard'), syncConnectionsButton: $('syncConnectionsButton'), bibleConnectionStatus: $('bibleConnectionStatus'), openBibleConnectionButton: $('openBibleConnectionButton'), bibleAppUrlInput: $('bibleAppUrlInput'), saveBibleConnectionButton: $('saveBibleConnectionButton'), testBibleConnectionButton: $('testBibleConnectionButton'), connectionTemplates: $('connectionTemplates'),
     appleNativeCard: $('appleNativeCard'), iphoneWidgetCard: $('iphoneWidgetCard'), appleWatchCard: $('appleWatchCard'), appleStepCount: $('appleStepCount'), appleSleepHours: $('appleSleepHours'), appleWorkoutCount: $('appleWorkoutCount'), appleHealthStatus: $('appleHealthStatus'), healthSourceSummary: $('healthSourceSummary'), healthSourceDetail: $('healthSourceDetail'), connectAppleHealthButton: $('connectAppleHealthButton'), refreshAppleHealthButton: $('refreshAppleHealthButton'), appleWatchStatus: $('appleWatchStatus'), appleStepsGoalInput: $('appleStepsGoalInput'), saveAppleStepsGoalButton: $('saveAppleStepsGoalButton'), appleWatchQuickActionInput: $('appleWatchQuickActionInput'),
-    earnedAccessCard: $('earnedAccessCard'), earnedAccessBadge: $('earnedAccessBadge'), earnedAccessNativeStatus: $('earnedAccessNativeStatus'), earnedAccessGateStatus: $('earnedAccessGateStatus'), earnedAccessGateDetail: $('earnedAccessGateDetail'), earnedAccessAvailableNow: $('earnedAccessAvailableNow'), earnedAccessEarnedToday: $('earnedAccessEarnedToday'), earnedAccessStepMetric: $('earnedAccessStepMetric'), openEarnedAccessControlsButton: $('openEarnedAccessControlsButton'), earnedAccessLabelInput: $('earnedAccessLabelInput'), earnedAccessTaskMinutesInput: $('earnedAccessTaskMinutesInput'), earnedAccessDailyLimitInput: $('earnedAccessDailyLimitInput'), earnedAccessAutomaticStepsInput: $('earnedAccessAutomaticStepsInput'), earnedAccessAutomaticUseInput: $('earnedAccessAutomaticUseInput'), earnedAccessStepsInput: $('earnedAccessStepsInput'), earnedAccessMinutesInput: $('earnedAccessMinutesInput'), earnedAccessModeInput: $('earnedAccessModeInput'), earnedAccessBankStatus: $('earnedAccessBankStatus'), earnedAccessBankDetail: $('earnedAccessBankDetail'), useEarnedAccessButton: $('useEarnedAccessButton'), earnedAccessStatus: $('earnedAccessStatus'), earnedAccessDetail: $('earnedAccessDetail'), earnedAccessProgressBar: $('earnedAccessProgressBar'), startEarnedAccessButton: $('startEarnedAccessButton'), checkEarnedAccessButton: $('checkEarnedAccessButton'), cancelEarnedAccessButton: $('cancelEarnedAccessButton'), earnedAccessMorningTasks: $('earnedAccessMorningTasks'), earnedAccessLaterTasks: $('earnedAccessLaterTasks'), earnedAccessMorningStatus: $('earnedAccessMorningStatus'), earnedAccessLaterStatus: $('earnedAccessLaterStatus'), earnedAccessHealthSyncStatus: $('earnedAccessHealthSyncStatus'), earnedAccessStepSampleStatus: $('earnedAccessStepSampleStatus'), earnedAccessScreenTimeStatus: $('earnedAccessScreenTimeStatus'), earnedAccessScheduleStatus: $('earnedAccessScheduleStatus'), earnedAccessNotificationStatus: $('earnedAccessNotificationStatus'), earnedAccessWidgetStatus: $('earnedAccessWidgetStatus'),
+    earnedAccessCard: $('earnedAccessCard'), earnedAccessBadge: $('earnedAccessBadge'), earnedAccessNativeStatus: $('earnedAccessNativeStatus'), earnedAccessGateStatus: $('earnedAccessGateStatus'), earnedAccessGateDetail: $('earnedAccessGateDetail'), earnedAccessAvailableNow: $('earnedAccessAvailableNow'), earnedAccessEarnedToday: $('earnedAccessEarnedToday'), earnedAccessStillBanked: $('earnedAccessStillBanked'), earnedAccessStepMetric: $('earnedAccessStepMetric'), openEarnedAccessControlsButton: $('openEarnedAccessControlsButton'), earnedAccessLabelInput: $('earnedAccessLabelInput'), earnedAccessTaskMinutesInput: $('earnedAccessTaskMinutesInput'), earnedAccessDailyLimitInput: $('earnedAccessDailyLimitInput'), earnedAccessAutomaticStepsInput: $('earnedAccessAutomaticStepsInput'), earnedAccessAutomaticUseInput: $('earnedAccessAutomaticUseInput'), earnedAccessStepsInput: $('earnedAccessStepsInput'), earnedAccessMinutesInput: $('earnedAccessMinutesInput'), earnedAccessModeInput: $('earnedAccessModeInput'), earnedAccessBankStatus: $('earnedAccessBankStatus'), earnedAccessBankDetail: $('earnedAccessBankDetail'), useEarnedAccessButton: $('useEarnedAccessButton'), earnedAccessStatus: $('earnedAccessStatus'), earnedAccessDetail: $('earnedAccessDetail'), earnedAccessProgressBar: $('earnedAccessProgressBar'), startEarnedAccessButton: $('startEarnedAccessButton'), checkEarnedAccessButton: $('checkEarnedAccessButton'), cancelEarnedAccessButton: $('cancelEarnedAccessButton'), earnedAccessMorningTasks: $('earnedAccessMorningTasks'), earnedAccessLaterTasks: $('earnedAccessLaterTasks'), earnedAccessMorningStatus: $('earnedAccessMorningStatus'), earnedAccessLaterStatus: $('earnedAccessLaterStatus'), earnedAccessHealthSyncStatus: $('earnedAccessHealthSyncStatus'), earnedAccessStepSampleStatus: $('earnedAccessStepSampleStatus'), earnedAccessScreenTimeStatus: $('earnedAccessScreenTimeStatus'), earnedAccessScheduleStatus: $('earnedAccessScheduleStatus'), earnedAccessNotificationStatus: $('earnedAccessNotificationStatus'), earnedAccessWidgetStatus: $('earnedAccessWidgetStatus'),
     healthSleepSuggestion: $('healthSleepSuggestion'), healthSleepSuggestionText: $('healthSleepSuggestionText'), applyHealthSleepButton: $('applyHealthSleepButton'),
     linkedActionFields: $('linkedActionFields'), linkedTemplateInput: $('linkedTemplateInput'), linkedCompletionInput: $('linkedCompletionInput'), linkedUrlField: $('linkedUrlField'), linkedUrlInput: $('linkedUrlInput'), linkedInternalField: $('linkedInternalField'), linkedInternalTargetInput: $('linkedInternalTargetInput'), linkedButtonLabelInput: $('linkedButtonLabelInput'), timeWindowFields: $('timeWindowFields'), timeWindowStartInput: $('timeWindowStartInput'), timeWindowEndInput: $('timeWindowEndInput'),
     medicationProgressCard: $('medicationProgressCard'), weeklyReviewCard: $('weeklyReviewCard'), memoryBankCard: $('memoryBankCard'), dataBackupCard: $('dataBackupCard'),
@@ -217,6 +217,11 @@
     };
   }
 
+  function normalizeMedicationList(value) {
+    const candidates = Array.isArray(value) ? value : typeof value === 'string' ? value.split(/\r?\n/) : [];
+    return candidates.map(entry => String(entry || '').trim()).filter(Boolean).slice(0, 20).map(entry => entry.slice(0, 160));
+  }
+
   function normalizeItem(item, index) {
     let type = item.type;
     if (['morning-meds', 'evening-meds'].includes(item.id) && type === 'checkbox') type = 'medication';
@@ -232,6 +237,7 @@
       placeholder: item.placeholder || '',
       memoryCategory: item.memoryCategory || 'any',
       medicationDose: item.medicationDose || '',
+      medicationList: normalizeMedicationList(item.medicationList),
       pausedFrom: item.pausedFrom || '',
       pausedUntil: item.pausedUntil || '',
       linkedTemplate: item.linkedTemplate || 'website',
@@ -690,6 +696,63 @@
   function fromDateKey(key) { const [y, m, d] = key.split('-').map(Number); return new Date(y, m - 1, d, 12, 0, 0, 0); }
   function shiftDate(date, days) { const d = new Date(date); d.setDate(d.getDate() + days); return d; }
   function isSameDay(a, b) { return dateKey(a) === dateKey(b); }
+  function historicalItemDefinition(item, source = 'recorded') {
+    const normalized = normalizeItem(item, Number(item?.order) || 0);
+    const fields = [
+      'id', 'name', 'kind', 'section', 'type', 'frequency', 'days', 'optional', 'unit', 'target', 'order',
+      'placeholder', 'memoryCategory', 'medicationDose', 'medicationList', 'createdDate', 'pausedFrom', 'pausedUntil',
+      'linkedTemplate', 'linkedCompletion', 'linkedUrl', 'linkedButtonLabel', 'linkedInternalTarget',
+      'timeWindowStart', 'timeWindowEnd', 'scale'
+    ];
+    const definition = { historySource: source };
+    fields.forEach(field => {
+      if (normalized[field] !== undefined) definition[field] = structuredClone(normalized[field]);
+    });
+    return definition;
+  }
+
+  function liveScheduledItemsForDate(date) {
+    const dow = date.getDay();
+    return state.items.filter(item => {
+      if (item.createdDate && dateKey(date) < item.createdDate) return false;
+      const key = dateKey(date);
+      if (item.pausedFrom && item.pausedUntil && key >= item.pausedFrom && key <= item.pausedUntil) return false;
+      if (item.frequency === 'weekdays') return dow >= 1 && dow <= 5;
+      if (item.frequency === 'weekends') return dow === 0 || dow === 6;
+      if (item.frequency === 'custom') return (item.days || []).includes(dow);
+      return true;
+    });
+  }
+
+  function captureDayDefinitions(day, key, source = 'recorded') {
+    if (day.itemDefinitions && typeof day.itemDefinitions === 'object' && !Array.isArray(day.itemDefinitions)) return day;
+    day.itemDefinitions = {};
+    const scheduled = liveScheduledItemsForDate(fromDateKey(key));
+    const included = new Map(scheduled.map(item => [item.id, item]));
+    Object.keys(day.entries || {}).forEach(id => {
+      const item = state.items.find(candidate => candidate.id === id);
+      if (item) included.set(id, item);
+    });
+    included.forEach(item => { day.itemDefinitions[item.id] = historicalItemDefinition(item, source); });
+    day.definitionSnapshotSource = source;
+    day.definitionSnapshotAt = day.definitionSnapshotAt || new Date().toISOString();
+    return day;
+  }
+
+  function refreshTodayDefinition(item, { remove = false } = {}) {
+    const key = dateKey(startOfToday());
+    const day = state.days[key];
+    if (!day?.itemDefinitions || typeof day.itemDefinitions !== 'object') return;
+    if (remove) {
+      if (!Object.prototype.hasOwnProperty.call(day.entries || {}, item.id)) delete day.itemDefinitions[item.id];
+      return;
+    }
+    const scheduled = liveScheduledItemsForDate(startOfToday()).some(candidate => candidate.id === item.id);
+    if (scheduled || Object.prototype.hasOwnProperty.call(day.entries || {}, item.id)) {
+      day.itemDefinitions[item.id] = historicalItemDefinition(item, 'recorded');
+    } else delete day.itemDefinitions[item.id];
+  }
+
   function captureDayTargets(day, key) {
     if (!day.targets || typeof day.targets !== 'object' || Array.isArray(day.targets)) day.targets = {};
     const scheduledIds = new Set(scheduledItemsForDate(fromDateKey(key)).map(item => item.id));
@@ -705,6 +768,7 @@
     if (!state.days[key].entries) state.days[key].entries = {};
     if (!state.days[key].skippedItems) state.days[key].skippedItems = {};
     if (!state.days[key].mode) state.days[key].mode = 'normal';
+    captureDayDefinitions(state.days[key], key);
     return captureDayTargets(state.days[key], key);
   }
 
@@ -752,6 +816,23 @@
       });
       state.settings.build27HistoricalTargetsMigrated = true;
       changed = true;
+    }
+    if (!state.settings.build29HistoricalDefinitionsMigrated) {
+      try {
+        requireSafetySnapshot('Before Build 29 historical-definition migration');
+        Object.keys(state.days || {}).filter(key => /^\d{4}-\d{2}-\d{2}$/.test(key)).forEach(key => {
+          const day = state.days[key];
+          if (!day || typeof day !== 'object') return;
+          if (!day.entries || typeof day.entries !== 'object') day.entries = {};
+          captureDayDefinitions(day, key, 'legacy-current-definition');
+        });
+        state.settings.build29HistoricalDefinitionsMigrated = true;
+        state.settings.build29HistoricalDefinitionsMigratedAt = new Date().toISOString();
+        delete state.settings.build29HistoricalDefinitionsMigrationPending;
+        changed = true;
+      } catch (error) {
+        state.settings.build29HistoricalDefinitionsMigrationPending = true;
+      }
     }
     if (!state.settings.v14Seeded) {
       if (!state.items.some(item => item.type === 'memory')) {
@@ -810,16 +891,11 @@
   }
 
   function scheduledItemsForDate(date) {
-    const dow = date.getDay();
-    return state.items.filter(item => {
-      if (item.createdDate && dateKey(date) < item.createdDate) return false;
-      const key = dateKey(date);
-      if (item.pausedFrom && item.pausedUntil && key >= item.pausedFrom && key <= item.pausedUntil) return false;
-      if (item.frequency === 'weekdays') return dow >= 1 && dow <= 5;
-      if (item.frequency === 'weekends') return dow === 0 || dow === 6;
-      if (item.frequency === 'custom') return (item.days || []).includes(dow);
-      return true;
-    });
+    const definitions = state.days[dateKey(date)]?.itemDefinitions;
+    if (definitions && typeof definitions === 'object' && !Array.isArray(definitions)) {
+      return Object.values(definitions).map((item, index) => normalizeItem(item, index));
+    }
+    return liveScheduledItemsForDate(date);
   }
 
   function scoredItemsForDate(date) {
@@ -1756,14 +1832,15 @@
     syncNativeStepRewardAutomation(settings);
     renderEarnedAccessStages(settings);
     els.earnedAccessAvailableNow.textContent = `${foundationLocked ? 0 : totalAvailable} min`;
-    els.earnedAccessEarnedToday.textContent = `${earnedToday} min`;
+    els.earnedAccessEarnedToday.textContent = `${foundationLocked ? 0 : allowanceRemaining} min`;
+    els.earnedAccessStillBanked.textContent = `${bankMinutes} min`;
     els.earnedAccessStepMetric.textContent = `${stepPercent}%`;
-    els.earnedAccessBankStatus.textContent = `${totalAvailable} of ${settings.dailyLimitMinutes} minutes available`;
+    els.earnedAccessBankStatus.textContent = `${totalAvailable} of ${settings.dailyLimitMinutes} minutes available today`;
     els.earnedAccessBankDetail.textContent = foundationLocked && totalAvailable
       ? `${totalAvailable} earned minute${totalAvailable === 1 ? '' : 's'} waiting for today’s foundation · resets at midnight`
       : earnedToday >= settings.dailyLimitMinutes
       ? 'Today’s limit is reached · unused minutes reset at midnight'
-      : `${earnedToday} earned today · ${settings.dailyLimitMinutes - earnedToday} still available to earn · resets at midnight`;
+      : `${allowanceRemaining} currently open · ${bankMinutes} still banked · ${earnedToday} earned today · resets at midnight`;
     els.useEarnedAccessButton.disabled = bankMinutes < 15 || Boolean(active) || accessIsEarned;
     els.useEarnedAccessButton.textContent = accessIsEarned ? 'Access open' : bankMinutes < 15 ? `${bankMinutes}/15 banked` : 'Use 15 minutes';
     els.useEarnedAccessButton.hidden = settings.automaticAccess;
@@ -3634,6 +3711,7 @@
     els.itemPlaceholderInput.value = item?.placeholder || '';
     els.memoryCategoryInput.value = item?.memoryCategory || 'any';
     els.medicationDoseInput.value = item?.medicationDose || '';
+    els.medicationListInput.value = normalizeMedicationList(item?.medicationList).join('\n');
     els.pauseUntilInput.value = item?.pausedUntil || '';
     els.itemOptionalInput.checked = item ? Boolean(item.optional) : resolvedKind === 'checkin';
     const linked = item || preset || {};
@@ -3690,6 +3768,7 @@
       placeholder: ['text', 'longtext'].includes(type) ? els.itemPlaceholderInput.value.trim() : '',
       memoryCategory: type === 'memory' ? els.memoryCategoryInput.value : 'any',
       medicationDose: type === 'medication' ? els.medicationDoseInput.value.trim() : '',
+      medicationList: type === 'medication' ? normalizeMedicationList(els.medicationListInput.value) : [],
       linkedTemplate: type === 'linked' ? els.linkedTemplateInput.value : 'website',
       linkedCompletion: type === 'linked' ? els.linkedCompletionInput.value : 'manual',
       linkedUrl: type === 'linked' ? els.linkedUrlInput.value.trim() : '',
@@ -3704,11 +3783,16 @@
     const id = els.editingItemId.value;
     if (id) {
       const index = state.items.findIndex(item => item.id === id);
-      if (index >= 0) state.items[index] = { ...state.items[index], ...payload };
+      if (index >= 0) {
+        state.items[index] = { ...state.items[index], ...payload };
+        refreshTodayDefinition(state.items[index]);
+      }
     } else {
       const same = state.items.filter(item => item.kind === kind && item.section === payload.section);
       const maxOrder = same.reduce((max, item) => Math.max(max, Number(item.order) || 0), -1);
-      state.items.push({ id: `item-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, order: maxOrder + 1, createdDate: dateKey(startOfToday()), ...payload });
+      const created = { id: `item-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, order: maxOrder + 1, createdDate: dateKey(startOfToday()), ...payload };
+      state.items.push(created);
+      refreshTodayDefinition(created);
     }
     saveState(); els.itemDialog.close(); renderAll(); showToast(id ? `${kind === 'checkin' ? 'Check-in' : 'Routine item'} updated` : `${kind === 'checkin' ? 'Check-in' : 'Routine item'} added`);
   }
@@ -3719,6 +3803,7 @@
     const item = state.items.find(candidate => candidate.id === id);
     if (!item || !confirm(`Delete “${item.name}”?`)) return;
     createLocalSnapshot('Before deleting routine item', true);
+    refreshTodayDefinition(item, { remove: true });
     state.items = state.items.filter(candidate => candidate.id !== id);
     saveState(); els.itemDialog.close(); renderAll(); showToast(item.kind === 'checkin' ? 'Check-in deleted' : 'Routine item deleted');
   }
@@ -3870,28 +3955,67 @@
     });
   }
 
+  function medicationReminderLines(item, value = null) {
+    const recorded = value && typeof value === 'object' ? normalizeMedicationList(value.medications) : [];
+    if (recorded.length) return recorded;
+    const configured = normalizeMedicationList(item.medicationList);
+    if (configured.length) return configured;
+    const legacyDose = String(value?.dose ?? item.medicationDose ?? '').trim();
+    return legacyDose ? [`Usual dose · ${legacyDose}`] : [];
+  }
+
+  function medicationReminderMarkup(lines) {
+    if (!lines.length) return '<p class="medication-list-empty">No medication reminder list has been added yet.</p>';
+    return `<ul class="medication-reminder-list">${lines.map(line => `<li>${escapeHtml(line)}</li>`).join('')}</ul>`;
+  }
+
+  function bindMedicationExpander(row) {
+    const button = row.querySelector('.medication-expand');
+    const panel = row.querySelector('.medication-reminder-panel');
+    if (!button || !panel) return;
+    button.addEventListener('click', () => {
+      const open = button.getAttribute('aria-expanded') === 'true';
+      button.setAttribute('aria-expanded', String(!open));
+      panel.hidden = open;
+      button.querySelector('span').textContent = open ? '⌄' : '⌃';
+    });
+  }
+
+  function showMedicationTimeEditor(actions, item, time, { focus = false } = {}) {
+    actions.innerHTML = `<div class="medication-inline-confirm"><label class="med-time-edit"><span>Taken at</span><input class="task-input med-time-input" type="time" value="${escapeHtml(time || currentTimeValue())}" /></label><div class="medication-confirm-actions"><button class="secondary-button medication-cancel" type="button">Cancel</button><button class="primary-button medication-confirm" type="button">✓ Confirm</button></div></div>`;
+    const input = actions.querySelector('.med-time-input');
+    actions.querySelector('.medication-cancel').addEventListener('click', () => renderToday());
+    actions.querySelector('.medication-confirm').addEventListener('click', async () => {
+      const saved = await saveMedicationTime(item, input.value, true);
+      if (!saved) input.focus();
+    });
+    if (focus) requestAnimationFrame(() => input.focus());
+  }
+
   function buildMedicationRow(row, item, value) {
-    const taken = entryIsLogged(item, value), time = medicationTime(value), dose = value?.dose ?? item.medicationDose ?? '';
+    const taken = entryIsLogged(item, value), time = medicationTime(value), lines = medicationReminderLines(item, value);
     const timing = metaForItem(item, { showRequirement: false, showFrequency: false });
-    const detail = taken ? `${time ? `Taken ${formatTime(time)}` : 'Taken · time not logged'}${dose ? ` · ${escapeHtml(dose)}` : ''}` : timing;
+    const count = lines.length;
+    const detail = taken
+      ? `${time ? `Taken ${formatTime(time)}` : 'Taken · time not logged'}${count ? ` · ${count} reminder${count === 1 ? '' : 's'}` : ''}`
+      : count ? `${count} medication reminder${count === 1 ? '' : 's'}` : timing;
+    const panelId = `medication-reminder-${String(item.id).replace(/[^a-zA-Z0-9_-]/g, '-')}`;
     row.classList.add('medication-row');
     row.classList.toggle('done', taken);
-    row.innerHTML = `<div class="task-main medication-main"><span class="medication-icon" aria-hidden="true">Rx</span><span class="task-name">${escapeHtml(item.name)}${detail ? `<span class="task-meta">${detail}</span>` : ''}</span>${taken ? '<span class="completion-badge">✓ Taken</span>' : ''}</div><div class="medication-actions"></div>`;
+    row.innerHTML = `<div class="task-main medication-main"><span class="medication-icon" aria-hidden="true">Rx</span><span class="task-name">${escapeHtml(item.name)}${detail ? `<span class="task-meta">${escapeHtml(detail)}</span>` : ''}</span><button class="medication-expand" type="button" aria-expanded="false" aria-controls="${panelId}" aria-label="Show medication reminder"><span aria-hidden="true">⌄</span></button>${taken ? '<span class="completion-badge">✓ Taken</span>' : ''}</div><div id="${panelId}" class="medication-reminder-panel" hidden><strong>What to take</strong>${medicationReminderMarkup(lines)}<small>Reminder only—confirm the complete medication routine once.</small></div><div class="medication-actions"></div>`;
+    bindMedicationExpander(row);
     const actions = row.querySelector('.medication-actions');
     if (!taken) {
-      actions.innerHTML = `<button class="primary-button medication-now" type="button">Now</button><button class="small-button medication-manual" type="button">Time</button>`;
-      actions.querySelector('.medication-now').addEventListener('click', () => logMedicationNow(item));
-      actions.querySelector('.medication-manual').addEventListener('click', () => saveMedicationTime(item, currentTimeValue(), true));
+      actions.innerHTML = `<button class="primary-button medication-now" type="button">Taken now</button><button class="small-button medication-manual" type="button">Choose time</button>`;
+      actions.querySelector('.medication-now').addEventListener('click', () => showMedicationTimeEditor(actions, item, currentTimeValue()));
+      actions.querySelector('.medication-manual').addEventListener('click', () => showMedicationTimeEditor(actions, item, currentTimeValue(), { focus: true }));
     } else {
-      actions.innerHTML = `<div class="medication-detail-grid"><label class="med-time-edit"><span>Taken at</span><input class="task-input med-time-input" type="time" value="${escapeHtml(time)}" /></label><label class="med-time-edit"><span>Dose</span><input class="task-input med-dose-input" type="text" maxlength="40" value="${escapeHtml(dose)}" /></label></div><div class="medication-finished"><span class="already-logged">✓ Already logged</span><button class="small-button medication-clear" type="button">Clear</button></div>`;
-      actions.querySelector('.med-time-input').addEventListener('change', event => saveMedicationTime(item, event.target.value, true));
-      actions.querySelector('.med-dose-input').addEventListener('change', event => saveMedicationDetail(item, 'dose', event.target.value));
+      actions.innerHTML = `<div class="medication-finished"><span class="already-logged">✓ Logged${time ? ` at ${escapeHtml(formatTime(time))}` : ''}</span><div><button class="small-button medication-edit" type="button">Edit time</button><button class="small-button medication-clear" type="button">Clear</button></div></div>`;
+      actions.querySelector('.medication-edit').addEventListener('click', () => showMedicationTimeEditor(actions, item, time || currentTimeValue(), { focus: true }));
       actions.querySelector('.medication-clear').addEventListener('click', () => clearMedication(item));
     }
     return row;
   }
-
-  function logMedicationNow(item) { saveMedicationTime(item, currentTimeValue(), true); }
 
   async function saveMedicationTime(item, time, rerender = true) {
     const key = dateKey(selectedDate), day = ensureDay(key), previous = structuredClone(day.entries[item.id]);
@@ -3903,8 +4027,8 @@
     const selected = fromDateKey(key), existing = day.entries[item.id] && typeof day.entries[item.id] === 'object' ? day.entries[item.id] : {};
     if (time) {
       const [hours, minutes] = time.split(':').map(Number); selected.setHours(hours, minutes, 0, 0);
-      day.entries[item.id] = { ...existing, taken: true, time, timestamp: selected.toISOString(), dose: existing.dose ?? item.medicationDose ?? '', note: existing.note ?? '' };
-    } else day.entries[item.id] = { ...existing, taken: true, time: '', timestamp: null, dose: existing.dose ?? item.medicationDose ?? '', note: existing.note ?? '' };
+      day.entries[item.id] = { ...existing, taken: true, time, timestamp: selected.toISOString(), dose: existing.dose ?? item.medicationDose ?? '', medications: medicationReminderLines(item), note: existing.note ?? '' };
+    } else day.entries[item.id] = { ...existing, taken: true, time: '', timestamp: null, dose: existing.dose ?? item.medicationDose ?? '', medications: medicationReminderLines(item), note: existing.note ?? '' };
     pushUndo(`Log ${item.name}`, () => { const target = ensureDay(key); if (previous === undefined) delete target.entries[item.id]; else target.entries[item.id] = previous; saveState(); renderToday(); renderHistory(); });
     saveState(); if (rerender) renderToday(); else renderStats(); showToast(time ? `Medication logged at ${formatTime(time)}` : 'Medication logged');
     return true;
@@ -4344,7 +4468,8 @@
       const entry = state.days[dateKey(date)]?.entries?.[item.id];
       if (!entryIsLogged(item, entry)) return '';
       const time = medicationTime(entry);
-      return `<div class="med-history-row"><span>${escapeHtml(formatShortDate(date))}</span><b>${time ? escapeHtml(formatTime(time)) : 'time —'}</b><em>${escapeHtml(entry?.dose || item.medicationDose || '')}</em>${entry?.note ? `<small>${escapeHtml(entry.note)}</small>` : ''}</div>`;
+      const lines = medicationReminderLines(item, entry);
+      return `<div class="med-history-row"><span>${escapeHtml(formatShortDate(date))}</span><b>${time ? escapeHtml(formatTime(time)) : 'time —'}</b><em>${lines.length ? `${lines.length} reminder${lines.length === 1 ? '' : 's'}` : 'list —'}</em>${lines.length ? `<small>${lines.map(escapeHtml).join(' · ')}</small>` : ''}${entry?.note ? `<small>${escapeHtml(entry.note)}</small>` : ''}</div>`;
     }).filter(Boolean).slice(0, 7);
     return rows.length ? `<div class="med-history-title">Recent logs</div>${rows.join('')}` : '';
   }
