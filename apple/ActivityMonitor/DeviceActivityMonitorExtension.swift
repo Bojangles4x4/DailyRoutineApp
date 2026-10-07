@@ -36,12 +36,20 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
 
     private func enforceTruthReminderGate() {
         guard EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.truthReminderGateEnabledKey) else {
-            EarnedAccessShared.clearFoundationShield(from: truthReminderStore)
+            EarnedAccessShared.clearTruthReminderGate(from: truthReminderStore)
             return
         }
+        let now = Date()
         let minute = EarnedAccessShared.defaults.integer(forKey: EarnedAccessShared.truthReminderGateNextMinuteKey)
+        let scheduledExpiry = EarnedAccessShared.defaults.double(forKey: EarnedAccessShared.truthReminderGateNextExpiresAtKey)
         EarnedAccessShared.defaults.set(true, forKey: EarnedAccessShared.truthReminderGateActiveKey)
         EarnedAccessShared.defaults.set(minute, forKey: EarnedAccessShared.truthReminderGateMinuteKey)
+        EarnedAccessShared.defaults.set(now.timeIntervalSince1970, forKey: EarnedAccessShared.truthReminderGateActivatedAtKey)
+        EarnedAccessShared.defaults.set(max(scheduledExpiry, now.addingTimeInterval(15 * 60).timeIntervalSince1970), forKey: EarnedAccessShared.truthReminderGateExpiresAtKey)
+        EarnedAccessShared.defaults.set(EarnedAccessShared.localDateKey(now), forKey: EarnedAccessShared.truthReminderGateDateKey)
+        if let entryID = EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.truthReminderGateNextEntryIDKey), !entryID.isEmpty {
+            EarnedAccessShared.defaults.set(entryID, forKey: EarnedAccessShared.truthReminderGateEntryIDKey)
+        }
         EarnedAccessShared.applyFoundationShield(
             exceptions: EarnedAccessShared.loadEssentialSelection(),
             to: truthReminderStore
@@ -67,6 +75,10 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
 
     override func intervalDidEnd(for activity: DeviceActivityName) {
         super.intervalDidEnd(for: activity)
+        if activity == EarnedAccessShared.truthReminderActivityName {
+            EarnedAccessShared.clearTruthReminderGate(from: truthReminderStore)
+            return
+        }
         guard activity == EarnedAccessShared.activityName,
               EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.protectionKey),
               EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.allowanceActiveKey),

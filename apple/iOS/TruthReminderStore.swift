@@ -40,8 +40,8 @@ struct TruthReminderSettings: Codable {
         endMinute = try values.decodeIfPresent(Int.self, forKey: .endMinute) ?? 20 * 60
         interval = try values.decodeIfPresent(Int.self, forKey: .interval) ?? 30
         shuffle = try values.decodeIfPresent(Bool.self, forKey: .shuffle) ?? false
-        // Existing enabled schedules migrate to the review gate Taylor requested. New schedules start with it off.
-        pauseAppsUntilReviewed = try values.decodeIfPresent(Bool.self, forKey: .pauseAppsUntilReviewed) ?? enabled
+        // App pausing is a separate, explicit choice; notification-only schedules stay notification-only.
+        pauseAppsUntilReviewed = try values.decodeIfPresent(Bool.self, forKey: .pauseAppsUntilReviewed) ?? false
         entries = try values.decodeIfPresent([TruthReminder].self, forKey: .entries) ?? []
         scheduledDay = try values.decodeIfPresent(String.self, forKey: .scheduledDay) ?? ""
         scheduledEntryIDs = try values.decodeIfPresent([String: String].self, forKey: .scheduledEntryIDs) ?? [:]
@@ -84,6 +84,10 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
             return date.formatted(date: .omitted, time: .shortened)
         }
         return "\(format(settings.startMinute))–\(format(settings.endMinute)) · every \(settings.interval == 60 ? "hour" : settings.interval == 120 ? "2 hours" : "30 minutes")"
+    }
+
+    var gateIsActive: Bool {
+        EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.truthReminderGateActiveKey)
     }
 
     func imageURL(_ name: String) -> URL { folder.appendingPathComponent(name) }
@@ -139,15 +143,14 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
     }
 
     func refreshForNewDay() async {
+        reconcileActiveGate()
         guard settings.enabled, !busy else { return }
         let day = Calendar.current.startOfDay(for: Date()).description
         if settings.scheduledDay != day || settings.scheduledEntryIDs.isEmpty {
             await apply(requestPermission: false)
             return
         }
-        if settings.pauseAppsUntilReviewed,
-           !EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.truthReminderGateEnabledKey),
-           !EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.truthReminderGateActiveKey) {
+        if settings.pauseAppsUntilReviewed, !gateIsActive {
             do {
                 try scheduleNextTruthGate()
             } catch {
@@ -176,6 +179,7 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
             guard !entries.isEmpty else {
                 await clearPending()
                 settings.enabled = false
+                disableTruthGate()
                 try persist()
                 status = "Choose at least one entry before enabling reminders."
                 return
@@ -258,8 +262,23 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
     }
 
     func restorePendingGatePresentation() {
-        guard EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.truthReminderGateActiveKey) else { return }
-        presentForReview(entryID: activeGateEntryID())
+        reconcileActiveGate()
+    }
+
+    func dismissPresentation() {
+        guard !gateIsActive else { return }
+        pendingPresentation = nil
+    }
+
+    func unlockCurrentReminder() {
+        clearActiveGate(stopMonitoring: true)
+        pendingPresentation = nil
+        do {
+            if settings.enabled && settings.pauseAppsUntilReviewed { try scheduleNextTruthGate() }
+            status = "This reminder was unlocked without marking it reviewed."
+        } catch {
+            status = "The reminder was unlocked, but the next app pause could not be scheduled: \(error.localizedDescription)"
+        }
     }
 
     private func acknowledge(entryID: UUID?) {
@@ -268,13 +287,15 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         settings.acknowledgedDay = today
         settings.lastAcknowledgedAt = Date()
         pendingPresentation = nil
-        EarnedAccessShared.defaults.set(false, forKey: EarnedAccessShared.truthReminderGateActiveKey)
-        EarnedAccessShared.defaults.removeObject(forKey: EarnedAccessShared.truthReminderGateMinuteKey)
-        EarnedAccessShared.clearFoundationShield(from: truthGateStore)
+        clearActiveGate(stopMonitoring: true)
         try? persist()
         do {
             if settings.enabled && settings.pauseAppsUntilReviewed { try scheduleNextTruthGate() }
-            status = "Acknowledged at \(Date().formatted(date: .omitted, time: .shortened))."
+            let morningStillLocked = EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.morningGateEnabledKey)
+                && EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.morningFoundationCompleteDateKey) != EarnedAccessShared.localDateKey()
+            status = morningStillLocked
+                ? "Truth reminder cleared. The Morning Gate is still protecting apps until today’s opening is complete."
+                : "Acknowledged at \(Date().formatted(date: .omitted, time: .shortened))."
         } catch {
             status = "Acknowledged, but the next app pause could not be scheduled: \(error.localizedDescription)"
         }
@@ -284,21 +305,55 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         let entry = entryID.flatMap { id in settings.entries.first { $0.id == id } }
             ?? activeGateEntryID().flatMap { id in settings.entries.first { $0.id == id } }
             ?? settings.entries.first(where: { settings.shuffle || $0.selected })
-        pendingPresentation = entry
+        if let entry {
+            pendingPresentation = entry
+        } else if gateIsActive {
+            clearActiveGate(stopMonitoring: true)
+            status = "A stale reminder lock was cleared because its reminder was no longer available."
+        }
     }
 
     private func activeGateEntryID() -> UUID? {
+        if let raw = EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.truthReminderGateEntryIDKey),
+           let id = UUID(uuidString: raw) { return id }
         let minute = EarnedAccessShared.defaults.integer(forKey: EarnedAccessShared.truthReminderGateMinuteKey)
         return settings.scheduledEntryIDs[String(minute)].flatMap(UUID.init(uuidString:))
+    }
+
+    private func reconcileActiveGate(now: Date = Date()) {
+        guard gateIsActive else { return }
+        let defaults = EarnedAccessShared.defaults
+        let hasExpiry = defaults.object(forKey: EarnedAccessShared.truthReminderGateExpiresAtKey) != nil
+        let expiry = defaults.double(forKey: EarnedAccessShared.truthReminderGateExpiresAtKey)
+        let gateDate = defaults.string(forKey: EarnedAccessShared.truthReminderGateDateKey)
+        let entry = activeGateEntryID().flatMap { id in settings.entries.first { $0.id == id } }
+        guard settings.enabled,
+              settings.pauseAppsUntilReviewed,
+              hasExpiry,
+              expiry > now.timeIntervalSince1970,
+              gateDate == EarnedAccessShared.localDateKey(now),
+              let entry
+        else {
+            clearActiveGate(stopMonitoring: true)
+            pendingPresentation = nil
+            status = "A stale truth-reminder lock was cleared."
+            return
+        }
+        pendingPresentation = entry
+    }
+
+    private func clearActiveGate(stopMonitoring: Bool) {
+        if stopMonitoring { activityCenter.stopMonitoring([EarnedAccessShared.truthReminderActivityName]) }
+        EarnedAccessShared.clearTruthReminderGate(from: truthGateStore)
     }
 
     private func disableTruthGate() {
         activityCenter.stopMonitoring([EarnedAccessShared.truthReminderActivityName])
         EarnedAccessShared.defaults.set(false, forKey: EarnedAccessShared.truthReminderGateEnabledKey)
-        EarnedAccessShared.defaults.set(false, forKey: EarnedAccessShared.truthReminderGateActiveKey)
-        EarnedAccessShared.defaults.removeObject(forKey: EarnedAccessShared.truthReminderGateMinuteKey)
         EarnedAccessShared.defaults.removeObject(forKey: EarnedAccessShared.truthReminderGateNextMinuteKey)
-        EarnedAccessShared.clearFoundationShield(from: truthGateStore)
+        EarnedAccessShared.defaults.removeObject(forKey: EarnedAccessShared.truthReminderGateNextEntryIDKey)
+        EarnedAccessShared.defaults.removeObject(forKey: EarnedAccessShared.truthReminderGateNextExpiresAtKey)
+        EarnedAccessShared.clearTruthReminderGate(from: truthGateStore)
         pendingPresentation = nil
     }
 
@@ -321,6 +376,12 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         EarnedAccessShared.defaults.set(next.minute, forKey: EarnedAccessShared.truthReminderGateNextMinuteKey)
         let calendar = Calendar.current
         let end = calendar.date(byAdding: .minute, value: 15, to: next.date) ?? next.date.addingTimeInterval(900)
+        if let entryID = settings.scheduledEntryIDs[String(next.minute)] {
+            EarnedAccessShared.defaults.set(entryID, forKey: EarnedAccessShared.truthReminderGateNextEntryIDKey)
+        } else {
+            EarnedAccessShared.defaults.removeObject(forKey: EarnedAccessShared.truthReminderGateNextEntryIDKey)
+        }
+        EarnedAccessShared.defaults.set(end.timeIntervalSince1970, forKey: EarnedAccessShared.truthReminderGateNextExpiresAtKey)
         let components: Set<Calendar.Component> = [.era, .year, .month, .day, .hour, .minute, .second]
         try activityCenter.startMonitoring(
             EarnedAccessShared.truthReminderActivityName,

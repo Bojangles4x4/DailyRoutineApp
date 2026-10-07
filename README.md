@@ -2,8 +2,9 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.29.0 development features
+## Version 1.30.0 development features
 
+- Build 32 repairs interrupted Truth Before Tasks sessions, automatically releases stale truth-reminder app locks, and adds a visible recovery action when a blocking reminder cannot be completed normally.
 - Build 31 makes morning and evening medication tasks match the surrounding routine rows, with the reminder dropdown immediately left of the completion circle. Build 30 added the dedicated truth-reminder review and optional app pause.
 
 - Build 28 adds a review-before-sync plan, verified recovery snapshots that block unsafe sync or restore operations, visible local/cloud record counts, a non-destructive history audit, dated snapshot restores, and per-partner accountability publish status

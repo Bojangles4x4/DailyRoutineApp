@@ -24,6 +24,12 @@ enum EarnedAccessShared {
     static let truthReminderGateActiveKey = "dailyRoutine.truthReminderGate.active.v1"
     static let truthReminderGateMinuteKey = "dailyRoutine.truthReminderGate.minute.v1"
     static let truthReminderGateNextMinuteKey = "dailyRoutine.truthReminderGate.nextMinute.v1"
+    static let truthReminderGateEntryIDKey = "dailyRoutine.truthReminderGate.entryID.v2"
+    static let truthReminderGateNextEntryIDKey = "dailyRoutine.truthReminderGate.nextEntryID.v2"
+    static let truthReminderGateActivatedAtKey = "dailyRoutine.truthReminderGate.activatedAt.v2"
+    static let truthReminderGateExpiresAtKey = "dailyRoutine.truthReminderGate.expiresAt.v2"
+    static let truthReminderGateDateKey = "dailyRoutine.truthReminderGate.dateKey.v2"
+    static let truthReminderGateNextExpiresAtKey = "dailyRoutine.truthReminderGate.nextExpiresAt.v2"
     static let storeName = ManagedSettingsStore.Name("dailyRoutine.earnedAccess")
     static let foundationStoreName = ManagedSettingsStore.Name("dailyRoutine.morningFoundation")
     static let truthReminderStoreName = ManagedSettingsStore.Name("dailyRoutine.truthReminder")
@@ -82,6 +88,16 @@ enum EarnedAccessShared {
 
     static func clearFoundationShield(from store: ManagedSettingsStore) {
         store.clearAllSettings()
+    }
+
+    static func clearTruthReminderGate(from store: ManagedSettingsStore) {
+        clearFoundationShield(from: store)
+        defaults.set(false, forKey: truthReminderGateActiveKey)
+        defaults.removeObject(forKey: truthReminderGateMinuteKey)
+        defaults.removeObject(forKey: truthReminderGateEntryIDKey)
+        defaults.removeObject(forKey: truthReminderGateActivatedAtKey)
+        defaults.removeObject(forKey: truthReminderGateExpiresAtKey)
+        defaults.removeObject(forKey: truthReminderGateDateKey)
     }
 
     static func clearAllowance(completed: Bool = false) {

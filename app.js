@@ -9,8 +9,8 @@
   const EARNED_ACCESS_DEVICE_KEY = 'dailyRoutine.earnedAccess.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.29.0';
-  const APP_BUILD = 31;
+  const APP_VERSION = '1.30.0';
+  const APP_BUILD = 32;
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const ROUTINE_AGENT_DB_NAME = 'dailyRoutine.agentBridge.v1';
@@ -5599,9 +5599,25 @@
         api.saveState();
       }
       const session = config().sessions[key];
+      let repaired = false;
       if (!Number.isFinite(Number(session.startedAt))) session.startedAt = Date.now();
       session.visited = Array.isArray(session.visited) ? session.visited.map(Number).filter(Number.isInteger) : [0];
-      if (!session.visited.includes(0)) session.visited.push(0);
+      const lastStep = Math.max(0, totalStepCount() - 1);
+      const currentStep = Math.min(lastStep, Math.max(0, Number.isInteger(Number(session.currentStep)) ? Number(session.currentStep) : 0));
+      if (session.currentStep !== currentStep) {
+        session.currentStep = currentStep;
+        repaired = true;
+      }
+      // Navigation is sequential. If an interrupted sync preserved the current step but
+      // only part of the visited array, every earlier step was necessarily reviewed.
+      // Repair that recoverable state instead of leaving Enter the Day disabled forever.
+      const visited = new Set(session.visited.filter(index => index >= 0 && index <= lastStep));
+      for (let index = 0; index <= currentStep; index += 1) {
+        if (!visited.has(index)) repaired = true;
+        visited.add(index);
+      }
+      session.visited = [...visited].sort((a, b) => a - b);
+      if (repaired) api.saveState();
       return session;
     }
 

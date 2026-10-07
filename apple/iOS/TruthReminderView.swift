@@ -106,6 +106,7 @@ struct TruthReminderView: View {
 struct TruthReminderReviewView: View {
     @ObservedObject var store: TruthReminderStore
     let entry: TruthReminder
+    let blocking: Bool
 
     var body: some View {
         ZStack {
@@ -163,7 +164,22 @@ struct TruthReminderReviewView: View {
                     .tint(Color(red: 0.12, green: 0.35, blue: 0.30))
                     .accessibilityIdentifier("truthReminderAcknowledgeButton")
 
-                    Text("Your other apps will resume after you acknowledge this reminder.")
+                    if blocking {
+                        Button("Unlock for now") {
+                            store.unlockCurrentReminder()
+                        }
+                        .buttonStyle(.bordered)
+                        .accessibilityIdentifier("truthReminderUnlockButton")
+                    } else {
+                        Button("Close") {
+                            store.dismissPresentation()
+                        }
+                        .buttonStyle(.bordered)
+                    }
+
+                    Text(blocking
+                         ? "Your other apps will resume after you acknowledge this reminder. If the reminder cannot be reviewed, Unlock for now safely clears this pause."
+                         : "This reminder did not pause your other apps.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -172,7 +188,7 @@ struct TruthReminderReviewView: View {
                 .padding(.vertical, 34)
             }
         }
-        .interactiveDismissDisabled()
+        .interactiveDismissDisabled(blocking)
     }
 }
 

@@ -29,7 +29,7 @@ private struct DailyRoutineRootView: View {
                 reminders.restorePendingGatePresentation()
             }
             .fullScreenCover(item: $reminders.pendingPresentation) { entry in
-                TruthReminderReviewView(store: reminders, entry: entry)
+                TruthReminderReviewView(store: reminders, entry: entry, blocking: reminders.gateIsActive)
             }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active {

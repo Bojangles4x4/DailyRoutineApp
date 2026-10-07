@@ -26,7 +26,7 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#truthHeroTitle').textContent(), 'Truth Before Tasks');
   assert.equal(await page.locator('#truthEnterDayButton').isDisabled(), true);
   assert.equal(await page.locator('#accountabilitySharingCard').count(), 1);
-  assert.equal(await page.locator('#appVersion').textContent(), 'v1.29.0 · Build 31');
+  assert.equal(await page.locator('#appVersion').textContent(), 'v1.30.0 · Build 32');
   assert.match(await page.locator('#openAccountabilityFromSetupButton').textContent(), /Open private accountability/);
   assert.equal(await page.locator('#accountabilitySharingSignedOut').evaluate(element => element.hidden), false);
   assert.match(await page.locator('#accountabilitySharingSignedOut').textContent(), /Connect Private Sync first/);
@@ -46,6 +46,40 @@ function localDateKey(date = new Date()) {
     return { prevented, open: dialog.open };
   });
   assert.deepEqual(syncCancelHandled, { prevented: true, open: false });
+
+  const recoveryPage = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+  await recoveryPage.addInitScript(() => {
+    const now = Date.now();
+    const date = new Date();
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    localStorage.setItem('dailyRoutineApp.v1', JSON.stringify({
+      settings: {
+        truthBeforeTasks: {
+          completions: {},
+          sessions: {
+            [key]: {
+              startedAt: now - (10 * 60 * 1000),
+              convictionsStartedAt: now - (5 * 60 * 1000),
+              currentStep: 22,
+              visited: [0, 8, 16, 17, 19, 21, 22]
+            }
+          }
+        }
+      },
+      items: [], days: {}, memories: [], notes: [], weeklyReviews: {}
+    }));
+  });
+  await recoveryPage.goto(baseURL, { waitUntil: 'networkidle' });
+  await recoveryPage.waitForFunction(() => document.querySelector('#truthEnterDayButton')?.disabled === false);
+  const repairedSession = await recoveryPage.evaluate(() => {
+    const state = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
+    const key = Object.keys(state.settings.truthBeforeTasks.sessions)[0];
+    return state.settings.truthBeforeTasks.sessions[key];
+  });
+  assert.deepEqual(repairedSession.visited, Array.from({ length: repairedSession.currentStep + 1 }, (_, index) => index));
+  await recoveryPage.locator('#truthEnterDayButton').click();
+  await recoveryPage.waitForFunction(() => !document.body.classList.contains('truth-locked'));
+  await recoveryPage.close();
 
   const partnerPage = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
   const partnerCloudRequests = [];
