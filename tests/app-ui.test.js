@@ -26,7 +26,7 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#truthHeroTitle').textContent(), 'Truth Before Tasks');
   assert.equal(await page.locator('#truthEnterDayButton').isDisabled(), true);
   assert.equal(await page.locator('#accountabilitySharingCard').count(), 1);
-  assert.equal(await page.locator('#appVersion').textContent(), 'v1.28.0 · Build 30');
+  assert.equal(await page.locator('#appVersion').textContent(), 'v1.29.0 · Build 31');
   assert.match(await page.locator('#openAccountabilityFromSetupButton').textContent(), /Open private accountability/);
   assert.equal(await page.locator('#accountabilitySharingSignedOut').evaluate(element => element.hidden), false);
   assert.match(await page.locator('#accountabilitySharingSignedOut').textContent(), /Connect Private Sync first/);
@@ -283,16 +283,17 @@ function localDateKey(date = new Date()) {
   assert.equal(await medicationRow.locator('.medication-now').count(), 1);
   assert.equal(await medicationRow.locator('.medication-manual').count(), 0);
   assert.equal(await medicationRow.locator('.medication-expand').count(), 1);
-  assert.match(await medicationRow.textContent(), /Tap the arrow to review what to take/);
-  assert.equal(Math.round((await medicationRow.locator('.medication-now').boundingBox()).height), 50);
+  assert.equal(Math.round((await medicationRow.locator('.medication-now').boundingBox()).height), 30);
+  const medicationBox = await medicationRow.boundingBox();
+  assert.ok(medicationBox.height <= 60, `Expected compact medication row, received ${medicationBox.height}px`);
   const medicationLayout = await medicationRow.evaluate(row => {
     const complete = row.querySelector('.medication-complete').getBoundingClientRect();
     const copy = row.querySelector('.task-name').getBoundingClientRect();
     const expand = row.querySelector('.medication-expand').getBoundingClientRect();
     return { complete: complete.x, copy: copy.x, expand: expand.x };
   });
-  assert.ok(medicationLayout.complete < medicationLayout.copy && medicationLayout.copy < medicationLayout.expand,
-    `Expected medication circle, copy, and arrow in that order: ${JSON.stringify(medicationLayout)}`);
+  assert.ok(medicationLayout.copy < medicationLayout.expand && medicationLayout.expand < medicationLayout.complete,
+    `Expected medication copy, arrow, and circle in that order: ${JSON.stringify(medicationLayout)}`);
   await medicationRow.locator('.medication-now').click();
   assert.equal(await medicationRow.locator('.medication-inline-confirm').isVisible(), true);
   assert.equal(await page.evaluate(key => window.DailyRoutineApp.getState().days[key]?.entries?.['morning-meds'], today), undefined);
@@ -310,7 +311,7 @@ function localDateKey(date = new Date()) {
   await medicationRow.locator('.medication-expand').click();
   assert.match(await medicationRow.locator('.medication-reminder-panel').textContent(), /Medication A · 10 mg/);
   assert.match(await medicationRow.locator('.medication-reminder-panel').textContent(), /Today’s reminder/);
-  assert.match(await medicationRow.locator('.medication-reminder-panel').textContent(), /no individual medication checkboxes/);
+  assert.match(await medicationRow.locator('.medication-reminder-panel').textContent(), /one check logs the complete medication routine/);
   await medicationRow.locator('.medication-now').click();
   await medicationRow.locator('.med-time-input').fill('08:30');
   await medicationRow.locator('.medication-confirm').click();

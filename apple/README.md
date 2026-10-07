@@ -51,7 +51,7 @@ Build 26 clarifies routine sharing with a selected count and select-all/clear co
 
 Build 28 adds a review-before-sync plan, verified recovery snapshots that block unsafe sync or restore operations, visible local/cloud record counts, a non-destructive history audit, dated snapshot restores, and per-partner accountability publish status.
 
-Build 30 gives morning and evening medication tasks the approved large completion control and expandable reminder card. Truth-reminder notifications now open a dedicated picture-and-text review, and an optional separate Screen Time shield pauses nonessential apps until the reminder is acknowledged. Each day continues to preserve the routine definition and medication reminder shown at the time.
+Build 31 makes morning and evening medication tasks match the surrounding routine rows, with the reminder dropdown immediately left of the completion circle. Build 30 added the dedicated picture-and-text truth-reminder review and optional separate Screen Time shield.
 
 Build 27 restores the six-cup water goal and freezes numeric targets with each recorded day so later goal edits do not rewrite history. Private Sync merges convictions by stable item ID and saves a device-only recovery copy before any synced conviction change.
 

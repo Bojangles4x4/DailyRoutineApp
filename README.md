@@ -2,9 +2,9 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.28.0 development features
+## Version 1.29.0 development features
 
-- Build 30 gives morning and evening medication tasks the approved large completion control and expandable reminder card, opens truth-reminder pictures in a dedicated review screen, and can pause nonessential apps until the reminder is acknowledged. Build 29 added historically accurate routine definitions and clarified the shared Earned Access bank.
+- Build 31 makes morning and evening medication tasks match the surrounding routine rows, with the reminder dropdown immediately left of the completion circle. Build 30 added the dedicated truth-reminder review and optional app pause.
 
 - Build 28 adds a review-before-sync plan, verified recovery snapshots that block unsafe sync or restore operations, visible local/cloud record counts, a non-destructive history audit, dated snapshot restores, and per-partner accountability publish status
 - Build 27 restores the six-cup water goal, preserves each recorded day’s numeric targets, merges convictions individually during Private Sync, and keeps a device-only recovery copy before synced convictions change

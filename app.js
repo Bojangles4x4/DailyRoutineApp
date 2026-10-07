@@ -9,8 +9,8 @@
   const EARNED_ACCESS_DEVICE_KEY = 'dailyRoutine.earnedAccess.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.28.0';
-  const APP_BUILD = 30;
+  const APP_VERSION = '1.29.0';
+  const APP_BUILD = 31;
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const ROUTINE_AGENT_DB_NAME = 'dailyRoutine.agentBridge.v1';
@@ -3994,13 +3994,10 @@
 
   function buildMedicationRow(row, item, value) {
     const taken = entryIsLogged(item, value), time = medicationTime(value), lines = medicationReminderLines(item, value);
-    const detail = taken
-      ? (time ? `Taken at ${formatTime(time)}` : 'Taken · time not logged')
-      : 'Tap the arrow to review what to take';
     const panelId = `medication-reminder-${String(item.id).replace(/[^a-zA-Z0-9_-]/g, '-')}`;
     row.classList.add('medication-row');
     row.classList.toggle('done', taken);
-    row.innerHTML = `<div class="task-main medication-main"><button class="medication-complete${taken ? ' is-complete' : ' medication-now'}" type="button" aria-label="${taken ? `${escapeHtml(item.name)} is logged` : `Log ${escapeHtml(item.name)}`}"><span aria-hidden="true">${taken ? '✓' : ''}</span></button><span class="task-name">${escapeHtml(item.name)}<span class="task-meta">${escapeHtml(detail)}</span></span><button class="medication-expand" type="button" aria-expanded="false" aria-controls="${panelId}" aria-label="Show medication reminder"><span aria-hidden="true">⌄</span></button></div><div id="${panelId}" class="medication-reminder-panel" hidden><strong>Today’s reminder</strong>${medicationReminderMarkup(lines)}<small>Reminder only—there are no individual medication checkboxes.</small></div><div class="medication-actions"></div>`;
+    row.innerHTML = `<div class="task-main medication-main"><span class="task-name">${escapeHtml(item.name)}</span><button class="medication-expand" type="button" aria-expanded="false" aria-controls="${panelId}" aria-label="Show medication reminder"><span aria-hidden="true">⌄</span></button><button class="medication-complete${taken ? ' is-complete' : ' medication-now'}" type="button" aria-label="${taken ? `${escapeHtml(item.name)} is logged${time ? ` at ${escapeHtml(formatTime(time))}` : ''}` : `Log ${escapeHtml(item.name)}`}"><span aria-hidden="true">${taken ? '✓' : ''}</span></button></div><div id="${panelId}" class="medication-reminder-panel" hidden><strong>Today’s reminder</strong>${medicationReminderMarkup(lines)}<small>Reminder only—one check logs the complete medication routine.</small></div><div class="medication-actions"></div>`;
     bindMedicationExpander(row);
     const actions = row.querySelector('.medication-actions');
     if (!taken) {
