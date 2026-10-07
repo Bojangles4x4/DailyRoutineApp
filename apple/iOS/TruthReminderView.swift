@@ -31,11 +31,12 @@ struct TruthReminderView: View {
                         Text("2 hours").tag(120)
                     }
                     Toggle("Shuffle the whole library", isOn: $draft.shuffle)
+                    Toggle("Pause nonessential apps until reviewed", isOn: $draft.pauseAppsUntilReviewed)
                     if store.settings.enabled {
                         LabeledContent("Active schedule", value: store.scheduleSummary)
                     }
                 } header: { Text("Daily schedule") } footer: {
-                    Text("The end time is included. The schedule repeats daily, even while the app is closed. A shuffled mix refreshes when you open the app on a new day; otherwise the previous mix repeats.")
+                    Text("The end time is included. When app pausing is on, the next reminder uses a separate Screen Time shield. Your always-available Earned Access apps stay open, and the shield remains until you review the reminder.")
                 }
                 Section {
                     Button("Save reminder schedule") {
@@ -44,6 +45,7 @@ struct TruthReminderView: View {
                         store.settings.endMinute = draft.endMinute
                         store.settings.interval = draft.interval
                         store.settings.shuffle = draft.shuffle
+                        store.settings.pauseAppsUntilReviewed = draft.pauseAppsUntilReviewed
                         store.settings.entries = store.settings.entries.map { entry in
                             var next = entry; next.selected = chosen.contains(entry.id); return next
                         }
@@ -55,7 +57,7 @@ struct TruthReminderView: View {
                         LabeledContent("Last acknowledged", value: acknowledgedAt.formatted(date: .abbreviated, time: .shortened))
                     }
                 } footer: {
-                    Text("Reminder text and pictures may appear on your lock screen. Use “I’ve read this” on the notification to record a private acknowledgement. Your library stays on this iPhone and is separate from routine backups and Private sync.")
+                    Text("Reminder text and pictures may appear on your lock screen. Tap the notification or “Review now” to open the full reminder, then acknowledge it inside the app. Your library stays on this iPhone and is separate from routine backups and Private sync.")
                 }
                 Section {
                     ForEach(store.settings.entries) { entry in
@@ -98,6 +100,79 @@ struct TruthReminderView: View {
                 Button("Cancel", role: .cancel) { deleting = nil }
             } message: { Text("It will be removed from your library and future reminders.") }
         }
+    }
+}
+
+struct TruthReminderReviewView: View {
+    @ObservedObject var store: TruthReminderStore
+    let entry: TruthReminder
+
+    var body: some View {
+        ZStack {
+            LinearGradient(
+                colors: [Color(red: 0.93, green: 0.97, blue: 0.95), Color(red: 0.98, green: 0.95, blue: 0.89)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+
+            ScrollView {
+                VStack(spacing: 22) {
+                    VStack(spacing: 7) {
+                        Image(systemName: "pause.circle.fill")
+                            .font(.system(size: 34, weight: .semibold))
+                            .foregroundStyle(Color(red: 0.12, green: 0.35, blue: 0.30))
+                        Text("A moment of truth")
+                            .font(.system(.title2, design: .serif, weight: .bold))
+                        Text("Pause here before returning to other apps.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+
+                    VStack(spacing: 18) {
+                        if let name = entry.imageName,
+                           let image = UIImage(contentsOfFile: store.imageURL(name).path) {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFit()
+                                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                                .accessibilityLabel("Truth reminder picture")
+                        }
+                        if !entry.text.isEmpty {
+                            Text(entry.text)
+                                .font(.system(.title3, design: .serif, weight: .medium))
+                                .foregroundStyle(Color(red: 0.10, green: 0.25, blue: 0.22))
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(6)
+                                .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .padding(22)
+                    .background(.white.opacity(0.84), in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+
+                    Button {
+                        store.acknowledge(entry)
+                    } label: {
+                        Label("I’ve read this", systemImage: "checkmark.circle.fill")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 15)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color(red: 0.12, green: 0.35, blue: 0.30))
+                    .accessibilityIdentifier("truthReminderAcknowledgeButton")
+
+                    Text("Your other apps will resume after you acknowledge this reminder.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.horizontal, 22)
+                .padding(.vertical, 34)
+            }
+        }
+        .interactiveDismissDisabled()
     }
 }
 

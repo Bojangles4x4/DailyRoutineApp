@@ -9,8 +9,8 @@
   const EARNED_ACCESS_DEVICE_KEY = 'dailyRoutine.earnedAccess.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.27.0';
-  const APP_BUILD = 29;
+  const APP_VERSION = '1.28.0';
+  const APP_BUILD = 30;
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const ROUTINE_AGENT_DB_NAME = 'dailyRoutine.agentBridge.v1';
@@ -3994,21 +3994,17 @@
 
   function buildMedicationRow(row, item, value) {
     const taken = entryIsLogged(item, value), time = medicationTime(value), lines = medicationReminderLines(item, value);
-    const timing = metaForItem(item, { showRequirement: false, showFrequency: false });
-    const count = lines.length;
     const detail = taken
-      ? `${time ? `Taken ${formatTime(time)}` : 'Taken · time not logged'}${count ? ` · ${count} reminder${count === 1 ? '' : 's'}` : ''}`
-      : count ? `${count} medication reminder${count === 1 ? '' : 's'}` : timing;
+      ? (time ? `Taken at ${formatTime(time)}` : 'Taken · time not logged')
+      : 'Tap the arrow to review what to take';
     const panelId = `medication-reminder-${String(item.id).replace(/[^a-zA-Z0-9_-]/g, '-')}`;
     row.classList.add('medication-row');
     row.classList.toggle('done', taken);
-    row.innerHTML = `<div class="task-main medication-main"><span class="medication-icon" aria-hidden="true">Rx</span><span class="task-name">${escapeHtml(item.name)}${detail ? `<span class="task-meta">${escapeHtml(detail)}</span>` : ''}</span><button class="medication-expand" type="button" aria-expanded="false" aria-controls="${panelId}" aria-label="Show medication reminder"><span aria-hidden="true">⌄</span></button>${taken ? '<span class="completion-badge">✓ Taken</span>' : ''}</div><div id="${panelId}" class="medication-reminder-panel" hidden><strong>What to take</strong>${medicationReminderMarkup(lines)}<small>Reminder only—confirm the complete medication routine once.</small></div><div class="medication-actions"></div>`;
+    row.innerHTML = `<div class="task-main medication-main"><button class="medication-complete${taken ? ' is-complete' : ' medication-now'}" type="button" aria-label="${taken ? `${escapeHtml(item.name)} is logged` : `Log ${escapeHtml(item.name)}`}"><span aria-hidden="true">${taken ? '✓' : ''}</span></button><span class="task-name">${escapeHtml(item.name)}<span class="task-meta">${escapeHtml(detail)}</span></span><button class="medication-expand" type="button" aria-expanded="false" aria-controls="${panelId}" aria-label="Show medication reminder"><span aria-hidden="true">⌄</span></button></div><div id="${panelId}" class="medication-reminder-panel" hidden><strong>Today’s reminder</strong>${medicationReminderMarkup(lines)}<small>Reminder only—there are no individual medication checkboxes.</small></div><div class="medication-actions"></div>`;
     bindMedicationExpander(row);
     const actions = row.querySelector('.medication-actions');
     if (!taken) {
-      actions.innerHTML = `<button class="primary-button medication-now" type="button">Taken now</button><button class="small-button medication-manual" type="button">Choose time</button>`;
-      actions.querySelector('.medication-now').addEventListener('click', () => showMedicationTimeEditor(actions, item, currentTimeValue()));
-      actions.querySelector('.medication-manual').addEventListener('click', () => showMedicationTimeEditor(actions, item, currentTimeValue(), { focus: true }));
+      row.querySelector('.medication-now').addEventListener('click', () => showMedicationTimeEditor(actions, item, currentTimeValue(), { focus: true }));
     } else {
       actions.innerHTML = `<div class="medication-finished"><span class="already-logged">✓ Logged${time ? ` at ${escapeHtml(formatTime(time))}` : ''}</span><div><button class="small-button medication-edit" type="button">Edit time</button><button class="small-button medication-clear" type="button">Clear</button></div></div>`;
       actions.querySelector('.medication-edit').addEventListener('click', () => showMedicationTimeEditor(actions, item, time || currentTimeValue(), { focus: true }));

@@ -1,4 +1,7 @@
+import DeviceActivity
+import FamilyControls
 import Foundation
+import ManagedSettings
 import UIKit
 import UserNotifications
 
@@ -15,11 +18,37 @@ struct TruthReminderSettings: Codable {
     var endMinute = 20 * 60
     var interval = 30
     var shuffle = false
+    var pauseAppsUntilReviewed = false
     var entries: [TruthReminder] = []
     var scheduledDay = ""
+    var scheduledEntryIDs: [String: String] = [:]
     var lastAcknowledgedAt: Date?
     var acknowledgedDay: String?
     var acknowledgedCount: Int?
+
+    private enum CodingKeys: String, CodingKey {
+        case enabled, startMinute, endMinute, interval, shuffle, pauseAppsUntilReviewed, entries
+        case scheduledDay, scheduledEntryIDs, lastAcknowledgedAt, acknowledgedDay, acknowledgedCount
+    }
+
+    init() {}
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        enabled = try values.decodeIfPresent(Bool.self, forKey: .enabled) ?? false
+        startMinute = try values.decodeIfPresent(Int.self, forKey: .startMinute) ?? 8 * 60
+        endMinute = try values.decodeIfPresent(Int.self, forKey: .endMinute) ?? 20 * 60
+        interval = try values.decodeIfPresent(Int.self, forKey: .interval) ?? 30
+        shuffle = try values.decodeIfPresent(Bool.self, forKey: .shuffle) ?? false
+        // Existing enabled schedules migrate to the review gate Taylor requested. New schedules start with it off.
+        pauseAppsUntilReviewed = try values.decodeIfPresent(Bool.self, forKey: .pauseAppsUntilReviewed) ?? enabled
+        entries = try values.decodeIfPresent([TruthReminder].self, forKey: .entries) ?? []
+        scheduledDay = try values.decodeIfPresent(String.self, forKey: .scheduledDay) ?? ""
+        scheduledEntryIDs = try values.decodeIfPresent([String: String].self, forKey: .scheduledEntryIDs) ?? [:]
+        lastAcknowledgedAt = try values.decodeIfPresent(Date.self, forKey: .lastAcknowledgedAt)
+        acknowledgedDay = try values.decodeIfPresent(String.self, forKey: .acknowledgedDay)
+        acknowledgedCount = try values.decodeIfPresent(Int.self, forKey: .acknowledgedCount)
+    }
 }
 
 @MainActor
@@ -27,7 +56,10 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
     @Published var settings = TruthReminderSettings()
     @Published var status = "Reminders are off. Add a truth, then enable your schedule."
     @Published var busy = false
+    @Published var pendingPresentation: TruthReminder?
     private let center = UNUserNotificationCenter.current()
+    private let activityCenter = DeviceActivityCenter()
+    private let truthGateStore = ManagedSettingsStore(named: EarnedAccessShared.truthReminderStoreName)
     private let prefix = "dailyRoutine.truth."
     private let categoryIdentifier = "dailyRoutine.truth.category"
     private let acknowledgeActionIdentifier = "dailyRoutine.truth.acknowledge"
@@ -41,8 +73,9 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         if let data = try? Data(contentsOf: folder.appendingPathComponent("settings.json")),
            let saved = try? JSONDecoder().decode(TruthReminderSettings.self, from: data) { settings = saved }
         center.delegate = self
-        let acknowledge = UNNotificationAction(identifier: acknowledgeActionIdentifier, title: "I’ve read this", options: [])
+        let acknowledge = UNNotificationAction(identifier: acknowledgeActionIdentifier, title: "Review now", options: [.foreground])
         center.setNotificationCategories([UNNotificationCategory(identifier: categoryIdentifier, actions: [acknowledge], intentIdentifiers: [])])
+        restorePendingGatePresentation()
     }
 
     var scheduleSummary: String {
@@ -108,7 +141,19 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
     func refreshForNewDay() async {
         guard settings.enabled, !busy else { return }
         let day = Calendar.current.startOfDay(for: Date()).description
-        if settings.scheduledDay != day { await apply(requestPermission: false) }
+        if settings.scheduledDay != day || settings.scheduledEntryIDs.isEmpty {
+            await apply(requestPermission: false)
+            return
+        }
+        if settings.pauseAppsUntilReviewed,
+           !EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.truthReminderGateEnabledKey),
+           !EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.truthReminderGateActiveKey) {
+            do {
+                try scheduleNextTruthGate()
+            } catch {
+                status = "Truth reminders are scheduled, but app pausing needs attention: \(error.localizedDescription)"
+            }
+        }
     }
 
     func apply(requestPermission: Bool = true) async {
@@ -118,6 +163,7 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         do {
             if !settings.enabled {
                 await clearPending()
+                disableTruthGate()
                 try persist()
                 status = "Reminders are off. Your library is saved."
                 return
@@ -146,8 +192,10 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
             if settings.shuffle { entries.shuffle() }
             let minutes = Array(stride(from: settings.startMinute, through: settings.endMinute, by: settings.interval))
             var requests: [UNNotificationRequest] = []
+            settings.scheduledEntryIDs = [:]
             for (index, minute) in minutes.enumerated() {
                 let entry = entries[index % entries.count]
+                settings.scheduledEntryIDs[String(minute)] = entry.id.uuidString
                 let content = UNMutableNotificationContent()
                 content.title = "A moment of truth"
                 content.body = entry.text.isEmpty ? "Pause and reflect on your chosen picture." : entry.text
@@ -177,7 +225,12 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
             center.removePendingNotificationRequests(withIdentifiers: old.map(\.identifier).filter { !ids.contains($0) })
             settings.scheduledDay = Calendar.current.startOfDay(for: Date()).description
             try persist()
-            status = "Scheduled \(requests.count) reminders each day from \(scheduleSummary). \(settings.shuffle ? "The mix refreshes when you open the app on a new day." : "Your selected entries repeat in library order.")"
+            if settings.pauseAppsUntilReviewed {
+                try scheduleNextTruthGate()
+            } else {
+                disableTruthGate()
+            }
+            status = "Scheduled \(requests.count) reminders each day from \(scheduleSummary). \(settings.pauseAppsUntilReviewed ? "Each reminder pauses nonessential apps until you review it." : "Notifications will not pause other apps.")"
         } catch { status = "Could not update reminders: \(error.localizedDescription)" }
     }
 
@@ -191,15 +244,111 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
     }
 
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
-        guard response.notification.request.identifier.hasPrefix("dailyRoutine.truth."),
-              response.actionIdentifier == "dailyRoutine.truth.acknowledge" || response.actionIdentifier == UNNotificationDefaultActionIdentifier else { return }
+        guard response.notification.request.identifier.hasPrefix("dailyRoutine.truth.") else { return }
+        let rawID = response.notification.request.content.userInfo["truthReminderID"] as? String
         await MainActor.run {
-            let today = Calendar.current.startOfDay(for: Date()).description
-            settings.acknowledgedCount = settings.acknowledgedDay == today ? (settings.acknowledgedCount ?? 0) + 1 : 1
-            settings.acknowledgedDay = today
-            settings.lastAcknowledgedAt = Date()
-            try? persist()
-            status = "Acknowledged at \(Date().formatted(date: .omitted, time: .shortened))."
+            if response.actionIdentifier == acknowledgeActionIdentifier || response.actionIdentifier == UNNotificationDefaultActionIdentifier {
+                presentForReview(entryID: rawID.flatMap(UUID.init(uuidString:)))
+            }
         }
+    }
+
+    func acknowledge(_ entry: TruthReminder) {
+        acknowledge(entryID: entry.id)
+    }
+
+    func restorePendingGatePresentation() {
+        guard EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.truthReminderGateActiveKey) else { return }
+        presentForReview(entryID: activeGateEntryID())
+    }
+
+    private func acknowledge(entryID: UUID?) {
+        let today = Calendar.current.startOfDay(for: Date()).description
+        settings.acknowledgedCount = settings.acknowledgedDay == today ? (settings.acknowledgedCount ?? 0) + 1 : 1
+        settings.acknowledgedDay = today
+        settings.lastAcknowledgedAt = Date()
+        pendingPresentation = nil
+        EarnedAccessShared.defaults.set(false, forKey: EarnedAccessShared.truthReminderGateActiveKey)
+        EarnedAccessShared.defaults.removeObject(forKey: EarnedAccessShared.truthReminderGateMinuteKey)
+        EarnedAccessShared.clearFoundationShield(from: truthGateStore)
+        try? persist()
+        do {
+            if settings.enabled && settings.pauseAppsUntilReviewed { try scheduleNextTruthGate() }
+            status = "Acknowledged at \(Date().formatted(date: .omitted, time: .shortened))."
+        } catch {
+            status = "Acknowledged, but the next app pause could not be scheduled: \(error.localizedDescription)"
+        }
+    }
+
+    private func presentForReview(entryID: UUID?) {
+        let entry = entryID.flatMap { id in settings.entries.first { $0.id == id } }
+            ?? activeGateEntryID().flatMap { id in settings.entries.first { $0.id == id } }
+            ?? settings.entries.first(where: { settings.shuffle || $0.selected })
+        pendingPresentation = entry
+    }
+
+    private func activeGateEntryID() -> UUID? {
+        let minute = EarnedAccessShared.defaults.integer(forKey: EarnedAccessShared.truthReminderGateMinuteKey)
+        return settings.scheduledEntryIDs[String(minute)].flatMap(UUID.init(uuidString:))
+    }
+
+    private func disableTruthGate() {
+        activityCenter.stopMonitoring([EarnedAccessShared.truthReminderActivityName])
+        EarnedAccessShared.defaults.set(false, forKey: EarnedAccessShared.truthReminderGateEnabledKey)
+        EarnedAccessShared.defaults.set(false, forKey: EarnedAccessShared.truthReminderGateActiveKey)
+        EarnedAccessShared.defaults.removeObject(forKey: EarnedAccessShared.truthReminderGateMinuteKey)
+        EarnedAccessShared.defaults.removeObject(forKey: EarnedAccessShared.truthReminderGateNextMinuteKey)
+        EarnedAccessShared.clearFoundationShield(from: truthGateStore)
+        pendingPresentation = nil
+    }
+
+    private func scheduleNextTruthGate(after date: Date = Date()) throws {
+        guard settings.enabled && settings.pauseAppsUntilReviewed else {
+            disableTruthGate()
+            return
+        }
+        guard screenTimeIsAuthorized else {
+            throw NSError(domain: "TruthReminderGate", code: 1, userInfo: [NSLocalizedDescriptionKey: "Allow Screen Time in Earned Access before enabling reminder pauses."])
+        }
+        let essential = EarnedAccessShared.loadEssentialSelection()
+        guard !essential.applicationTokens.isEmpty || !essential.webDomainTokens.isEmpty else {
+            throw NSError(domain: "TruthReminderGate", code: 2, userInfo: [NSLocalizedDescriptionKey: "Choose your always-available apps in Earned Access before enabling reminder pauses."])
+        }
+        let minutes = Array(stride(from: settings.startMinute, through: settings.endMinute, by: settings.interval))
+        guard let next = nextOccurrence(in: minutes, after: date) else { return }
+        activityCenter.stopMonitoring([EarnedAccessShared.truthReminderActivityName])
+        EarnedAccessShared.defaults.set(true, forKey: EarnedAccessShared.truthReminderGateEnabledKey)
+        EarnedAccessShared.defaults.set(next.minute, forKey: EarnedAccessShared.truthReminderGateNextMinuteKey)
+        let calendar = Calendar.current
+        let end = calendar.date(byAdding: .minute, value: 15, to: next.date) ?? next.date.addingTimeInterval(900)
+        let components: Set<Calendar.Component> = [.era, .year, .month, .day, .hour, .minute, .second]
+        try activityCenter.startMonitoring(
+            EarnedAccessShared.truthReminderActivityName,
+            during: DeviceActivitySchedule(
+                intervalStart: calendar.dateComponents(components, from: next.date),
+                intervalEnd: calendar.dateComponents(components, from: end),
+                repeats: false
+            )
+        )
+    }
+
+    private func nextOccurrence(in minutes: [Int], after date: Date) -> (minute: Int, date: Date)? {
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: date)
+        for dayOffset in 0...1 {
+            guard let day = calendar.date(byAdding: .day, value: dayOffset, to: start) else { continue }
+            for minute in minutes {
+                guard let candidate = calendar.date(byAdding: .minute, value: minute, to: day), candidate > date else { continue }
+                return (minute, candidate)
+            }
+        }
+        return nil
+    }
+
+    private var screenTimeIsAuthorized: Bool {
+        let authorization = AuthorizationCenter.shared.authorizationStatus
+        if authorization == .approved { return true }
+        if #available(iOS 26.4, *) { return authorization == .approvedWithDataAccess }
+        return false
     }
 }

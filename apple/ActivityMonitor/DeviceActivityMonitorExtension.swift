@@ -7,11 +7,16 @@ import UserNotifications
 final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
     private let store = ManagedSettingsStore(named: EarnedAccessShared.storeName)
     private let foundationStore = ManagedSettingsStore(named: EarnedAccessShared.foundationStoreName)
+    private let truthReminderStore = ManagedSettingsStore(named: EarnedAccessShared.truthReminderStoreName)
 
     override func intervalDidStart(for activity: DeviceActivityName) {
         super.intervalDidStart(for: activity)
         if activity == EarnedAccessShared.dailyResetActivityName {
             enforceDailyReset()
+            return
+        }
+        if activity == EarnedAccessShared.truthReminderActivityName {
+            enforceTruthReminderGate()
             return
         }
         guard activity == EarnedAccessShared.foundationActivityName,
@@ -26,6 +31,20 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         EarnedAccessShared.applyFoundationShield(
             exceptions: EarnedAccessShared.loadEssentialSelection(),
             to: foundationStore
+        )
+    }
+
+    private func enforceTruthReminderGate() {
+        guard EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.truthReminderGateEnabledKey) else {
+            EarnedAccessShared.clearFoundationShield(from: truthReminderStore)
+            return
+        }
+        let minute = EarnedAccessShared.defaults.integer(forKey: EarnedAccessShared.truthReminderGateNextMinuteKey)
+        EarnedAccessShared.defaults.set(true, forKey: EarnedAccessShared.truthReminderGateActiveKey)
+        EarnedAccessShared.defaults.set(minute, forKey: EarnedAccessShared.truthReminderGateMinuteKey)
+        EarnedAccessShared.applyFoundationShield(
+            exceptions: EarnedAccessShared.loadEssentialSelection(),
+            to: truthReminderStore
         )
     }
 

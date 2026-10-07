@@ -20,13 +20,19 @@ enum EarnedAccessShared {
     static let essentialSelectionKey = "dailyRoutine.morningFoundation.essentialSelection.v1"
     static let morningGateEnabledKey = "dailyRoutine.morningFoundation.enabled.v1"
     static let morningFoundationCompleteDateKey = "dailyRoutine.morningFoundation.completeDate.v1"
+    static let truthReminderGateEnabledKey = "dailyRoutine.truthReminderGate.enabled.v1"
+    static let truthReminderGateActiveKey = "dailyRoutine.truthReminderGate.active.v1"
+    static let truthReminderGateMinuteKey = "dailyRoutine.truthReminderGate.minute.v1"
+    static let truthReminderGateNextMinuteKey = "dailyRoutine.truthReminderGate.nextMinute.v1"
     static let storeName = ManagedSettingsStore.Name("dailyRoutine.earnedAccess")
     static let foundationStoreName = ManagedSettingsStore.Name("dailyRoutine.morningFoundation")
+    static let truthReminderStoreName = ManagedSettingsStore.Name("dailyRoutine.truthReminder")
     static let activityName = DeviceActivityName("dailyRoutine.earnedAccess.usage")
     static let eventName = DeviceActivityEvent.Name("dailyRoutine.earnedAccess.budget")
     static let eventPrefix = "dailyRoutine.earnedAccess.minute."
     static let dailyResetActivityName = DeviceActivityName("dailyRoutine.earnedAccess.dailyReset")
     static let foundationActivityName = DeviceActivityName("dailyRoutine.morningFoundation.daily")
+    static let truthReminderActivityName = DeviceActivityName("dailyRoutine.truthReminder.next")
 
     static var defaults: UserDefaults {
         UserDefaults(suiteName: suiteName) ?? .standard
