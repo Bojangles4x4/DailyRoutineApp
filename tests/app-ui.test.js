@@ -26,7 +26,7 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#truthHeroTitle').textContent(), 'Truth Before Tasks');
   assert.equal(await page.locator('#truthEnterDayButton').isDisabled(), true);
   assert.equal(await page.locator('#accountabilitySharingCard').count(), 1);
-  assert.equal(await page.locator('#appVersion').textContent(), 'v1.30.0 · Build 32');
+  assert.equal(await page.locator('#appVersion').textContent(), 'v1.31.0 · Build 33');
   assert.match(await page.locator('#openAccountabilityFromSetupButton').textContent(), /Open private accountability/);
   assert.equal(await page.locator('#accountabilitySharingSignedOut').evaluate(element => element.hidden), false);
   assert.match(await page.locator('#accountabilitySharingSignedOut').textContent(), /Connect Private Sync first/);
@@ -35,6 +35,9 @@ function localDateKey(date = new Date()) {
   assert.match(await page.locator('#dataBackupCard').textContent(), /routine definitions and daily completion history/);
   assert.match(await page.locator('#routineAgentFileStatus').textContent(), /Not connected|Brave will connect|Reconnect|Connected/);
   assert.equal(await page.locator('#privateSyncHealthBadge').count(), 1);
+  const dataHealthFunctions = await page.evaluate(() => ['summarizeState', 'auditHistory', 'buildSyncPreview']
+    .map(name => typeof window.DailyRoutineDataHealth?.[name]));
+  assert.deepEqual(dataHealthFunctions, ['function', 'function', 'function']);
   assert.equal(await page.locator('#historyAuditBadge').count(), 1);
   assert.match(await page.locator('#historyAuditIssues').textContent(), /No malformed dates|Review only/);
   assert.equal(await page.locator('#syncPreviewDialog').count(), 1);
@@ -46,6 +49,57 @@ function localDateKey(date = new Date()) {
     return { prevented, open: dialog.open };
   });
   assert.deepEqual(syncCancelHandled, { prevented: true, open: false });
+
+  const syncPreflightPage = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+  const syncPreflightRequests = [];
+  await syncPreflightPage.route('**/data-health.js', route => route.abort());
+  await syncPreflightPage.route('https://shmvxujnlbolgcjwwewe.supabase.co/**', async route => {
+    syncPreflightRequests.push(route.request().url());
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+  });
+  await syncPreflightPage.addInitScript(() => {
+    localStorage.setItem('dailyRoutineApp.v1', JSON.stringify({
+      settings: {},
+      items: [],
+      days: { '2026-10-01': { entries: { prayer: true, water: 4 } } },
+      memories: [], notes: [], weeklyReviews: {}
+    }));
+    localStorage.setItem('dailyRoutine.sync.session.v1', JSON.stringify({
+      access_token: 'owner-access', refresh_token: 'owner-refresh',
+      expires_at: Math.floor(Date.now() / 1000) + 3600,
+      user: { id: 'owner-1', email: 'owner@example.com' }
+    }));
+  });
+  await syncPreflightPage.goto(baseURL, { waitUntil: 'networkidle' });
+  assert.match(await syncPreflightPage.locator('#privateSyncStatus').textContent(), /missing a required sync component/i);
+  assert.match(await syncPreflightPage.locator('#privateSyncStatus').textContent(), /No routine data on this device or in the cloud was changed/i);
+  assert.equal((await syncPreflightPage.locator('#privateSyncLocalDays').textContent()).trim(), '1 saved day');
+  assert.equal((await syncPreflightPage.locator('#privateSyncLocalRecords').textContent()).trim(), '2 entries');
+  assert.equal((await syncPreflightPage.locator('#privateSyncCloudHealth').textContent()).trim(), 'Not checked · update required');
+  assert.equal((await syncPreflightPage.locator('#privateSyncHealthBadge').textContent()).trim(), 'Update required');
+  assert.equal(await syncPreflightPage.locator('#privateSyncNowButton').isDisabled(), true);
+  assert.equal((await syncPreflightPage.locator('#privateSyncNowButton').textContent()).trim(), 'Update required');
+  assert.doesNotMatch(await syncPreflightPage.locator('#privateSyncCard').textContent(), /undefined is not an object/i);
+  assert.equal(syncPreflightRequests.some(url => url.includes('/routine_documents')), false);
+  await syncPreflightPage.close();
+
+  const migratedLocalState = await page.evaluate(() => localStorage.getItem('dailyRoutineApp.v1'));
+  const legacySyncErrorPage = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+  await legacySyncErrorPage.addInitScript(({ localState }) => {
+    localStorage.setItem('dailyRoutineApp.v1', localState);
+    localStorage.setItem('dailyRoutine.sync.metadata.v1', JSON.stringify({
+      schemaVersion: 1, deviceId: 'device-build32', localFingerprint: 'preserved',
+      dirty: true, localChangeCount: 3, pendingSince: '2026-10-01T12:00:00.000Z',
+      lastError: "undefined is not an object (evaluating 'window.DailyRoutineDataHealth.summarizeState')"
+    }));
+  }, { localState: migratedLocalState });
+  await legacySyncErrorPage.goto(baseURL, { waitUntil: 'networkidle' });
+  assert.equal((await legacySyncErrorPage.locator('#privateSyncStatus').textContent()).trim(),
+    'The previous build could not sync. Your local data is preserved—review and sync now.');
+  assert.doesNotMatch(await legacySyncErrorPage.locator('#privateSyncCard').textContent(), /undefined is not an object/i);
+  assert.match(await legacySyncErrorPage.locator('#privateSyncPendingHealth').textContent(), /3 local changes/);
+  assert.match(await legacySyncErrorPage.evaluate(() => localStorage.getItem('dailyRoutine.sync.metadata.v1')), /undefined is not an object/);
+  await legacySyncErrorPage.close();
 
   const recoveryPage = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
   await recoveryPage.addInitScript(() => {
@@ -330,6 +384,23 @@ function localDateKey(date = new Date()) {
     `Expected medication copy, arrow, and circle in that order: ${JSON.stringify(medicationLayout)}`);
   await medicationRow.locator('.medication-now').click();
   assert.equal(await medicationRow.locator('.medication-inline-confirm').isVisible(), true);
+  const medicationEditorGeometry = await medicationRow.locator('.medication-inline-confirm').evaluate(editor => {
+    const input = editor.querySelector('.med-time-input').getBoundingClientRect();
+    const cancel = editor.querySelector('.medication-cancel').getBoundingClientRect();
+    const confirm = editor.querySelector('.medication-confirm').getBoundingClientRect();
+    const bounds = editor.getBoundingClientRect();
+    return {
+      height: bounds.height,
+      aligned: Math.abs(input.top - cancel.top) < 3 && Math.abs(cancel.top - confirm.top) < 3,
+      buttonHeights: [cancel.height, confirm.height],
+      fits: editor.scrollWidth <= editor.clientWidth
+    };
+  });
+  assert.ok(medicationEditorGeometry.height <= 60, `Expected compact medication editor, received ${medicationEditorGeometry.height}px`);
+  assert.equal(medicationEditorGeometry.aligned, true);
+  assert.ok(medicationEditorGeometry.buttonHeights.every(height => height >= 44),
+    `Expected 44px medication actions, received ${JSON.stringify(medicationEditorGeometry.buttonHeights)}`);
+  assert.equal(medicationEditorGeometry.fits, true);
   assert.equal(await page.evaluate(key => window.DailyRoutineApp.getState().days[key]?.entries?.['morning-meds'], today), undefined);
   await medicationRow.locator('.medication-cancel').click();
   assert.equal(await page.evaluate(key => window.DailyRoutineApp.getState().days[key]?.entries?.['morning-meds'], today), undefined);

@@ -9,8 +9,10 @@
   const EARNED_ACCESS_DEVICE_KEY = 'dailyRoutine.earnedAccess.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.30.0';
-  const APP_BUILD = 32;
+  const APP_VERSION = '1.31.0';
+  const APP_BUILD = 33;
+  const PRIVATE_SYNC_COMPONENT_MESSAGE = 'This build is missing a required sync component. No routine data on this device or in the cloud was changed. Update the app to continue.';
+  const PRIVATE_SYNC_LEGACY_RECOVERY_MESSAGE = 'The previous build could not sync. Your local data is preserved—review and sync now.';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
   const INTEGRATION_CHANNEL = 'dailyRoutine.integrations.v1';
   const ROUTINE_AGENT_DB_NAME = 'dailyRoutine.agentBridge.v1';
@@ -3298,21 +3300,72 @@
     els.setupDataSummary.textContent = privateSyncSession ? 'Private sync connected · Backups & sharing' : 'Local first · Private sync, backups, and sharing';
   }
 
+  function privateSyncDependencyStatus() {
+    const sync = window.DailyRoutineSync;
+    const health = window.DailyRoutineDataHealth;
+    const missing = [];
+    if (!syncCoordinator || typeof syncCoordinator.status !== 'function' || typeof sync?.syncableState !== 'function' || typeof sync?.applySyncableState !== 'function') missing.push('sync core');
+    if (!syncCloud || typeof syncCloud.fetchRoutine !== 'function' || typeof syncCloud.pushRoutine !== 'function') missing.push('cloud client');
+    if (typeof health?.summarizeState !== 'function' || typeof health?.auditHistory !== 'function' || typeof health?.buildSyncPreview !== 'function') missing.push('data health');
+    return { ready: missing.length === 0, missing };
+  }
+
+  function privateSyncLocalSummary() {
+    const days = state?.days && typeof state.days === 'object' && !Array.isArray(state.days) ? state.days : {};
+    return {
+      dayCount: Object.keys(days).length,
+      entryCount: Object.values(days).reduce((total, day) => {
+        const entries = day?.entries && typeof day.entries === 'object' && !Array.isArray(day.entries) ? day.entries : {};
+        return total + Object.keys(entries).length;
+      }, 0)
+    };
+  }
+
+  function privateSyncComponentError() {
+    const error = new Error(PRIVATE_SYNC_COMPONENT_MESSAGE);
+    error.code = 'sync_component_missing';
+    return error;
+  }
+
+  function privateSyncDisplayedError(error) {
+    const message = String(error || '');
+    if (/DailyRoutineDataHealth.*summarizeState|summarizeState.*DailyRoutineDataHealth/i.test(message)) return PRIVATE_SYNC_LEGACY_RECOVERY_MESSAGE;
+    return `Sync paused: ${message}`;
+  }
+
   function renderPrivateSyncStatus() {
     if (!els.privateSyncCard) return;
     const status = syncCoordinator?.status();
-    if (!status || !syncCloud) {
-      els.privateSyncStatus.textContent = 'Sync foundation is unavailable in this build.';
-      els.privateSyncDevice.textContent = '—';
-      els.privateSyncLastSync.textContent = 'Not connected';
+    const dependencies = privateSyncDependencyStatus();
+    if (!dependencies.ready) {
+      const local = privateSyncLocalSummary();
+      const shortDevice = status?.deviceId ? status.deviceId.replace(/^device-/, '').slice(0, 8).toUpperCase() : '';
+      els.privateSyncDevice.textContent = shortDevice ? `This device · ${shortDevice}` : 'This device';
+      els.privateSyncBadge.textContent = 'Update required';
+      els.privateSyncStatus.textContent = PRIVATE_SYNC_COMPONENT_MESSAGE;
+      els.privateSyncLastSync.textContent = status?.lastSyncedAt ? new Date(status.lastSyncedAt).toLocaleString() : 'Not connected';
+      els.privateSyncNowButton.textContent = 'Update required';
       els.privateSyncNowButton.disabled = true;
+      els.privateSyncSendCodeButton.disabled = true;
+      els.privateSyncVerifyButton.disabled = true;
+      els.privateSyncAccount.hidden = !privateSyncSession;
+      els.privateSyncAccount.textContent = privateSyncSession?.user?.email ? `Signed in privately as ${privateSyncSession.user.email}` : '';
+      els.privateSyncSignOutButton.hidden = !privateSyncSession;
+      els.privateSyncDeleteCloudButton.hidden = !privateSyncSession;
+      if (privateSyncSession) els.privateSyncSignIn.hidden = true;
+      els.privateSyncLocalDays.textContent = `${local.dayCount} saved day${local.dayCount === 1 ? '' : 's'}`;
+      els.privateSyncLocalRecords.textContent = `${local.entryCount} entr${local.entryCount === 1 ? 'y' : 'ies'}`;
+      els.privateSyncCloudHealth.textContent = 'Not checked · update required';
+      els.privateSyncPendingHealth.textContent = status?.dirty ? `${status.localChangeCount} local change${status.localChangeCount === 1 ? '' : 's'}` : 'Local data preserved';
+      els.privateSyncHealthBadge.textContent = 'Update required';
+      els.privateSyncHealthDetail.textContent = 'Private Sync did not compare, download, or upload routine data. Update the app before trying again.';
       return;
     }
     const shortDevice = status.deviceId.replace(/^device-/, '').slice(0, 8).toUpperCase();
     els.privateSyncDevice.textContent = `This device · ${shortDevice}`;
     els.privateSyncBadge.textContent = privateSyncSession ? 'Connected' : 'Local only';
     els.privateSyncStatus.textContent = status.lastError
-      ? `Sync paused: ${status.lastError}`
+      ? privateSyncDisplayedError(status.lastError)
       : privateSyncSession
         ? status.dirty
           ? `${status.localChangeCount} local change${status.localChangeCount === 1 ? '' : 's'} waiting to sync.`
@@ -3491,7 +3544,14 @@
   }
 
   async function performPrivateSync({ keepBusy = false } = {}) {
-    if (!syncCloud || !syncCoordinator) return;
+    const dependencies = privateSyncDependencyStatus();
+    if (!dependencies.ready) {
+      const error = privateSyncComponentError();
+      syncCoordinator?.recordFailure(error);
+      renderPrivateSyncStatus();
+      showToast(PRIVATE_SYNC_COMPONENT_MESSAGE);
+      return false;
+    }
     if (!keepBusy) setPrivateSyncBusy(true);
     try {
       privateSyncSession = privateSyncSession || await syncCloud.session();
@@ -3641,6 +3701,7 @@
   }
 
   function privateSyncErrorMessage(error) {
+    if (error?.code === 'sync_component_missing') return PRIVATE_SYNC_COMPONENT_MESSAGE;
     if (error?.status === 429) return 'Too many sign-in attempts. Wait a few minutes and try again.';
     if (error?.status === 401 || error?.status === 403) return 'That code or sign-in session is no longer valid.';
     if (error?.code === 'revision_conflict') return 'Another device changed the cloud copy. Please sync again.';

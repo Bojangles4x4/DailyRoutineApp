@@ -178,6 +178,28 @@ final class RoutineSharedStateStoreTests: XCTestCase {
         XCTAssertEqual(EarnedAccessShared.usageCheckpoints(totalMinutes: 500).last, 120)
     }
 
+    func testEveryLocalWebReferenceIsBundledInTheApp() throws {
+        let bundle = Bundle.main
+        let indexURL = try XCTUnwrap(bundle.url(forResource: "index", withExtension: "html"))
+        let html = try String(contentsOf: indexURL, encoding: .utf8)
+        let expression = try NSRegularExpression(pattern: #"(?:src|href)="([^"]+)""#)
+        let range = NSRange(html.startIndex..<html.endIndex, in: html)
+        let references = expression.matches(in: html, range: range).compactMap { match -> String? in
+            guard let capture = Range(match.range(at: 1), in: html) else { return nil }
+            return String(html[capture])
+        }.filter { reference in
+            !reference.hasPrefix("http") && !reference.hasPrefix("data:") && !reference.hasPrefix("#")
+        }.map { reference in
+            reference.components(separatedBy: "?")[0].components(separatedBy: "#")[0]
+        }
+
+        XCTAssertTrue(references.contains("data-health.js"), "index.html must load the sync safety component")
+        for reference in references {
+            let resourceURL = try XCTUnwrap(bundle.resourceURL?.appendingPathComponent(reference))
+            XCTAssertTrue(FileManager.default.fileExists(atPath: resourceURL.path), "Missing bundled web resource: \(reference)")
+        }
+    }
+
     private func makeSnapshot() -> RoutineSharedSnapshot {
         let item = RoutineSharedItemSnapshot(
             id: "morning-teeth",
