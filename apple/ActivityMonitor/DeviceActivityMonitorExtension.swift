@@ -40,6 +40,12 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
             return
         }
         let now = Date()
+        let morningFoundationIsIncomplete = EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.morningGateEnabledKey)
+            && EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.morningFoundationCompleteDateKey) != EarnedAccessShared.localDateKey(now)
+        guard !morningFoundationIsIncomplete else {
+            EarnedAccessShared.clearTruthReminderGate(from: truthReminderStore)
+            return
+        }
         let minute = EarnedAccessShared.defaults.integer(forKey: EarnedAccessShared.truthReminderGateNextMinuteKey)
         let scheduledExpiry = EarnedAccessShared.defaults.double(forKey: EarnedAccessShared.truthReminderGateNextExpiresAtKey)
         EarnedAccessShared.defaults.set(true, forKey: EarnedAccessShared.truthReminderGateActiveKey)

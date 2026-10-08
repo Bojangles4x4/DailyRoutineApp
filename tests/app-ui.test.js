@@ -135,6 +135,106 @@ function localDateKey(date = new Date()) {
   await recoveryPage.waitForFunction(() => !document.body.classList.contains('truth-locked'));
   await recoveryPage.close();
 
+  const interruptedConvictionPage = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+  await interruptedConvictionPage.addInitScript(() => {
+    const now = Date.now();
+    const date = new Date();
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    localStorage.setItem('dailyRoutineApp.v1', JSON.stringify({
+      settings: {
+        truthBeforeTasks: {
+          completions: {},
+          sessions: { [key]: { startedAt: now - (10 * 60 * 1000), currentStep: 16, visited: Array.from({ length: 17 }, (_, index) => index) } }
+        }
+      },
+      items: [], days: {}, memories: [], notes: [], weeklyReviews: {}
+    }));
+  });
+  await interruptedConvictionPage.goto(baseURL, { waitUntil: 'networkidle' });
+  const interruptedBefore = await interruptedConvictionPage.locator('#truthStepBody').textContent();
+  const repairedInterruptedSession = await interruptedConvictionPage.evaluate(() => {
+    const state = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
+    const key = Object.keys(state.settings.truthBeforeTasks.sessions)[0];
+    window.dispatchEvent(new Event('focus'));
+    document.dispatchEvent(new Event('visibilitychange'));
+    return state.settings.truthBeforeTasks.sessions[key];
+  });
+  assert.equal(repairedInterruptedSession.currentStep, 16);
+  assert.ok(Number.isFinite(repairedInterruptedSession.convictionsStartedAt));
+  assert.equal(await interruptedConvictionPage.locator('#truthStepBody').textContent(), interruptedBefore);
+
+  await interruptedConvictionPage.evaluate(() => {
+    const originalSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function setItem(key, value) {
+      if (key === 'dailyRoutine.sync.metadata.v1') throw new DOMException('Simulated metadata quota', 'QuotaExceededError');
+      return originalSetItem.call(this, key, value);
+    };
+  });
+  await interruptedConvictionPage.locator('#truthContinueButton').click();
+  const continuedSession = await interruptedConvictionPage.evaluate(() => {
+    const state = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
+    const key = Object.keys(state.settings.truthBeforeTasks.sessions)[0];
+    return state.settings.truthBeforeTasks.sessions[key];
+  });
+  assert.equal(continuedSession.currentStep, 17);
+  assert.notEqual(await interruptedConvictionPage.locator('#truthStepBody').textContent(), interruptedBefore);
+
+  const stableBody = await interruptedConvictionPage.locator('#truthStepBody').textContent();
+  await interruptedConvictionPage.evaluate(() => {
+    const originalSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function setItem(key, value) {
+      if (key === 'dailyRoutineApp.v1') throw new DOMException('Simulated canonical quota', 'QuotaExceededError');
+      return originalSetItem.call(this, key, value);
+    };
+  });
+  await interruptedConvictionPage.locator('#truthContinueButton').click();
+  const failedSession = await interruptedConvictionPage.evaluate(() => {
+    const state = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
+    const key = Object.keys(state.settings.truthBeforeTasks.sessions)[0];
+    return state.settings.truthBeforeTasks.sessions[key];
+  });
+  assert.equal(failedSession.currentStep, 17);
+  assert.equal(await interruptedConvictionPage.locator('#truthStepBody').textContent(), stableBody);
+  assert.match(await interruptedConvictionPage.locator('#truthProgressText').textContent(), /could not be saved/i);
+  await interruptedConvictionPage.close();
+
+  const quotaRecoveryPage = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+  await quotaRecoveryPage.addInitScript(() => {
+    const now = Date.now();
+    const date = new Date();
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    localStorage.setItem('dailyRoutineApp.v1', JSON.stringify({
+      settings: { truthBeforeTasks: { completions: {}, sessions: { [key]: { startedAt: now - (10 * 60 * 1000), currentStep: 0, visited: [0] } } } },
+      items: [], days: {}, memories: [], notes: [], weeklyReviews: {}
+    }));
+    localStorage.setItem('dailyRoutineApp.snapshots.v1', JSON.stringify([
+      { id: 'newest', createdAt: new Date(now - 1000).toISOString(), state: { settings: {}, items: [], days: {} } },
+      { id: 'oldest', createdAt: new Date(now - 2000).toISOString(), state: { settings: {}, items: [], days: {} } }
+    ]));
+    const originalSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function setItem(storageKey, value) {
+      if (storageKey === 'dailyRoutineApp.v1') {
+        const snapshots = JSON.parse(localStorage.getItem('dailyRoutineApp.snapshots.v1') || '[]');
+        if (snapshots.length > 1) throw new DOMException('Simulated snapshot quota', 'QuotaExceededError');
+      }
+      return originalSetItem.call(this, storageKey, value);
+    };
+  });
+  await quotaRecoveryPage.goto(baseURL, { waitUntil: 'networkidle' });
+  await quotaRecoveryPage.locator('#truthContinueButton').click();
+  const quotaRecovery = await quotaRecoveryPage.evaluate(() => {
+    const state = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
+    const key = Object.keys(state.settings.truthBeforeTasks.sessions)[0];
+    return {
+      currentStep: state.settings.truthBeforeTasks.sessions[key].currentStep,
+      snapshotIDs: JSON.parse(localStorage.getItem('dailyRoutineApp.snapshots.v1') || '[]').map(snapshot => snapshot.id)
+    };
+  });
+  assert.equal(quotaRecovery.currentStep, 1);
+  assert.equal(quotaRecovery.snapshotIDs.length, 1);
+  assert.equal(quotaRecovery.snapshotIDs.includes('oldest'), false);
+  await quotaRecoveryPage.close();
+
   const partnerPage = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
   const partnerCloudRequests = [];
   await partnerPage.addInitScript(() => {

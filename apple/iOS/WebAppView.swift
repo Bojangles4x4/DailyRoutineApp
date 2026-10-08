@@ -362,6 +362,7 @@ struct WebAppView: UIViewRepresentable {
                     dateKey: dateKey,
                     completed: action == .completeMorningFoundation
                 )
+                model.reminders.morningFoundationDidChange(completed: action == .completeMorningFoundation)
                 emit(name: "earned.access.status", value: model.earnedAccess.bridgeStatus)
             case .openEarnedAccessControls:
                 guard let webView else { return }

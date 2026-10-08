@@ -90,6 +90,11 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.truthReminderGateActiveKey)
     }
 
+    private var morningFoundationIsIncomplete: Bool {
+        EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.morningGateEnabledKey)
+            && EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.morningFoundationCompleteDateKey) != EarnedAccessShared.localDateKey()
+    }
+
     func imageURL(_ name: String) -> URL { folder.appendingPathComponent(name) }
 
     private func persist() throws {
@@ -265,6 +270,20 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         reconcileActiveGate()
     }
 
+    func morningFoundationDidChange(completed: Bool) {
+        if !completed || morningFoundationIsIncomplete {
+            suspendTruthGateForMorningFoundation()
+            status = "Truth reminders will begin after today’s opening is complete."
+            return
+        }
+        guard settings.enabled && settings.pauseAppsUntilReviewed else { return }
+        do {
+            try scheduleNextTruthGate()
+        } catch {
+            status = "Today’s opening is complete, but the next truth-reminder pause could not be scheduled: \(error.localizedDescription)"
+        }
+    }
+
     func dismissPresentation() {
         guard !gateIsActive else { return }
         pendingPresentation = nil
@@ -321,7 +340,15 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
     }
 
     private func reconcileActiveGate(now: Date = Date()) {
-        guard gateIsActive else { return }
+        guard gateIsActive else {
+            pendingPresentation = nil
+            return
+        }
+        guard !morningFoundationIsIncomplete else {
+            suspendTruthGateForMorningFoundation()
+            status = "Truth reminders will begin after today’s opening is complete."
+            return
+        }
         let defaults = EarnedAccessShared.defaults
         let hasExpiry = defaults.object(forKey: EarnedAccessShared.truthReminderGateExpiresAtKey) != nil
         let expiry = defaults.double(forKey: EarnedAccessShared.truthReminderGateExpiresAtKey)
@@ -347,9 +374,8 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         EarnedAccessShared.clearTruthReminderGate(from: truthGateStore)
     }
 
-    private func disableTruthGate() {
+    private func suspendTruthGateForMorningFoundation() {
         activityCenter.stopMonitoring([EarnedAccessShared.truthReminderActivityName])
-        EarnedAccessShared.defaults.set(false, forKey: EarnedAccessShared.truthReminderGateEnabledKey)
         EarnedAccessShared.defaults.removeObject(forKey: EarnedAccessShared.truthReminderGateNextMinuteKey)
         EarnedAccessShared.defaults.removeObject(forKey: EarnedAccessShared.truthReminderGateNextEntryIDKey)
         EarnedAccessShared.defaults.removeObject(forKey: EarnedAccessShared.truthReminderGateNextExpiresAtKey)
@@ -357,9 +383,19 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         pendingPresentation = nil
     }
 
+    private func disableTruthGate() {
+        suspendTruthGateForMorningFoundation()
+        EarnedAccessShared.defaults.set(false, forKey: EarnedAccessShared.truthReminderGateEnabledKey)
+    }
+
     private func scheduleNextTruthGate(after date: Date = Date()) throws {
         guard settings.enabled && settings.pauseAppsUntilReviewed else {
             disableTruthGate()
+            return
+        }
+        guard !morningFoundationIsIncomplete else {
+            suspendTruthGateForMorningFoundation()
+            status = "Truth reminders will begin after today’s opening is complete."
             return
         }
         guard screenTimeIsAuthorized else {

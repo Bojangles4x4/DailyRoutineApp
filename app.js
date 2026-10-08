@@ -324,15 +324,63 @@
     }
   }
 
+  function isStorageCapacityError(error) {
+    const name = String(error?.name || '');
+    const message = String(error?.message || '');
+    return name === 'QuotaExceededError'
+      || Number(error?.code) === 22
+      || /quota|storage.*full|exceeded/i.test(`${name} ${message}`);
+  }
+
+  function persistCanonicalState() {
+    const serialized = JSON.stringify(state);
+    const writeAndVerify = () => {
+      localStorage.setItem(STORAGE_KEY, serialized);
+      if (localStorage.getItem(STORAGE_KEY) !== serialized) throw new Error('The saved routine state could not be verified.');
+    };
+    try {
+      writeAndVerify();
+      return;
+    } catch (error) {
+      if (!isStorageCapacityError(error)) throw error;
+    }
+
+    // Recovery snapshots are deliberately expendable when they would otherwise
+    // prevent the canonical routine state from being saved. Keep as many of the
+    // newest copies as fit, but always prefer the user's current data.
+    const snapshots = readSnapshots();
+    for (let count = Math.max(0, snapshots.length - 1); count >= 0; count -= 1) {
+      try {
+        if (count > 0) localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshots.slice(0, count)));
+        else localStorage.removeItem(SNAPSHOT_KEY);
+        writeAndVerify();
+        return;
+      } catch (error) {
+        if (!isStorageCapacityError(error)) throw error;
+      }
+    }
+    throw new DOMException('Daily Routine could not save because this device storage area is full.', 'QuotaExceededError');
+  }
+
+  function runPostSaveTask(task) {
+    try { task(); }
+    catch (error) {
+      // The canonical routine state is already verified. A secondary cache,
+      // sync marker, or native projection must never make the initiating UI
+      // appear frozen or roll the user forward without a redraw.
+      console.warn('Daily Routine post-save task was deferred:', error);
+    }
+  }
+
   function saveState({ trackSync = true } = {}) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    advanceSharedStateRevision();
-    if (trackSync) syncCoordinator?.markLocalChange(state);
-    renderPrivateSyncStatus();
-    maybeAutoSnapshot();
-    syncWatchContext();
-    scheduleAccountabilitySnapshotRefresh();
-    scheduleRoutineAgentSnapshotWrite();
+    persistCanonicalState();
+    runPostSaveTask(advanceSharedStateRevision);
+    if (trackSync) runPostSaveTask(() => syncCoordinator?.markLocalChange(state));
+    runPostSaveTask(renderPrivateSyncStatus);
+    runPostSaveTask(maybeAutoSnapshot);
+    runPostSaveTask(syncWatchContext);
+    runPostSaveTask(scheduleAccountabilitySnapshotRefresh);
+    runPostSaveTask(scheduleRoutineAgentSnapshotWrite);
   }
 
   function snapshotPayload() {
@@ -5700,6 +5748,7 @@
     let stepIndex = 0;
     let activeDateKey = '';
     let timer = null;
+    let truthStorageError = '';
 
     function clone(value) {
       return JSON.parse(JSON.stringify(value));
@@ -5792,32 +5841,69 @@
       return themes[hash % themes.length];
     }
 
-    function getSession(key) {
-      if (!config().sessions[key]) {
-        config().sessions[key] = { startedAt: Date.now(), visited: [0] };
+    function reportTruthStorageError(error) {
+      console.warn('Truth Before Tasks could not save:', error);
+      truthStorageError = 'Your place could not be saved. Stay on this screen and tap again; Daily Routine will not advance until the save succeeds.';
+      if (el('truthProgressText')) el('truthProgressText').textContent = truthStorageError;
+      if (el('truthEnterDayButton')) el('truthEnterDayButton').disabled = true;
+    }
+
+    function persistSession(key, candidate, previous) {
+      config().sessions[key] = candidate;
+      try {
         api.saveState();
+        truthStorageError = '';
+        return true;
+      } catch (error) {
+        if (previous === undefined) delete config().sessions[key];
+        else config().sessions[key] = previous;
+        reportTruthStorageError(error);
+        return false;
       }
-      const session = config().sessions[key];
-      let repaired = false;
+    }
+
+    function getSession(key) {
+      const stored = config().sessions[key];
+      const session = stored ? clone(stored) : { startedAt: Date.now(), visited: [0], currentStep: 0 };
       if (!Number.isFinite(Number(session.startedAt))) session.startedAt = Date.now();
       session.visited = Array.isArray(session.visited) ? session.visited.map(Number).filter(Number.isInteger) : [0];
       const lastStep = Math.max(0, totalStepCount() - 1);
       const currentStep = Math.min(lastStep, Math.max(0, Number.isInteger(Number(session.currentStep)) ? Number(session.currentStep) : 0));
-      if (session.currentStep !== currentStep) {
-        session.currentStep = currentStep;
-        repaired = true;
-      }
+      session.currentStep = currentStep;
       // Navigation is sequential. If an interrupted sync preserved the current step but
       // only part of the visited array, every earlier step was necessarily reviewed.
       // Repair that recoverable state instead of leaving Enter the Day disabled forever.
       const visited = new Set(session.visited.filter(index => index >= 0 && index <= lastStep));
-      for (let index = 0; index <= currentStep; index += 1) {
-        if (!visited.has(index)) repaired = true;
-        visited.add(index);
-      }
+      for (let index = 0; index <= currentStep; index += 1) visited.add(index);
       session.visited = [...visited].sort((a, b) => a - b);
-      if (repaired) api.saveState();
+      // If an earlier interrupted save advanced into convictions without saving the
+      // phase timer, restart the two-minute conviction interval once and persist the
+      // whole repair before allowing completion.
+      if (convictionItems().length && currentStep >= TRUTH_STEP_COUNT && !Number.isFinite(Number(session.convictionsStartedAt))) {
+        session.convictionsStartedAt = Date.now();
+      }
+      if (!stored || JSON.stringify(stored) !== JSON.stringify(session)) persistSession(key, session, stored ? clone(stored) : undefined);
       return session;
+    }
+
+    function moveToStep(nextStep) {
+      const key = todayKey();
+      const previous = config().sessions[key] ? clone(config().sessions[key]) : undefined;
+      const candidate = clone(getSession(key));
+      candidate.currentStep = Math.min(totalStepCount() - 1, Math.max(0, nextStep));
+      const visited = new Set(Array.isArray(candidate.visited) ? candidate.visited : []);
+      visited.add(candidate.currentStep);
+      candidate.visited = [...visited].sort((a, b) => a - b);
+      if (candidate.currentStep >= TRUTH_STEP_COUNT && !Number.isFinite(Number(candidate.convictionsStartedAt))) {
+        candidate.convictionsStartedAt = Date.now();
+      }
+      if (!persistSession(key, candidate, previous)) {
+        stepIndex = Math.min(totalStepCount() - 1, Math.max(0, Number(previous?.currentStep) || 0));
+        updateProgress();
+        return;
+      }
+      stepIndex = candidate.currentStep;
+      renderStep();
     }
 
     function convictionItems() {
@@ -5926,10 +6012,6 @@
       });
       const step = steps[stepIndex];
       const convictionsPhase = step.phase === 'convictions';
-      if (convictionsPhase && !Number.isFinite(Number(session.convictionsStartedAt))) {
-        session.convictionsStartedAt = Math.max(Date.now(), Number(session.startedAt) + TRUTH_MINIMUM_MS);
-        api.saveState();
-      }
       el('truthHeroEyebrow').textContent = convictionsPhase ? 'Choose before the day chooses for you' : 'Begin with what is true';
       el('truthHeroTitle').textContent = convictionsPhase ? 'Convictions Before Circumstances' : 'Truth Before Tasks';
       el('truthHeroIntro').textContent = convictionsPhase
@@ -5944,11 +6026,6 @@
       step.render();
       el('truthPreviousButton').disabled = stepIndex === 0;
       el('truthContinueButton').hidden = stepIndex === steps.length - 1;
-      if (!session.visited.includes(stepIndex)) {
-        session.visited.push(stepIndex);
-        session.currentStep = stepIndex;
-        api.saveState();
-      }
       updateProgress();
     }
 
@@ -5960,6 +6037,11 @@
         return;
       }
       const session = getSession(key);
+      if (truthStorageError) {
+        el('truthProgressText').textContent = truthStorageError;
+        el('truthEnterDayButton').disabled = true;
+        return;
+      }
       const hasConvictions = convictionItems().length > 0;
       const truthElapsed = Math.max(0, Date.now() - Number(session.startedAt));
       const convictionElapsed = hasConvictions && Number.isFinite(Number(session.convictionsStartedAt))
@@ -6000,9 +6082,20 @@
         api.showToast('Remain with the truth a little longer.');
         return;
       }
+      const previousCompletion = config().completions[key];
+      const previousSession = clone(config().sessions[key]);
       config().completions[key] = new Date().toISOString();
       delete config().sessions[key];
-      api.saveState();
+      try {
+        api.saveState();
+        truthStorageError = '';
+      } catch (error) {
+        if (previousCompletion === undefined) delete config().completions[key];
+        else config().completions[key] = previousCompletion;
+        config().sessions[key] = previousSession;
+        reportTruthStorageError(error);
+        return;
+      }
       api.syncMorningFoundation(true, key);
       unlock();
       api.switchView('today');
@@ -6018,16 +6111,10 @@
         api.showToast('Truth before tasks.');
       }, true);
       el('truthPreviousButton').addEventListener('click', () => {
-        stepIndex = Math.max(0, stepIndex - 1);
-        config().sessions[todayKey()].currentStep = stepIndex;
-        api.saveState();
-        renderStep();
+        moveToStep(stepIndex - 1);
       });
       el('truthContinueButton').addEventListener('click', () => {
-        stepIndex = Math.min(totalStepCount() - 1, stepIndex + 1);
-        config().sessions[todayKey()].currentStep = stepIndex;
-        api.saveState();
-        renderStep();
+        moveToStep(stepIndex + 1);
       });
       el('truthEnterDayButton').addEventListener('click', enterDay);
       window.addEventListener('focus', tick);
