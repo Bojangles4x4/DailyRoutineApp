@@ -26,7 +26,7 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#truthHeroTitle').textContent(), 'Truth Before Tasks');
   assert.equal(await page.locator('#truthEnterDayButton').isDisabled(), true);
   assert.equal(await page.locator('#accountabilitySharingCard').count(), 1);
-  assert.equal(await page.locator('#appVersion').textContent(), 'v1.31.0 · Build 33');
+  assert.equal(await page.locator('#appVersion').textContent(), 'v1.32.0 · Build 34');
   assert.match(await page.locator('#openAccountabilityFromSetupButton').textContent(), /Open private accountability/);
   assert.equal(await page.locator('#accountabilitySharingSignedOut').evaluate(element => element.hidden), false);
   assert.match(await page.locator('#accountabilitySharingSignedOut').textContent(), /Connect Private Sync first/);
@@ -835,6 +835,102 @@ function localDateKey(date = new Date()) {
   assert.match(exportedFiles[1].value.filename, /^daily-routine-backup-\d{4}-\d{2}-\d{2}\.json$/);
   assert.match(exportedFiles[1].value.content, /"state"/);
 
+  const compactSnapshotContext = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+  const compactSnapshotPage = await compactSnapshotContext.newPage();
+  await compactSnapshotPage.goto(baseURL, { waitUntil: 'networkidle' });
+  const compactSnapshotResult = await compactSnapshotPage.evaluate(async () => {
+    const key = 'dailyRoutineApp.snapshots.v1';
+    const state = window.DailyRoutineApp.getState();
+    localStorage.setItem(key, JSON.stringify([
+      { id: 'old-1', createdAt: '2026-10-08T10:00:00.000Z', label: 'Old 1', state },
+      { id: 'old-2', createdAt: '2026-10-08T09:00:00.000Z', label: 'Old 2', state }
+    ]));
+    const originalSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (storageKey, value) {
+      if (storageKey === key && JSON.parse(value).length > 1) throw new DOMException('Storage full', 'QuotaExceededError');
+      return originalSetItem.call(this, storageKey, value);
+    };
+    const result = await window.DailyRoutineApp.createPrivateSyncSafetySnapshot('Quota compaction test');
+    const snapshots = JSON.parse(localStorage.getItem(key));
+    return { result, count: snapshots.length, label: snapshots[0].label };
+  });
+  assert.equal(compactSnapshotResult.result.storage, 'browser');
+  assert.equal(compactSnapshotResult.count, 1);
+  assert.equal(compactSnapshotResult.label, 'Quota compaction test');
+  await compactSnapshotContext.close();
+
+  const nativeSnapshotContext = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+  await nativeSnapshotContext.addInitScript(() => {
+    window.__nativeSafetyMessages = [];
+    window.DailyRoutineNative = {
+      postMessage(message) {
+        window.__nativeSafetyMessages.push(message);
+        if (message.action !== 'safety.snapshot.save') return;
+        setTimeout(() => window.dispatchEvent(new CustomEvent('dailyRoutine:native', {
+          detail: {
+            name: 'safety.snapshot.saved',
+            value: {
+              requestId: message.value.requestId,
+              snapshotId: message.value.snapshotId,
+              success: true,
+              byteCount: message.value.content.length
+            }
+          }
+        })), 30);
+      }
+    };
+  });
+  const nativeSnapshotPage = await nativeSnapshotContext.newPage();
+  await nativeSnapshotPage.goto(baseURL, { waitUntil: 'networkidle' });
+  const nativeSnapshotResult = await nativeSnapshotPage.evaluate(async () => {
+    const originalSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      if (key === 'dailyRoutineApp.snapshots.v1') throw new DOMException('Storage full', 'QuotaExceededError');
+      return originalSetItem.call(this, key, value);
+    };
+    const pending = window.DailyRoutineApp.createPrivateSyncSafetySnapshot('Native fallback test');
+    const beforeAcknowledgement = await Promise.race([
+      pending.then(() => 'resolved'),
+      new Promise(resolve => setTimeout(() => resolve('waiting'), 5))
+    ]);
+    const result = await pending;
+    const message = window.__nativeSafetyMessages.find(entry => entry.action === 'safety.snapshot.save');
+    const content = JSON.parse(message.value.content);
+    return {
+      beforeAcknowledgement,
+      result,
+      contentId: content.id,
+      envelopeId: message.value.snapshotId,
+      hasBackground: Boolean(content.state.settings.backgroundImage),
+      hasAuthToken: Object.prototype.hasOwnProperty.call(content, 'access_token')
+    };
+  });
+  assert.equal(nativeSnapshotResult.beforeAcknowledgement, 'waiting');
+  assert.equal(nativeSnapshotResult.result.storage, 'device');
+  assert.equal(nativeSnapshotResult.contentId, nativeSnapshotResult.envelopeId);
+  assert.equal(nativeSnapshotResult.hasBackground, false);
+  assert.equal(nativeSnapshotResult.hasAuthToken, false);
+
+  const rejectedNativeSnapshot = await nativeSnapshotPage.evaluate(async () => {
+    window.DailyRoutineNative.postMessage = message => {
+      if (message.action !== 'safety.snapshot.save') return;
+      setTimeout(() => window.dispatchEvent(new CustomEvent('dailyRoutine:native', {
+        detail: {
+          name: 'safety.snapshot.saved',
+          value: { requestId: message.value.requestId, snapshotId: 'wrong-snapshot-id', success: true }
+        }
+      })), 0);
+    };
+    try {
+      await window.DailyRoutineApp.createPrivateSyncSafetySnapshot('Reject mismatched acknowledgment');
+      return '';
+    } catch (error) {
+      return error.message;
+    }
+  });
+  assert.match(rejectedNativeSnapshot, /no routine data was changed/i);
+  await nativeSnapshotContext.close();
+
   const safetyContext = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
   const safetyPage = await safetyContext.newPage();
   await safetyPage.goto(baseURL, { waitUntil: 'networkidle' });
@@ -853,7 +949,7 @@ function localDateKey(date = new Date()) {
   });
   safetyPage.once('dialog', dialog => dialog.accept());
   await safetyPage.locator('#restoreSnapshotButton').evaluate(button => button.click());
-  assert.match(await safetyPage.locator('#toast').textContent(), /Restore was not|verified safety snapshot could not be saved/);
+  assert.match(await safetyPage.locator('#toast').textContent(), /Restore was not|verified (?:on-device recovery copy|safety snapshot) could not be saved/);
   assert.equal(await safetyPage.evaluate(() => window.DailyRoutineApp.getState().settings.theme), 'dusk');
   await safetyContext.close();
 

@@ -9,8 +9,8 @@
   const EARNED_ACCESS_DEVICE_KEY = 'dailyRoutine.earnedAccess.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.31.0';
-  const APP_BUILD = 33;
+  const APP_VERSION = '1.32.0';
+  const APP_BUILD = 34;
   const PRIVATE_SYNC_COMPONENT_MESSAGE = 'This build is missing a required sync component. No routine data on this device or in the cloud was changed. Update the app to continue.';
   const PRIVATE_SYNC_LEGACY_RECOVERY_MESSAGE = 'The previous build could not sync. Your local data is preserved—review and sync now.';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
@@ -123,6 +123,9 @@
   let privateSyncBusy = false;
   let privateSyncRemoteHealth = null;
   let pendingSyncPreviewResolve = null;
+  const pendingNativeSafetySnapshots = new Map();
+  const pendingNativeSafetyLoads = new Map();
+  let nativeSafetySnapshots = [];
   const processedWatchEventIds = new Set();
   const collapsedSections = new Set();
 
@@ -176,6 +179,7 @@
     buildAccountabilityReport,
     getConvictionRecoveries: () => structuredClone(readConvictionRecoveries()),
     saveConvictionRecoveries: recoveries => writeConvictionRecoveries(structuredClone(recoveries)),
+    createPrivateSyncSafetySnapshot: label => requirePrivateSyncSafetySnapshot(label),
     syncStatus: () => syncCoordinator?.status() || null,
     dateKey,
     startOfToday
@@ -344,21 +348,29 @@
 
   function writeSnapshots(snapshots) {
     const limited = snapshots.slice(0, 5);
-    try {
-      localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(limited));
-      const verified = JSON.parse(localStorage.getItem(SNAPSHOT_KEY) || '[]');
-      return Array.isArray(verified)
-        && verified[0]?.id === limited[0]?.id
-        && verified[0]?.createdAt === limited[0]?.createdAt
-        && Array.isArray(verified[0]?.state?.items)
-        && verified[0]?.state?.days && typeof verified[0].state.days === 'object'
-        && JSON.stringify(verified[0].state) === JSON.stringify(limited[0].state);
-    } catch { return false; }
+    if (!limited.length) return false;
+    for (let count = limited.length; count >= 1; count -= 1) {
+      const candidate = limited.slice(0, count);
+      try {
+        const serialized = JSON.stringify(candidate);
+        localStorage.setItem(SNAPSHOT_KEY, serialized);
+        const stored = localStorage.getItem(SNAPSHOT_KEY) || '';
+        const verified = JSON.parse(stored || '[]');
+        if (stored === serialized
+          && Array.isArray(verified)
+          && verified[0]?.id === candidate[0]?.id
+          && verified[0]?.createdAt === candidate[0]?.createdAt
+          && Array.isArray(verified[0]?.state?.items)
+          && verified[0]?.state?.days && typeof verified[0].state.days === 'object'
+          && JSON.stringify(verified[0].state) === JSON.stringify(candidate[0].state)) return true;
+      } catch { /* Retry with fewer retained snapshots before using native storage. */ }
+    }
+    return false;
   }
 
   function createLocalSnapshot(label = 'Manual snapshot', quiet = false) {
     const snapshots = readSnapshots();
-    const snapshot = { id: `snapshot-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, createdAt: new Date().toISOString(), label, version: APP_VERSION, build: APP_BUILD, state: snapshotPayload() };
+    const snapshot = { schemaVersion: 1, id: `snapshot-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, createdAt: new Date().toISOString(), label, version: APP_VERSION, build: APP_BUILD, state: snapshotPayload() };
     snapshots.unshift(snapshot);
     const saved = writeSnapshots(snapshots);
     renderSnapshotStatus();
@@ -372,8 +384,44 @@
 
   function requireSafetySnapshot(label) {
     const snapshot = createLocalSnapshot(label, true);
-    if (!snapshot) throw new Error('A verified safety snapshot could not be saved, so no data was changed. Download a backup and free device storage before trying again.');
+    if (!snapshot) throw new Error('A verified safety snapshot could not be saved, so no data was changed. Download a backup before trying again.');
     return snapshot;
+  }
+
+  function saveNativeSafetySnapshot(snapshot) {
+    if (!window.DailyRoutineNative?.postMessage) return Promise.resolve(false);
+    let content;
+    try { content = JSON.stringify(snapshot); }
+    catch { return Promise.resolve(false); }
+    const requestId = `safety-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    return new Promise(resolve => {
+      const timeout = setTimeout(() => {
+        pendingNativeSafetySnapshots.delete(requestId);
+        resolve(false);
+      }, 15000);
+      pendingNativeSafetySnapshots.set(requestId, { snapshotId: snapshot.id, resolve, timeout });
+      if (!sendNativeBridgeMessage('safety.snapshot.save', { requestId, snapshotId: snapshot.id, content })) {
+        clearTimeout(timeout);
+        pendingNativeSafetySnapshots.delete(requestId);
+        resolve(false);
+      }
+    });
+  }
+
+  async function requirePrivateSyncSafetySnapshot(label) {
+    const localSnapshot = createLocalSnapshot(label, true);
+    if (localSnapshot) return { storage: 'browser', snapshotId: localSnapshot.id };
+    const snapshot = {
+      schemaVersion: 1,
+      id: `snapshot-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      createdAt: new Date().toISOString(),
+      label,
+      version: APP_VERSION,
+      build: APP_BUILD,
+      state: snapshotPayload()
+    };
+    if (await saveNativeSafetySnapshot(snapshot)) return { storage: 'device', snapshotId: snapshot.id };
+    throw new Error('A verified on-device recovery copy could not be saved, so no routine data was changed. Keep the app installed and download a backup before trying again.');
   }
 
   function convictionConfig(source) {
@@ -420,22 +468,28 @@
   function renderSnapshotStatus() {
     if (!els.snapshotStatus) return;
     const latest = readSnapshots()[0];
-    els.snapshotStatus.textContent = latest ? `Latest local snapshot: ${new Date(latest.createdAt).toLocaleString()} · ${latest.label}` : 'No local snapshots yet.';
+    const protectedLatest = nativeSafetySnapshots[0];
+    if (latest) els.snapshotStatus.textContent = `Latest local snapshot: ${new Date(latest.createdAt).toLocaleString()} · ${latest.label}`;
+    else if (protectedLatest) els.snapshotStatus.textContent = `Latest protected iPhone copy: ${new Date(protectedLatest.createdAt).toLocaleString()} · ${protectedLatest.label}`;
+    else els.snapshotStatus.textContent = 'No recovery snapshots yet.';
     renderSnapshotManager();
   }
 
   function renderSnapshotManager() {
     if (!els.snapshotList) return;
     const snapshots = readSnapshots();
-    if (!snapshots.length) {
-      els.snapshotList.innerHTML = '<div class="analytics-empty">No local recovery snapshots yet.</div>';
+    if (!snapshots.length && !nativeSafetySnapshots.length) {
+      els.snapshotList.innerHTML = '<div class="analytics-empty">No recovery snapshots yet.</div>';
       return;
     }
-    els.snapshotList.innerHTML = snapshots.map(snapshot => {
+    const localRows = snapshots.map(snapshot => {
       const summary = window.DailyRoutineDataHealth?.summarizeState(snapshot.state) || { dayCount: Object.keys(snapshot.state?.days || {}).length, itemCount: snapshot.state?.items?.length || 0 };
       return `<div class="snapshot-row"><div><strong>${escapeHtml(snapshot.label || 'Local snapshot')}</strong><span>${escapeHtml(new Date(snapshot.createdAt).toLocaleString())}</span><small>${summary.dayCount} saved days · ${summary.itemCount} routine and check-in items${snapshot.version ? ` · v${escapeHtml(snapshot.version)}` : ''}</small></div><button class="small-button" type="button" data-snapshot-id="${escapeHtml(snapshot.id || snapshot.createdAt)}">Restore</button></div>`;
-    }).join('');
+    });
+    const protectedRows = nativeSafetySnapshots.map(snapshot => `<div class="snapshot-row"><div><strong>${escapeHtml(snapshot.label || 'Protected iPhone recovery copy')}</strong><span>${escapeHtml(new Date(snapshot.createdAt).toLocaleString())} · Protected iPhone copy</span><small>${Math.max(0, Number(snapshot.dayCount) || 0)} saved days · ${Math.max(0, Number(snapshot.itemCount) || 0)} routine and check-in items</small></div><button class="small-button" type="button" data-native-snapshot-id="${escapeHtml(snapshot.snapshotId)}">Restore</button></div>`);
+    els.snapshotList.innerHTML = [...localRows, ...protectedRows].join('');
     els.snapshotList.querySelectorAll('[data-snapshot-id]').forEach(button => button.addEventListener('click', () => restoreSnapshot(button.dataset.snapshotId)));
+    els.snapshotList.querySelectorAll('[data-native-snapshot-id]').forEach(button => button.addEventListener('click', () => requestNativeSafetySnapshot(button.dataset.nativeSnapshotId)));
   }
 
   function renderHistoryAudit() {
@@ -663,12 +717,29 @@
     restoreSnapshot(latest.id || latest.createdAt);
   }
 
-  function restoreSnapshot(snapshotId) {
+  async function restoreSnapshot(snapshotId) {
     const latest = readSnapshots().find(snapshot => (snapshot.id || snapshot.createdAt) === snapshotId);
     if (!latest?.state) { showToast('That local snapshot is no longer available'); return; }
+    await restoreSnapshotEnvelope(latest);
+  }
+
+  function requestNativeSafetySnapshot(snapshotId) {
+    if (!snapshotId || !window.DailyRoutineNative?.postMessage) {
+      showToast('That protected recovery copy is not available on this device.');
+      return;
+    }
+    const requestId = `restore-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    pendingNativeSafetyLoads.set(requestId, snapshotId);
+    if (!sendNativeBridgeMessage('safety.snapshot.load', { requestId, snapshotId })) {
+      pendingNativeSafetyLoads.delete(requestId);
+      showToast('The protected recovery copy could not be requested.');
+    }
+  }
+
+  async function restoreSnapshotEnvelope(latest) {
     if (!Array.isArray(latest.state.items) || !latest.state.days || typeof latest.state.days !== 'object') { showToast('That snapshot is not valid and was not restored'); return; }
-    if (!confirm(`Restore “${latest.label || 'Local snapshot'}” from ${new Date(latest.createdAt).toLocaleString()}? Current local data will be replaced after a new safety snapshot is verified.`)) return;
-    try { requireSafetySnapshot('Before restoring a local snapshot'); }
+    if (!confirm(`Restore “${latest.label || 'Recovery snapshot'}” from ${new Date(latest.createdAt).toLocaleString()}? Current local data will be replaced after a new safety snapshot is verified.`)) return;
+    try { await requirePrivateSyncSafetySnapshot('Before restoring a local snapshot'); }
     catch (error) { showToast(error.message); return; }
     const previousState = state;
     const restoredState = {
@@ -1235,6 +1306,7 @@
         renderEarnedAccess();
         if (value.healthAvailable && healthDeviceSettings().connected) requestHealthSummary();
         sendNativeBridgeMessage('routine.commands.request');
+        sendNativeBridgeMessage('safety.snapshot.status.request');
       } else if (detail.name === 'health.authorization.completed') {
         saveHealthDeviceSettings({ connected: true });
         els.appleHealthStatus.textContent = 'Health permission choice saved on this iPhone.';
@@ -1273,6 +1345,37 @@
         lastRoutineSnapshotSavedAt = new Date();
         lastRoutineSnapshotSavedRevision = Math.max(0, Number(detail.value?.revision) || 0);
         renderEarnedAccessReliability();
+      } else if (detail.name === 'safety.snapshot.saved') {
+        const value = detail.value || {};
+        const pending = pendingNativeSafetySnapshots.get(String(value.requestId || ''));
+        if (pending) {
+          clearTimeout(pending.timeout);
+          pendingNativeSafetySnapshots.delete(String(value.requestId || ''));
+          pending.resolve(value.success === true && value.snapshotId === pending.snapshotId);
+        }
+        sendNativeBridgeMessage('safety.snapshot.status.request');
+      } else if (detail.name === 'safety.snapshot.status') {
+        nativeSafetySnapshots = Array.isArray(detail.value)
+          ? detail.value.filter(snapshot => snapshot && typeof snapshot.snapshotId === 'string' && snapshot.snapshotId).slice(0, 2)
+          : [];
+        renderSnapshotStatus();
+      } else if (detail.name === 'safety.snapshot.loaded') {
+        const value = detail.value || {};
+        const requestId = String(value.requestId || '');
+        const expectedSnapshotId = pendingNativeSafetyLoads.get(requestId);
+        if (!expectedSnapshotId) return;
+        pendingNativeSafetyLoads.delete(requestId);
+        if (value.success !== true || value.snapshotId !== expectedSnapshotId || typeof value.content !== 'string') {
+          showToast(value.message || 'The protected recovery copy could not be read.');
+          return;
+        }
+        try {
+          const snapshot = JSON.parse(value.content);
+          if (snapshot?.id !== expectedSnapshotId) throw new Error('Snapshot identity did not match.');
+          restoreSnapshotEnvelope(snapshot);
+        } catch {
+          showToast('The protected recovery copy was not valid and was not restored.');
+        }
       } else if (detail.name === 'watch.event') {
         handleWatchEvent(detail.value || {});
       } else if (detail.name === 'watch.context.updated') {
@@ -1317,6 +1420,7 @@
     renderEarnedAccess();
     sendNativeBridgeMessage('earned.access.status.request');
     sendNativeBridgeMessage('routine.commands.request');
+    sendNativeBridgeMessage('safety.snapshot.status.request');
   }
 
   function healthDeviceSettings() {
@@ -3597,7 +3701,17 @@
           continue;
         }
 
-        requireSafetySnapshot(decision.action === 'adopt' ? 'Before downloading cloud changes' : 'Before private sync upload');
+        await requirePrivateSyncSafetySnapshot(decision.action === 'adopt' ? 'Before downloading cloud changes' : 'Before private sync upload');
+        const postSnapshotDateKey = dateKey(startOfToday());
+        const postSnapshotTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+        const localChangedDuringSnapshot = localPlan !== JSON.stringify(window.DailyRoutineSync.syncableState(state));
+        const postSnapshotRemote = await syncCloud.fetchRoutine(privateSyncSession);
+        const remoteChangedDuringSnapshot = Math.max(0, Number(postSnapshotRemote?.revision) || 0) !== latestRevision
+          || Boolean(postSnapshotRemote?.document) !== Boolean(latestRemote?.document);
+        if (planDateKey !== postSnapshotDateKey || planTimeZone !== postSnapshotTimeZone || localChangedDuringSnapshot || remoteChangedDuringSnapshot) {
+          showToast('Data changed while the safety copy was being saved. Review the refreshed plan.');
+          continue;
+        }
         syncCoordinator.archiveConflicts(decision.conflicts, state, remote?.document || {}, Math.max(0, Number(remote?.revision) || 0));
         if (decision.action === 'adopt') {
           const nextState = window.DailyRoutineSync.applySyncableState(state, decision.state);
@@ -3682,8 +3796,32 @@
     try {
       privateSyncSession = privateSyncSession || await syncCloud.session();
       if (!privateSyncSession) throw new Error('Sign in before deleting the cloud copy.');
-      requireSafetySnapshot('Before deleting private cloud copy');
-      await syncCloud.deleteRoutine(privateSyncSession);
+      const remoteBeforeSnapshot = await syncCloud.fetchRoutine(privateSyncSession);
+      const remotePresentBeforeSnapshot = Boolean(remoteBeforeSnapshot);
+      const remoteRevisionBeforeSnapshot = Math.max(0, Number(remoteBeforeSnapshot?.revision) || 0);
+      if (remotePresentBeforeSnapshot) {
+        const deleteDecision = syncCoordinator.reconcile(state, remoteBeforeSnapshot, { persistConflicts: false });
+        if (deleteDecision.action !== 'none') {
+          throw new Error('Private Sync has unsaved differences. Sync them first, then review cloud deletion again. No cloud data was changed.');
+        }
+      }
+      const localPlan = JSON.stringify(window.DailyRoutineSync.syncableState(state));
+      const planDateKey = dateKey(startOfToday());
+      const planTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+      await requirePrivateSyncSafetySnapshot('Before deleting private cloud copy');
+      const localChanged = localPlan !== JSON.stringify(window.DailyRoutineSync.syncableState(state));
+      const dateChanged = planDateKey !== dateKey(startOfToday());
+      const timeZoneChanged = planTimeZone !== (Intl.DateTimeFormat().resolvedOptions().timeZone || '');
+      if (localChanged || dateChanged || timeZoneChanged) {
+        throw new Error('Your routine changed while the safety copy was being saved. No cloud data was changed. Review it and try again.');
+      }
+      const remoteAfterSnapshot = await syncCloud.fetchRoutine(privateSyncSession);
+      const remotePresentAfterSnapshot = Boolean(remoteAfterSnapshot);
+      const remoteRevisionAfterSnapshot = Math.max(0, Number(remoteAfterSnapshot?.revision) || 0);
+      if (remotePresentBeforeSnapshot !== remotePresentAfterSnapshot || remoteRevisionBeforeSnapshot !== remoteRevisionAfterSnapshot) {
+        throw new Error('The cloud copy changed while the safety copy was being saved. No cloud data was deleted. Review Sync Health and try again.');
+      }
+      if (remotePresentAfterSnapshot) await syncCloud.deleteRoutine(privateSyncSession, remoteRevisionAfterSnapshot);
       await syncCloud.signOut();
       privateSyncSession = null;
       privateSyncRemoteHealth = null;

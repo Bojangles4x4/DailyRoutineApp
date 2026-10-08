@@ -175,14 +175,18 @@
       return Array.isArray(rows) && rows.length ? rows[0] : null;
     }
 
-    async deleteRoutine(sessionInput) {
+    async deleteRoutine(sessionInput, expectedRevision) {
       const session = sessionInput || await this.session();
       if (!session?.access_token || !session?.user?.id) throw new CloudRequestError('Sign in before deleting the cloud copy.', 401, 'not_signed_in');
-      await this.request(`/rest/v1/routine_documents?owner_id=eq.${encodeURIComponent(session.user.id)}`, {
+      const revision = Math.max(0, Number(expectedRevision) || 0);
+      if (!revision) throw new CloudConflictError('The cloud copy could not be verified before deletion.');
+      const rows = await this.request(`/rest/v1/routine_documents?owner_id=eq.${encodeURIComponent(session.user.id)}&revision=eq.${revision}`, {
         method: 'DELETE',
         token: session.access_token,
-        headers: { Prefer: 'return=minimal' }
+        headers: { Prefer: 'return=representation' }
       });
+      if (!Array.isArray(rows) || !rows[0]) throw new CloudConflictError();
+      return rows[0];
     }
 
     async pushRoutine({ session: sessionInput, document, expectedRevision, deviceId, schemaVersion = 1 }) {

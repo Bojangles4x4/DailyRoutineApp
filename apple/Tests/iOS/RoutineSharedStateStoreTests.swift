@@ -178,6 +178,46 @@ final class RoutineSharedStateStoreTests: XCTestCase {
         XCTAssertEqual(EarnedAccessShared.usageCheckpoints(totalMinutes: 500).last, 120)
     }
 
+    func testNativeSafetySnapshotRoundTripsExactBytesAndRetainsTwoCopies() throws {
+        let safetyDirectory = directoryURL.appendingPathComponent("Safety", isDirectory: true)
+        let safetyStore = NativeSafetySnapshotStore(directoryURL: safetyDirectory)
+        let first = makeSafetySnapshotData(id: "snapshot-first", createdAt: "2026-10-08T12:00:00.000Z")
+        let second = makeSafetySnapshotData(id: "snapshot-second", createdAt: "2026-10-08T12:01:00.000Z")
+        let third = makeSafetySnapshotData(id: "snapshot-third", createdAt: "2026-10-08T12:02:00.000Z")
+
+        XCTAssertEqual(try safetyStore.save(snapshotData: first, expectedSnapshotID: "snapshot-first"), first.count)
+        XCTAssertEqual(try safetyStore.load(snapshotID: "snapshot-first"), first)
+        _ = try safetyStore.save(snapshotData: second, expectedSnapshotID: "snapshot-second")
+        _ = try safetyStore.save(snapshotData: third, expectedSnapshotID: "snapshot-third")
+
+        XCTAssertEqual(try safetyStore.metadata().map(\.snapshotId), ["snapshot-third", "snapshot-second"])
+        XCTAssertNil(try safetyStore.load(snapshotID: "snapshot-first"))
+        XCTAssertEqual(try safetyStore.load(snapshotID: "snapshot-third"), third)
+    }
+
+    func testNativeSafetySnapshotRejectsMismatchedEnvelopeWithoutReplacingVerifiedCopy() throws {
+        let safetyDirectory = directoryURL.appendingPathComponent("SafetyMismatch", isDirectory: true)
+        let safetyStore = NativeSafetySnapshotStore(directoryURL: safetyDirectory)
+        let verified = makeSafetySnapshotData(id: "snapshot-verified", createdAt: "2026-10-08T12:00:00.000Z")
+        let mismatched = makeSafetySnapshotData(id: "snapshot-content", createdAt: "2026-10-08T12:01:00.000Z")
+
+        _ = try safetyStore.save(snapshotData: verified, expectedSnapshotID: "snapshot-verified")
+        XCTAssertThrowsError(try safetyStore.save(snapshotData: mismatched, expectedSnapshotID: "snapshot-envelope"))
+
+        XCTAssertEqual(try safetyStore.metadata().map(\.snapshotId), ["snapshot-verified"])
+        XCTAssertEqual(try safetyStore.load(snapshotID: "snapshot-verified"), verified)
+    }
+
+    func testNativeSafetySnapshotRejectsInvalidOrUnsafeContent() throws {
+        let safetyStore = NativeSafetySnapshotStore(directoryURL: directoryURL.appendingPathComponent("SafetyInvalid", isDirectory: true))
+        XCTAssertThrowsError(try safetyStore.save(snapshotData: Data("{}".utf8), expectedSnapshotID: "snapshot-invalid"))
+        XCTAssertThrowsError(try safetyStore.save(
+            snapshotData: makeSafetySnapshotData(id: "snapshot-valid", createdAt: "2026-10-08T12:00:00.000Z"),
+            expectedSnapshotID: "../unsafe"
+        ))
+        XCTAssertTrue(try safetyStore.metadata().isEmpty)
+    }
+
     func testEveryLocalWebReferenceIsBundledInTheApp() throws {
         let bundle = Bundle.main
         let indexURL = try XCTUnwrap(bundle.url(forResource: "index", withExtension: "html"))
@@ -223,6 +263,26 @@ final class RoutineSharedStateStoreTests: XCTestCase {
             eligibleItems: [item],
             updatedAt: "2026-09-14T12:00:00.000Z"
         )
+    }
+
+    private func makeSafetySnapshotData(id: String, createdAt: String) -> Data {
+        let snapshot: [String: Any] = [
+            "schemaVersion": 1,
+            "id": id,
+            "createdAt": createdAt,
+            "label": "Before private sync",
+            "version": "1.32.0",
+            "build": 34,
+            "state": [
+                "settings": ["backgroundImage": ""],
+                "items": [["id": "morning-teeth", "name": "Brush teeth"]],
+                "days": ["2026-10-08": ["entries": ["morning-teeth": true]]],
+                "memories": [],
+                "notes": [],
+                "weeklyReviews": [:]
+            ]
+        ]
+        return try! JSONSerialization.data(withJSONObject: snapshot, options: [.sortedKeys])
     }
 
     private func makeCommand(id: String) -> RoutineSharedCommand {

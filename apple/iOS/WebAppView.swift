@@ -4,6 +4,142 @@ import UIKit
 import WebKit
 import WidgetKit
 
+enum NativeSafetySnapshotStoreError: LocalizedError {
+    case unavailable
+    case invalidSnapshot
+    case snapshotTooLarge
+    case verificationFailed
+
+    var errorDescription: String? {
+        switch self {
+        case .unavailable:
+            "Protected recovery storage is unavailable."
+        case .invalidSnapshot:
+            "The recovery copy was not valid."
+        case .snapshotTooLarge:
+            "The recovery copy was too large to save safely."
+        case .verificationFailed:
+            "The recovery copy could not be verified after saving."
+        }
+    }
+}
+
+final class NativeSafetySnapshotStore: @unchecked Sendable {
+    private let directoryURL: URL?
+    private let fileManager: FileManager
+    private let processLock = NSLock()
+    private let maximumSnapshotBytes = 25 * 1_024 * 1_024
+    private let maximumSnapshots = 2
+
+    init(directoryURL: URL? = nil, fileManager: FileManager = .default) {
+        self.fileManager = fileManager
+        self.directoryURL = directoryURL
+            ?? fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
+                .appendingPathComponent("DailyRoutineSafetySnapshots", isDirectory: true)
+    }
+
+    @discardableResult
+    func save(snapshotData: Data, expectedSnapshotID: String) throws -> Int {
+        processLock.lock()
+        defer { processLock.unlock() }
+        guard let directoryURL else { throw NativeSafetySnapshotStoreError.unavailable }
+        guard !snapshotData.isEmpty else { throw NativeSafetySnapshotStoreError.invalidSnapshot }
+        guard snapshotData.count <= maximumSnapshotBytes else { throw NativeSafetySnapshotStoreError.snapshotTooLarge }
+        guard Self.isSafeIdentifier(expectedSnapshotID) else { throw NativeSafetySnapshotStoreError.invalidSnapshot }
+        _ = try validate(snapshotData, expectedSnapshotID: expectedSnapshotID)
+        try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+        let snapshotURL = fileURL(snapshotID: expectedSnapshotID, directoryURL: directoryURL)
+        try snapshotData.write(to: snapshotURL, options: [.atomic, .completeFileProtection])
+        let verified = try Data(contentsOf: snapshotURL)
+        guard verified == snapshotData else { throw NativeSafetySnapshotStoreError.verificationFailed }
+        _ = try validate(verified, expectedSnapshotID: expectedSnapshotID)
+        try pruneVerifiedSnapshots(in: directoryURL)
+        return verified.count
+    }
+
+    func load(snapshotID: String) throws -> Data? {
+        processLock.lock()
+        defer { processLock.unlock() }
+        guard let directoryURL else { throw NativeSafetySnapshotStoreError.unavailable }
+        guard Self.isSafeIdentifier(snapshotID) else { throw NativeSafetySnapshotStoreError.invalidSnapshot }
+        let snapshotURL = fileURL(snapshotID: snapshotID, directoryURL: directoryURL)
+        guard fileManager.fileExists(atPath: snapshotURL.path) else { return nil }
+        let data = try Data(contentsOf: snapshotURL)
+        _ = try validate(data, expectedSnapshotID: snapshotID)
+        return data
+    }
+
+    func metadata() throws -> [NativeSafetySnapshotMetadata] {
+        processLock.lock()
+        defer { processLock.unlock() }
+        return try metadataUnlocked()
+    }
+
+    private func metadataUnlocked() throws -> [NativeSafetySnapshotMetadata] {
+        guard let directoryURL else { throw NativeSafetySnapshotStoreError.unavailable }
+        guard fileManager.fileExists(atPath: directoryURL.path) else { return [] }
+        return try fileManager.contentsOfDirectory(at: directoryURL, includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension == "json" }
+            .compactMap { url in
+                guard let data = try? Data(contentsOf: url) else { return nil }
+                return try? validate(data, expectedSnapshotID: nil)
+            }
+            .sorted { $0.createdAt > $1.createdAt }
+    }
+
+    private func fileURL(snapshotID: String, directoryURL: URL) -> URL {
+        directoryURL.appendingPathComponent("private-sync-safety-\(snapshotID).json", isDirectory: false)
+    }
+
+    private func validate(_ data: Data, expectedSnapshotID: String?) throws -> NativeSafetySnapshotMetadata {
+        guard
+            let object = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+            (object["schemaVersion"] as? NSNumber)?.intValue == 1,
+            let id = object["id"] as? String,
+            Self.isSafeIdentifier(id),
+            expectedSnapshotID == nil || id == expectedSnapshotID,
+            let createdAt = object["createdAt"] as? String,
+            !createdAt.isEmpty,
+            object["version"] is String,
+            object["build"] is NSNumber,
+            let state = object["state"] as? [String: Any],
+            let items = state["items"] as? [Any],
+            let days = state["days"] as? [String: Any]
+        else {
+            throw NativeSafetySnapshotStoreError.invalidSnapshot
+        }
+        return NativeSafetySnapshotMetadata(
+            snapshotId: id,
+            createdAt: createdAt,
+            label: String((object["label"] as? String ?? "Protected recovery copy").prefix(160)),
+            dayCount: days.count,
+            itemCount: items.count,
+            byteCount: data.count
+        )
+    }
+
+    private func pruneVerifiedSnapshots(in directoryURL: URL) throws {
+        let retained = try metadataUnlocked()
+        guard retained.count > maximumSnapshots else { return }
+        for snapshot in retained.dropFirst(maximumSnapshots) {
+            try? fileManager.removeItem(at: fileURL(snapshotID: snapshot.snapshotId, directoryURL: directoryURL))
+        }
+    }
+
+    private static func isSafeIdentifier(_ value: String) -> Bool {
+        value.range(of: #"^[A-Za-z0-9-]{1,160}$"#, options: .regularExpression) != nil
+    }
+}
+
+struct NativeSafetySnapshotMetadata: Codable, Equatable, Sendable {
+    let snapshotId: String
+    let createdAt: String
+    let label: String
+    let dayCount: Int
+    let itemCount: Int
+    let byteCount: Int
+}
+
 struct WebAppView: UIViewRepresentable {
     @ObservedObject var model: AppModel
 
@@ -60,6 +196,7 @@ struct WebAppView: UIViewRepresentable {
         private var processedWatchEventIDs = Set<UUID>()
         private var didBecomeActiveObserver: NSObjectProtocol?
         private var healthRefreshTask: Task<Void, Never>?
+        private let safetySnapshotStore = NativeSafetySnapshotStore()
         weak var webView: WKWebView?
 
         init(model: AppModel) {
@@ -133,6 +270,12 @@ struct WebAppView: UIViewRepresentable {
                 let action = NativeBridgeAction(rawValue: rawAction)
             else {
                 emitError("The native request was not recognized.")
+                return
+            }
+
+            if [.saveSafetySnapshot, .requestSafetySnapshotStatus, .loadSafetySnapshot].contains(action),
+               !message.frameInfo.isMainFrame {
+                emitError("The recovery request must come from the main app screen.")
                 return
             }
 
@@ -291,6 +434,92 @@ struct WebAppView: UIViewRepresentable {
                     return
                 }
                 presentShareSheet(filename: filename, content: content)
+            case .saveSafetySnapshot:
+                let value = payload["value"] as? [String: Any]
+                let requestID = value?["requestId"] as? String ?? ""
+                let snapshotID = value?["snapshotId"] as? String ?? ""
+                guard
+                    !requestID.isEmpty,
+                    !snapshotID.isEmpty,
+                    let content = value?["content"] as? String,
+                    let data = content.data(using: .utf8)
+                else {
+                    if !requestID.isEmpty {
+                        emit(
+                            name: "safety.snapshot.saved",
+                            value: SafetySnapshotSavedEvent(
+                                requestId: requestID,
+                                snapshotId: snapshotID,
+                                success: false,
+                                byteCount: 0,
+                                message: "The safety snapshot request was not valid."
+                            )
+                        )
+                    } else {
+                        emitError("The safety snapshot request was not valid.")
+                    }
+                    return
+                }
+                Task.detached(priority: .utility) { [weak self, safetySnapshotStore] in
+                    let event: SafetySnapshotSavedEvent
+                    do {
+                        let byteCount = try safetySnapshotStore.save(snapshotData: data, expectedSnapshotID: snapshotID)
+                        event = SafetySnapshotSavedEvent(
+                            requestId: requestID,
+                            snapshotId: snapshotID,
+                            success: true,
+                            byteCount: byteCount,
+                            message: nil
+                        )
+                    } catch {
+                        event = SafetySnapshotSavedEvent(
+                            requestId: requestID,
+                            snapshotId: snapshotID,
+                            success: false,
+                            byteCount: 0,
+                            message: "The protected recovery copy could not be saved and verified."
+                        )
+                    }
+                    await MainActor.run { self?.emit(name: "safety.snapshot.saved", value: event) }
+                }
+            case .requestSafetySnapshotStatus:
+                Task.detached(priority: .utility) { [weak self, safetySnapshotStore] in
+                    let snapshots = (try? safetySnapshotStore.metadata()) ?? []
+                    await MainActor.run { self?.emit(name: "safety.snapshot.status", value: snapshots) }
+                }
+            case .loadSafetySnapshot:
+                let value = payload["value"] as? [String: Any]
+                let requestID = value?["requestId"] as? String ?? ""
+                let snapshotID = value?["snapshotId"] as? String ?? ""
+                guard !requestID.isEmpty, !snapshotID.isEmpty else {
+                    emitError("The recovery-copy request was not valid.")
+                    return
+                }
+                Task.detached(priority: .utility) { [weak self, safetySnapshotStore] in
+                    let event: SafetySnapshotLoadedEvent
+                    do {
+                        guard
+                            let data = try safetySnapshotStore.load(snapshotID: snapshotID),
+                            let content = String(data: data, encoding: .utf8)
+                        else { throw NativeSafetySnapshotStoreError.invalidSnapshot }
+                        event = SafetySnapshotLoadedEvent(
+                            requestId: requestID,
+                            snapshotId: snapshotID,
+                            success: true,
+                            content: content,
+                            message: nil
+                        )
+                    } catch {
+                        event = SafetySnapshotLoadedEvent(
+                            requestId: requestID,
+                            snapshotId: snapshotID,
+                            success: false,
+                            content: nil,
+                            message: "The protected recovery copy could not be read and verified."
+                        )
+                    }
+                    await MainActor.run { self?.emit(name: "safety.snapshot.loaded", value: event) }
+                }
             }
         }
 
@@ -462,6 +691,22 @@ struct WebAppView: UIViewRepresentable {
 private struct RoutineSnapshotSavedEvent: Encodable {
     let revision: Int
     let localDateKey: String
+}
+
+private struct SafetySnapshotSavedEvent: Encodable {
+    let requestId: String
+    let snapshotId: String
+    let success: Bool
+    let byteCount: Int
+    let message: String?
+}
+
+private struct SafetySnapshotLoadedEvent: Encodable {
+    let requestId: String
+    let snapshotId: String
+    let success: Bool
+    let content: String?
+    let message: String?
 }
 
 private extension JSONEncoder {

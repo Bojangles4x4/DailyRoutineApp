@@ -70,19 +70,27 @@ test('reads the owner document with the signed-in token', async () => {
   assert.strictEqual(authorization, 'Bearer access');
 });
 
-test('deletes only the signed-in owner document', async () => {
+test('deletes only the signed-in owner document at the verified revision', async () => {
   let requestUrl = '';
   let requestOptions = null;
   const client = createClient({ url: 'https://example.supabase.co', publishableKey: 'publishable', storage: storage(), fetchImpl: async (url, options) => {
     requestUrl = url;
     requestOptions = options;
-    return response(204, null);
+    return response(200, [{ owner_id: 'owner-1', revision: 7 }]);
   } });
-  await client.deleteRoutine({ access_token: 'access', user: { id: 'owner-1' } });
-  assert.ok(requestUrl.endsWith('/rest/v1/routine_documents?owner_id=eq.owner-1'));
+  await client.deleteRoutine({ access_token: 'access', user: { id: 'owner-1' } }, 7);
+  assert.ok(requestUrl.endsWith('/rest/v1/routine_documents?owner_id=eq.owner-1&revision=eq.7'));
   assert.strictEqual(requestOptions.method, 'DELETE');
   assert.strictEqual(requestOptions.headers.Authorization, 'Bearer access');
-  assert.strictEqual(requestOptions.headers.Prefer, 'return=minimal');
+  assert.strictEqual(requestOptions.headers.Prefer, 'return=representation');
+});
+
+test('reports a revision conflict when verified cloud deletion removes no row', async () => {
+  const client = createClient({ url: 'https://example.supabase.co', publishableKey: 'publishable', storage: storage(), fetchImpl: async () => response(200, []) });
+  await assert.rejects(
+    () => client.deleteRoutine({ access_token: 'access', user: { id: 'owner-1' } }, 7),
+    error => error instanceof CloudConflictError
+  );
 });
 
 test('updates only the expected revision', async () => {
