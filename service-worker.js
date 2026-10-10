@@ -1,5 +1,5 @@
-const CACHE_NAME = 'daily-routine-v1-33-0-build-35-truth-reminder-launch';
-const ASSETS = ['./','./index.html','./styles.css','./sync-core.js','./sync-cloud.js','./data-health.js','./app.js?v=1.33.0-build35-truth-reminder-launch','./manifest.webmanifest','./icon-192.png','./icon-512.png','./privacy.html','./support.html','./legal.css'];
+const CACHE_NAME = 'daily-routine-v1-34-0-build-36-truth-reminder-notification';
+const ASSETS = ['./','./index.html','./styles.css','./sync-core.js','./sync-cloud.js','./data-health.js','./app.js?v=1.34.0-build36-truth-reminder-notification','./manifest.webmanifest','./icon-192.png','./icon-512.png','./privacy.html','./support.html','./legal.css'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));

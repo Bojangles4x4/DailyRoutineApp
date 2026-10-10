@@ -266,13 +266,27 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         [.banner, .list, .sound]
     }
 
-    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
-        guard response.notification.request.identifier.hasPrefix("dailyRoutine.truth.") else { return }
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        let identifier = response.notification.request.identifier
+        let actionIdentifier = response.actionIdentifier
         let rawID = response.notification.request.content.userInfo["truthReminderID"] as? String
-        await MainActor.run {
-            if response.actionIdentifier == acknowledgeActionIdentifier || response.actionIdentifier == UNNotificationDefaultActionIdentifier {
-                queuePresentation(entryID: rawID.flatMap(UUID.init(uuidString:)))
-            }
+
+        // Finish the system notification handoff on the callback path before touching
+        // SwiftUI. On a cold launch, awaiting the main actor from the async delegate
+        // can overlap UIKit's background state-restoration transaction and abort the app.
+        completionHandler()
+
+        guard identifier.hasPrefix("dailyRoutine.truth."),
+              actionIdentifier == "dailyRoutine.truth.acknowledge"
+                || actionIdentifier == UNNotificationDefaultActionIdentifier
+        else { return }
+
+        Task { @MainActor [weak self] in
+            self?.queuePresentation(entryID: rawID.flatMap(UUID.init(uuidString:)))
         }
     }
 

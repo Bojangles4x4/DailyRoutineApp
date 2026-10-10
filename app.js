@@ -9,8 +9,8 @@
   const EARNED_ACCESS_DEVICE_KEY = 'dailyRoutine.earnedAccess.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.33.0';
-  const APP_BUILD = 35;
+  const APP_VERSION = '1.34.0';
+  const APP_BUILD = 36;
   const PRIVATE_SYNC_COMPONENT_MESSAGE = 'This build is missing a required sync component. No routine data on this device or in the cloud was changed. Update the app to continue.';
   const PRIVATE_SYNC_LEGACY_RECOVERY_MESSAGE = 'The previous build could not sync. Your local data is preserved—review and sync now.';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
