@@ -178,6 +178,59 @@ final class RoutineSharedStateStoreTests: XCTestCase {
         XCTAssertEqual(EarnedAccessShared.usageCheckpoints(totalMinutes: 500).last, 120)
     }
 
+    func testTruthReminderPresentationWaitsForMorningFoundation() {
+        let entryID = UUID()
+
+        let decision = TruthReminderStore.presentationDecision(
+            queuedEntryID: entryID,
+            activeGateEntryID: entryID,
+            availableEntryIDs: [entryID],
+            morningFoundationIsIncomplete: true
+        )
+
+        XCTAssertNil(decision)
+    }
+
+    func testActiveTruthGateWinsOverNotificationAndBlocks() {
+        let queuedID = UUID()
+        let activeID = UUID()
+
+        let decision = TruthReminderStore.presentationDecision(
+            queuedEntryID: queuedID,
+            activeGateEntryID: activeID,
+            availableEntryIDs: [queuedID, activeID],
+            morningFoundationIsIncomplete: false
+        )
+
+        XCTAssertEqual(decision, TruthReminderPresentationDecision(entryID: activeID, blocking: true))
+    }
+
+    func testNotificationOnlyTruthReminderIsNonblocking() {
+        let entryID = UUID()
+
+        let decision = TruthReminderStore.presentationDecision(
+            queuedEntryID: entryID,
+            activeGateEntryID: nil,
+            availableEntryIDs: [entryID],
+            morningFoundationIsIncomplete: false
+        )
+
+        XCTAssertEqual(decision, TruthReminderPresentationDecision(entryID: entryID, blocking: false))
+    }
+
+    func testMissingTruthReminderDoesNotPresent() {
+        let missingID = UUID()
+
+        let decision = TruthReminderStore.presentationDecision(
+            queuedEntryID: missingID,
+            activeGateEntryID: nil,
+            availableEntryIDs: [],
+            morningFoundationIsIncomplete: false
+        )
+
+        XCTAssertNil(decision)
+    }
+
     func testNativeSafetySnapshotRoundTripsExactBytesAndRetainsTwoCopies() throws {
         let safetyDirectory = directoryURL.appendingPathComponent("Safety", isDirectory: true)
         let safetyStore = NativeSafetySnapshotStore(directoryURL: safetyDirectory)
@@ -271,7 +324,7 @@ final class RoutineSharedStateStoreTests: XCTestCase {
             "id": id,
             "createdAt": createdAt,
             "label": "Before private sync",
-            "version": "1.32.0",
+            "version": "1.33.0",
             "build": 34,
             "state": [
                 "settings": ["backgroundImage": ""],

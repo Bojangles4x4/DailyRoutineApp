@@ -25,19 +25,23 @@ private struct DailyRoutineRootView: View {
         WebAppView(model: model)
             .ignoresSafeArea(.container, edges: .bottom)
             .task {
-                await reminders.refreshForNewDay()
-                reminders.restorePendingGatePresentation()
+                await reminders.appDidBecomeActive()
             }
-            .fullScreenCover(item: $reminders.pendingPresentation) { entry in
-                TruthReminderReviewView(store: reminders, entry: entry, blocking: reminders.gateIsActive)
+            .fullScreenCover(item: $reminders.pendingPresentation) { presentation in
+                TruthReminderReviewView(
+                    store: reminders,
+                    entry: presentation.entry,
+                    blocking: presentation.blocking
+                )
             }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active {
                     model.earnedAccess.refresh()
                     Task {
-                        await reminders.refreshForNewDay()
-                        reminders.restorePendingGatePresentation()
+                        await reminders.appDidBecomeActive()
                     }
+                } else {
+                    reminders.appDidResignActive()
                 }
             }
     }

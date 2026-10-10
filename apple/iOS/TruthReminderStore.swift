@@ -12,6 +12,18 @@ struct TruthReminder: Codable, Identifiable, Equatable {
     var selected = true
 }
 
+struct TruthReminderPresentation: Identifiable, Equatable {
+    let entry: TruthReminder
+    let blocking: Bool
+
+    var id: UUID { entry.id }
+}
+
+struct TruthReminderPresentationDecision: Equatable {
+    let entryID: UUID
+    let blocking: Bool
+}
+
 struct TruthReminderSettings: Codable {
     var enabled = false
     var startMinute = 8 * 60
@@ -56,13 +68,16 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
     @Published var settings = TruthReminderSettings()
     @Published var status = "Reminders are off. Add a truth, then enable your schedule."
     @Published var busy = false
-    @Published var pendingPresentation: TruthReminder?
+    @Published var pendingPresentation: TruthReminderPresentation?
     private let center = UNUserNotificationCenter.current()
     private let activityCenter = DeviceActivityCenter()
     private let truthGateStore = ManagedSettingsStore(named: EarnedAccessShared.truthReminderStoreName)
     private let prefix = "dailyRoutine.truth."
     private let categoryIdentifier = "dailyRoutine.truth.category"
     private let acknowledgeActionIdentifier = "dailyRoutine.truth.acknowledge"
+    private var queuedNotificationEntryID: UUID?
+    private var presentationHostIsReady = false
+    private var presentationTask: Task<Void, Never>?
     private var folder: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("TruthReminders", isDirectory: true)
@@ -75,7 +90,6 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         center.delegate = self
         let acknowledge = UNNotificationAction(identifier: acknowledgeActionIdentifier, title: "Review now", options: [.foreground])
         center.setNotificationCategories([UNNotificationCategory(identifier: categoryIdentifier, actions: [acknowledge], intentIdentifiers: [])])
-        restorePendingGatePresentation()
     }
 
     var scheduleSummary: String {
@@ -148,7 +162,7 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
     }
 
     func refreshForNewDay() async {
-        reconcileActiveGate()
+        _ = validatedActiveGateEntry()
         guard settings.enabled, !busy else { return }
         let day = Calendar.current.startOfDay(for: Date()).description
         if settings.scheduledDay != day || settings.scheduledEntryIDs.isEmpty {
@@ -257,7 +271,7 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         let rawID = response.notification.request.content.userInfo["truthReminderID"] as? String
         await MainActor.run {
             if response.actionIdentifier == acknowledgeActionIdentifier || response.actionIdentifier == UNNotificationDefaultActionIdentifier {
-                presentForReview(entryID: rawID.flatMap(UUID.init(uuidString:)))
+                queuePresentation(entryID: rawID.flatMap(UUID.init(uuidString:)))
             }
         }
     }
@@ -266,8 +280,16 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         acknowledge(entryID: entry.id)
     }
 
-    func restorePendingGatePresentation() {
-        reconcileActiveGate()
+    func appDidBecomeActive() async {
+        await refreshForNewDay()
+        presentationHostIsReady = true
+        requestPresentationReconciliation()
+    }
+
+    func appDidResignActive() {
+        presentationHostIsReady = false
+        presentationTask?.cancel()
+        presentationTask = nil
     }
 
     func morningFoundationDidChange(completed: Bool) {
@@ -279,6 +301,7 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         guard settings.enabled && settings.pauseAppsUntilReviewed else { return }
         do {
             try scheduleNextTruthGate()
+            requestPresentationReconciliation()
         } catch {
             status = "Today’s opening is complete, but the next truth-reminder pause could not be scheduled: \(error.localizedDescription)"
         }
@@ -291,6 +314,7 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
 
     func unlockCurrentReminder() {
         clearActiveGate(stopMonitoring: true)
+        queuedNotificationEntryID = nil
         pendingPresentation = nil
         do {
             if settings.enabled && settings.pauseAppsUntilReviewed { try scheduleNextTruthGate() }
@@ -305,8 +329,9 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         settings.acknowledgedCount = settings.acknowledgedDay == today ? (settings.acknowledgedCount ?? 0) + 1 : 1
         settings.acknowledgedDay = today
         settings.lastAcknowledgedAt = Date()
-        pendingPresentation = nil
         clearActiveGate(stopMonitoring: true)
+        queuedNotificationEntryID = nil
+        pendingPresentation = nil
         try? persist()
         do {
             if settings.enabled && settings.pauseAppsUntilReviewed { try scheduleNextTruthGate() }
@@ -320,16 +345,65 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         }
     }
 
-    private func presentForReview(entryID: UUID?) {
-        let entry = entryID.flatMap { id in settings.entries.first { $0.id == id } }
-            ?? activeGateEntryID().flatMap { id in settings.entries.first { $0.id == id } }
-            ?? settings.entries.first(where: { settings.shuffle || $0.selected })
-        if let entry {
-            pendingPresentation = entry
-        } else if gateIsActive {
-            clearActiveGate(stopMonitoring: true)
-            status = "A stale reminder lock was cleared because its reminder was no longer available."
+    private func queuePresentation(entryID: UUID?) {
+        queuedNotificationEntryID = entryID
+            ?? activeGateEntryID()
+            ?? settings.entries.first(where: { settings.shuffle || $0.selected })?.id
+        requestPresentationReconciliation()
+    }
+
+    private func requestPresentationReconciliation() {
+        guard presentationHostIsReady else { return }
+        presentationTask?.cancel()
+        presentationTask = Task { @MainActor [weak self] in
+            // Notification callbacks can arrive while SwiftUI is still constructing the
+            // launch window. One run-loop turn gives the single presentation host time
+            // to attach and collapses duplicate app/task/scene callbacks into one route.
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            self?.reconcilePendingPresentation()
         }
+    }
+
+    private func reconcilePendingPresentation(now: Date = Date()) {
+        guard presentationHostIsReady else { return }
+        guard !morningFoundationIsIncomplete else {
+            queuedNotificationEntryID = nil
+            if pendingPresentation?.blocking == true { pendingPresentation = nil }
+            return
+        }
+
+        let activeEntry = validatedActiveGateEntry(now: now)
+        let availableIDs = Set(settings.entries.map(\.id))
+        let decision = Self.presentationDecision(
+            queuedEntryID: queuedNotificationEntryID,
+            activeGateEntryID: activeEntry?.id,
+            availableEntryIDs: availableIDs,
+            morningFoundationIsIncomplete: false
+        )
+        queuedNotificationEntryID = nil
+
+        guard let decision,
+              let entry = settings.entries.first(where: { $0.id == decision.entryID })
+        else { return }
+        let route = TruthReminderPresentation(entry: entry, blocking: decision.blocking)
+        if pendingPresentation != route { pendingPresentation = route }
+    }
+
+    nonisolated static func presentationDecision(
+        queuedEntryID: UUID?,
+        activeGateEntryID: UUID?,
+        availableEntryIDs: Set<UUID>,
+        morningFoundationIsIncomplete: Bool
+    ) -> TruthReminderPresentationDecision? {
+        guard !morningFoundationIsIncomplete else { return nil }
+        if let activeGateEntryID, availableEntryIDs.contains(activeGateEntryID) {
+            return TruthReminderPresentationDecision(entryID: activeGateEntryID, blocking: true)
+        }
+        if let queuedEntryID, availableEntryIDs.contains(queuedEntryID) {
+            return TruthReminderPresentationDecision(entryID: queuedEntryID, blocking: false)
+        }
+        return nil
     }
 
     private func activeGateEntryID() -> UUID? {
@@ -339,15 +413,12 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         return settings.scheduledEntryIDs[String(minute)].flatMap(UUID.init(uuidString:))
     }
 
-    private func reconcileActiveGate(now: Date = Date()) {
-        guard gateIsActive else {
-            pendingPresentation = nil
-            return
-        }
+    private func validatedActiveGateEntry(now: Date = Date()) -> TruthReminder? {
+        guard gateIsActive else { return nil }
         guard !morningFoundationIsIncomplete else {
             suspendTruthGateForMorningFoundation()
             status = "Truth reminders will begin after today’s opening is complete."
-            return
+            return nil
         }
         let defaults = EarnedAccessShared.defaults
         let hasExpiry = defaults.object(forKey: EarnedAccessShared.truthReminderGateExpiresAtKey) != nil
@@ -362,11 +433,10 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
               let entry
         else {
             clearActiveGate(stopMonitoring: true)
-            pendingPresentation = nil
             status = "A stale truth-reminder lock was cleared."
-            return
+            return nil
         }
-        pendingPresentation = entry
+        return entry
     }
 
     private func clearActiveGate(stopMonitoring: Bool) {
@@ -380,6 +450,7 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         EarnedAccessShared.defaults.removeObject(forKey: EarnedAccessShared.truthReminderGateNextEntryIDKey)
         EarnedAccessShared.defaults.removeObject(forKey: EarnedAccessShared.truthReminderGateNextExpiresAtKey)
         EarnedAccessShared.clearTruthReminderGate(from: truthGateStore)
+        queuedNotificationEntryID = nil
         pendingPresentation = nil
     }
 
