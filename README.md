@@ -2,8 +2,9 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.34.0 development features
+## Version 1.35.0 development features
 
+- Build 37 keeps every due truth reminder in a separate same-day review queue, holds the app shield until the queue is empty, and adds a logged 15-minute safety unlock that relocks automatically while reminders remain.
 - Build 36 fixes the notification-tap crash confirmed in the Build 35 device report by completing the iOS notification handoff before queuing the truth-reminder screen on the active app scene.
 - Build 35 makes notification-launched truth reminders wait for the active app scene, deduplicates competing launch and restoration callbacks, and reliably preserves the app pause until the reminder is acknowledged or explicitly unlocked.
 - Build 34 keeps Private Sync fail-closed when browser snapshot storage is full, compacts older local copies, and falls back to an atomically written, verified, protected iPhone recovery copy that is visible and restorable in Backup & export.

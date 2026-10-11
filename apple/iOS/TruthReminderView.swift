@@ -56,6 +56,9 @@ struct TruthReminderView: View {
                     if let acknowledgedAt = store.settings.lastAcknowledgedAt {
                         LabeledContent("Last acknowledged", value: acknowledgedAt.formatted(date: .abbreviated, time: .shortened))
                     }
+                    if let safetyAt = store.lastSafetyUnlockAt {
+                        LabeledContent("Safety unlocks today", value: "\(store.safetyUnlockCountToday) · last at \(safetyAt.formatted(date: .omitted, time: .shortened))")
+                    }
                 } footer: {
                     Text("Reminder text and pictures may appear on your lock screen. Tap the notification or “Review now” to open the full reminder, then acknowledge it inside the app. Your library stays on this iPhone and is separate from routine backups and Private sync.")
                 }
@@ -105,8 +108,10 @@ struct TruthReminderView: View {
 
 struct TruthReminderReviewView: View {
     @ObservedObject var store: TruthReminderStore
-    let entry: TruthReminder
-    let blocking: Bool
+    let presentation: TruthReminderPresentation
+
+    private var entry: TruthReminder { presentation.entry }
+    private var blocking: Bool { presentation.blocking }
 
     var body: some View {
         ZStack {
@@ -129,6 +134,14 @@ struct TruthReminderReviewView: View {
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
+                        if blocking && presentation.queueTotal > 1 {
+                            Text("Reminder \(presentation.queuePosition) of \(presentation.queueTotal) waiting")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Color(red: 0.12, green: 0.35, blue: 0.30))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(.white.opacity(0.72), in: Capsule())
+                        }
                     }
 
                     VStack(spacing: 18) {
@@ -153,7 +166,7 @@ struct TruthReminderReviewView: View {
                     .background(.white.opacity(0.84), in: RoundedRectangle(cornerRadius: 28, style: .continuous))
 
                     Button {
-                        store.acknowledge(entry)
+                        store.acknowledge(presentation)
                     } label: {
                         Label("I’ve read this", systemImage: "checkmark.circle.fill")
                             .font(.headline)
@@ -165,8 +178,8 @@ struct TruthReminderReviewView: View {
                     .accessibilityIdentifier("truthReminderAcknowledgeButton")
 
                     if blocking {
-                        Button("Unlock for now") {
-                            store.unlockCurrentReminder()
+                        Button("Safety unlock for 15 minutes") {
+                            store.safetyUnlockForFifteenMinutes()
                         }
                         .buttonStyle(.bordered)
                         .accessibilityIdentifier("truthReminderUnlockButton")
@@ -178,7 +191,7 @@ struct TruthReminderReviewView: View {
                     }
 
                     Text(blocking
-                         ? "Your other apps will resume after you acknowledge this reminder. If the reminder cannot be reviewed, Unlock for now safely clears this pause."
+                         ? "Other apps resume when every waiting reminder is reviewed. Safety unlock opens them for 15 minutes without marking any reminder complete; they lock again if reminders still wait. All reminder locks clear at midnight."
                          : "This reminder did not pause your other apps.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)

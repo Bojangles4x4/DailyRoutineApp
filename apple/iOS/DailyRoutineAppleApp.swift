@@ -30,8 +30,7 @@ private struct DailyRoutineRootView: View {
             .fullScreenCover(item: $reminders.pendingPresentation) { presentation in
                 TruthReminderReviewView(
                     store: reminders,
-                    entry: presentation.entry,
-                    blocking: presentation.blocking
+                    presentation: presentation
                 )
             }
             .onChange(of: scenePhase) { _, phase in

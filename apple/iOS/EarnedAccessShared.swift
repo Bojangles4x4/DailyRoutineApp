@@ -24,12 +24,18 @@ enum EarnedAccessShared {
     static let truthReminderGateActiveKey = "dailyRoutine.truthReminderGate.active.v1"
     static let truthReminderGateMinuteKey = "dailyRoutine.truthReminderGate.minute.v1"
     static let truthReminderGateNextMinuteKey = "dailyRoutine.truthReminderGate.nextMinute.v1"
+    static let truthReminderGateNextDateKey = "dailyRoutine.truthReminderGate.nextDate.v1"
+    static let truthReminderGateDailyStartMinuteKey = "dailyRoutine.truthReminderGate.dailyStartMinute.v1"
     static let truthReminderGateEntryIDKey = "dailyRoutine.truthReminderGate.entryID.v2"
     static let truthReminderGateNextEntryIDKey = "dailyRoutine.truthReminderGate.nextEntryID.v2"
     static let truthReminderGateActivatedAtKey = "dailyRoutine.truthReminderGate.activatedAt.v2"
     static let truthReminderGateExpiresAtKey = "dailyRoutine.truthReminderGate.expiresAt.v2"
     static let truthReminderGateDateKey = "dailyRoutine.truthReminderGate.dateKey.v2"
     static let truthReminderGateNextExpiresAtKey = "dailyRoutine.truthReminderGate.nextExpiresAt.v2"
+    static let truthReminderSafetyUnlockUntilKey = "dailyRoutine.truthReminderGate.safetyUnlockUntil.v1"
+    static let truthReminderSafetyUnlockDayKey = "dailyRoutine.truthReminderGate.safetyUnlockDay.v1"
+    static let truthReminderSafetyUnlockCountKey = "dailyRoutine.truthReminderGate.safetyUnlockCount.v1"
+    static let truthReminderSafetyUnlockLastAtKey = "dailyRoutine.truthReminderGate.safetyUnlockLastAt.v1"
     static let storeName = ManagedSettingsStore.Name("dailyRoutine.earnedAccess")
     static let foundationStoreName = ManagedSettingsStore.Name("dailyRoutine.morningFoundation")
     static let truthReminderStoreName = ManagedSettingsStore.Name("dailyRoutine.truthReminder")
@@ -98,6 +104,10 @@ enum EarnedAccessShared {
         defaults.removeObject(forKey: truthReminderGateActivatedAtKey)
         defaults.removeObject(forKey: truthReminderGateExpiresAtKey)
         defaults.removeObject(forKey: truthReminderGateDateKey)
+    }
+
+    static func clearTruthReminderSafetyUnlock() {
+        defaults.removeObject(forKey: truthReminderSafetyUnlockUntilKey)
     }
 
     static func clearAllowance(completed: Bool = false) {

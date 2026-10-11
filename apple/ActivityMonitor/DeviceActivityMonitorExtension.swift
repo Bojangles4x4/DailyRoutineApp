@@ -46,12 +46,18 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
             EarnedAccessShared.clearTruthReminderGate(from: truthReminderStore)
             return
         }
+        let safetyUnlockUntil = EarnedAccessShared.defaults.double(forKey: EarnedAccessShared.truthReminderSafetyUnlockUntilKey)
+        guard safetyUnlockUntil <= now.timeIntervalSince1970 + 5 else {
+            EarnedAccessShared.clearTruthReminderGate(from: truthReminderStore)
+            return
+        }
+        EarnedAccessShared.clearTruthReminderSafetyUnlock()
         let minute = EarnedAccessShared.defaults.integer(forKey: EarnedAccessShared.truthReminderGateNextMinuteKey)
         let scheduledExpiry = EarnedAccessShared.defaults.double(forKey: EarnedAccessShared.truthReminderGateNextExpiresAtKey)
         EarnedAccessShared.defaults.set(true, forKey: EarnedAccessShared.truthReminderGateActiveKey)
         EarnedAccessShared.defaults.set(minute, forKey: EarnedAccessShared.truthReminderGateMinuteKey)
         EarnedAccessShared.defaults.set(now.timeIntervalSince1970, forKey: EarnedAccessShared.truthReminderGateActivatedAtKey)
-        EarnedAccessShared.defaults.set(max(scheduledExpiry, now.addingTimeInterval(15 * 60).timeIntervalSince1970), forKey: EarnedAccessShared.truthReminderGateExpiresAtKey)
+        EarnedAccessShared.defaults.set(scheduledExpiry, forKey: EarnedAccessShared.truthReminderGateExpiresAtKey)
         EarnedAccessShared.defaults.set(EarnedAccessShared.localDateKey(now), forKey: EarnedAccessShared.truthReminderGateDateKey)
         if let entryID = EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.truthReminderGateNextEntryIDKey), !entryID.isEmpty {
             EarnedAccessShared.defaults.set(entryID, forKey: EarnedAccessShared.truthReminderGateEntryIDKey)
@@ -83,6 +89,15 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         super.intervalDidEnd(for: activity)
         if activity == EarnedAccessShared.truthReminderActivityName {
             EarnedAccessShared.clearTruthReminderGate(from: truthReminderStore)
+            let scheduledEnd = EarnedAccessShared.defaults.double(forKey: EarnedAccessShared.truthReminderGateNextExpiresAtKey)
+            let safetyUntil = EarnedAccessShared.defaults.double(forKey: EarnedAccessShared.truthReminderSafetyUnlockUntilKey)
+            let now = Date()
+            if safetyUntil <= now.timeIntervalSince1970 + 5 {
+                EarnedAccessShared.clearTruthReminderSafetyUnlock()
+            }
+            if scheduledEnd <= now.timeIntervalSince1970 + 5 {
+                scheduleNextTruthReminderDay(after: now)
+            }
             return
         }
         guard activity == EarnedAccessShared.activityName,
@@ -93,6 +108,29 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         else { return }
 
         restoreEarnedAccessShield(completed: true)
+    }
+
+    private func scheduleNextTruthReminderDay(after now: Date) {
+        let defaults = EarnedAccessShared.defaults
+        guard defaults.bool(forKey: EarnedAccessShared.truthReminderGateEnabledKey) else { return }
+        let calendar = Calendar.current
+        let nextDay = calendar.startOfDay(for: now.addingTimeInterval(60))
+        guard let end = calendar.date(byAdding: .day, value: 1, to: nextDay) else { return }
+        let startMinute = defaults.integer(forKey: EarnedAccessShared.truthReminderGateDailyStartMinuteKey)
+        guard let start = calendar.date(byAdding: .minute, value: startMinute, to: nextDay), start > now else { return }
+        defaults.set(startMinute, forKey: EarnedAccessShared.truthReminderGateNextMinuteKey)
+        defaults.set(EarnedAccessShared.localDateKey(start), forKey: EarnedAccessShared.truthReminderGateNextDateKey)
+        defaults.removeObject(forKey: EarnedAccessShared.truthReminderGateNextEntryIDKey)
+        defaults.set(end.timeIntervalSince1970, forKey: EarnedAccessShared.truthReminderGateNextExpiresAtKey)
+        let components: Set<Calendar.Component> = [.era, .year, .month, .day, .hour, .minute, .second]
+        try? DeviceActivityCenter().startMonitoring(
+            EarnedAccessShared.truthReminderActivityName,
+            during: DeviceActivitySchedule(
+                intervalStart: calendar.dateComponents(components, from: start),
+                intervalEnd: calendar.dateComponents(components, from: end),
+                repeats: false
+            )
+        )
     }
 
     override func eventDidReachThreshold(_ event: DeviceActivityEvent.Name, activity: DeviceActivityName) {

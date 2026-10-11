@@ -231,6 +231,39 @@ final class RoutineSharedStateStoreTests: XCTestCase {
         XCTAssertNil(decision)
     }
 
+    func testTruthReminderQueueKeepsEveryDueOccurrenceDistinct() {
+        let waiting = TruthReminderStore.dueUnreviewedMinutes(
+            scheduleMinutes: [480, 510, 540, 570],
+            trackingStartMinute: 480,
+            reviewedMinutes: [],
+            nowMinute: 545
+        )
+
+        XCTAssertEqual(waiting, [480, 510, 540])
+    }
+
+    func testTruthReminderQueueAdvancesWithoutSkippingLaterDueOccurrences() {
+        let waiting = TruthReminderStore.dueUnreviewedMinutes(
+            scheduleMinutes: [480, 510, 540, 570],
+            trackingStartMinute: 480,
+            reviewedMinutes: [480, 540],
+            nowMinute: 575
+        )
+
+        XCTAssertEqual(waiting, [510, 570])
+    }
+
+    func testTruthReminderQueueDoesNotCarryEarlierScheduleBeforeTrackingStarted() {
+        let waiting = TruthReminderStore.dueUnreviewedMinutes(
+            scheduleMinutes: [480, 510, 540, 570],
+            trackingStartMinute: 540,
+            reviewedMinutes: [],
+            nowMinute: 550
+        )
+
+        XCTAssertEqual(waiting, [540])
+    }
+
     func testNativeSafetySnapshotRoundTripsExactBytesAndRetainsTwoCopies() throws {
         let safetyDirectory = directoryURL.appendingPathComponent("Safety", isDirectory: true)
         let safetyStore = NativeSafetySnapshotStore(directoryURL: safetyDirectory)
