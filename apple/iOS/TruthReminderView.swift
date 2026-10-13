@@ -59,6 +59,17 @@ struct TruthReminderView: View {
                     if let safetyAt = store.lastSafetyUnlockAt {
                         LabeledContent("Safety unlocks today", value: "\(store.safetyUnlockCountToday) · last at \(safetyAt.formatted(date: .omitted, time: .shortened))")
                     }
+                    if store.settings.pauseAppsUntilReviewed {
+                        LabeledContent("Waiting reminders", value: String(store.waitingReminderCount))
+                        if let unlockUntil = store.safetyUnlockEndsAt {
+                            LabeledContent("Temporary access", value: "Until \(unlockUntil.formatted(date: .omitted, time: .shortened))")
+                        }
+                        if store.waitingReminderCount > 0 {
+                            Button(store.safetyUnlockEndsAt == nil ? "Review waiting reminders" : "End safety unlock and review") {
+                                store.reviewWaitingRemindersNow()
+                            }
+                        }
+                    }
                 } footer: {
                     Text("Reminder text and pictures may appear on your lock screen. Tap the notification or “Review now” to open the full reminder, then acknowledge it inside the app. Your library stays on this iPhone and is separate from routine backups and Private sync.")
                 }
@@ -93,7 +104,11 @@ struct TruthReminderView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
             .sheet(item: $editor) { TruthReminderEditor(store: store, entry: $0) }
-            .onAppear { draft = store.settings; chosen = Set(store.settings.entries.filter(\.selected).map(\.id)) }
+            .onAppear {
+                draft = store.settings
+                chosen = Set(store.settings.entries.filter(\.selected).map(\.id))
+                Task { await store.refreshForNewDay() }
+            }
             .onChange(of: store.settings.entries.map(\.id)) { old, new in
                 chosen.formUnion(Set(new).subtracting(old))
                 chosen.formIntersection(new)

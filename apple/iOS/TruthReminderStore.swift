@@ -42,13 +42,14 @@ struct TruthReminderSettings: Codable {
     var acknowledgedDay: String?
     var acknowledgedCount: Int?
     var reviewDay: String?
+    var reviewGateStartedDay: String?
     var reviewTrackingStartMinute: Int?
     var reviewedMinutes: [Int] = []
 
     private enum CodingKeys: String, CodingKey {
         case enabled, startMinute, endMinute, interval, shuffle, pauseAppsUntilReviewed, entries
         case scheduledDay, scheduledEntryIDs, lastAcknowledgedAt, acknowledgedDay, acknowledgedCount
-        case reviewDay, reviewTrackingStartMinute, reviewedMinutes
+        case reviewDay, reviewGateStartedDay, reviewTrackingStartMinute, reviewedMinutes
     }
 
     init() {}
@@ -69,6 +70,7 @@ struct TruthReminderSettings: Codable {
         acknowledgedDay = try values.decodeIfPresent(String.self, forKey: .acknowledgedDay)
         acknowledgedCount = try values.decodeIfPresent(Int.self, forKey: .acknowledgedCount)
         reviewDay = try values.decodeIfPresent(String.self, forKey: .reviewDay)
+        reviewGateStartedDay = try values.decodeIfPresent(String.self, forKey: .reviewGateStartedDay) ?? reviewDay
         reviewTrackingStartMinute = try values.decodeIfPresent(Int.self, forKey: .reviewTrackingStartMinute)
         reviewedMinutes = try values.decodeIfPresent([Int].self, forKey: .reviewedMinutes) ?? []
     }
@@ -129,6 +131,20 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
               defaults.object(forKey: EarnedAccessShared.truthReminderSafetyUnlockLastAtKey) != nil
         else { return nil }
         return Date(timeIntervalSince1970: defaults.double(forKey: EarnedAccessShared.truthReminderSafetyUnlockLastAtKey))
+    }
+
+    var waitingReminderCount: Int {
+        pendingMinutes(now: Date()).count
+    }
+
+    var safetyUnlockEndsAt: Date? {
+        let defaults = EarnedAccessShared.defaults
+        let now = Date()
+        guard defaults.string(forKey: EarnedAccessShared.truthReminderSafetyUnlockDayKey) == EarnedAccessShared.localDateKey(now),
+              defaults.object(forKey: EarnedAccessShared.truthReminderSafetyUnlockUntilKey) != nil
+        else { return nil }
+        let date = Date(timeIntervalSince1970: defaults.double(forKey: EarnedAccessShared.truthReminderSafetyUnlockUntilKey))
+        return date > now ? date : nil
     }
 
     private var morningFoundationIsIncomplete: Bool {
@@ -358,11 +374,15 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
             return
         }
         guard settings.enabled && settings.pauseAppsUntilReviewed else { return }
+        let today = EarnedAccessShared.localDateKey()
         do {
-            settings.reviewDay = EarnedAccessShared.localDateKey()
-            settings.reviewTrackingStartMinute = nil
-            settings.reviewedMinutes = []
-            try persist()
+            if Self.shouldInitializeReviewQueue(startedDay: settings.reviewGateStartedDay, today: today) {
+                settings.reviewDay = today
+                settings.reviewGateStartedDay = today
+                settings.reviewTrackingStartMinute = nil
+                settings.reviewedMinutes = []
+                try persist()
+            }
             try scheduleNextTruthGate()
             requestPresentationReconciliation()
         } catch {
@@ -380,14 +400,66 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         let minute = pendingPresentation?.slotMinute ?? pendingMinutes(now: now).first ?? activeGateMinute()
         let entryID = minute.flatMap { settings.scheduledEntryIDs[String($0)] }
         let scheduled = Self.performSafetyUnlock(minute: minute, entryID: entryID, now: now)
-        queuedNotificationEntryID = nil
-        pendingPresentation = nil
+        if scheduled {
+            queuedNotificationEntryID = nil
+            pendingPresentation = nil
+        } else {
+            requestPresentationReconciliation()
+        }
         let remaining = pendingMinutes(now: now).count
         let midnight = Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: now)) ?? now.addingTimeInterval(15 * 60)
         let unlockUntil = min(now.addingTimeInterval(15 * 60), midnight)
         status = scheduled
             ? "Safety unlock is on until \(unlockUntil.formatted(date: .omitted, time: .shortened)). \(remaining) reminder\(remaining == 1 ? "" : "s") still waiting."
             : "The safety unlock could not be scheduled, so the app pause remains in place."
+    }
+
+    func reviewWaitingRemindersNow() {
+        let now = Date()
+        prepareReviewState(now: now)
+        guard !morningFoundationIsIncomplete else {
+            status = "Complete today’s opening before reviewing scheduled truth reminders."
+            return
+        }
+        guard let minute = pendingMinutes(now: now).first else {
+            status = "No truth reminders are waiting right now."
+            return
+        }
+        let essential = EarnedAccessShared.loadEssentialSelection()
+        if !EarnedAccessShared.canApplyFoundationShield(
+            applicationCount: essential.applicationTokens.count,
+            websiteCount: essential.webDomainTokens.count
+        ) {
+            EarnedAccessShared.clearTruthReminderGate(from: truthGateStore)
+            if let rawID = settings.scheduledEntryIDs[String(minute)],
+               let entryID = UUID(uuidString: rawID),
+               let entry = settings.entries.first(where: { $0.id == entryID }) {
+                pendingPresentation = TruthReminderPresentation(
+                    presentationID: "repair:\(EarnedAccessShared.localDateKey(now)):\(minute)",
+                    entry: entry,
+                    blocking: false,
+                    slotMinute: minute,
+                    queuePosition: 1,
+                    queueTotal: pendingMinutes(now: now).count
+                )
+                status = "The app pause is released until essential apps are chosen again. You can still review this reminder."
+            } else {
+                status = "The app pause is released until essential apps are chosen again."
+            }
+            return
+        }
+        do {
+            EarnedAccessShared.clearTruthReminderSafetyUnlock()
+            try activateGateImmediately(for: minute, now: now)
+            status = "Review the waiting reminder to restore access to nonessential apps."
+            requestPresentationReconciliation()
+        } catch {
+            status = "The waiting reminder could not be opened: \(error.localizedDescription)"
+        }
+    }
+
+    nonisolated static func shouldInitializeReviewQueue(startedDay: String?, today: String) -> Bool {
+        startedDay != today
     }
 
     private func acknowledge(entryID: UUID?, slotMinute: Int?) {
@@ -479,11 +551,20 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
                 nowMinute: nowMinute
             ).filter { self.entry(for: $0) != nil }
             let position = (allDue.firstIndex(of: minute) ?? 0) + 1
+            let essential = EarnedAccessShared.loadEssentialSelection()
+            let canEnforceGate = EarnedAccessShared.canApplyFoundationShield(
+                applicationCount: essential.applicationTokens.count,
+                websiteCount: essential.webDomainTokens.count
+            )
             queuedNotificationEntryID = nil
             let route = TruthReminderPresentation(
                 presentationID: "\(EarnedAccessShared.localDateKey(now)):\(minute)",
                 entry: entry,
-                blocking: true,
+                blocking: Self.shouldBlockWaitingPresentation(
+                    canEnforceGate: canEnforceGate,
+                    gateIsActive: gateIsActive,
+                    safetyUnlockActive: safetyUnlockIsActive(now: now)
+                ),
                 slotMinute: minute,
                 queuePosition: position,
                 queueTotal: allDue.count
@@ -530,6 +611,14 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
             return TruthReminderPresentationDecision(entryID: queuedEntryID, blocking: false)
         }
         return nil
+    }
+
+    nonisolated static func shouldBlockWaitingPresentation(
+        canEnforceGate: Bool,
+        gateIsActive: Bool,
+        safetyUnlockActive: Bool
+    ) -> Bool {
+        canEnforceGate && gateIsActive && !safetyUnlockActive
     }
 
     private func activeGateEntryID() -> UUID? {
@@ -699,6 +788,14 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
 
     private func activateGateImmediately(for minute: Int, now: Date) throws {
         let defaults = EarnedAccessShared.defaults
+        let essential = EarnedAccessShared.loadEssentialSelection()
+        guard EarnedAccessShared.canApplyFoundationShield(
+            applicationCount: essential.applicationTokens.count,
+            websiteCount: essential.webDomainTokens.count
+        ) else {
+            EarnedAccessShared.clearTruthReminderGate(from: truthGateStore)
+            throw NSError(domain: "TruthReminderGate", code: 3, userInfo: [NSLocalizedDescriptionKey: "The app pause was released because essential apps need to be chosen again. The reminder queue was preserved."])
+        }
         let end = Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: now)) ?? now.addingTimeInterval(24 * 60 * 60)
         if defaults.double(forKey: EarnedAccessShared.truthReminderGateNextExpiresAtKey) < end.timeIntervalSince1970 - 5 {
             try scheduleGateActivity(startingAt: now.addingTimeInterval(5), minute: minute)
@@ -712,7 +809,10 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         if let entryID = settings.scheduledEntryIDs[String(minute)] {
             defaults.set(entryID, forKey: EarnedAccessShared.truthReminderGateEntryIDKey)
         }
-        EarnedAccessShared.applyFoundationShield(exceptions: EarnedAccessShared.loadEssentialSelection(), to: truthGateStore)
+        guard EarnedAccessShared.applyFoundationShield(exceptions: essential, to: truthGateStore) else {
+            EarnedAccessShared.clearTruthReminderGate(from: truthGateStore)
+            throw NSError(domain: "TruthReminderGate", code: 4, userInfo: [NSLocalizedDescriptionKey: "The app pause was released because essential apps could not be restored. The reminder queue was preserved."])
+        }
     }
 
     private func scheduleGateActivity(startingAt start: Date, minute: Int) throws {

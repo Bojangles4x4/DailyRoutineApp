@@ -9,8 +9,8 @@
   const EARNED_ACCESS_DEVICE_KEY = 'dailyRoutine.earnedAccess.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.35.0';
-  const APP_BUILD = 37;
+  const APP_VERSION = '1.36.0';
+  const APP_BUILD = 38;
   const PRIVATE_SYNC_COMPONENT_MESSAGE = 'This build is missing a required sync component. No routine data on this device or in the cloud was changed. Update the app to continue.';
   const PRIVATE_SYNC_LEGACY_RECOVERY_MESSAGE = 'The previous build could not sync. Your local data is preserved—review and sync now.';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
@@ -94,7 +94,7 @@
   let lastStepRewardNativeDirective = '';
   let lastEarnedAccessNativeDirective = '';
   let lastMorningFoundationDirective = '';
-  let earnedAccessNativeState = { available: false, protectionEnabled: false, shielding: false, allowanceActive: false, allowanceMinutes: 0, allowanceRemainingMinutes: null, allowanceRedemptionID: '', lastConsumedRedemptionID: '', morningGateEnabled: false, morningFoundationCompleteToday: false, selectionCount: 0, essentialCount: 0, dailyResetScheduled: false, morningGateScheduled: false, notificationsAllowed: false };
+  let earnedAccessNativeState = { available: false, protectionEnabled: false, shielding: false, allowanceActive: false, allowanceMinutes: 0, allowanceRemainingMinutes: null, allowanceRedemptionID: '', lastConsumedRedemptionID: '', morningGateEnabled: false, morningFoundationCompleteToday: false, truthReminderGateEnabled: false, truthReminderGateActive: false, truthReminderSafetyUnlockUntil: null, selectionCount: 0, essentialCount: 0, dailyResetScheduled: false, morningGateScheduled: false, allowanceMonitorScheduled: false, essentialSelectionNeedsRepair: false, notificationsAllowed: false };
   let activeSetupCategory = '';
   let accountabilityPreview = '';
   let accountabilityPreviewSignature = '';
@@ -1441,10 +1441,15 @@
           lastConsumedRedemptionID: String(value.lastConsumedRedemptionID || ''),
           morningGateEnabled: value.morningGateEnabled === true || value.morningGateEnabled === 'true',
           morningFoundationCompleteToday: value.morningFoundationCompleteToday === true || value.morningFoundationCompleteToday === 'true',
+          truthReminderGateEnabled: value.truthReminderGateEnabled === true || value.truthReminderGateEnabled === 'true',
+          truthReminderGateActive: value.truthReminderGateActive === true || value.truthReminderGateActive === 'true',
+          truthReminderSafetyUnlockUntil: String(value.truthReminderSafetyUnlockUntil ?? '') === '' ? null : new Date(Number(value.truthReminderSafetyUnlockUntil) * 1000),
           selectionCount: Math.max(0, Number(value.selectionCount) || 0),
           essentialCount: Math.max(0, Number(value.essentialCount) || 0),
           dailyResetScheduled: value.dailyResetScheduled === true || value.dailyResetScheduled === 'true',
           morningGateScheduled: value.morningGateScheduled === true || value.morningGateScheduled === 'true',
+          allowanceMonitorScheduled: value.allowanceMonitorScheduled === true || value.allowanceMonitorScheduled === 'true',
+          essentialSelectionNeedsRepair: value.essentialSelectionNeedsRepair === true || value.essentialSelectionNeedsRepair === 'true',
           notificationsAllowed: value.notificationsAllowed === true || value.notificationsAllowed === 'true'
         };
         const settings = earnedAccessDeviceSettings();
@@ -1929,14 +1934,30 @@
       : latestHealthSummaryReceivedAt ? 'No sample today' : 'Not received';
     els.earnedAccessScreenTimeStatus.textContent = !earnedAccessNativeState.available
       ? 'Open the iPhone app'
+      : earnedAccessNativeState.essentialSelectionNeedsRepair
+      ? 'All-app gates released for safety'
+      : earnedAccessNativeState.morningGateEnabled && !earnedAccessNativeState.morningFoundationCompleteToday
+      ? 'Morning Gate is active'
+      : earnedAccessNativeState.truthReminderGateActive
+      ? 'Truth Reminder is active'
+      : earnedAccessNativeState.truthReminderSafetyUnlockUntil
+      ? 'Truth safety access is open'
       : !earnedAccessNativeState.protectionEnabled
-      ? 'Protection is off'
+      ? 'Earned-app protection is off'
       : earnedAccessNativeState.allowanceActive
-      ? 'Allowance is active'
+      ? earnedAccessNativeState.allowanceMonitorScheduled ? 'Allowance is active' : 'Allowance needs repair'
       : earnedAccessNativeState.shielding ? 'Apps are shielded' : 'Ready';
     els.earnedAccessScheduleStatus.textContent = !earnedAccessNativeState.available
       ? 'Unavailable on web'
-      : earnedAccessNativeState.dailyResetScheduled && (!earnedAccessNativeState.morningGateEnabled || earnedAccessNativeState.morningGateScheduled)
+      : earnedAccessNativeState.essentialSelectionNeedsRepair
+      ? 'Choose essential apps again'
+      : !earnedAccessNativeState.protectionEnabled
+        && !earnedAccessNativeState.morningGateEnabled
+        && !earnedAccessNativeState.truthReminderGateEnabled
+      ? 'No protection scheduled'
+      : (!earnedAccessNativeState.protectionEnabled || earnedAccessNativeState.dailyResetScheduled)
+        && (!earnedAccessNativeState.morningGateEnabled || earnedAccessNativeState.morningGateScheduled)
+        && (!earnedAccessNativeState.allowanceActive || earnedAccessNativeState.allowanceMonitorScheduled)
       ? 'Daily protection armed'
       : 'Needs attention';
     els.earnedAccessNotificationStatus.textContent = !earnedAccessNativeState.available

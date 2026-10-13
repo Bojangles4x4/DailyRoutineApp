@@ -36,6 +36,7 @@ enum EarnedAccessShared {
     static let truthReminderSafetyUnlockDayKey = "dailyRoutine.truthReminderGate.safetyUnlockDay.v1"
     static let truthReminderSafetyUnlockCountKey = "dailyRoutine.truthReminderGate.safetyUnlockCount.v1"
     static let truthReminderSafetyUnlockLastAtKey = "dailyRoutine.truthReminderGate.safetyUnlockLastAt.v1"
+    static let essentialSelectionNeedsRepairKey = "dailyRoutine.screenTime.essentialSelectionNeedsRepair.v1"
     static let storeName = ManagedSettingsStore.Name("dailyRoutine.earnedAccess")
     static let foundationStoreName = ManagedSettingsStore.Name("dailyRoutine.morningFoundation")
     static let truthReminderStoreName = ManagedSettingsStore.Name("dailyRoutine.truthReminder")
@@ -87,9 +88,24 @@ enum EarnedAccessShared {
         defaults.set(false, forKey: shieldingKey)
     }
 
-    static func applyFoundationShield(exceptions: FamilyActivitySelection, to store: ManagedSettingsStore) {
+    @discardableResult
+    static func applyFoundationShield(exceptions: FamilyActivitySelection, to store: ManagedSettingsStore) -> Bool {
+        guard canApplyFoundationShield(
+            applicationCount: exceptions.applicationTokens.count,
+            websiteCount: exceptions.webDomainTokens.count
+        ) else {
+            clearFoundationShield(from: store)
+            defaults.set(true, forKey: essentialSelectionNeedsRepairKey)
+            return false
+        }
         store.shield.applicationCategories = .all(except: exceptions.applicationTokens)
         store.shield.webDomainCategories = .all(except: exceptions.webDomainTokens)
+        defaults.set(false, forKey: essentialSelectionNeedsRepairKey)
+        return true
+    }
+
+    static func canApplyFoundationShield(applicationCount: Int, websiteCount: Int) -> Bool {
+        applicationCount > 0 || websiteCount > 0
     }
 
     static func clearFoundationShield(from store: ManagedSettingsStore) {

@@ -62,10 +62,12 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         if let entryID = EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.truthReminderGateNextEntryIDKey), !entryID.isEmpty {
             EarnedAccessShared.defaults.set(entryID, forKey: EarnedAccessShared.truthReminderGateEntryIDKey)
         }
-        EarnedAccessShared.applyFoundationShield(
+        if !EarnedAccessShared.applyFoundationShield(
             exceptions: EarnedAccessShared.loadEssentialSelection(),
             to: truthReminderStore
-        )
+        ) {
+            EarnedAccessShared.clearTruthReminderGate(from: truthReminderStore)
+        }
     }
 
     private func enforceDailyReset(now: Date = Date()) {

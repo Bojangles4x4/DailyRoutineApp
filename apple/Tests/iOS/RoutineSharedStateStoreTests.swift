@@ -178,6 +178,127 @@ final class RoutineSharedStateStoreTests: XCTestCase {
         XCTAssertEqual(EarnedAccessShared.usageCheckpoints(totalMinutes: 500).last, 120)
     }
 
+    func testRepeatedMorningCompletionDoesNotResetSameDayTruthQueue() {
+        XCTAssertTrue(TruthReminderStore.shouldInitializeReviewQueue(startedDay: nil, today: "2026-10-13"))
+        XCTAssertTrue(TruthReminderStore.shouldInitializeReviewQueue(startedDay: "2026-10-12", today: "2026-10-13"))
+        XCTAssertFalse(TruthReminderStore.shouldInitializeReviewQueue(startedDay: "2026-10-13", today: "2026-10-13"))
+    }
+
+    func testLegacyTruthQueueMigratesReviewDayIntoInitializationMarker() throws {
+        let legacy = Data(#"{"reviewDay":"2026-10-13","reviewTrackingStartMinute":480,"reviewedMinutes":[480,510]}"#.utf8)
+
+        let settings = try JSONDecoder().decode(TruthReminderSettings.self, from: legacy)
+
+        XCTAssertEqual(settings.reviewGateStartedDay, "2026-10-13")
+        XCTAssertEqual(settings.reviewTrackingStartMinute, 480)
+        XCTAssertEqual(settings.reviewedMinutes, [480, 510])
+        XCTAssertFalse(TruthReminderStore.shouldInitializeReviewQueue(
+            startedDay: settings.reviewGateStartedDay,
+            today: "2026-10-13"
+        ))
+    }
+
+    func testChangingProtectedAppsEndsAnActiveAllowance() {
+        XCTAssertTrue(EarnedAccessControlStore.shouldEndActiveAllowance(selectionChanged: true, allowanceActive: true))
+        XCTAssertFalse(EarnedAccessControlStore.shouldEndActiveAllowance(selectionChanged: false, allowanceActive: true))
+        XCTAssertFalse(EarnedAccessControlStore.shouldEndActiveAllowance(selectionChanged: true, allowanceActive: false))
+    }
+
+    func testMorningGateOffStillShowsEarnedAccessAsControllingState() {
+        let locked = EarnedAccessProtectionSummary.title(
+            isAuthorized: true,
+            essentialSelectionNeedsRepair: false,
+            morningGateEnabled: false,
+            morningFoundationCompleteToday: false,
+            truthReminderGateActive: false,
+            truthReminderSafetyUnlockActive: false,
+            protectionEnabled: true,
+            allowanceActive: false,
+            allowanceRemainingMinutes: nil,
+            isShielding: true
+        )
+        let open = EarnedAccessProtectionSummary.title(
+            isAuthorized: true,
+            essentialSelectionNeedsRepair: false,
+            morningGateEnabled: false,
+            morningFoundationCompleteToday: false,
+            truthReminderGateActive: false,
+            truthReminderSafetyUnlockActive: false,
+            protectionEnabled: true,
+            allowanceActive: true,
+            allowanceRemainingMinutes: 12,
+            isShielding: false
+        )
+
+        XCTAssertEqual(locked, "Earned apps are locked")
+        XCTAssertEqual(open, "Currently open: about 12 min")
+    }
+
+    func testActiveAllowanceRequiresCurrentCompleteMonitorState() {
+        let today = "2026-10-13"
+        XCTAssertFalse(EarnedAccessControlStore.allowanceMonitorNeedsRepair(
+            active: true,
+            allowanceDate: today,
+            today: today,
+            redemptionID: "allowance-1",
+            remainingMinutes: 15,
+            monitorScheduled: true
+        ))
+        XCTAssertTrue(EarnedAccessControlStore.allowanceMonitorNeedsRepair(
+            active: true,
+            allowanceDate: today,
+            today: today,
+            redemptionID: "allowance-1",
+            remainingMinutes: 15,
+            monitorScheduled: false
+        ))
+        XCTAssertTrue(EarnedAccessControlStore.allowanceMonitorNeedsRepair(
+            active: true,
+            allowanceDate: "2026-10-12",
+            today: today,
+            redemptionID: "allowance-1",
+            remainingMinutes: 15,
+            monitorScheduled: true
+        ))
+        XCTAssertTrue(EarnedAccessControlStore.allowanceMonitorNeedsRepair(
+            active: true,
+            allowanceDate: today,
+            today: today,
+            redemptionID: "",
+            remainingMinutes: nil,
+            monitorScheduled: true
+        ))
+        XCTAssertFalse(EarnedAccessControlStore.allowanceMonitorNeedsRepair(
+            active: false,
+            allowanceDate: nil,
+            today: today,
+            redemptionID: "",
+            remainingMinutes: nil,
+            monitorScheduled: false
+        ))
+    }
+
+    func testAllAppGateFailsOpenWithoutEssentialExceptions() {
+        XCTAssertFalse(EarnedAccessShared.canApplyFoundationShield(applicationCount: 0, websiteCount: 0))
+        XCTAssertTrue(EarnedAccessShared.canApplyFoundationShield(applicationCount: 1, websiteCount: 0))
+        XCTAssertTrue(EarnedAccessShared.canApplyFoundationShield(applicationCount: 0, websiteCount: 1))
+        XCTAssertFalse(TruthReminderStore.shouldBlockWaitingPresentation(
+            canEnforceGate: false,
+            gateIsActive: true,
+            safetyUnlockActive: false
+        ))
+        XCTAssertFalse(TruthReminderStore.shouldBlockWaitingPresentation(
+            canEnforceGate: true,
+            gateIsActive: true,
+            safetyUnlockActive: true
+        ))
+        XCTAssertTrue(TruthReminderStore.shouldBlockWaitingPresentation(
+            canEnforceGate: true,
+            gateIsActive: true,
+            safetyUnlockActive: false
+        ))
+    }
+
     func testTruthReminderPresentationWaitsForMorningFoundation() {
         let entryID = UUID()
 

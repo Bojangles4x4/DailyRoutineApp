@@ -23,6 +23,7 @@ final class EarnedAccessControlStore: ObservableObject {
     private let authorizationCenter = AuthorizationCenter.shared
     private let managedStore = ManagedSettingsStore(named: EarnedAccessShared.storeName)
     private let foundationStore = ManagedSettingsStore(named: EarnedAccessShared.foundationStoreName)
+    private let truthReminderStore = ManagedSettingsStore(named: EarnedAccessShared.truthReminderStoreName)
     private let activityCenter = DeviceActivityCenter()
     private let notificationCenter = UNUserNotificationCenter.current()
 
@@ -81,6 +82,29 @@ final class EarnedAccessControlStore: ObservableObject {
     var morningGateScheduled: Bool {
         activityCenter.activities.contains(EarnedAccessShared.foundationActivityName)
     }
+    var allowanceMonitorScheduled: Bool {
+        activityCenter.activities.contains(EarnedAccessShared.activityName)
+    }
+    var truthReminderGateActive: Bool {
+        let defaults = EarnedAccessShared.defaults
+        return defaults.bool(forKey: EarnedAccessShared.truthReminderGateActiveKey)
+            && defaults.string(forKey: EarnedAccessShared.truthReminderGateDateKey) == EarnedAccessShared.localDateKey()
+            && truthReminderSafetyUnlockUntil == nil
+    }
+    var truthReminderGateEnabled: Bool {
+        EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.truthReminderGateEnabledKey)
+    }
+    var truthReminderSafetyUnlockUntil: Date? {
+        let defaults = EarnedAccessShared.defaults
+        guard defaults.string(forKey: EarnedAccessShared.truthReminderSafetyUnlockDayKey) == EarnedAccessShared.localDateKey(),
+              defaults.object(forKey: EarnedAccessShared.truthReminderSafetyUnlockUntilKey) != nil
+        else { return nil }
+        let date = Date(timeIntervalSince1970: defaults.double(forKey: EarnedAccessShared.truthReminderSafetyUnlockUntilKey))
+        return date > Date() ? date : nil
+    }
+    var essentialSelectionNeedsRepair: Bool {
+        EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.essentialSelectionNeedsRepairKey)
+    }
     var notificationsAllowed: Bool {
         notificationAuthorizationStatus == .authorized || notificationAuthorizationStatus == .provisional
     }
@@ -111,9 +135,19 @@ final class EarnedAccessControlStore: ObservableObject {
 
     func saveSelection() {
         do {
+            let previous = EarnedAccessShared.loadSelection()
+            let changed = Self.selectionChanged(from: previous, to: selection)
             try EarnedAccessShared.saveSelection(selection)
-            if protectionEnabled && isShielding { lockIfEnabled() }
-            else { refreshStatus(success: selectionSummary(prefix: "Selection saved")) }
+            if !hasSelection {
+                clearInvalidSelectionState()
+            } else if Self.shouldEndActiveAllowance(selectionChanged: changed, allowanceActive: allowanceActive) {
+                lockIfEnabled()
+                status = "App selection updated. The active allowance ended so every selected app is protected by the same monitor."
+            } else if protectionEnabled && (isShielding || !allowanceActive) {
+                lockIfEnabled()
+            } else {
+                refreshStatus(success: selectionSummary(prefix: "Selection saved"))
+            }
         } catch {
             status = "The app selection could not be saved: \(error.localizedDescription)"
         }
@@ -122,8 +156,12 @@ final class EarnedAccessControlStore: ObservableObject {
     func saveEssentialSelection() {
         do {
             try EarnedAccessShared.saveEssentialSelection(essentialSelection)
-            if morningGateEnabled { refreshMorningGateShield() }
-            status = "Always-available app selection saved."
+            EarnedAccessShared.defaults.set(!hasEssentialSelection, forKey: EarnedAccessShared.essentialSelectionNeedsRepairKey)
+            refreshMorningGateShield()
+            refreshTruthReminderGateShield()
+            status = hasEssentialSelection
+                ? "Always-available app selection saved and active gates were updated."
+                : "Choose at least one essential app before using an all-app gate. Existing all-app gates were released for safety."
         } catch {
             status = "The always-available app selection could not be saved: \(error.localizedDescription)"
         }
@@ -186,6 +224,11 @@ final class EarnedAccessControlStore: ObservableObject {
         guard !morningGateEnabled || morningFoundationCompleteToday else {
             refreshMorningGateShield()
             status = "Complete Truth Before Tasks before opening earned apps today."
+            return
+        }
+        guard !truthReminderGateActive else {
+            refreshTruthReminderGateShield()
+            status = "Review the waiting truth reminder before opening earned apps."
             return
         }
 
@@ -335,13 +378,35 @@ final class EarnedAccessControlStore: ObservableObject {
             disableMorningGate()
             return
         }
+        if !hasSelection {
+            clearInvalidSelectionState()
+            refreshMorningGateShield()
+            refreshTruthReminderGateShield()
+            Task { await refreshNotificationAuthorization() }
+            return
+        }
         ensureProtectionSchedules()
         Task { await refreshNotificationAuthorization() }
+        let allowanceDate = EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.allowanceDateKey)
+        if Self.allowanceMonitorNeedsRepair(
+            active: allowanceActive,
+            allowanceDate: allowanceDate,
+            today: EarnedAccessShared.localDateKey(),
+            redemptionID: allowanceRedemptionID,
+            remainingMinutes: allowanceRemainingMinutes,
+            monitorScheduled: allowanceMonitorScheduled
+        ) {
+            repairMissingAllowanceMonitor()
+            refreshMorningGateShield()
+            refreshTruthReminderGateShield()
+            return
+        }
         if protectionEnabled, !allowanceActive, hasSelection {
             EarnedAccessShared.applyShield(selection: selection, to: managedStore)
             isShielding = true
         }
         refreshMorningGateShield()
+        refreshTruthReminderGateShield()
         refreshStatus()
     }
 
@@ -358,10 +423,15 @@ final class EarnedAccessControlStore: ObservableObject {
             "lastConsumedRedemptionID": lastConsumedRedemptionID,
             "morningGateEnabled": morningGateEnabled ? "true" : "false",
             "morningFoundationCompleteToday": morningFoundationCompleteToday ? "true" : "false",
+            "truthReminderGateActive": truthReminderGateActive ? "true" : "false",
+            "truthReminderGateEnabled": truthReminderGateEnabled ? "true" : "false",
+            "truthReminderSafetyUnlockUntil": truthReminderSafetyUnlockUntil.map { String($0.timeIntervalSince1970) } ?? "",
             "selectionCount": String(selectedApplicationCount + selectedCategoryCount + selectedWebsiteCount),
             "essentialCount": String(essentialApplicationCount + essentialWebsiteCount),
             "dailyResetScheduled": dailyResetScheduled ? "true" : "false",
             "morningGateScheduled": morningGateScheduled ? "true" : "false",
+            "allowanceMonitorScheduled": allowanceMonitorScheduled ? "true" : "false",
+            "essentialSelectionNeedsRepair": essentialSelectionNeedsRepair ? "true" : "false",
             "notificationsAllowed": notificationsAllowed ? "true" : "false",
             "message": status
         ]
@@ -452,6 +522,78 @@ final class EarnedAccessControlStore: ObservableObject {
         }
     }
 
+    private func refreshTruthReminderGateShield() {
+        if truthReminderGateActive {
+            if !EarnedAccessShared.applyFoundationShield(exceptions: essentialSelection, to: truthReminderStore) {
+                EarnedAccessShared.clearTruthReminderGate(from: truthReminderStore)
+                status = "Truth gate released—choose essential apps again. Waiting reminders were preserved."
+            }
+        } else if truthReminderSafetyUnlockUntil != nil
+                    || !EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.truthReminderGateActiveKey) {
+            EarnedAccessShared.clearFoundationShield(from: truthReminderStore)
+        }
+    }
+
+    private func repairMissingAllowanceMonitor() {
+        activityCenter.stopMonitoring([EarnedAccessShared.activityName])
+        EarnedAccessShared.clearAllowance()
+        allowanceActive = false
+        allowanceMinutes = 0
+        allowanceRemainingMinutes = nil
+        allowanceRedemptionID = ""
+        if protectionEnabled, isAuthorized, hasSelection {
+            EarnedAccessShared.applyShield(selection: selection, to: managedStore)
+            isShielding = true
+        } else {
+            EarnedAccessShared.clearShield(from: managedStore)
+            isShielding = false
+        }
+        status = "The active allowance monitor needed repair, so earned apps were relocked. Earn more time to reopen them."
+    }
+
+    private func clearInvalidSelectionState() {
+        activityCenter.stopMonitoring([EarnedAccessShared.activityName])
+        EarnedAccessShared.clearAllowance()
+        EarnedAccessShared.clearShield(from: managedStore)
+        allowanceActive = false
+        allowanceMinutes = 0
+        allowanceRemainingMinutes = nil
+        allowanceRedemptionID = ""
+        isShielding = false
+        status = protectionEnabled
+            ? "Choose apps again before relying on Earned Access. No stale app shield was left behind."
+            : "Choose apps for Earned Access."
+    }
+
+    nonisolated static func selectionChanged(
+        from previous: FamilyActivitySelection,
+        to next: FamilyActivitySelection
+    ) -> Bool {
+        previous.applicationTokens != next.applicationTokens
+            || previous.categoryTokens != next.categoryTokens
+            || previous.webDomainTokens != next.webDomainTokens
+    }
+
+    nonisolated static func shouldEndActiveAllowance(selectionChanged: Bool, allowanceActive: Bool) -> Bool {
+        selectionChanged && allowanceActive
+    }
+
+    nonisolated static func allowanceMonitorNeedsRepair(
+        active: Bool,
+        allowanceDate: String?,
+        today: String,
+        redemptionID: String,
+        remainingMinutes: Int?,
+        monitorScheduled: Bool
+    ) -> Bool {
+        guard active else { return false }
+        return allowanceDate != today
+            || redemptionID.isEmpty
+            || remainingMinutes == nil
+            || (remainingMinutes ?? 0) <= 0
+            || !monitorScheduled
+    }
+
     private func selectionSummary(prefix: String) -> String {
         let total = selectedApplicationCount + selectedCategoryCount + selectedWebsiteCount
         return "\(prefix): \(total) selection\(total == 1 ? "" : "s")."
@@ -460,7 +602,15 @@ final class EarnedAccessControlStore: ObservableObject {
     private func refreshStatus(success: String? = nil) {
         if let success { status = success; return }
         if isAuthorized {
-            if protectionEnabled && allowanceActive {
+            if essentialSelectionNeedsRepair {
+                status = "All-app gates are released for safety. Choose essential apps again before relying on Morning Gate or Truth Reminder protection."
+            } else if morningGateEnabled && !morningFoundationCompleteToday {
+                status = "Morning Gate is protecting nonessential apps until Truth Before Tasks is complete."
+            } else if truthReminderGateActive {
+                status = "Truth Reminder is protecting nonessential apps until every waiting reminder is reviewed."
+            } else if let unlockUntil = truthReminderSafetyUnlockUntil {
+                status = "Truth Reminder safety access is open until \(unlockUntil.formatted(date: .omitted, time: .shortened)); waiting reminders will relock apps afterward."
+            } else if protectionEnabled && allowanceActive {
                 if let allowanceRemainingMinutes {
                     status = "Currently open: about \(allowanceRemainingMinutes) of \(allowanceMinutes) selected-app minutes remain."
                 } else {
