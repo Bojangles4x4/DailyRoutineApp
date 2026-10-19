@@ -36,9 +36,12 @@ final class HealthKitService {
     private let automationConfigurationKey = "dailyRoutine.health.stepRewards.configuration.v1"
     private let automationDayKey = "dailyRoutine.health.stepRewards.notificationDay.v1"
     private let automationMilestoneKey = "dailyRoutine.health.stepRewards.notificationMilestone.v1"
+    private let sleepNotificationDayKey = "dailyRoutine.health.sleepReview.lastDay.v2"
     private var stepObserver: HKObserverQuery?
+    private var sleepObserver: HKObserverQuery?
 
     var onStepRewardUpdate: (() -> Void)?
+    var onHealthSummaryUpdate: (() -> Void)?
 
     var isAvailable: Bool {
         HKHealthStore.isHealthDataAvailable()
@@ -65,11 +68,16 @@ final class HealthKitService {
         }
         try await store.requestAuthorization(toShare: [], read: readTypes)
         if loadStepRewardConfiguration().enabled { activateStepRewardAutomation() }
+        activateSleepSummaryAutomation()
     }
 
     func restoreStepRewardAutomation() {
         guard loadStepRewardConfiguration().enabled else { return }
         activateStepRewardAutomation()
+    }
+
+    func restoreSleepSummaryAutomation() {
+        activateSleepSummaryAutomation()
     }
 
     func configureStepRewards(enabled: Bool, goalSteps: Int, maxMinutes: Int) async {
@@ -120,6 +128,51 @@ final class HealthKitService {
             store.execute(query)
         }
         store.enableBackgroundDelivery(for: stepType, frequency: .immediate) { _, _ in }
+    }
+
+    private func activateSleepSummaryAutomation() {
+        guard let sleepType else { return }
+        if sleepObserver == nil {
+            let query = HKObserverQuery(sampleType: sleepType, predicate: nil) { [weak self] _, completion, error in
+                guard error == nil else {
+                    completion()
+                    return
+                }
+                Task { @MainActor [weak self] in
+                    await self?.processSleepSummaryUpdate()
+                    completion()
+                }
+            }
+            sleepObserver = query
+            store.execute(query)
+        }
+        store.enableBackgroundDelivery(for: sleepType, frequency: .immediate) { _, _ in }
+    }
+
+    private func processSleepSummaryUpdate(now: Date = Date()) async {
+        onHealthSummaryUpdate?()
+        guard let sleep = try? await fetchRecentSleep(now: now), let end = sleep.end else { return }
+        let day = Self.localDateKey(end)
+        guard automationDefaults.string(forKey: sleepNotificationDayKey) != day else { return }
+
+        let settings = await notificationCenter.notificationSettings()
+        guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else { return }
+        let content = UNMutableNotificationContent()
+        content.title = "Sleep times ready to review"
+        content.body = "Open My Daily Rhythms to confirm or correct last night’s bedtime and today’s wake time."
+        content.sound = .default
+        content.threadIdentifier = "health-sleep-review"
+        let request = UNNotificationRequest(
+            identifier: "dailyRoutine.sleepReview.\(day)",
+            content: content,
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        )
+        do {
+            try await notificationCenter.add(request)
+            automationDefaults.set(day, forKey: sleepNotificationDayKey)
+        } catch {
+            return
+        }
     }
 
     private func processStepRewardUpdate(configuration: StepRewardConfiguration? = nil, now: Date = Date()) async {
@@ -270,14 +323,36 @@ final class HealthKitService {
                 sessions.append([interval])
             }
         }
-        guard let session = sessions.max(by: { left, right in
-            let leftDuration = left.reduce(0.0) { $0 + $1.duration }
-            let rightDuration = right.reduce(0.0) { $0 + $1.duration }
-            if leftDuration == rightDuration { return (left.last?.end ?? .distantPast) < (right.last?.end ?? .distantPast) }
-            return leftDuration < rightDuration
-        }) else { return SleepSummary(hours: 0, start: nil, end: nil) }
+        guard let session = Self.preferredSleepSession(sessions, now: now) else {
+            return SleepSummary(hours: 0, start: nil, end: nil)
+        }
         let seconds = session.reduce(0.0) { $0 + $1.duration }
         return SleepSummary(hours: seconds / 3_600, start: session.first?.start, end: session.last?.end)
+    }
+
+    nonisolated static func preferredSleepSession(
+        _ sessions: [[DateInterval]],
+        now: Date,
+        calendar: Calendar = .current
+    ) -> [DateInterval]? {
+        let completed = sessions.filter { session in
+            guard let end = session.last?.end else { return false }
+            let asleepSeconds = session.reduce(0.0) { $0 + $1.duration }
+            return end <= now && asleepSeconds >= 2 * 60 * 60
+        }
+        let startOfToday = calendar.startOfDay(for: now)
+        let endingToday = completed.filter { session in
+            guard let end = session.last?.end else { return false }
+            return end >= startOfToday
+        }
+        return (endingToday.isEmpty ? completed : endingToday).max { left, right in
+            let leftDuration = left.reduce(0.0) { $0 + $1.duration }
+            let rightDuration = right.reduce(0.0) { $0 + $1.duration }
+            if leftDuration == rightDuration {
+                return (left.last?.end ?? .distantPast) < (right.last?.end ?? .distantPast)
+            }
+            return leftDuration < rightDuration
+        }
     }
 
     private func mergeOverlapping(_ intervals: [DateInterval]) -> [DateInterval] {

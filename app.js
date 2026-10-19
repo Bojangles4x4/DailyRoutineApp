@@ -9,8 +9,8 @@
   const EARNED_ACCESS_DEVICE_KEY = 'dailyRoutine.earnedAccess.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.36.0';
-  const APP_BUILD = 38;
+  const APP_VERSION = '1.37.0';
+  const APP_BUILD = 39;
   const PRIVATE_SYNC_COMPONENT_MESSAGE = 'This build is missing a required sync component. No routine data on this device or in the cloud was changed. Update the app to continue.';
   const PRIVATE_SYNC_LEGACY_RECOVERY_MESSAGE = 'The previous build could not sync. Your local data is preserved—review and sync now.';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
@@ -86,6 +86,7 @@
   let watchLastActionMessage = '';
   let latestHealthSummary = null;
   let latestHealthSummaryReceivedAt = null;
+  let latestHealthSummaryError = '';
   let lastRoutineSnapshotSavedAt = null;
   let lastRoutineSnapshotSavedRevision = null;
   let pendingEarnedAccessStart = false;
@@ -158,7 +159,7 @@
     connectionsCard: $('connectionsCard'), syncConnectionsButton: $('syncConnectionsButton'), bibleConnectionStatus: $('bibleConnectionStatus'), openBibleConnectionButton: $('openBibleConnectionButton'), bibleAppUrlInput: $('bibleAppUrlInput'), saveBibleConnectionButton: $('saveBibleConnectionButton'), testBibleConnectionButton: $('testBibleConnectionButton'), connectionTemplates: $('connectionTemplates'),
     appleNativeCard: $('appleNativeCard'), iphoneWidgetCard: $('iphoneWidgetCard'), appleWatchCard: $('appleWatchCard'), appleStepCount: $('appleStepCount'), appleSleepHours: $('appleSleepHours'), appleWorkoutCount: $('appleWorkoutCount'), appleHealthStatus: $('appleHealthStatus'), healthSourceSummary: $('healthSourceSummary'), healthSourceDetail: $('healthSourceDetail'), connectAppleHealthButton: $('connectAppleHealthButton'), refreshAppleHealthButton: $('refreshAppleHealthButton'), appleWatchStatus: $('appleWatchStatus'), appleStepsGoalInput: $('appleStepsGoalInput'), saveAppleStepsGoalButton: $('saveAppleStepsGoalButton'), appleWatchQuickActionInput: $('appleWatchQuickActionInput'),
     earnedAccessCard: $('earnedAccessCard'), earnedAccessBadge: $('earnedAccessBadge'), earnedAccessNativeStatus: $('earnedAccessNativeStatus'), earnedAccessGateStatus: $('earnedAccessGateStatus'), earnedAccessGateDetail: $('earnedAccessGateDetail'), earnedAccessAvailableNow: $('earnedAccessAvailableNow'), earnedAccessEarnedToday: $('earnedAccessEarnedToday'), earnedAccessStillBanked: $('earnedAccessStillBanked'), earnedAccessStepMetric: $('earnedAccessStepMetric'), openEarnedAccessControlsButton: $('openEarnedAccessControlsButton'), earnedAccessLabelInput: $('earnedAccessLabelInput'), earnedAccessTaskMinutesInput: $('earnedAccessTaskMinutesInput'), earnedAccessDailyLimitInput: $('earnedAccessDailyLimitInput'), earnedAccessAutomaticStepsInput: $('earnedAccessAutomaticStepsInput'), earnedAccessAutomaticUseInput: $('earnedAccessAutomaticUseInput'), earnedAccessStepsInput: $('earnedAccessStepsInput'), earnedAccessMinutesInput: $('earnedAccessMinutesInput'), earnedAccessModeInput: $('earnedAccessModeInput'), earnedAccessBankStatus: $('earnedAccessBankStatus'), earnedAccessBankDetail: $('earnedAccessBankDetail'), useEarnedAccessButton: $('useEarnedAccessButton'), earnedAccessStatus: $('earnedAccessStatus'), earnedAccessDetail: $('earnedAccessDetail'), earnedAccessProgressBar: $('earnedAccessProgressBar'), startEarnedAccessButton: $('startEarnedAccessButton'), checkEarnedAccessButton: $('checkEarnedAccessButton'), cancelEarnedAccessButton: $('cancelEarnedAccessButton'), earnedAccessMorningTasks: $('earnedAccessMorningTasks'), earnedAccessLaterTasks: $('earnedAccessLaterTasks'), earnedAccessMorningStatus: $('earnedAccessMorningStatus'), earnedAccessLaterStatus: $('earnedAccessLaterStatus'), earnedAccessHealthSyncStatus: $('earnedAccessHealthSyncStatus'), earnedAccessStepSampleStatus: $('earnedAccessStepSampleStatus'), earnedAccessScreenTimeStatus: $('earnedAccessScreenTimeStatus'), earnedAccessScheduleStatus: $('earnedAccessScheduleStatus'), earnedAccessNotificationStatus: $('earnedAccessNotificationStatus'), earnedAccessWidgetStatus: $('earnedAccessWidgetStatus'),
-    healthSleepSuggestion: $('healthSleepSuggestion'), healthSleepSuggestionText: $('healthSleepSuggestionText'), applyHealthSleepButton: $('applyHealthSleepButton'),
+    healthSleepSuggestion: $('healthSleepSuggestion'), healthSleepSuggestionTitle: $('healthSleepSuggestionTitle'), healthSleepSuggestionText: $('healthSleepSuggestionText'), applyHealthSleepButton: $('applyHealthSleepButton'),
     linkedActionFields: $('linkedActionFields'), linkedTemplateInput: $('linkedTemplateInput'), linkedCompletionInput: $('linkedCompletionInput'), linkedUrlField: $('linkedUrlField'), linkedUrlInput: $('linkedUrlInput'), linkedInternalField: $('linkedInternalField'), linkedInternalTargetInput: $('linkedInternalTargetInput'), linkedButtonLabelInput: $('linkedButtonLabelInput'), timeWindowFields: $('timeWindowFields'), timeWindowStartInput: $('timeWindowStartInput'), timeWindowEndInput: $('timeWindowEndInput'),
     medicationProgressCard: $('medicationProgressCard'), weeklyReviewCard: $('weeklyReviewCard'), memoryBankCard: $('memoryBankCard'), dataBackupCard: $('dataBackupCard'),
     accountabilitySharingCard: $('accountabilitySharingCard'), accountabilitySharingBadge: $('accountabilitySharingBadge'), accountabilitySharingSignedOut: $('accountabilitySharingSignedOut'), accountabilitySharingOwner: $('accountabilitySharingOwner'), openPrivateSyncForAccountabilityButton: $('openPrivateSyncForAccountabilityButton'), accountabilityConnectionsList: $('accountabilityConnectionsList'), accountabilityConnectionEditor: $('accountabilityConnectionEditor'), accountabilityEditorTitle: $('accountabilityEditorTitle'), accountabilityEditorStatus: $('accountabilityEditorStatus'), accountabilityOwnerNameInput: $('accountabilityOwnerNameInput'), accountabilityPartnerNameInput: $('accountabilityPartnerNameInput'), accountabilityPartnerEmailInput: $('accountabilityPartnerEmailInput'), accountabilityShareProgressInput: $('accountabilityShareProgressInput'), accountabilityShareRoutinesInput: $('accountabilityShareRoutinesInput'), accountabilityShareCheckinsInput: $('accountabilityShareCheckinsInput'), accountabilityShareStepsInput: $('accountabilityShareStepsInput'), accountabilityShareMedicationInput: $('accountabilityShareMedicationInput'), accountabilityRoutineChooser: $('accountabilityRoutineChooser'), accountabilityRoutineSelectionCount: $('accountabilityRoutineSelectionCount'), selectAllAccountabilityRoutinesButton: $('selectAllAccountabilityRoutinesButton'), clearAccountabilityRoutinesButton: $('clearAccountabilityRoutinesButton'), accountabilityRoutineChoices: $('accountabilityRoutineChoices'), accountabilitySnapshotPreview: $('accountabilitySnapshotPreview'), accountabilitySnapshotStatus: $('accountabilitySnapshotStatus'), saveAccountabilityConnectionButton: $('saveAccountabilityConnectionButton'), refreshAccountabilitySnapshotButton: $('refreshAccountabilitySnapshotButton'), pauseAccountabilityConnectionButton: $('pauseAccountabilityConnectionButton'), revokeAccountabilityConnectionButton: $('revokeAccountabilityConnectionButton'), accountabilityDashboardCard: $('accountabilityDashboardCard'), accountabilityRosterCount: $('accountabilityRosterCount'), accountabilityPartnerRoster: $('accountabilityPartnerRoster'), accountabilityPartnerDetail: $('accountabilityPartnerDetail'), accountabilityPartnerAccount: $('accountabilityPartnerAccount'), accountabilityPartnerSignOutButton: $('accountabilityPartnerSignOutButton'), accountabilityPartnerSearchInput: $('accountabilityPartnerSearchInput'), accountabilityPartnerFilterInput: $('accountabilityPartnerFilterInput'), accountabilityPartnerSortInput: $('accountabilityPartnerSortInput'),
@@ -1119,6 +1120,7 @@
     els.bedNowButton.addEventListener('click', () => { const value = currentTimeValue(); els.actualBedInput.value = value; saveActualTime('actualBedTime', value); });
     els.applyHealthSleepButton.addEventListener('click', applyHealthSleepSuggestion);
     $('closeHealthSleepButton').addEventListener('click', () => $('healthSleepDialog').close());
+    $('keepManualSleepButton').addEventListener('click', () => $('healthSleepDialog').close());
     $('healthSleepForm').addEventListener('submit', confirmHealthSleepSuggestion);
     ['healthBedDateInput', 'healthWakeDateInput'].forEach(id => $(id).addEventListener('change', renderSleepReviewExisting));
     els.quickMemoryButton.addEventListener('click', () => openMemoryDialog('blessing'));
@@ -1362,6 +1364,7 @@
       } else if (detail.name === 'health.summary') {
         const value = detail.value || {};
         latestHealthSummaryReceivedAt = new Date();
+        latestHealthSummaryError = '';
         latestHealthSummary = {
           date: value.date || new Date().toISOString(),
           stepCount: Math.max(0, Number(value.stepCount) || 0),
@@ -1389,6 +1392,10 @@
           accountabilityPreviewSignature = '';
           renderAccountabilityReport();
         }
+      } else if (detail.name === 'health.summary.failed') {
+        latestHealthSummaryError = String(detail.value?.message || 'Apple Health could not be refreshed.');
+        els.appleHealthStatus.textContent = latestHealthSummaryError;
+        renderHealthSleepSuggestion();
       } else if (detail.name === 'routine.snapshot.saved') {
         lastRoutineSnapshotSavedAt = new Date();
         lastRoutineSnapshotSavedRevision = Math.max(0, Number(detail.value?.revision) || 0);
@@ -2227,14 +2234,32 @@
   function renderHealthSleepSuggestion() {
     const suggestion = healthSleepTimes();
     const matchesDay = suggestion && [dateKey(suggestion.start), dateKey(suggestion.end)].includes(dateKey(selectedDate));
-    els.healthSleepSuggestion.hidden = !suggestion || !matchesDay;
-    if (!suggestion || !matchesDay) return;
+    const todaySelected = isSameDay(selectedDate, startOfToday());
+    const connected = Boolean(healthDeviceSettings().connected);
+    els.healthSleepSuggestion.hidden = !(suggestion && matchesDay) && !(todaySelected && connected);
+    if (!suggestion || !matchesDay) {
+      if (!todaySelected || !connected) return;
+      els.healthSleepSuggestionTitle.textContent = latestHealthSummaryError ? 'Health refresh needs attention' : 'No sleep record found yet';
+      els.healthSleepSuggestionText.textContent = latestHealthSummaryError
+        ? `${latestHealthSummaryError} Your routine data was not changed; refresh again or enter either time manually.`
+        : 'Refresh after your watch or wearable finishes syncing to Apple Health, or enter either time manually.';
+      els.applyHealthSleepButton.textContent = 'Check Health again';
+      return;
+    }
+    els.healthSleepSuggestionTitle.textContent = 'Apple Health suggestion';
     els.healthSleepSuggestionText.textContent = `Bed: ${formatShortDate(suggestion.start)} at ${formatTime(suggestion.bedTime)}. Wake: ${formatShortDate(suggestion.end)} at ${formatTime(suggestion.wakeTime)}. Review before saving.`;
+    els.applyHealthSleepButton.textContent = 'Review times';
   }
 
   function applyHealthSleepSuggestion() {
     const suggestion = healthSleepTimes();
-    if (!suggestion) return;
+    const matchesDay = suggestion && [dateKey(suggestion.start), dateKey(suggestion.end)].includes(dateKey(selectedDate));
+    if (!suggestion || !matchesDay) {
+      latestHealthSummaryError = '';
+      els.healthSleepSuggestionText.textContent = 'Checking Apple Health…';
+      requestHealthSummary();
+      return;
+    }
     $('healthBedDateInput').value = dateKey(suggestion.start);
     $('healthBedTimeInput').value = suggestion.bedTime;
     $('healthWakeDateInput').value = dateKey(suggestion.end);

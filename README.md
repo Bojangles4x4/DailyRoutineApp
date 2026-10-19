@@ -2,8 +2,10 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.36.0 development features
+## Version 1.37.0 development features
 
+- Build 39 prefers the latest completed sleep session ending today, makes missing or failed Health sleep refreshes visible with a manual fallback, and notifies when newly synced sleep times are ready to review.
+- Truth reminders now use a compact pause prompt and a configurable 5–30 second foreground reflection countdown before acknowledgement, while the safety unlock remains immediately available.
 - Build 38 makes repeated same-day Truth Before Tasks completion idempotent, ends active allowances when the protected-app selection changes, repairs missing usage monitors by relocking, and identifies the gate currently controlling access.
 - All-app Morning and Truth Reminder gates now fail open if the essential-app selection is missing or corrupt, and saving essentials immediately reapplies every active gate.
 - Build 37 keeps every due truth reminder in a separate same-day review queue, holds the app shield until the queue is empty, and adds a logged 15-minute safety unlock that relocks automatically while reminders remain.

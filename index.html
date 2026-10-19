@@ -92,7 +92,7 @@
             <p class="muted micro-copy">Last night’s bedtime belongs to yesterday; this morning’s wake time belongs here. Enter either when Health has no recording.</p>
           </div>
           <div id="healthSleepSuggestion" class="health-sleep-suggestion" hidden>
-            <div><strong>Apple Health suggestion</strong><span id="healthSleepSuggestionText"></span></div>
+            <div><strong id="healthSleepSuggestionTitle">Apple Health suggestion</strong><span id="healthSleepSuggestionText"></span></div>
             <button id="applyHealthSleepButton" class="small-button" type="button">Review times</button>
           </div>
         </section>
@@ -756,7 +756,7 @@
       <label class="text-field compact"><span>Wake time</span><input id="healthWakeTimeInput" type="time" required /></label>
       <label id="repairHealthBedField" class="toggle-field" hidden><input id="repairHealthBedInput" type="checkbox" /><span><b>Remove the matching bedtime from the wake date</b><small>A matching time was saved there by an earlier version. Select this only if it belongs to the prior night.</small></span></label>
       <p id="healthSleepReviewStatus" class="muted" aria-live="polite"></p>
-      <div class="dialog-actions"><button class="primary-button" type="submit">Confirm selected times</button></div>
+      <div class="dialog-actions"><button id="keepManualSleepButton" class="secondary-button" type="button">Keep manual times</button><button class="primary-button" type="submit">Confirm selected times</button></div>
     </form>
   </dialog>
 
@@ -897,6 +897,6 @@
   <script src="sync-core.js" defer></script>
   <script src="sync-cloud.js" defer></script>
   <script src="data-health.js" defer></script>
-  <script src="app.js?v=1.36.0-build38-access-reliability" defer></script>
+  <script src="app.js?v=1.37.0-build39-feedback" defer></script>
 </body>
 </html>

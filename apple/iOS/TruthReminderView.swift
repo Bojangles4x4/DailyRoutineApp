@@ -30,6 +30,12 @@ struct TruthReminderView: View {
                         Text("1 hour").tag(60)
                         Text("2 hours").tag(120)
                     }
+                    Picker("Minimum reflection", selection: $draft.reflectionSeconds) {
+                        Text("5 seconds").tag(5)
+                        Text("10 seconds").tag(10)
+                        Text("15 seconds").tag(15)
+                        Text("30 seconds").tag(30)
+                    }
                     Toggle("Shuffle the whole library", isOn: $draft.shuffle)
                     Toggle("Pause nonessential apps until reviewed", isOn: $draft.pauseAppsUntilReviewed)
                     if store.settings.enabled {
@@ -44,6 +50,7 @@ struct TruthReminderView: View {
                         store.settings.startMinute = draft.startMinute
                         store.settings.endMinute = draft.endMinute
                         store.settings.interval = draft.interval
+                        store.settings.reflectionSeconds = draft.reflectionSeconds
                         store.settings.shuffle = draft.shuffle
                         store.settings.pauseAppsUntilReviewed = draft.pauseAppsUntilReviewed
                         store.settings.entries = store.settings.entries.map { entry in
@@ -124,9 +131,18 @@ struct TruthReminderView: View {
 struct TruthReminderReviewView: View {
     @ObservedObject var store: TruthReminderStore
     let presentation: TruthReminderPresentation
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var secondsRemaining: Int
 
     private var entry: TruthReminder { presentation.entry }
     private var blocking: Bool { presentation.blocking }
+    private var timerTaskID: String { "\(presentation.id)|\(scenePhase == .active ? "active" : "paused")" }
+
+    init(store: TruthReminderStore, presentation: TruthReminderPresentation) {
+        self.store = store
+        self.presentation = presentation
+        _secondsRemaining = State(initialValue: max(0, store.settings.reflectionSeconds))
+    }
 
     var body: some View {
         ZStack {
@@ -138,17 +154,18 @@ struct TruthReminderReviewView: View {
             .ignoresSafeArea()
 
             ScrollView {
-                VStack(spacing: 22) {
-                    VStack(spacing: 7) {
-                        Image(systemName: "pause.circle.fill")
-                            .font(.system(size: 34, weight: .semibold))
-                            .foregroundStyle(Color(red: 0.12, green: 0.35, blue: 0.30))
-                        Text("A moment of truth")
-                            .font(.system(.title2, design: .serif, weight: .bold))
-                        Text("Pause here before returning to other apps.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
+                VStack(spacing: 16) {
+                    VStack(spacing: 8) {
+                        HStack(spacing: 9) {
+                            Image(systemName: "pause.circle.fill")
+                                .font(.system(size: 22, weight: .semibold))
+                                .foregroundStyle(Color(red: 0.12, green: 0.35, blue: 0.30))
+                            Text("Pause for a few seconds to reset your mind on what is true.")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         if blocking && presentation.queueTotal > 1 {
                             Text("Reminder \(presentation.queuePosition) of \(presentation.queueTotal) waiting")
                                 .font(.caption.weight(.semibold))
@@ -183,13 +200,16 @@ struct TruthReminderReviewView: View {
                     Button {
                         store.acknowledge(presentation)
                     } label: {
-                        Label("I’ve read this", systemImage: "checkmark.circle.fill")
+                        Label(secondsRemaining > 0 ? "Continue in \(secondsRemaining)s" : "I’ve read this", systemImage: secondsRemaining > 0 ? "timer" : "checkmark.circle.fill")
                             .font(.headline)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 15)
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(Color(red: 0.12, green: 0.35, blue: 0.30))
+                    .disabled(secondsRemaining > 0)
+                    .accessibilityLabel(secondsRemaining > 0 ? "Reflection timer" : "I've read this")
+                    .accessibilityValue(secondsRemaining > 0 ? "\(secondsRemaining) seconds remaining" : "Ready")
                     .accessibilityIdentifier("truthReminderAcknowledgeButton")
 
                     if blocking {
@@ -206,17 +226,36 @@ struct TruthReminderReviewView: View {
                     }
 
                     Text(blocking
-                         ? "Other apps resume when every waiting reminder is reviewed. Safety unlock opens them for 15 minutes without marking any reminder complete; they lock again if reminders still wait. All reminder locks clear at midnight."
+                         ? "Review every waiting reminder to resume your apps. Safety unlock pauses this gate for 15 minutes without marking anything reviewed."
                          : "This reminder did not pause your other apps.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
                 .padding(.horizontal, 22)
-                .padding(.vertical, 34)
+                .padding(.vertical, 18)
             }
         }
         .interactiveDismissDisabled(blocking)
+        .onChange(of: presentation.id) {
+            secondsRemaining = max(0, store.settings.reflectionSeconds)
+        }
+        .task(id: timerTaskID) {
+            guard scenePhase == .active else { return }
+            while secondsRemaining > 0 {
+                do { try await Task.sleep(for: .seconds(1)) }
+                catch { return }
+                guard !Task.isCancelled, scenePhase == .active else { return }
+                secondsRemaining = TruthReminderCountdown.next(secondsRemaining, sceneIsActive: true)
+            }
+        }
+    }
+}
+
+enum TruthReminderCountdown {
+    static func next(_ secondsRemaining: Int, sceneIsActive: Bool) -> Int {
+        guard sceneIsActive else { return secondsRemaining }
+        return max(0, secondsRemaining - 1)
     }
 }
 

@@ -33,6 +33,7 @@ struct TruthReminderSettings: Codable {
     var startMinute = 8 * 60
     var endMinute = 20 * 60
     var interval = 30
+    var reflectionSeconds = 10
     var shuffle = false
     var pauseAppsUntilReviewed = false
     var entries: [TruthReminder] = []
@@ -47,7 +48,7 @@ struct TruthReminderSettings: Codable {
     var reviewedMinutes: [Int] = []
 
     private enum CodingKeys: String, CodingKey {
-        case enabled, startMinute, endMinute, interval, shuffle, pauseAppsUntilReviewed, entries
+        case enabled, startMinute, endMinute, interval, reflectionSeconds, shuffle, pauseAppsUntilReviewed, entries
         case scheduledDay, scheduledEntryIDs, lastAcknowledgedAt, acknowledgedDay, acknowledgedCount
         case reviewDay, reviewGateStartedDay, reviewTrackingStartMinute, reviewedMinutes
     }
@@ -60,6 +61,8 @@ struct TruthReminderSettings: Codable {
         startMinute = try values.decodeIfPresent(Int.self, forKey: .startMinute) ?? 8 * 60
         endMinute = try values.decodeIfPresent(Int.self, forKey: .endMinute) ?? 20 * 60
         interval = try values.decodeIfPresent(Int.self, forKey: .interval) ?? 30
+        let savedReflectionSeconds = try values.decodeIfPresent(Int.self, forKey: .reflectionSeconds) ?? 10
+        reflectionSeconds = [5, 10, 15, 30].contains(savedReflectionSeconds) ? savedReflectionSeconds : 10
         shuffle = try values.decodeIfPresent(Bool.self, forKey: .shuffle) ?? false
         // App pausing is a separate, explicit choice; notification-only schedules stay notification-only.
         pauseAppsUntilReviewed = try values.decodeIfPresent(Bool.self, forKey: .pauseAppsUntilReviewed) ?? false
@@ -236,8 +239,9 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
                 return
             }
             guard settings.startMinute >= 0, settings.endMinute < 1440,
-                  settings.startMinute <= settings.endMinute, [30, 60, 120].contains(settings.interval) else {
-                status = "Choose an end time after the start time, within the same day."; return
+                  settings.startMinute <= settings.endMinute, [30, 60, 120].contains(settings.interval),
+                  [5, 10, 15, 30].contains(settings.reflectionSeconds) else {
+                status = "Choose a valid same-day schedule and reflection time."; return
             }
             var entries = settings.shuffle ? settings.entries : settings.entries.filter(\.selected)
             guard !entries.isEmpty else {

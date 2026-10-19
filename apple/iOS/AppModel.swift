@@ -10,5 +10,6 @@ final class AppModel: ObservableObject {
 
     init() {
         health.restoreStepRewardAutomation()
+        health.restoreSleepSummaryAutomation()
     }
 }

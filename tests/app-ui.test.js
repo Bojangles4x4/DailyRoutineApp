@@ -26,7 +26,7 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#truthHeroTitle').textContent(), 'Truth Before Tasks');
   assert.equal(await page.locator('#truthEnterDayButton').isDisabled(), true);
   assert.equal(await page.locator('#accountabilitySharingCard').count(), 1);
-  assert.equal(await page.locator('#appVersion').textContent(), 'v1.36.0 · Build 38');
+  assert.equal(await page.locator('#appVersion').textContent(), 'v1.37.0 · Build 39');
   assert.match(await page.locator('#openAccountabilityFromSetupButton').textContent(), /Open private accountability/);
   assert.equal(await page.locator('#accountabilitySharingSignedOut').evaluate(element => element.hidden), false);
   assert.match(await page.locator('#accountabilitySharingSignedOut').textContent(), /Connect Private Sync first/);
@@ -835,6 +835,14 @@ function localDateKey(date = new Date()) {
   assert.equal(Math.round((await medicationTimeInput.boundingBox()).height), 44);
   await loggedMedicationRow.locator('.medication-cancel').click();
 
+  await page.evaluate(() => {
+    window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'health.summary', value: { date: new Date().toISOString(), stepCount: 0, sleepHours: 0, workoutCount: 0 } } }));
+  });
+  assert.equal(await page.locator('#healthSleepSuggestion').isVisible(), true);
+  assert.equal((await page.locator('#healthSleepSuggestionTitle').textContent()).trim(), 'No sleep record found yet');
+  assert.match(await page.locator('#healthSleepSuggestionText').textContent(), /wearable finishes syncing|enter either time manually/);
+  assert.equal((await page.locator('#applyHealthSleepButton').textContent()).trim(), 'Check Health again');
+
   const sleepEnd = new Date();
   sleepEnd.setHours(6, 45, 0, 0);
   const sleepStart = new Date(sleepEnd);
@@ -864,7 +872,8 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#confirmHealthWakeInput').isChecked(), false);
   await page.locator('#healthSleepForm button[type="submit"]').click();
   assert.match(await page.locator('#healthSleepReviewStatus').textContent(), /Select at least one/);
-  await page.locator('#closeHealthSleepButton').click();
+  await page.locator('#keepManualSleepButton').click();
+  assert.equal(await page.locator('#healthSleepDialog').isVisible(), false);
 
   // Actual sleep fields remain separate from Now at phone widths, including 12-hour text.
   for (const width of [320, 390, 440]) {

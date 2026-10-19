@@ -8,8 +8,8 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
     CODE_SIGN_STYLE: Automatic
-    MARKETING_VERSION: "1.36.0"
-    CURRENT_PROJECT_VERSION: "38"
+    MARKETING_VERSION: "1.37.0"
+    CURRENT_PROJECT_VERSION: "39"
 schemes:
   DailyRoutine:
     build:

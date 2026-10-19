@@ -192,10 +192,55 @@ final class RoutineSharedStateStoreTests: XCTestCase {
         XCTAssertEqual(settings.reviewGateStartedDay, "2026-10-13")
         XCTAssertEqual(settings.reviewTrackingStartMinute, 480)
         XCTAssertEqual(settings.reviewedMinutes, [480, 510])
+        XCTAssertEqual(settings.reflectionSeconds, 10)
         XCTAssertFalse(TruthReminderStore.shouldInitializeReviewQueue(
             startedDay: settings.reviewGateStartedDay,
             today: "2026-10-13"
         ))
+    }
+
+    func testSleepSelectionPrefersTheLatestSessionEndingTodayOverALongerOlderNight() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))
+        let now = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 18, hour: 22)))
+        let olderStart = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 16, hour: 21)))
+        let olderEnd = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 17, hour: 8)))
+        let currentStart = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 17, hour: 23)))
+        let currentEnd = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 18, hour: 6)))
+        let sessions = [
+            [DateInterval(start: olderStart, end: olderEnd)],
+            [DateInterval(start: currentStart, end: currentEnd)]
+        ]
+
+        let selected = HealthKitService.preferredSleepSession(sessions, now: now, calendar: calendar)
+
+        XCTAssertEqual(selected?.first?.start, currentStart)
+        XCTAssertEqual(selected?.last?.end, currentEnd)
+    }
+
+    func testSleepSelectionKeepsOvernightSleepInsteadOfALaterNap() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))
+        let now = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 18, hour: 18)))
+        let overnightStart = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 17, hour: 22)))
+        let overnightEnd = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 18, hour: 6)))
+        let napStart = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 18, hour: 14)))
+        let napEnd = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 18, hour: 15)))
+
+        let selected = HealthKitService.preferredSleepSession(
+            [[DateInterval(start: overnightStart, end: overnightEnd)], [DateInterval(start: napStart, end: napEnd)]],
+            now: now,
+            calendar: calendar
+        )
+
+        XCTAssertEqual(selected?.first?.start, overnightStart)
+        XCTAssertEqual(selected?.last?.end, overnightEnd)
+    }
+
+    func testTruthReminderCountdownPausesOutsideTheForeground() {
+        XCTAssertEqual(TruthReminderCountdown.next(10, sceneIsActive: false), 10)
+        XCTAssertEqual(TruthReminderCountdown.next(10, sceneIsActive: true), 9)
+        XCTAssertEqual(TruthReminderCountdown.next(0, sceneIsActive: true), 0)
     }
 
     func testChangingProtectedAppsEndsAnActiveAllowance() {

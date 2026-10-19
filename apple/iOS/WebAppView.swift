@@ -220,17 +220,23 @@ struct WebAppView: UIViewRepresentable {
             model.health.onStepRewardUpdate = { [weak self] in
                 self?.scheduleHealthRefresh()
             }
+            model.health.onHealthSummaryUpdate = { [weak self] in
+                self?.scheduleHealthRefresh()
+            }
         }
 
         private func scheduleHealthRefresh() {
             guard UIApplication.shared.applicationState == .active else { return }
             healthRefreshTask?.cancel()
             healthRefreshTask = Task { @MainActor [weak self] in
-                try? await Task.sleep(for: .seconds(1))
-                guard let self, !Task.isCancelled, self.isWebAppReady,
-                      let summary = try? await self.model.health.fetchSummary()
-                else { return }
-                self.emit(name: "health.summary", value: summary)
+                do { try await Task.sleep(for: .seconds(1)) }
+                catch { return }
+                guard let self, !Task.isCancelled, self.isWebAppReady else { return }
+                do {
+                    self.emit(name: "health.summary", value: try await self.model.health.fetchSummary())
+                } catch {
+                    self.emit(name: "health.summary.failed", value: ["message": error.localizedDescription])
+                }
             }
         }
 
@@ -246,9 +252,12 @@ struct WebAppView: UIViewRepresentable {
                     self.model.earnedAccess.refresh()
                     self.emit(name: "earned.access.status", value: self.model.earnedAccess.bridgeStatus)
                     self.emitPendingRoutineCommands()
-                    if self.model.health.isAvailable,
-                       let summary = try? await self.model.health.fetchSummary() {
-                        self.emit(name: "health.summary", value: summary)
+                    if self.model.health.isAvailable {
+                        do {
+                            self.emit(name: "health.summary", value: try await self.model.health.fetchSummary())
+                        } catch {
+                            self.emit(name: "health.summary.failed", value: ["message": error.localizedDescription])
+                        }
                     }
                 }
             }
@@ -393,7 +402,7 @@ struct WebAppView: UIViewRepresentable {
                         let roundStartedAt = Self.roundStartedAt(from: payload)
                         emit(name: "health.summary", value: try await model.health.fetchSummary(roundStartedAt: roundStartedAt))
                     } catch {
-                        emitError(error.localizedDescription)
+                        emit(name: "health.summary.failed", value: ["message": error.localizedDescription])
                     }
                 }
             case .configureStepRewards:
