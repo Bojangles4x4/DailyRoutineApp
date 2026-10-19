@@ -723,16 +723,34 @@ function localDateKey(date = new Date()) {
 
   await page.locator('#setupBackButton').click();
   await page.locator('[data-setup-target="routine"]').click();
-  const setupTimeLayout = await page.locator('.daily-anchor-list').evaluate(node => {
-    const card = node.closest('.card').getBoundingClientRect();
-    const inputs = [...node.querySelectorAll('input')].map(input => input.getBoundingClientRect());
-    return { cardLeft: card.left, cardRight: card.right, inputs: inputs.map(rect => ({ left: rect.left, right: rect.right, height: rect.height })) };
-  });
-  setupTimeLayout.inputs.forEach(rect => {
-    assert.ok(rect.left >= setupTimeLayout.cardLeft);
-    assert.ok(rect.right <= setupTimeLayout.cardRight);
-    assert.equal(Math.round(rect.height), 38);
-  });
+  for (const width of [320, 390, 440]) {
+    await page.setViewportSize({ width, height: 844 });
+    const setupTimeLayout = await page.locator('.daily-anchor-list').evaluate(node => {
+      const card = node.closest('.card').getBoundingClientRect();
+      const rows = [...node.querySelectorAll('.daily-anchor-row')].map(row => {
+        const rowRect = row.getBoundingClientRect();
+        const copy = row.querySelector('.daily-anchor-copy').getBoundingClientRect();
+        const subtitle = row.querySelector('small').getBoundingClientRect();
+        const input = row.querySelector('input').getBoundingClientRect();
+        return {
+          row: { left: rowRect.left, right: rowRect.right, top: rowRect.top, bottom: rowRect.bottom },
+          copy: { left: copy.left, right: copy.right, top: copy.top, bottom: copy.bottom },
+          subtitle: { left: subtitle.left, right: subtitle.right, top: subtitle.top, bottom: subtitle.bottom },
+          input: { left: input.left, right: input.right, height: input.height }
+        };
+      });
+      return { cardLeft: card.left, cardRight: card.right, rows };
+    });
+    setupTimeLayout.rows.forEach(({ row, copy, subtitle, input }) => {
+      assert.ok(input.left >= setupTimeLayout.cardLeft);
+      assert.ok(input.right <= setupTimeLayout.cardRight);
+      assert.equal(Math.round(input.height), 38);
+      assert.ok(copy.left >= row.left && copy.right <= input.left);
+      assert.ok(subtitle.left >= copy.left && subtitle.right <= copy.right);
+      assert.ok(subtitle.top >= row.top && subtitle.bottom <= row.bottom);
+    });
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
   if (process.env.DAILY_ROUTINE_SCREENSHOT_DIR) {
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({ path: `${process.env.DAILY_ROUTINE_SCREENSHOT_DIR}/daily-routine-build13-setup.png` });
