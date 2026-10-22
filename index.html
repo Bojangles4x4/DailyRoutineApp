@@ -505,9 +505,8 @@
               <div><span>Current protection</span><strong id="earnedAccessGateStatus">Checking Screen Time…</strong><small id="earnedAccessGateDetail">Confirming today’s foundation and app shields.</small></div>
             </div>
             <div class="earned-access-metrics">
-              <div><strong id="earnedAccessAvailableNow">0 min</strong><span>Available today</span></div>
-              <div><strong id="earnedAccessEarnedToday">0 min</strong><span>Currently open</span></div>
-              <div><strong id="earnedAccessStillBanked">0 min</strong><span>Still banked</span></div>
+              <div><strong id="earnedAccessAvailableNow">0 min</strong><span>Balance remaining</span></div>
+              <div><strong id="earnedAccessUsableNow">0 min</strong><span>Usable now</span></div>
               <div><strong id="earnedAccessStepMetric">0%</strong><span>Step goal</span></div>
             </div>
           </div>
@@ -516,8 +515,24 @@
           <p id="earnedAccessNativeStatus" class="muted micro-copy earned-access-native-status">Authorize Screen Time and privately choose the apps Daily Routine should manage.</p>
 
           <div class="earned-access-bank" aria-live="polite">
-            <div><span>Today’s shared bank</span><strong id="earnedAccessBankStatus">0 of 60 minutes available today</strong><small id="earnedAccessBankDetail">Currently open and still-banked minutes belong to this same balance. Minutes reset at midnight.</small></div>
+            <div><span>Today’s shared bank</span><strong id="earnedAccessBankStatus">0 of 60 minutes remain today</strong><small id="earnedAccessBankDetail">Currently open and still-banked minutes belong to this same balance. Minutes reset at midnight.</small></div>
             <button id="useEarnedAccessButton" class="primary-button" type="button" disabled>Use 15 minutes</button>
+          </div>
+
+          <details class="earned-access-ledger">
+            <summary><span>Today’s minute breakdown</span><strong id="earnedAccessLedgerSummary">0 earned · 0 remaining</strong></summary>
+            <div class="earned-access-ledger-rows">
+              <div><span>Routine tasks</span><strong id="earnedAccessTaskEarned">+0 min</strong></div>
+              <div><span>Walking</span><strong id="earnedAccessWalkingEarned">+0 min</strong></div>
+              <div><span>Selected-app use</span><strong id="earnedAccessUsedToday">0 min</strong></div>
+              <div><span>Balance remaining</span><strong id="earnedAccessBalanceRemaining">0 min</strong></div>
+            </div>
+            <p id="earnedAccessLedgerNote" class="muted micro-copy earned-access-ledger-note">Usage is updated at Apple’s Screen Time checkpoints. Unused minutes expire at midnight.</p>
+          </details>
+
+          <div class="earned-access-truth-status" aria-live="polite">
+            <div><span>Truth Reminders</span><strong id="earnedAccessTruthStatus">Checking reminder schedule…</strong><small id="earnedAccessTruthDetail">Waiting count and the next reminder will appear here.</small></div>
+            <span id="earnedAccessTruthCount" class="privacy-pill">Checking</span>
           </div>
 
           <div class="earned-access-rule-heading"><strong>Ways to earn time</strong><span>Completed requirements add to the same daily bank.</span></div>
@@ -570,8 +585,12 @@
               <div><span>Notifications</span><strong id="earnedAccessNotificationStatus">Checking</strong></div>
               <div><span>Widget snapshot</span><strong id="earnedAccessWidgetStatus">Waiting to sync</strong></div>
               <div><span>Today check</span><strong id="earnedAccessDayBoundaryStatus">Waiting for first check</strong></div>
+              <div><span>Truth queue</span><strong id="earnedAccessTruthDiagnosticStatus">Checking</strong></div>
             </div>
-            <button id="runEarnedAccessChecksButton" class="secondary-button" type="button">Run checks</button>
+            <div class="earned-access-reliability-actions">
+              <button id="runEarnedAccessChecksButton" class="secondary-button" type="button">Run checks</button>
+              <button id="copyEarnedAccessDiagnosticsButton" class="secondary-button" type="button">Copy diagnostic summary</button>
+            </div>
             <p class="muted micro-copy earned-access-reliability-note">This status shows only connection health and timestamps. It never lists selected apps, browsing activity, or Health values.</p>
           </details>
           <p class="muted micro-copy earned-access-reset-note"><strong>Daily reset:</strong> unused minutes expire at midnight. Tomorrow begins locked again until Truth Before Tasks and any configured convictions are complete.</p>
@@ -899,6 +918,6 @@
   <script src="sync-core.js" defer></script>
   <script src="sync-cloud.js" defer></script>
   <script src="data-health.js" defer></script>
-  <script src="app.js?v=1.39.0-build41-notifications" defer></script>
+  <script src="app.js?v=1.40.0-build42-access-clarity" defer></script>
 </body>
 </html>

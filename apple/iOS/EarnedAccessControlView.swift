@@ -184,7 +184,9 @@ struct EarnedAccessControlView: View {
             protectionEnabled: store.protectionEnabled,
             allowanceActive: store.allowanceActive,
             allowanceRemainingMinutes: store.allowanceRemainingMinutes,
-            isShielding: store.isShielding
+            isShielding: store.isShielding,
+            dailyResetScheduled: store.dailyResetScheduled,
+            morningGateScheduled: store.morningGateScheduled
         )
     }
 
@@ -232,6 +234,43 @@ struct EarnedAccessControlView: View {
 }
 
 enum EarnedAccessProtectionSummary {
+    enum Reason: String {
+        case permissionNeeded
+        case essentialSelectionRepair
+        case morningGate
+        case truthReminderGate
+        case safetyUnlock
+        case scheduleRepair
+        case protectionOff
+        case allowanceOpen
+        case earnedAppsLocked
+        case ready
+    }
+
+    static func reason(
+        isAuthorized: Bool,
+        essentialSelectionNeedsRepair: Bool,
+        morningGateEnabled: Bool,
+        morningFoundationCompleteToday: Bool,
+        truthReminderGateActive: Bool,
+        truthReminderSafetyUnlockActive: Bool,
+        protectionEnabled: Bool,
+        allowanceActive: Bool,
+        isShielding: Bool,
+        dailyResetScheduled: Bool = true,
+        morningGateScheduled: Bool = true
+    ) -> Reason {
+        if !isAuthorized { return .permissionNeeded }
+        if essentialSelectionNeedsRepair { return .essentialSelectionRepair }
+        if morningGateEnabled && !morningFoundationCompleteToday { return .morningGate }
+        if truthReminderGateActive { return .truthReminderGate }
+        if truthReminderSafetyUnlockActive { return .safetyUnlock }
+        if protectionEnabled && (!dailyResetScheduled || (morningGateEnabled && !morningGateScheduled)) { return .scheduleRepair }
+        if !protectionEnabled { return .protectionOff }
+        if allowanceActive { return .allowanceOpen }
+        return isShielding ? .earnedAppsLocked : .ready
+    }
+
     static func title(
         isAuthorized: Bool,
         essentialSelectionNeedsRepair: Bool,
@@ -242,18 +281,36 @@ enum EarnedAccessProtectionSummary {
         protectionEnabled: Bool,
         allowanceActive: Bool,
         allowanceRemainingMinutes: Int?,
-        isShielding: Bool
+        isShielding: Bool,
+        dailyResetScheduled: Bool = true,
+        morningGateScheduled: Bool = true
     ) -> String {
-        if !isAuthorized { return "Screen Time setup needed" }
-        if essentialSelectionNeedsRepair { return "Essential app setup needs repair" }
-        if morningGateEnabled && !morningFoundationCompleteToday { return "Locked until Truth Before Tasks" }
-        if truthReminderGateActive { return "Paused for a Truth Reminder" }
-        if truthReminderSafetyUnlockActive { return "Truth safety access is open" }
-        if !protectionEnabled { return "Earned-app protection is off" }
-        if allowanceActive {
+        let current = reason(
+            isAuthorized: isAuthorized,
+            essentialSelectionNeedsRepair: essentialSelectionNeedsRepair,
+            morningGateEnabled: morningGateEnabled,
+            morningFoundationCompleteToday: morningFoundationCompleteToday,
+            truthReminderGateActive: truthReminderGateActive,
+            truthReminderSafetyUnlockActive: truthReminderSafetyUnlockActive,
+            protectionEnabled: protectionEnabled,
+            allowanceActive: allowanceActive,
+            isShielding: isShielding,
+            dailyResetScheduled: dailyResetScheduled,
+            morningGateScheduled: morningGateScheduled
+        )
+        switch current {
+        case .permissionNeeded: return "Screen Time setup needed"
+        case .essentialSelectionRepair: return "Essential app setup needs repair"
+        case .morningGate: return "Locked until Truth Before Tasks"
+        case .truthReminderGate: return "Paused for a Truth Reminder"
+        case .safetyUnlock: return "Truth safety access is open"
+        case .scheduleRepair: return "Protection schedule needs attention"
+        case .protectionOff: return "Earned-app protection is off"
+        case .allowanceOpen:
             if let allowanceRemainingMinutes { return "Currently open: about \(allowanceRemainingMinutes) min" }
             return "Currently open: refreshing"
+        case .earnedAppsLocked: return "Earned apps are locked"
+        case .ready: return "Protection is ready"
         }
-        return isShielding ? "Earned apps are locked" : "Protection is ready"
     }
 }

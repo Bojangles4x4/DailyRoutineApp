@@ -2,8 +2,9 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.39.0 development features
+## Version 1.40.0 development features
 
+- Build 42 makes the active app-access gate explicit, adds a private daily earned-minute ledger, shows Truth Reminder queue and next-schedule status, and provides a locally generated diagnostic summary that excludes app identities, reminder content, routine details, Health measurements, and account data.
 - Build 41 replaces stacked or stale Earned Access notices with one authoritative current-balance notification, labels walking rewards as a separate cumulative contribution, suppresses availability claims while a Morning or Truth gate is active, and retries walking notices after transient delivery failures.
 - Build 40 makes day changes repeat-safe across the web and iPhone layers, expires unused earned minutes and active access at midnight, repairs stale Screen Time allowances without restoring used minutes, rejects stale Watch actions, adds a visible day check, and guarantees a newly added Truth theme appears in the next unopened session without changing an active or completed session.
 - Build 39 prefers the latest completed sleep session ending today, makes missing or failed Health sleep refreshes visible with a manual fallback, and notifies when newly synced sleep times are ready to review.

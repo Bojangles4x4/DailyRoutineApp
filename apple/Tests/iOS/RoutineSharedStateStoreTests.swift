@@ -334,6 +334,48 @@ final class RoutineSharedStateStoreTests: XCTestCase {
         XCTAssertEqual(open, "Currently open: about 12 min")
     }
 
+    func testProtectionSummaryUsesHigherGateBeforeAnOpenAllowance() {
+        let morning = EarnedAccessProtectionSummary.reason(
+            isAuthorized: true,
+            essentialSelectionNeedsRepair: false,
+            morningGateEnabled: true,
+            morningFoundationCompleteToday: false,
+            truthReminderGateActive: true,
+            truthReminderSafetyUnlockActive: false,
+            protectionEnabled: true,
+            allowanceActive: true,
+            isShielding: false
+        )
+        let truth = EarnedAccessProtectionSummary.reason(
+            isAuthorized: true,
+            essentialSelectionNeedsRepair: false,
+            morningGateEnabled: true,
+            morningFoundationCompleteToday: true,
+            truthReminderGateActive: true,
+            truthReminderSafetyUnlockActive: false,
+            protectionEnabled: true,
+            allowanceActive: true,
+            isShielding: false
+        )
+        let schedule = EarnedAccessProtectionSummary.reason(
+            isAuthorized: true,
+            essentialSelectionNeedsRepair: false,
+            morningGateEnabled: true,
+            morningFoundationCompleteToday: true,
+            truthReminderGateActive: false,
+            truthReminderSafetyUnlockActive: false,
+            protectionEnabled: true,
+            allowanceActive: false,
+            isShielding: true,
+            dailyResetScheduled: false,
+            morningGateScheduled: true
+        )
+
+        XCTAssertEqual(morning, .morningGate)
+        XCTAssertEqual(truth, .truthReminderGate)
+        XCTAssertEqual(schedule, .scheduleRepair)
+    }
+
     func testActiveAllowanceRequiresCurrentCompleteMonitorState() {
         let today = "2026-10-13"
         XCTAssertFalse(EarnedAccessControlStore.allowanceMonitorNeedsRepair(

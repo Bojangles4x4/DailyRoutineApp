@@ -3,6 +3,7 @@ import PhotosUI
 
 struct TruthReminderView: View {
     @ObservedObject var store: TruthReminderStore
+    var onDone: () -> Void = {}
     @Environment(\.dismiss) private var dismiss
     @State private var editor: TruthReminder?
     @State private var deleting: TruthReminder?
@@ -40,6 +41,10 @@ struct TruthReminderView: View {
                     Toggle("Pause nonessential apps until reviewed", isOn: $draft.pauseAppsUntilReviewed)
                     if store.settings.enabled {
                         LabeledContent("Active schedule", value: store.scheduleSummary)
+                        LabeledContent(
+                            store.settings.pauseAppsUntilReviewed ? "Next app pause" : "Next reminder",
+                            value: store.nextScheduledReminderAt?.formatted(date: .abbreviated, time: .shortened) ?? "Needs attention"
+                        )
                     }
                 } header: { Text("Daily schedule") } footer: {
                     Text("The end time is included. When app pausing is on, the next reminder uses a separate Screen Time shield. Your always-available Earned Access apps stay open, and the shield remains until you review the reminder.")
@@ -67,7 +72,7 @@ struct TruthReminderView: View {
                         LabeledContent("Safety unlocks today", value: "\(store.safetyUnlockCountToday) · last at \(safetyAt.formatted(date: .omitted, time: .shortened))")
                     }
                     if store.settings.pauseAppsUntilReviewed {
-                        LabeledContent("Waiting reminders", value: String(store.waitingReminderCount))
+                        LabeledContent("Waiting to review", value: String(store.waitingReminderCount))
                         if let unlockUntil = store.safetyUnlockEndsAt {
                             LabeledContent("Temporary access", value: "Until \(unlockUntil.formatted(date: .omitted, time: .shortened))")
                         }
@@ -109,7 +114,7 @@ struct TruthReminderView: View {
             .disabled(store.busy)
             .navigationTitle("Truth reminders")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { onDone(); dismiss() } } }
             .sheet(item: $editor) { TruthReminderEditor(store: store, entry: $0) }
             .onAppear {
                 draft = store.settings

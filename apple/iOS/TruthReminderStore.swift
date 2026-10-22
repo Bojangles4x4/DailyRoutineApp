@@ -150,6 +150,22 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         return date > now ? date : nil
     }
 
+    var nextScheduledReminderAt: Date? {
+        guard settings.enabled else { return nil }
+        let minutes = Array(stride(from: settings.startMinute, through: settings.endMinute, by: settings.interval))
+        return nextOccurrence(in: minutes, after: Date())?.date
+    }
+
+    var bridgeStatus: [String: String] {
+        [
+            "truthReminderEnabled": settings.enabled ? "true" : "false",
+            "truthReminderPauseEnabled": settings.pauseAppsUntilReviewed ? "true" : "false",
+            "truthReminderWaitingCount": String(waitingReminderCount),
+            "truthReminderNextAt": nextScheduledReminderAt.map { String($0.timeIntervalSince1970) } ?? "",
+            "truthReminderScheduleSummary": scheduleSummary
+        ]
+    }
+
     private var morningFoundationIsIncomplete: Bool {
         EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.morningGateEnabledKey)
             && EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.morningFoundationCompleteDateKey) != EarnedAccessShared.localDateKey()

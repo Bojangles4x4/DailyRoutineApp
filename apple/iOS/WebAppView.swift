@@ -250,7 +250,7 @@ struct WebAppView: UIViewRepresentable {
                 Task { @MainActor [weak self] in
                     guard let self, self.isWebAppReady else { return }
                     self.model.earnedAccess.refresh()
-                    self.emit(name: "earned.access.status", value: self.model.earnedAccess.bridgeStatus)
+                    self.emit(name: "earned.access.status", value: self.model.earnedAccessBridgeStatus)
                     self.emitPendingRoutineCommands()
                     if self.model.health.isAvailable {
                         do {
@@ -341,14 +341,14 @@ struct WebAppView: UIViewRepresentable {
                 }
             case .requestEarnedAccessStatus:
                 model.earnedAccess.refresh()
-                emit(name: "earned.access.status", value: model.earnedAccess.bridgeStatus)
+                emit(name: "earned.access.status", value: model.earnedAccessBridgeStatus)
             case .reconcileDayBoundary:
                 model.earnedAccess.reconcileDayBoundary()
                 model.earnedAccess.refresh()
-                emit(name: "earned.access.status", value: model.earnedAccess.bridgeStatus)
+                emit(name: "earned.access.status", value: model.earnedAccessBridgeStatus)
             case .lockEarnedAccess:
                 model.earnedAccess.lockIfEnabled()
-                emit(name: "earned.access.status", value: model.earnedAccess.bridgeStatus)
+                emit(name: "earned.access.status", value: model.earnedAccessBridgeStatus)
             case .allowEarnedAccess:
                 guard
                     let value = payload["value"] as? [String: Any],
@@ -361,7 +361,7 @@ struct WebAppView: UIViewRepresentable {
                 }
                 let label = (value["label"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
                 model.earnedAccess.allowAccess(minutes: minutes.intValue, redemptionID: redemptionID, label: label)
-                emit(name: "earned.access.status", value: model.earnedAccess.bridgeStatus)
+                emit(name: "earned.access.status", value: model.earnedAccessBridgeStatus)
             case .lockMorningFoundation, .completeMorningFoundation:
                 guard
                     let value = payload["value"] as? [String: Any],
@@ -376,20 +376,26 @@ struct WebAppView: UIViewRepresentable {
                     completed: action == .completeMorningFoundation
                 )
                 model.reminders.morningFoundationDidChange(completed: action == .completeMorningFoundation)
-                emit(name: "earned.access.status", value: model.earnedAccess.bridgeStatus)
+                emit(name: "earned.access.status", value: model.earnedAccessBridgeStatus)
             case .openEarnedAccessControls:
                 guard let webView else { return }
                 let controller = UIHostingController(
                     rootView: EarnedAccessControlView(store: model.earnedAccess) { [weak self] in
                         guard let self else { return }
                         self.model.earnedAccess.refresh()
-                        self.emit(name: "earned.access.status", value: self.model.earnedAccess.bridgeStatus)
+                        self.emit(name: "earned.access.status", value: self.model.earnedAccessBridgeStatus)
                     }
                 )
                 present(controller, from: webView) { }
             case .openTruthReminders:
                 guard let webView else { return }
-                let controller = UIHostingController(rootView: TruthReminderView(store: model.reminders))
+                let controller = UIHostingController(
+                    rootView: TruthReminderView(store: model.reminders) { [weak self] in
+                        guard let self else { return }
+                        self.model.earnedAccess.refresh()
+                        self.emit(name: "earned.access.status", value: self.model.earnedAccessBridgeStatus)
+                    }
+                )
                 present(controller, from: webView) { }
             case .requestHealthAuthorization:
                 Task {
@@ -553,7 +559,7 @@ struct WebAppView: UIViewRepresentable {
             )
             pendingWatchEvents.forEach { emit(name: "watch.event", value: $0) }
             pendingWatchEvents.removeAll()
-            emit(name: "earned.access.status", value: model.earnedAccess.bridgeStatus)
+            emit(name: "earned.access.status", value: model.earnedAccessBridgeStatus)
             emitPendingRoutineCommands()
         }
 

@@ -26,7 +26,7 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#truthHeroTitle').textContent(), 'Truth Before Tasks');
   assert.equal(await page.locator('#truthEnterDayButton').isDisabled(), true);
   assert.equal(await page.locator('#accountabilitySharingCard').count(), 1);
-  assert.equal(await page.locator('#appVersion').textContent(), 'v1.39.0 · Build 41');
+  assert.equal(await page.locator('#appVersion').textContent(), 'v1.40.0 · Build 42');
   assert.match(await page.locator('#openAccountabilityFromSetupButton').textContent(), /Open private accountability/);
   assert.equal(await page.locator('#accountabilitySharingSignedOut').evaluate(element => element.hidden), false);
   assert.match(await page.locator('#accountabilitySharingSignedOut').textContent(), /Connect Private Sync first/);
@@ -649,7 +649,7 @@ function localDateKey(date = new Date()) {
   await page.evaluate(() => {
     window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'health.summary', value: { date: new Date().toISOString(), stepCount: 5820, sleepHours: 0, workoutCount: 0 } } }));
   });
-  assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '25 of 60 minutes available today');
+  assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '25 of 60 minutes remain today');
   assert.equal(await page.locator('#useEarnedAccessButton').isDisabled(), false);
   await page.locator('#useEarnedAccessButton').click();
   assert.equal((await page.locator('#earnedAccessStatus').textContent()).trim(), '15 minutes available');
@@ -661,14 +661,56 @@ function localDateKey(date = new Date()) {
     window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'earned.access.status', value: {
       protectionEnabled: 'true', shielding: 'false', allowanceActive: 'true', allowanceMinutes: '15',
       allowanceRemainingMinutes: '9', allowanceRedemptionID: redemptionId, lastConsumedRedemptionID: '', morningGateEnabled: 'true',
-      morningFoundationCompleteToday: 'true', selectionCount: '3', essentialCount: '2', dailyResetScheduled: 'true', morningGateScheduled: 'true', notificationsAllowed: 'true'
+      morningFoundationCompleteToday: 'true', truthReminderEnabled: 'true', truthReminderPauseEnabled: 'true', truthReminderWaitingCount: '2',
+      truthReminderNextAt: String((Date.now() + 60 * 60 * 1000) / 1000), selectionCount: '3', essentialCount: '2', dailyResetScheduled: 'true', morningGateScheduled: 'true', notificationsAllowed: 'true'
     } } }));
   }, nativeAllowance.value.redemptionId);
   assert.equal((await page.locator('#earnedAccessStatus').textContent()).trim(), 'About 9 of 15 minutes remaining');
-  assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '19 of 60 minutes available today');
+  assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '19 of 60 minutes remain today');
   assert.equal((await page.locator('#earnedAccessAvailableNow').textContent()).trim(), '19 min');
-  assert.equal((await page.locator('#earnedAccessEarnedToday').textContent()).trim(), '9 min');
-  assert.equal((await page.locator('#earnedAccessStillBanked').textContent()).trim(), '10 min');
+  assert.equal((await page.locator('#earnedAccessUsableNow').textContent()).trim(), '9 min');
+  assert.equal((await page.locator('#earnedAccessTaskEarned').textContent()).trim(), '+5 min');
+  assert.equal((await page.locator('#earnedAccessWalkingEarned').textContent()).trim(), '+20 min');
+  assert.equal((await page.locator('#earnedAccessUsedToday').textContent()).trim(), '−about 6 min');
+  assert.match(await page.locator('#earnedAccessTruthStatus').textContent(), /2 reminders waiting/);
+  assert.equal((await page.locator('#earnedAccessTruthCount').textContent()).trim(), '2 waiting');
+  await page.evaluate(redemptionId => {
+    window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'earned.access.status', value: {
+      protectionEnabled: 'true', shielding: 'false', allowanceActive: 'true', allowanceMinutes: '15', allowanceRemainingMinutes: '9',
+      allowanceRedemptionID: redemptionId, lastConsumedRedemptionID: '', morningGateEnabled: 'true', morningFoundationCompleteToday: 'true',
+      truthReminderGateEnabled: 'true', truthReminderGateActive: 'true', truthReminderEnabled: 'true', truthReminderPauseEnabled: 'true',
+      truthReminderWaitingCount: '2', selectionCount: '3', essentialCount: '2', dailyResetScheduled: 'true', morningGateScheduled: 'true', allowanceMonitorScheduled: 'true', notificationsAllowed: 'true'
+    } } }));
+  }, nativeAllowance.value.redemptionId);
+  assert.equal((await page.locator('#earnedAccessAvailableNow').textContent()).trim(), '19 min');
+  assert.equal((await page.locator('#earnedAccessUsableNow').textContent()).trim(), '0 min');
+  assert.match(await page.locator('#earnedAccessBankDetail').textContent(), /19 earned minutes preserved · 0 usable/);
+  assert.match(await page.locator('#earnedAccessGateStatus').textContent(), /Paused by 2 Truth Reminders/);
+  await page.evaluate(redemptionId => {
+    window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'earned.access.status', value: {
+      protectionEnabled: 'true', shielding: 'false', allowanceActive: 'true', allowanceMinutes: '15', allowanceRemainingMinutes: '9',
+      allowanceRedemptionID: redemptionId, lastConsumedRedemptionID: '', morningGateEnabled: 'true', morningFoundationCompleteToday: 'true',
+      truthReminderGateEnabled: 'true', truthReminderGateActive: 'false', truthReminderEnabled: 'true', truthReminderPauseEnabled: 'true',
+      truthReminderWaitingCount: '2', selectionCount: '3', essentialCount: '2', dailyResetScheduled: 'true', morningGateScheduled: 'true', allowanceMonitorScheduled: 'true', notificationsAllowed: 'true'
+    } } }));
+  }, nativeAllowance.value.redemptionId);
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: async text => { window.__earnedAccessDiagnostic = text; } }
+    });
+  });
+  await page.getByText('Reliability status', { exact: true }).click();
+  await page.locator('#copyEarnedAccessDiagnosticsButton').click();
+  const diagnostic = await page.evaluate(() => window.__earnedAccessDiagnostic || '');
+  assert.match(diagnostic, /Daily Routine private diagnostic summary/);
+  assert.match(diagnostic, /Waiting count: 2/);
+  assert.equal(diagnostic.includes('Reddit'), false);
+  assert.equal(diagnostic.includes('Garmin Connect'), false);
+  if (process.env.DAILY_ROUTINE_BUILD42_SCREENSHOT) {
+    fs.mkdirSync(process.env.DAILY_ROUTINE_BUILD42_SCREENSHOT, { recursive: true });
+    await page.locator('#earnedAccessCard').screenshot({ path: `${process.env.DAILY_ROUTINE_BUILD42_SCREENSHOT}/earned-access-build42.png` });
+  }
   assert.match(await page.locator('#earnedAccessDetail').textContent(), /five-minute usage checkpoints/);
   const earnedWidgetSnapshot = await page.evaluate(() => [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'routine.snapshot.publish')?.value);
   assert.equal(earnedWidgetSnapshot.earnedAccessRemainingMinutes, 19);
@@ -802,11 +844,11 @@ function localDateKey(date = new Date()) {
   await page.locator('[data-view="setup"]').click();
   await page.locator('[data-setup-target="health"]').click();
   assert.equal((await page.locator('#earnedAccessMorningStatus').textContent()).trim(), '3 of 3 complete · 15 min added today');
-  assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '15 of 60 minutes available today');
+  assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '15 of 60 minutes remain today');
   await page.reload({ waitUntil: 'networkidle' });
   await page.locator('[data-view="setup"]').click();
   await page.locator('[data-setup-target="health"]').click();
-  assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '15 of 60 minutes available today');
+  assert.equal((await page.locator('#earnedAccessBankStatus').textContent()).trim(), '15 of 60 minutes remain today');
   assert.equal(await page.locator('#useEarnedAccessButton').isDisabled(), false);
   await page.locator('#useEarnedAccessButton').click();
   assert.equal((await page.locator('#earnedAccessStatus').textContent()).trim(), '15 minutes available');
@@ -956,7 +998,7 @@ function localDateKey(date = new Date()) {
   assert.equal(extendedAutomaticAllowance.activeAllowance.minutes, 26);
   assert.notEqual(extendedAutomaticAllowance.activeAllowance.id, openedAfterFoundation.activeAllowance.id);
   assert.equal(extendedAutomaticAllowance.nativeAllowance.value.minutes, 26);
-  assert.match(await automaticPage.locator('#earnedAccessBankStatus').textContent(), /26 of 60 minutes available today/);
+  assert.match(await automaticPage.locator('#earnedAccessBankStatus').textContent(), /26 of 60 minutes remain today/);
   await automaticPage.close();
 
   const exportedFiles = await page.evaluate(() => {
