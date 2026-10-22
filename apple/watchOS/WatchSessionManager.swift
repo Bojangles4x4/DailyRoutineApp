@@ -35,7 +35,8 @@ final class WatchSessionManager: NSObject, ObservableObject {
         }
 
         return WatchRoutineContext(
-            dateKey: "2026-08-21",
+            dateKey: Self.localDateKey(),
+            timeZoneIdentifier: TimeZone.current.identifier,
             completed: 4,
             total: 9,
             nextItemName: truthComplete ? "Morning walk" : "Complete Morning Foundation on iPhone",
@@ -55,7 +56,24 @@ final class WatchSessionManager: NSObject, ObservableObject {
 #endif
 
     func send(_ event: WatchEvent) {
-        guard let data = try? JSONEncoder().encode(event) else { return }
+        guard context?.dateKey == Self.localDateKey(),
+              context?.timeZoneIdentifier == TimeZone.current.identifier
+        else {
+            deliveryStatus = "Open iPhone to refresh"
+            return
+        }
+        let contextualEvent = WatchEvent(
+            id: event.id,
+            action: event.action,
+            value: event.value,
+            itemId: event.itemId,
+            text: event.text,
+            noteType: event.noteType,
+            createdAt: event.createdAt,
+            contextDateKey: context?.dateKey,
+            timeZoneIdentifier: context?.timeZoneIdentifier
+        )
+        guard let data = try? JSONEncoder().encode(contextualEvent) else { return }
         let payload: [String: Any] = ["watchEvent": data]
 
         if WCSession.default.isReachable {
@@ -81,6 +99,15 @@ final class WatchSessionManager: NSObject, ObservableObject {
         context = nextContext
         WidgetSnapshotStore.save(context: nextContext)
         WidgetCenter.shared.reloadTimelines(ofKind: WidgetSnapshotStore.widgetKind)
+    }
+
+    private static func localDateKey(_ date: Date = Date()) -> String {
+        let formatter = DateFormatter()
+        formatter.calendar = .current
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
     }
 }
 

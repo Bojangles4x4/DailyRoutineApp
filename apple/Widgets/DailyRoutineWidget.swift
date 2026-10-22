@@ -63,7 +63,7 @@ struct DailyRoutineWidgetView: View {
     let entry: RoutineTimelineEntry
 
     private var truthIsLocked: Bool {
-        entry.snapshot.truthBeforeTasksComplete == false
+        !entry.snapshot.isCurrentDay || entry.snapshot.truthBeforeTasksComplete == false
     }
 
     var body: some View {
@@ -120,7 +120,7 @@ struct DailyRoutineWidgetView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("MORNING FOUNDATION")
                         .font(.system(size: 10, weight: .bold))
-                    Text("Begin on iPhone")
+                    Text(entry.snapshot.isCurrentDay ? "Begin on iPhone" : "Open iPhone to refresh")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }

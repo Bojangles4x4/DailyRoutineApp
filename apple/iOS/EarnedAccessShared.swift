@@ -37,6 +37,9 @@ enum EarnedAccessShared {
     static let truthReminderSafetyUnlockCountKey = "dailyRoutine.truthReminderGate.safetyUnlockCount.v1"
     static let truthReminderSafetyUnlockLastAtKey = "dailyRoutine.truthReminderGate.safetyUnlockLastAt.v1"
     static let essentialSelectionNeedsRepairKey = "dailyRoutine.screenTime.essentialSelectionNeedsRepair.v1"
+    static let dayBoundaryIDKey = "dailyRoutine.dayBoundary.id.v1"
+    static let dayBoundaryCheckedAtKey = "dailyRoutine.dayBoundary.checkedAt.v1"
+    static let dayBoundaryResultKey = "dailyRoutine.dayBoundary.result.v1"
     static let storeName = ManagedSettingsStore.Name("dailyRoutine.earnedAccess")
     static let foundationStoreName = ManagedSettingsStore.Name("dailyRoutine.morningFoundation")
     static let truthReminderStoreName = ManagedSettingsStore.Name("dailyRoutine.truthReminder")

@@ -11,7 +11,18 @@ struct WatchContentView: View {
     }
 
     private var truthBeforeTasksComplete: Bool {
-        session.context?.truthBeforeTasksComplete == true
+        session.context?.dateKey == localDateKey
+            && session.context?.timeZoneIdentifier == TimeZone.current.identifier
+            && session.context?.truthBeforeTasksComplete == true
+    }
+
+    private var localDateKey: String {
+        let formatter = DateFormatter()
+        formatter.calendar = .current
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: Date())
     }
 
     private var routineItems: [WatchRoutineItem] {

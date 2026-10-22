@@ -7,10 +7,11 @@
   const ACCOUNTABILITY_PUBLISH_STATUS_KEY = 'dailyRoutine.accountability.publishStatus.v1';
   const HEALTH_DEVICE_KEY = 'dailyRoutine.health.device.v1';
   const EARNED_ACCESS_DEVICE_KEY = 'dailyRoutine.earnedAccess.device.v1';
+  const DAY_BOUNDARY_DEVICE_KEY = 'dailyRoutine.dayBoundary.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.37.0';
-  const APP_BUILD = 39;
+  const APP_VERSION = '1.38.0';
+  const APP_BUILD = 40;
   const PRIVATE_SYNC_COMPONENT_MESSAGE = 'This build is missing a required sync component. No routine data on this device or in the cloud was changed. Update the app to continue.';
   const PRIVATE_SYNC_LEGACY_RECOVERY_MESSAGE = 'The previous build could not sync. Your local data is preserved—review and sync now.';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
@@ -158,7 +159,7 @@
     privateSyncCard: $('privateSyncCard'), privateSyncBadge: $('privateSyncBadge'), privateSyncStatus: $('privateSyncStatus'), privateSyncDevice: $('privateSyncDevice'), privateSyncLastSync: $('privateSyncLastSync'), privateSyncHealthBadge: $('privateSyncHealthBadge'), privateSyncLocalDays: $('privateSyncLocalDays'), privateSyncLocalRecords: $('privateSyncLocalRecords'), privateSyncCloudHealth: $('privateSyncCloudHealth'), privateSyncPendingHealth: $('privateSyncPendingHealth'), privateSyncHealthDetail: $('privateSyncHealthDetail'), createSyncSnapshotButton: $('createSyncSnapshotButton'), privateSyncNowButton: $('privateSyncNowButton'), privateSyncSignIn: $('privateSyncSignIn'), privateSyncEmailInput: $('privateSyncEmailInput'), privateSyncPasswordInput: $('privateSyncPasswordInput'), privateSyncSendCodeButton: $('privateSyncSendCodeButton'), privateSyncVerifyButton: $('privateSyncVerifyButton'), privateSyncHelp: $('privateSyncHelp'), privateSyncAccount: $('privateSyncAccount'), privateSyncSignOutButton: $('privateSyncSignOutButton'), privateSyncDeleteCloudButton: $('privateSyncDeleteCloudButton'), syncPreviewDialog: $('syncPreviewDialog'), syncPreviewTitle: $('syncPreviewTitle'), syncPreviewDescription: $('syncPreviewDescription'), syncPreviewCounts: $('syncPreviewCounts'), syncPreviewChanges: $('syncPreviewChanges'), closeSyncPreviewButton: $('closeSyncPreviewButton'), cancelSyncPreviewButton: $('cancelSyncPreviewButton'), confirmSyncPreviewButton: $('confirmSyncPreviewButton'),
     connectionsCard: $('connectionsCard'), syncConnectionsButton: $('syncConnectionsButton'), bibleConnectionStatus: $('bibleConnectionStatus'), openBibleConnectionButton: $('openBibleConnectionButton'), bibleAppUrlInput: $('bibleAppUrlInput'), saveBibleConnectionButton: $('saveBibleConnectionButton'), testBibleConnectionButton: $('testBibleConnectionButton'), connectionTemplates: $('connectionTemplates'),
     appleNativeCard: $('appleNativeCard'), iphoneWidgetCard: $('iphoneWidgetCard'), appleWatchCard: $('appleWatchCard'), appleStepCount: $('appleStepCount'), appleSleepHours: $('appleSleepHours'), appleWorkoutCount: $('appleWorkoutCount'), appleHealthStatus: $('appleHealthStatus'), healthSourceSummary: $('healthSourceSummary'), healthSourceDetail: $('healthSourceDetail'), connectAppleHealthButton: $('connectAppleHealthButton'), refreshAppleHealthButton: $('refreshAppleHealthButton'), appleWatchStatus: $('appleWatchStatus'), appleStepsGoalInput: $('appleStepsGoalInput'), saveAppleStepsGoalButton: $('saveAppleStepsGoalButton'), appleWatchQuickActionInput: $('appleWatchQuickActionInput'),
-    earnedAccessCard: $('earnedAccessCard'), earnedAccessBadge: $('earnedAccessBadge'), earnedAccessNativeStatus: $('earnedAccessNativeStatus'), earnedAccessGateStatus: $('earnedAccessGateStatus'), earnedAccessGateDetail: $('earnedAccessGateDetail'), earnedAccessAvailableNow: $('earnedAccessAvailableNow'), earnedAccessEarnedToday: $('earnedAccessEarnedToday'), earnedAccessStillBanked: $('earnedAccessStillBanked'), earnedAccessStepMetric: $('earnedAccessStepMetric'), openEarnedAccessControlsButton: $('openEarnedAccessControlsButton'), earnedAccessLabelInput: $('earnedAccessLabelInput'), earnedAccessTaskMinutesInput: $('earnedAccessTaskMinutesInput'), earnedAccessDailyLimitInput: $('earnedAccessDailyLimitInput'), earnedAccessAutomaticStepsInput: $('earnedAccessAutomaticStepsInput'), earnedAccessAutomaticUseInput: $('earnedAccessAutomaticUseInput'), earnedAccessStepsInput: $('earnedAccessStepsInput'), earnedAccessMinutesInput: $('earnedAccessMinutesInput'), earnedAccessModeInput: $('earnedAccessModeInput'), earnedAccessBankStatus: $('earnedAccessBankStatus'), earnedAccessBankDetail: $('earnedAccessBankDetail'), useEarnedAccessButton: $('useEarnedAccessButton'), earnedAccessStatus: $('earnedAccessStatus'), earnedAccessDetail: $('earnedAccessDetail'), earnedAccessProgressBar: $('earnedAccessProgressBar'), startEarnedAccessButton: $('startEarnedAccessButton'), checkEarnedAccessButton: $('checkEarnedAccessButton'), cancelEarnedAccessButton: $('cancelEarnedAccessButton'), earnedAccessMorningTasks: $('earnedAccessMorningTasks'), earnedAccessLaterTasks: $('earnedAccessLaterTasks'), earnedAccessMorningStatus: $('earnedAccessMorningStatus'), earnedAccessLaterStatus: $('earnedAccessLaterStatus'), earnedAccessHealthSyncStatus: $('earnedAccessHealthSyncStatus'), earnedAccessStepSampleStatus: $('earnedAccessStepSampleStatus'), earnedAccessScreenTimeStatus: $('earnedAccessScreenTimeStatus'), earnedAccessScheduleStatus: $('earnedAccessScheduleStatus'), earnedAccessNotificationStatus: $('earnedAccessNotificationStatus'), earnedAccessWidgetStatus: $('earnedAccessWidgetStatus'),
+    earnedAccessCard: $('earnedAccessCard'), earnedAccessBadge: $('earnedAccessBadge'), earnedAccessNativeStatus: $('earnedAccessNativeStatus'), earnedAccessGateStatus: $('earnedAccessGateStatus'), earnedAccessGateDetail: $('earnedAccessGateDetail'), earnedAccessAvailableNow: $('earnedAccessAvailableNow'), earnedAccessEarnedToday: $('earnedAccessEarnedToday'), earnedAccessStillBanked: $('earnedAccessStillBanked'), earnedAccessStepMetric: $('earnedAccessStepMetric'), openEarnedAccessControlsButton: $('openEarnedAccessControlsButton'), earnedAccessLabelInput: $('earnedAccessLabelInput'), earnedAccessTaskMinutesInput: $('earnedAccessTaskMinutesInput'), earnedAccessDailyLimitInput: $('earnedAccessDailyLimitInput'), earnedAccessAutomaticStepsInput: $('earnedAccessAutomaticStepsInput'), earnedAccessAutomaticUseInput: $('earnedAccessAutomaticUseInput'), earnedAccessStepsInput: $('earnedAccessStepsInput'), earnedAccessMinutesInput: $('earnedAccessMinutesInput'), earnedAccessModeInput: $('earnedAccessModeInput'), earnedAccessBankStatus: $('earnedAccessBankStatus'), earnedAccessBankDetail: $('earnedAccessBankDetail'), useEarnedAccessButton: $('useEarnedAccessButton'), earnedAccessStatus: $('earnedAccessStatus'), earnedAccessDetail: $('earnedAccessDetail'), earnedAccessProgressBar: $('earnedAccessProgressBar'), startEarnedAccessButton: $('startEarnedAccessButton'), checkEarnedAccessButton: $('checkEarnedAccessButton'), cancelEarnedAccessButton: $('cancelEarnedAccessButton'), earnedAccessMorningTasks: $('earnedAccessMorningTasks'), earnedAccessLaterTasks: $('earnedAccessLaterTasks'), earnedAccessMorningStatus: $('earnedAccessMorningStatus'), earnedAccessLaterStatus: $('earnedAccessLaterStatus'), earnedAccessHealthSyncStatus: $('earnedAccessHealthSyncStatus'), earnedAccessStepSampleStatus: $('earnedAccessStepSampleStatus'), earnedAccessScreenTimeStatus: $('earnedAccessScreenTimeStatus'), earnedAccessScheduleStatus: $('earnedAccessScheduleStatus'), earnedAccessNotificationStatus: $('earnedAccessNotificationStatus'), earnedAccessWidgetStatus: $('earnedAccessWidgetStatus'), earnedAccessDayBoundaryStatus: $('earnedAccessDayBoundaryStatus'), runEarnedAccessChecksButton: $('runEarnedAccessChecksButton'),
     healthSleepSuggestion: $('healthSleepSuggestion'), healthSleepSuggestionTitle: $('healthSleepSuggestionTitle'), healthSleepSuggestionText: $('healthSleepSuggestionText'), applyHealthSleepButton: $('applyHealthSleepButton'),
     linkedActionFields: $('linkedActionFields'), linkedTemplateInput: $('linkedTemplateInput'), linkedCompletionInput: $('linkedCompletionInput'), linkedUrlField: $('linkedUrlField'), linkedUrlInput: $('linkedUrlInput'), linkedInternalField: $('linkedInternalField'), linkedInternalTargetInput: $('linkedInternalTargetInput'), linkedButtonLabelInput: $('linkedButtonLabelInput'), timeWindowFields: $('timeWindowFields'), timeWindowStartInput: $('timeWindowStartInput'), timeWindowEndInput: $('timeWindowEndInput'),
     medicationProgressCard: $('medicationProgressCard'), weeklyReviewCard: $('weeklyReviewCard'), memoryBankCard: $('memoryBankCard'), dataBackupCard: $('dataBackupCard'),
@@ -181,6 +182,8 @@
     getConvictionRecoveries: () => structuredClone(readConvictionRecoveries()),
     saveConvictionRecoveries: recoveries => writeConvictionRecoveries(structuredClone(recoveries)),
     createPrivateSyncSafetySnapshot: label => requirePrivateSyncSafetySnapshot(label),
+    reconcileDayBoundary,
+    dayBoundaryStatus,
     syncStatus: () => syncCoordinator?.status() || null,
     dateKey,
     startOfToday
@@ -190,6 +193,7 @@
 
   function init() {
     ensureFirstUseDate();
+    reconcileDayBoundary('launch');
     syncCoordinator?.ensureLocalState(state);
     consumeIntegrationReturn();
     syncLinkedIntegrations(false);
@@ -511,7 +515,10 @@
   function maybeAutoSnapshot() {
     const today = dateKey(startOfToday());
     const snapshots = readSnapshots();
-    if (!snapshots.some(snapshot => String(snapshot.createdAt || '').slice(0, 10) === today)) createLocalSnapshot('Automatic daily snapshot', true);
+    if (!snapshots.some(snapshot => {
+      const createdAt = new Date(snapshot.createdAt || '');
+      return !Number.isNaN(createdAt.getTime()) && dateKey(createdAt) === today;
+    })) createLocalSnapshot('Automatic daily snapshot', true);
   }
 
   function renderSnapshotStatus() {
@@ -1324,15 +1331,30 @@
     els.startEarnedAccessButton.addEventListener('click', startEarnedAccessRound);
     els.checkEarnedAccessButton.addEventListener('click', checkEarnedAccessProgress);
     els.cancelEarnedAccessButton.addEventListener('click', cancelEarnedAccessRound);
+    els.runEarnedAccessChecksButton?.addEventListener('click', () => {
+      reconcileDayBoundary('manual check');
+      sendNativeBridgeMessage('earned.access.status.request');
+      sendNativeBridgeMessage('routine.commands.request');
+      if (healthDeviceSettings().connected) requestHealthSummary();
+      publishRoutineSharedSnapshot();
+      renderEarnedAccess();
+      showToast('Today’s protection and shared displays were checked.');
+    });
     els.appleWatchQuickActionInput.addEventListener('change', () => {
       state.settings.watchQuickAction = els.appleWatchQuickActionInput.value || 'water';
       saveState();
       showToast('Apple Watch shortcut updated');
     });
     const refreshNativeState = () => {
+      const boundary = reconcileDayBoundary('app became active');
       sendNativeBridgeMessage('earned.access.status.request');
       sendNativeBridgeMessage('routine.commands.request');
       if (healthDeviceSettings().connected) requestHealthSummary();
+      if (boundary.changed) {
+        renderAll();
+        publishRoutineSharedSnapshot();
+        syncWatchContext();
+      }
     };
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') refreshNativeState();
@@ -1462,6 +1484,17 @@
         const settings = earnedAccessDeviceSettings();
         if (settings.activeAllowance?.id && earnedAccessNativeState.lastConsumedRedemptionID === settings.activeAllowance.id) {
           saveEarnedAccessDeviceSettings({ activeAllowance: null });
+          lastEarnedAccessNativeDirective = '';
+        } else if (settings.activeAllowance?.id && !earnedAccessNativeState.allowanceActive) {
+          const startedAt = new Date(settings.activeAllowance.startedAt || '');
+          const hasTimedOut = Number.isNaN(startedAt.getTime()) || Date.now() - startedAt.getTime() >= 60_000;
+          if (hasTimedOut) {
+            // Native Screen Time is authoritative. If its monitor disappeared,
+            // retire the stale web allowance without refunding possibly-used
+            // minutes; any still-banked minutes can then open safely.
+            saveEarnedAccessDeviceSettings({ activeAllowance: null });
+            lastEarnedAccessNativeDirective = '';
+          }
         }
         els.earnedAccessNativeStatus.textContent = value.message || 'Earned Access status updated.';
         syncMorningFoundation(!document.body.classList.contains('truth-locked'));
@@ -1511,6 +1544,64 @@
       .map(item => item.id);
   }
 
+  function currentDayBoundaryContext() {
+    const localDateKey = dateKey(startOfToday());
+    let timeZoneIdentifier = 'local';
+    try { timeZoneIdentifier = Intl.DateTimeFormat().resolvedOptions().timeZone || 'local'; } catch { /* use local */ }
+    return { localDateKey, timeZoneIdentifier, boundaryId: `${localDateKey}|${timeZoneIdentifier}` };
+  }
+
+  function dayBoundaryStatus() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(DAY_BOUNDARY_DEVICE_KEY) || '{}');
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch { return {}; }
+  }
+
+  function reconcileDayBoundary(reason = 'refresh') {
+    const context = currentDayBoundaryContext();
+    const previous = dayBoundaryStatus();
+    const now = new Date().toISOString();
+    let result = 'Current day verified';
+    let changed = false;
+    if (previous.boundaryId && previous.boundaryId !== context.boundaryId) {
+      const dateChanged = previous.localDateKey !== context.localDateKey;
+      let earned = {};
+      try { earned = JSON.parse(localStorage.getItem(EARNED_ACCESS_DEVICE_KEY) || '{}') || {}; } catch { earned = {}; }
+      const oldDateKey = String(previous.localDateKey || '');
+      const expiredDateKeys = dateChanged
+        ? [...new Set([...(Array.isArray(earned.expiredDateKeys) ? earned.expiredDateKeys : []), oldDateKey].filter(Boolean))].slice(-45)
+        : (Array.isArray(earned.expiredDateKeys) ? earned.expiredDateKeys : []);
+      const bankByDate = earned.bankByDate && typeof earned.bankByDate === 'object' ? { ...earned.bankByDate } : {};
+      if (dateChanged) {
+        bankByDate[context.localDateKey] = 0;
+        if (oldDateKey) bankByDate[oldDateKey] = 0;
+      }
+      earned = { ...earned, active: null, activeAllowance: null, bankByDate, expiredDateKeys };
+      localStorage.setItem(EARNED_ACCESS_DEVICE_KEY, JSON.stringify(earned));
+      lastEarnedAccessNativeDirective = '';
+      lastMorningFoundationDirective = '';
+      changed = true;
+      result = previous.localDateKey !== context.localDateKey
+        ? 'New day started · unused minutes expired'
+        : 'Time zone changed · access rechecked';
+    } else {
+      try {
+        const earned = JSON.parse(localStorage.getItem(EARNED_ACCESS_DEVICE_KEY) || '{}') || {};
+        if (Array.isArray(earned.expiredDateKeys) && earned.expiredDateKeys.includes(context.localDateKey)) {
+          const bankByDate = earned.bankByDate && typeof earned.bankByDate === 'object' ? { ...earned.bankByDate, [context.localDateKey]: 0 } : { [context.localDateKey]: 0 };
+          localStorage.setItem(EARNED_ACCESS_DEVICE_KEY, JSON.stringify({ ...earned, active: null, activeAllowance: null, bankByDate }));
+          changed = true;
+          result = 'Returned date rechecked · unused minutes remain expired';
+        }
+      } catch { /* settings loader will use safe defaults */ }
+    }
+    const next = { ...context, lastCheckedAt: now, lastTransitionAt: changed ? now : previous.lastTransitionAt || '', lastReason: String(reason), lastResult: result };
+    localStorage.setItem(DAY_BOUNDARY_DEVICE_KEY, JSON.stringify(next));
+    sendNativeBridgeMessage('day.boundary.reconcile', { ...context, reason });
+    return { ...next, changed };
+  }
+
   function earnedAccessDeviceSettings() {
     const defaults = {
       label: 'Selected apps', automaticSteps: true, automaticAccess: true, stepGoal: 8000, rewardMinutes: 60, taskRewardMinutes: 5, dailyLimitMinutes: 60, mode: 'fixed',
@@ -1549,6 +1640,13 @@
       next.movementCreditedByDate = next.movementCreditedByDate && typeof next.movementCreditedByDate === 'object' ? next.movementCreditedByDate : {};
       next.taskCreditsByDate = next.taskCreditsByDate && typeof next.taskCreditsByDate === 'object' ? next.taskCreditsByDate : {};
       next.redemptionsByDate = next.redemptionsByDate && typeof next.redemptionsByDate === 'object' ? next.redemptionsByDate : {};
+      next.expiredDateKeys = Array.isArray(next.expiredDateKeys) ? next.expiredDateKeys.map(String).slice(-45) : [];
+      if (next.expiredDateKeys.includes(dateKey(startOfToday()))) {
+        next.bankByDate[dateKey(startOfToday())] = 0;
+        next.active = null;
+        next.activeAllowance = null;
+        needsSave = true;
+      }
       if (!next.active || typeof next.active !== 'object') next.active = null;
       if (next.active?.dateKey && next.active.dateKey !== dateKey(startOfToday())) {
         next.active = null;
@@ -1973,6 +2071,13 @@
     els.earnedAccessWidgetStatus.textContent = lastRoutineSnapshotSavedAt
       ? `Synced ${formatRelativeTime(lastRoutineSnapshotSavedAt)} · r${lastRoutineSnapshotSavedRevision}`
       : window.DailyRoutineNative?.postMessage ? 'Waiting to sync' : 'Available in iPhone app';
+    if (els.earnedAccessDayBoundaryStatus) {
+      const boundary = dayBoundaryStatus();
+      const checkedAt = boundary.lastCheckedAt ? new Date(boundary.lastCheckedAt) : null;
+      els.earnedAccessDayBoundaryStatus.textContent = checkedAt && !Number.isNaN(checkedAt.getTime())
+        ? `${boundary.lastResult || 'Current day verified'} · ${formatRelativeTime(checkedAt)}`
+        : 'Waiting for first check';
+    }
   }
 
   function renderEarnedAccess() {
@@ -2516,6 +2621,7 @@
     const truthBeforeTasksComplete = !document.body.classList.contains('truth-locked');
     return {
       dateKey: dateKey(today),
+      timeZoneIdentifier: sharedStateTimeZone(),
       completed: completion.completed,
       total: completion.total,
       nextItemName: truthBeforeTasksComplete ? next?.name || null : 'Complete Morning Foundation on iPhone',
@@ -2609,6 +2715,16 @@
 
     if (document.body.classList.contains('truth-locked')) {
       watchLastActionMessage = 'Complete Morning Foundation on iPhone first';
+      els.appleWatchStatus.textContent = watchLastActionMessage;
+      syncWatchContext();
+      showToast(watchLastActionMessage);
+      return;
+    }
+
+    if (event.action !== 'captureNote'
+      && (String(event.contextDateKey || '') !== dateKey(startOfToday())
+        || String(event.timeZoneIdentifier || '') !== sharedStateTimeZone())) {
+      watchLastActionMessage = 'Watch action expired—open the iPhone app to refresh';
       els.appleWatchStatus.textContent = watchLastActionMessage;
       syncWatchContext();
       showToast(watchLastActionMessage);
@@ -3752,6 +3868,7 @@
     }
     if (!keepBusy) setPrivateSyncBusy(true);
     try {
+      reconcileDayBoundary('before private sync');
       privateSyncSession = privateSyncSession || await syncCloud.session();
       if (!privateSyncSession) throw new Error('Sign in before syncing.');
 
@@ -3767,6 +3884,7 @@
         renderPrivateSyncStatus();
         const decision = syncCoordinator.reconcile(state, remote, { persistConflicts: false });
         if (decision.action === 'none') {
+          reconcileDayBoundary('after private sync');
           syncCoordinator.commitRemote(state, remote?.revision || decision.remoteRevision, 'supabase', privateSyncSession.user.id);
           renderPrivateSyncStatus();
           showToast('Private sync is already current');
@@ -3812,6 +3930,7 @@
           preserveConvictionsBeforeSync(state, nextState);
           state = nextState;
           saveState({ trackSync: false });
+          reconcileDayBoundary('after private sync');
           syncCoordinator.commitRemote(state, decision.remoteRevision, 'supabase', privateSyncSession.user.id);
           renderAll();
           showToast('Cloud changes downloaded safely');
@@ -3829,6 +3948,7 @@
           preserveConvictionsBeforeSync(state, nextState);
           state = nextState;
           saveState({ trackSync: false });
+          reconcileDayBoundary('after private sync');
           syncCoordinator.commitRemote(state, saved.revision, 'supabase', privateSyncSession.user.id);
           privateSyncRemoteHealth = {
             exists: true,
@@ -5858,6 +5978,8 @@
           items: convictionItems
         },
         themes: Array.isArray(stored.themes) && stored.themes.length ? stored.themes.map(normalizeTheme).filter(Boolean) : DEFAULTS.themes.map(normalizeTheme).filter(Boolean),
+        nextThemeQueue: Array.isArray(stored.nextThemeQueue) ? stored.nextThemeQueue.map(String).filter(Boolean) : [],
+        themeAssignments: stored.themeAssignments && typeof stored.themeAssignments === 'object' ? stored.themeAssignments : {},
         completions: stored.completions && typeof stored.completions === 'object' ? stored.completions : {},
         sessions: stored.sessions && typeof stored.sessions === 'object' ? stored.sessions : {}
       };
@@ -5872,7 +5994,13 @@
 
     function config() {
       const currentState = api.getState();
-      if (!currentState.settings.truthBeforeTasks) normalizeConfig();
+      const stored = currentState.settings.truthBeforeTasks;
+      if (!stored
+        || !Array.isArray(stored.themes)
+        || !Array.isArray(stored.nextThemeQueue)
+        || !stored.themeAssignments || typeof stored.themeAssignments !== 'object'
+        || !stored.completions || typeof stored.completions !== 'object'
+        || !stored.sessions || typeof stored.sessions !== 'object') normalizeConfig();
       return currentState.settings.truthBeforeTasks;
     }
 
@@ -5885,6 +6013,39 @@
       let hash = 0;
       for (const character of key) hash = ((hash * 31) + character.charCodeAt(0)) >>> 0;
       return themes[hash % themes.length];
+    }
+
+    function assignedThemeForDate(key) {
+      const assigned = normalizeTheme(config().themeAssignments?.[key]);
+      return assigned || themeForDate(key);
+    }
+
+    function ensureThemeAssignment(key, consumeQueue, persist = true) {
+      const currentConfig = config();
+      const existing = normalizeTheme(currentConfig.themeAssignments?.[key]);
+      if (existing) return existing;
+      const previousAssignments = clone(currentConfig.themeAssignments || {});
+      const previousQueue = [...(currentConfig.nextThemeQueue || [])];
+      let theme = null;
+      if (consumeQueue) {
+        while (currentConfig.nextThemeQueue.length && !theme) {
+          const queuedId = currentConfig.nextThemeQueue.shift();
+          theme = currentConfig.themes.find(item => item.id === queuedId) || null;
+        }
+      }
+      theme = clone(theme || themeForDate(key));
+      currentConfig.themeAssignments[key] = theme;
+      if (!persist) return theme;
+      try {
+        api.saveState();
+        truthStorageError = '';
+        return theme;
+      } catch (error) {
+        currentConfig.themeAssignments = previousAssignments;
+        currentConfig.nextThemeQueue = previousQueue;
+        reportTruthStorageError(error);
+        return themeForDate(key);
+      }
     }
 
     function reportTruthStorageError(error) {
@@ -5910,6 +6071,10 @@
 
     function getSession(key) {
       const stored = config().sessions[key];
+      const assignmentMissing = !normalizeTheme(config().themeAssignments?.[key]);
+      const previousAssignments = assignmentMissing ? clone(config().themeAssignments || {}) : null;
+      const previousQueue = assignmentMissing ? [...(config().nextThemeQueue || [])] : null;
+      ensureThemeAssignment(key, !stored, false);
       const session = stored ? clone(stored) : { startedAt: Date.now(), visited: [0], currentStep: 0 };
       if (!Number.isFinite(Number(session.startedAt))) session.startedAt = Date.now();
       session.visited = Array.isArray(session.visited) ? session.visited.map(Number).filter(Number.isInteger) : [0];
@@ -5928,7 +6093,12 @@
       if (convictionItems().length && currentStep >= TRUTH_STEP_COUNT && !Number.isFinite(Number(session.convictionsStartedAt))) {
         session.convictionsStartedAt = Date.now();
       }
-      if (!stored || JSON.stringify(stored) !== JSON.stringify(session)) persistSession(key, session, stored ? clone(stored) : undefined);
+      if (!stored || assignmentMissing || JSON.stringify(stored) !== JSON.stringify(session)) {
+        if (!persistSession(key, session, stored ? clone(stored) : undefined) && assignmentMissing) {
+          config().themeAssignments = previousAssignments;
+          config().nextThemeQueue = previousQueue;
+        }
+      }
       return session;
     }
 
@@ -6004,7 +6174,7 @@
 
     function renderStep() {
       const currentConfig = config();
-      const theme = themeForDate(activeDateKey || todayKey());
+      const theme = assignedThemeForDate(activeDateKey || todayKey());
       const session = getSession(activeDateKey || todayKey());
       const body = el('truthStepBody');
       body.replaceChildren();
@@ -6176,10 +6346,15 @@
     function renderThemeList() {
       const list = el('truthThemeList');
       list.replaceChildren();
+      const nextThemeId = config().nextThemeQueue?.[0] || '';
       config().themes.forEach(theme => {
         const card = document.createElement('article');
         card.className = 'truth-theme-card';
-        card.append(textNode('h4', theme.name));
+        const heading = document.createElement('div');
+        heading.className = 'truth-theme-card-heading';
+        heading.append(textNode('h4', theme.name));
+        if (theme.id === nextThemeId) heading.append(textNode('span', 'Next up', 'status-pill truth-theme-next-badge'));
+        card.append(heading);
         card.append(textNode('p', theme.body));
         card.append(textNode('p', theme.scriptures.map(item => item.reference).join(' · '), 'muted micro-copy'));
         const actions = document.createElement('div');
@@ -6332,6 +6507,7 @@
             return;
           }
           config().themes = config().themes.filter(item => item.id !== deleteId);
+          config().nextThemeQueue = (config().nextThemeQueue || []).filter(id => id !== deleteId);
           api.saveState();
           renderThemeList();
           resetThemeForm();
@@ -6358,11 +6534,14 @@
         }
         const index = config().themes.findIndex(item => item.id === theme.id);
         if (index >= 0) config().themes[index] = theme;
-        else config().themes.push(theme);
+        else {
+          config().themes.push(theme);
+          if (!config().nextThemeQueue.includes(theme.id)) config().nextThemeQueue.push(theme.id);
+        }
         api.saveState();
         renderThemeList();
         resetThemeForm();
-        api.showToast(index >= 0 ? 'Theme updated.' : 'Theme added.');
+        api.showToast(index >= 0 ? 'Theme updated.' : `${theme.name} saved — it will appear in your next Truth Before Tasks, then join the rotation.`);
       });
       el('createTruthThemeButton').addEventListener('click', () => {
         resetThemeForm(false);

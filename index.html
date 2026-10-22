@@ -569,7 +569,9 @@
               <div><span>Daily schedules</span><strong id="earnedAccessScheduleStatus">Checking</strong></div>
               <div><span>Notifications</span><strong id="earnedAccessNotificationStatus">Checking</strong></div>
               <div><span>Widget snapshot</span><strong id="earnedAccessWidgetStatus">Waiting to sync</strong></div>
+              <div><span>Today check</span><strong id="earnedAccessDayBoundaryStatus">Waiting for first check</strong></div>
             </div>
+            <button id="runEarnedAccessChecksButton" class="secondary-button" type="button">Run checks</button>
             <p class="muted micro-copy earned-access-reliability-note">This status shows only connection health and timestamps. It never lists selected apps, browsing activity, or Health values.</p>
           </details>
           <p class="muted micro-copy earned-access-reset-note"><strong>Daily reset:</strong> unused minutes expire at midnight. Tomorrow begins locked again until Truth Before Tasks and any configured convictions are complete.</p>
@@ -897,6 +899,6 @@
   <script src="sync-core.js" defer></script>
   <script src="sync-cloud.js" defer></script>
   <script src="data-health.js" defer></script>
-  <script src="app.js?v=1.37.0-build39-feedback" defer></script>
+  <script src="app.js?v=1.38.0-build40-boundary" defer></script>
 </body>
 </html>

@@ -26,7 +26,7 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#truthHeroTitle').textContent(), 'Truth Before Tasks');
   assert.equal(await page.locator('#truthEnterDayButton').isDisabled(), true);
   assert.equal(await page.locator('#accountabilitySharingCard').count(), 1);
-  assert.equal(await page.locator('#appVersion').textContent(), 'v1.37.0 · Build 39');
+  assert.equal(await page.locator('#appVersion').textContent(), 'v1.38.0 · Build 40');
   assert.match(await page.locator('#openAccountabilityFromSetupButton').textContent(), /Open private accountability/);
   assert.equal(await page.locator('#accountabilitySharingSignedOut').evaluate(element => element.hidden), false);
   assert.match(await page.locator('#accountabilitySharingSignedOut').textContent(), /Connect Private Sync first/);
@@ -813,7 +813,10 @@ function localDateKey(date = new Date()) {
   await page.locator('[data-view="today"]').click();
 
   await page.evaluate(() => {
-    window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'watch.event', value: { id: 'watch-toggle-1', action: 'toggleRoutine', itemId: 'day-movement' } } }));
+    const now = new Date();
+    const contextDateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const timeZoneIdentifier = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'watch.event', value: { id: 'watch-toggle-1', action: 'toggleRoutine', itemId: 'day-movement', contextDateKey, timeZoneIdentifier } } }));
     window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'watch.event', value: { id: 'watch-note-1', action: 'captureNote', text: 'Pray for wisdom', noteType: 'prayer' } } }));
   });
   const watchUpdates = await page.evaluate(key => {
@@ -824,6 +827,12 @@ function localDateKey(date = new Date()) {
   assert.equal(watchUpdates.note.text, 'Pray for wisdom');
   assert.equal(watchUpdates.note.type, 'prayer');
   assert.equal(watchUpdates.note.source, 'Apple Watch');
+  await page.evaluate(() => {
+    window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'watch.event', value: {
+      id: 'watch-stale-toggle', action: 'toggleRoutine', itemId: 'day-movement', contextDateKey: '2000-01-01', timeZoneIdentifier: 'Old/Zone'
+    } } }));
+  });
+  assert.equal(await page.evaluate(key => JSON.parse(localStorage.getItem('dailyRoutineApp.v1')).days[key].entries['day-movement'], today), true);
 
   const loggedMedicationRow = page.locator('#todayView .medication-row').first();
   assert.equal(await loggedMedicationRow.locator('.medication-edit').count(), 1);
@@ -1140,6 +1149,153 @@ function localDateKey(date = new Date()) {
   assert.equal(await migrationPage.locator('#convictionRecoveryPanel').evaluate(element => element.hidden), false);
   assert.match(await migrationPage.locator('#convictionRecoveryStatus').textContent(), /pre-sync copy of 1 conviction/);
   await migrationContext.close();
+
+  const boundaryContext = await browser.newContext();
+  const boundaryPage = await boundaryContext.newPage();
+  await boundaryPage.addInitScript(() => {
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    localStorage.setItem('dailyRoutine.earnedAccess.device.v1', JSON.stringify({
+      active: { dateKey: '2000-01-01' },
+      activeAllowance: { id: 'old-access', dateKey: '2000-01-01', minutes: 9 },
+      bankByDate: { '2000-01-01': 7, [today]: 12 }
+    }));
+    localStorage.setItem('dailyRoutine.dayBoundary.device.v1', JSON.stringify({
+      localDateKey: '2000-01-01', timeZoneIdentifier: 'Old/Zone', boundaryId: '2000-01-01|Old/Zone'
+    }));
+  });
+  await boundaryPage.goto(baseURL, { waitUntil: 'networkidle' });
+  const boundaryResult = await boundaryPage.evaluate(() => {
+    const first = JSON.parse(localStorage.getItem('dailyRoutine.earnedAccess.device.v1'));
+    const stateBefore = JSON.stringify(window.DailyRoutineApp.getState().days);
+    window.DailyRoutineApp.reconcileDayBoundary('repeat test');
+    const second = JSON.parse(localStorage.getItem('dailyRoutine.earnedAccess.device.v1'));
+    return { first, second, historyUnchanged: stateBefore === JSON.stringify(window.DailyRoutineApp.getState().days) };
+  });
+  const boundaryToday = localDateKey();
+  assert.equal(boundaryResult.first.bankByDate[boundaryToday], 0);
+  assert.equal(boundaryResult.first.bankByDate['2000-01-01'], 0);
+  assert.equal(boundaryResult.first.active, null);
+  assert.equal(boundaryResult.first.activeAllowance, null);
+  assert.deepEqual(boundaryResult.second, boundaryResult.first);
+  assert.equal(boundaryResult.historyUnchanged, true);
+  await boundaryContext.close();
+
+  const timeZoneContext = await browser.newContext();
+  const timeZonePage = await timeZoneContext.newPage();
+  await timeZonePage.goto(baseURL, { waitUntil: 'networkidle' });
+  const timeZoneResult = await timeZonePage.evaluate(() => {
+    const key = window.DailyRoutineApp.dateKey(window.DailyRoutineApp.startOfToday());
+    const currentBoundary = JSON.parse(localStorage.getItem('dailyRoutine.dayBoundary.device.v1'));
+    localStorage.setItem('dailyRoutine.earnedAccess.device.v1', JSON.stringify({
+      active: { dateKey: key },
+      activeAllowance: { id: 'same-day-access', dateKey: key, minutes: 9 },
+      bankByDate: { [key]: 12 }
+    }));
+    localStorage.setItem('dailyRoutine.dayBoundary.device.v1', JSON.stringify({
+      ...currentBoundary,
+      localDateKey: key,
+      timeZoneIdentifier: 'Changed/Zone',
+      boundaryId: `${key}|Changed/Zone`
+    }));
+    window.DailyRoutineApp.reconcileDayBoundary('time zone test');
+    return JSON.parse(localStorage.getItem('dailyRoutine.earnedAccess.device.v1'));
+  });
+  assert.equal(timeZoneResult.bankByDate[boundaryToday], 12);
+  assert.equal(timeZoneResult.active, null);
+  assert.equal(timeZoneResult.activeAllowance, null);
+  assert.equal(timeZoneResult.expiredDateKeys?.includes(boundaryToday) || false, false);
+  await timeZoneContext.close();
+
+  const staleAllowanceContext = await browser.newContext();
+  const staleAllowancePage = await staleAllowanceContext.newPage();
+  await staleAllowancePage.addInitScript(() => {
+    window.__dailyRoutineNativeMessages = [];
+    window.DailyRoutineNative = { postMessage(message) { window.__dailyRoutineNativeMessages.push(message); } };
+  });
+  await staleAllowancePage.goto(baseURL, { waitUntil: 'networkidle' });
+  await staleAllowancePage.evaluate(key => {
+    const state = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
+    state.settings.truthBeforeTasks.completions[key] = new Date().toISOString();
+    localStorage.setItem('dailyRoutineApp.v1', JSON.stringify(state));
+    localStorage.setItem('dailyRoutine.earnedAccess.device.v1', JSON.stringify({
+      automaticAccess: true,
+      automaticSteps: true,
+      dailyLimitMinutes: 60,
+      bankByDate: { [key]: 20 },
+      earnedByDate: { [key]: 22 },
+      activeAllowance: { id: 'stale-native-monitor', minutes: 2, dateKey: key, startedAt: new Date(Date.now() - 7_200_000).toISOString() }
+    }));
+  }, boundaryToday);
+  await staleAllowancePage.reload({ waitUntil: 'networkidle' });
+  await staleAllowancePage.evaluate(() => {
+    window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'earned.access.status', value: {
+      protectionEnabled: 'true', shielding: 'true', allowanceActive: 'false', allowanceMinutes: '0', allowanceRemainingMinutes: '',
+      allowanceRedemptionID: '', lastConsumedRedemptionID: '', morningGateEnabled: 'true', morningFoundationCompleteToday: 'true',
+      selectionCount: '3', essentialCount: '2', dailyResetScheduled: 'true', morningGateScheduled: 'true', allowanceMonitorScheduled: 'false', notificationsAllowed: 'true'
+    } } }));
+  });
+  const repairedAllowance = await staleAllowancePage.evaluate(key => {
+    const settings = JSON.parse(localStorage.getItem('dailyRoutine.earnedAccess.device.v1'));
+    const nativeAllowance = [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'earned.access.allow');
+    return { bank: settings.bankByDate[key], allowance: settings.activeAllowance, nativeAllowance };
+  }, boundaryToday);
+  assert.equal(repairedAllowance.bank, 0);
+  assert.equal(repairedAllowance.allowance.minutes, 20);
+  assert.notEqual(repairedAllowance.allowance.id, 'stale-native-monitor');
+  assert.equal(repairedAllowance.nativeAllowance.value.minutes, 20);
+  await staleAllowanceContext.close();
+
+  const themeContext = await browser.newContext();
+  const themePage = await themeContext.newPage();
+  await themePage.goto(baseURL, { waitUntil: 'networkidle' });
+  await themePage.evaluate(() => {
+    const state = window.DailyRoutineApp.getState();
+    delete state.settings.truthBeforeTasks.nextThemeQueue;
+    delete state.settings.truthBeforeTasks.themeAssignments;
+    window.DailyRoutineApp.saveState();
+  });
+  await themePage.evaluate(() => {
+    const state = window.DailyRoutineApp.getState();
+    const key = window.DailyRoutineApp.dateKey(window.DailyRoutineApp.startOfToday());
+    state.settings.truthBeforeTasks.completions[key] = new Date().toISOString();
+    window.DailyRoutineApp.saveState();
+  });
+  await themePage.reload({ waitUntil: 'networkidle' });
+  await themePage.evaluate(() => {
+    document.getElementById('truthThemeNameInput').value = 'Queued Prayer';
+    document.getElementById('truthThemeBodyInput').value = 'A prayer saved for the next unopened session.';
+    document.getElementById('truthScripturesInput').value = 'Psalm 5:3 | In the morning I lay my requests before you.';
+    document.getElementById('truthThemeForm').requestSubmit();
+  });
+  const queuedTheme = await themePage.evaluate(() => {
+    const config = window.DailyRoutineApp.getState().settings.truthBeforeTasks;
+    const id = config.themes.find(theme => theme.name === 'Queued Prayer').id;
+    return { id, queue: [...config.nextThemeQueue], badge: document.querySelector('.truth-theme-next-badge')?.textContent || '' };
+  });
+  assert.deepEqual(queuedTheme.queue, [queuedTheme.id]);
+  assert.equal(queuedTheme.badge, 'Next up');
+  await themePage.evaluate(() => {
+    const state = window.DailyRoutineApp.getState();
+    const key = window.DailyRoutineApp.dateKey(window.DailyRoutineApp.startOfToday());
+    delete state.settings.truthBeforeTasks.completions[key];
+    delete state.settings.truthBeforeTasks.sessions[key];
+    delete state.settings.truthBeforeTasks.themeAssignments[key];
+    window.DailyRoutineApp.saveState();
+  });
+  await themePage.reload({ waitUntil: 'networkidle' });
+  const assignedTheme = await themePage.evaluate(() => {
+    const config = window.DailyRoutineApp.getState().settings.truthBeforeTasks;
+    const key = window.DailyRoutineApp.dateKey(window.DailyRoutineApp.startOfToday());
+    const assigned = JSON.parse(JSON.stringify(config.themeAssignments[key]));
+    config.themes.find(theme => theme.id === assigned.id).body = 'Edited after the session began.';
+    window.DailyRoutineApp.saveState();
+    return { assigned, queue: [...config.nextThemeQueue], currentAssignment: config.themeAssignments[key] };
+  });
+  assert.equal(assignedTheme.assigned.name, 'Queued Prayer');
+  assert.deepEqual(assignedTheme.queue, []);
+  assert.equal(assignedTheme.currentAssignment.body, 'A prayer saved for the next unopened session.');
+  await themeContext.close();
 
   assert.deepEqual(errors, []);
   await browser.close();

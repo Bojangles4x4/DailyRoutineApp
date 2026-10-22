@@ -1,6 +1,8 @@
 import Foundation
 
 struct RoutineWidgetSnapshot: Codable, Sendable {
+    let dateKey: String?
+    let timeZoneIdentifier: String?
     let completed: Int
     let total: Int
     let nextItemName: String?
@@ -9,6 +11,8 @@ struct RoutineWidgetSnapshot: Codable, Sendable {
     let updatedAt: Date
 
     init(
+        dateKey: String? = nil,
+        timeZoneIdentifier: String? = nil,
         completed: Int,
         total: Int,
         nextItemName: String?,
@@ -16,6 +20,8 @@ struct RoutineWidgetSnapshot: Codable, Sendable {
         truthBeforeTasksComplete: Bool? = nil,
         updatedAt: Date = Date()
     ) {
+        self.dateKey = dateKey
+        self.timeZoneIdentifier = timeZoneIdentifier
         self.completed = completed
         self.total = total
         self.nextItemName = nextItemName
@@ -26,6 +32,8 @@ struct RoutineWidgetSnapshot: Codable, Sendable {
 
     init(context: WatchRoutineContext) {
         self.init(
+            dateKey: context.dateKey,
+            timeZoneIdentifier: context.timeZoneIdentifier,
             completed: context.completed,
             total: context.total,
             nextItemName: context.nextItemName,
@@ -45,6 +53,16 @@ struct RoutineWidgetSnapshot: Codable, Sendable {
     var progress: Double {
         guard total > 0 else { return 0 }
         return min(max(Double(completed) / Double(total), 0), 1)
+    }
+
+    var isCurrentDay: Bool {
+        let formatter = DateFormatter()
+        formatter.calendar = .current
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd"
+        return dateKey == formatter.string(from: Date())
+            && timeZoneIdentifier == TimeZone.current.identifier
     }
 }
 

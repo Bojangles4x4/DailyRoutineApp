@@ -15,6 +15,7 @@ enum NativeBridgeAction: String, Codable {
     case lockEarnedAccess = "earned.access.lock"
     case allowEarnedAccess = "earned.access.allow"
     case requestEarnedAccessStatus = "earned.access.status.request"
+    case reconcileDayBoundary = "day.boundary.reconcile"
     case lockMorningFoundation = "morning.foundation.lock"
     case completeMorningFoundation = "morning.foundation.complete"
     case publishRoutineSnapshot = "routine.snapshot.publish"
@@ -79,26 +80,35 @@ struct WatchEvent: Codable, Sendable {
     let text: String?
     let noteType: String?
     let createdAt: Date
+    let contextDateKey: String?
+    let timeZoneIdentifier: String?
 
     init(
+        id: UUID = UUID(),
         action: WatchQuickAction,
         value: Double? = nil,
         itemId: String? = nil,
         text: String? = nil,
-        noteType: String? = nil
+        noteType: String? = nil,
+        createdAt: Date = Date(),
+        contextDateKey: String? = nil,
+        timeZoneIdentifier: String? = nil
     ) {
-        self.id = UUID()
+        self.id = id
         self.action = action
         self.value = value
         self.itemId = itemId
         self.text = text
         self.noteType = noteType
-        self.createdAt = Date()
+        self.createdAt = createdAt
+        self.contextDateKey = contextDateKey
+        self.timeZoneIdentifier = timeZoneIdentifier
     }
 }
 
 struct WatchRoutineContext: Codable, Sendable {
     let dateKey: String
+    let timeZoneIdentifier: String?
     let completed: Int
     let total: Int
     let nextItemName: String?
@@ -110,6 +120,7 @@ struct WatchRoutineContext: Codable, Sendable {
 
     init(
         dateKey: String,
+        timeZoneIdentifier: String? = nil,
         completed: Int,
         total: Int,
         nextItemName: String?,
@@ -120,6 +131,7 @@ struct WatchRoutineContext: Codable, Sendable {
         customAction: WatchCustomAction? = nil
     ) {
         self.dateKey = dateKey
+        self.timeZoneIdentifier = timeZoneIdentifier
         self.completed = completed
         self.total = total
         self.nextItemName = nextItemName

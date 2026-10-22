@@ -46,6 +46,7 @@ final class EarnedAccessControlStore: ObservableObject {
             try? EarnedAccessShared.saveSelection(saved)
         }
         readSharedState()
+        reconcileDayBoundary()
         expireStaleAllowanceIfNeeded()
         ensureProtectionSchedules()
         if protectionEnabled, !allowanceActive, hasSelection {
@@ -372,6 +373,7 @@ final class EarnedAccessControlStore: ObservableObject {
     func refresh() {
         authorizationStatus = authorizationCenter.authorizationStatus
         readSharedState()
+        reconcileDayBoundary()
         expireStaleAllowanceIfNeeded()
         if !isAuthorized && (protectionEnabled || morningGateEnabled) {
             disableProtection()
@@ -433,6 +435,8 @@ final class EarnedAccessControlStore: ObservableObject {
             "allowanceMonitorScheduled": allowanceMonitorScheduled ? "true" : "false",
             "essentialSelectionNeedsRepair": essentialSelectionNeedsRepair ? "true" : "false",
             "notificationsAllowed": notificationsAllowed ? "true" : "false",
+            "dayBoundaryCheckedAt": EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.dayBoundaryCheckedAtKey) ?? "",
+            "dayBoundaryResult": EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.dayBoundaryResultKey) ?? "",
             "message": status
         ]
     }
@@ -508,6 +512,36 @@ final class EarnedAccessControlStore: ObservableObject {
             EarnedAccessShared.applyShield(selection: selection, to: managedStore)
             isShielding = true
         }
+    }
+
+    func reconcileDayBoundary() {
+        let defaults = EarnedAccessShared.defaults
+        let today = EarnedAccessShared.localDateKey()
+        let zone = TimeZone.current.identifier
+        let boundaryID = "\(today)|\(zone)"
+        let previousID = defaults.string(forKey: EarnedAccessShared.dayBoundaryIDKey)
+        if let previousID, previousID != boundaryID {
+            activityCenter.stopMonitoring([EarnedAccessShared.activityName])
+            EarnedAccessShared.clearAllowance()
+            EarnedAccessShared.clearTruthReminderSafetyUnlock()
+            if defaults.string(forKey: EarnedAccessShared.truthReminderGateDateKey) != today {
+                EarnedAccessShared.clearTruthReminderGate(from: truthReminderStore)
+            }
+            if defaults.string(forKey: EarnedAccessShared.morningFoundationCompleteDateKey) != today {
+                defaults.removeObject(forKey: EarnedAccessShared.morningFoundationCompleteDateKey)
+            }
+            allowanceActive = false
+            allowanceMinutes = 0
+            allowanceRemainingMinutes = nil
+            allowanceRedemptionID = ""
+            defaults.set("New day or time zone checked; prior access expired", forKey: EarnedAccessShared.dayBoundaryResultKey)
+        } else if previousID == nil {
+            defaults.set("Current day adopted", forKey: EarnedAccessShared.dayBoundaryResultKey)
+        } else {
+            defaults.set("Current day verified", forKey: EarnedAccessShared.dayBoundaryResultKey)
+        }
+        defaults.set(boundaryID, forKey: EarnedAccessShared.dayBoundaryIDKey)
+        defaults.set(ISO8601DateFormatter().string(from: Date()), forKey: EarnedAccessShared.dayBoundaryCheckedAtKey)
     }
 
     private func refreshMorningGateShield() {

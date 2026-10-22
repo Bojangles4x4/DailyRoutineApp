@@ -71,13 +71,30 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
     }
 
     private func enforceDailyReset(now: Date = Date()) {
+        let defaults = EarnedAccessShared.defaults
+        let today = EarnedAccessShared.localDateKey(now)
+        let boundaryID = "\(today)|\(TimeZone.current.identifier)"
+        let boundaryChanged = defaults.string(forKey: EarnedAccessShared.dayBoundaryIDKey) != boundaryID
+        if boundaryChanged {
+            EarnedAccessShared.clearTruthReminderSafetyUnlock()
+            if defaults.string(forKey: EarnedAccessShared.truthReminderGateDateKey) != today {
+                EarnedAccessShared.clearTruthReminderGate(from: truthReminderStore)
+            }
+            if defaults.string(forKey: EarnedAccessShared.morningFoundationCompleteDateKey) != today {
+                defaults.removeObject(forKey: EarnedAccessShared.morningFoundationCompleteDateKey)
+            }
+            defaults.set(boundaryID, forKey: EarnedAccessShared.dayBoundaryIDKey)
+            defaults.set(ISO8601DateFormatter().string(from: now), forKey: EarnedAccessShared.dayBoundaryCheckedAtKey)
+            defaults.set("Midnight protection enforced", forKey: EarnedAccessShared.dayBoundaryResultKey)
+        }
         guard EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.protectionKey) else { return }
         let allowanceActive = EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.allowanceActiveKey)
         let allowanceDate = EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.allowanceDateKey)
         let expiresAt = EarnedAccessShared.defaults.object(forKey: EarnedAccessShared.allowanceExpiresAtKey) == nil
             ? nil
             : EarnedAccessShared.defaults.double(forKey: EarnedAccessShared.allowanceExpiresAtKey)
-        let allowanceIsCurrent = allowanceActive
+        let allowanceIsCurrent = !boundaryChanged
+            && allowanceActive
             && allowanceDate == EarnedAccessShared.localDateKey(now)
             && (expiresAt ?? 0) > now.timeIntervalSince1970
         guard !allowanceIsCurrent else { return }

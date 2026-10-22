@@ -342,6 +342,10 @@ struct WebAppView: UIViewRepresentable {
             case .requestEarnedAccessStatus:
                 model.earnedAccess.refresh()
                 emit(name: "earned.access.status", value: model.earnedAccess.bridgeStatus)
+            case .reconcileDayBoundary:
+                model.earnedAccess.reconcileDayBoundary()
+                model.earnedAccess.refresh()
+                emit(name: "earned.access.status", value: model.earnedAccess.bridgeStatus)
             case .lockEarnedAccess:
                 model.earnedAccess.lockIfEnabled()
                 emit(name: "earned.access.status", value: model.earnedAccess.bridgeStatus)
