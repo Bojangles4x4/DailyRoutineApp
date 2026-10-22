@@ -26,6 +26,7 @@ final class EarnedAccessControlStore: ObservableObject {
     private let truthReminderStore = ManagedSettingsStore(named: EarnedAccessShared.truthReminderStoreName)
     private let activityCenter = DeviceActivityCenter()
     private let notificationCenter = UNUserNotificationCenter.current()
+    private var earnedAccessNotificationTask: Task<Void, Never>?
 
     private var folder: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -52,6 +53,7 @@ final class EarnedAccessControlStore: ObservableObject {
         if protectionEnabled, !allowanceActive, hasSelection {
             EarnedAccessShared.applyShield(selection: selection, to: managedStore)
             isShielding = true
+            clearEarnedAccessNotifications()
         }
         refreshMorningGateShield()
         refreshStatus()
@@ -196,6 +198,7 @@ final class EarnedAccessControlStore: ObservableObject {
 
         activityCenter.stopMonitoring([EarnedAccessShared.activityName])
         EarnedAccessShared.clearAllowance()
+        clearEarnedAccessNotifications()
         EarnedAccessShared.applyShield(selection: selection, to: managedStore)
         allowanceActive = false
         allowanceMinutes = 0
@@ -289,37 +292,77 @@ final class EarnedAccessControlStore: ObservableObject {
             allowanceRedemptionID = redemptionID
             isShielding = false
             status = "\(safeMinutes) minutes of selected-app use are available. Unused minutes remain available."
-            if !isReplacingActiveAllowance {
-                notifyAllowanceOpened(minutes: safeMinutes, label: label)
-            }
+            notifyCurrentAllowance(
+                redemptionID: redemptionID,
+                label: label,
+                playSound: !isReplacingActiveAllowance
+            )
         } catch {
             lockIfEnabled()
             status = "The usage allowance could not start: \(error.localizedDescription)"
         }
     }
 
-    private func notifyAllowanceOpened(minutes: Int, label: String?) {
-        let content = UNMutableNotificationContent()
-        content.title = "Earned apps are available"
-        let name = String((label ?? "Your selected apps").prefix(80))
-        content.body = "\(name): about \(minutes) minute\(minutes == 1 ? "" : "s") available. Only foreground use counts."
-        content.sound = .default
-        content.threadIdentifier = "earned-access-usage"
-        let request = UNNotificationRequest(
-            identifier: "dailyRoutine.earnedAccess.opened.\(redemptionIDSafeSuffix())",
-            content: content,
-            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
-        )
-        UNUserNotificationCenter.current().add(request) { _ in }
+    private func notifyCurrentAllowance(redemptionID: String, label: String?, playSound: Bool) {
+        let generation = EarnedAccessShared.advanceBalanceNotificationGeneration()
+        earnedAccessNotificationTask?.cancel()
+        earnedAccessNotificationTask = Task { [weak self] in
+            guard let self else { return }
+            await removeEarnedAccessNotificationsNow()
+            guard !Task.isCancelled,
+                  balanceNotificationIsCurrent(redemptionID: redemptionID, generation: generation)
+            else { return }
+
+            let minutes = EarnedAccessShared.defaults.integer(forKey: EarnedAccessShared.allowanceRemainingMinutesKey)
+            let content = UNMutableNotificationContent()
+            content.title = EarnedAccessShared.availableNotificationTitle(minutes: minutes)
+            content.body = EarnedAccessShared.availableNotificationBody(label: label)
+            if playSound { content.sound = .default }
+            content.threadIdentifier = EarnedAccessShared.balanceNotificationThreadIdentifier
+            content.userInfo[EarnedAccessShared.notificationGenerationUserInfoKey] = generation
+            let request = UNNotificationRequest(
+                identifier: EarnedAccessShared.balanceNotificationIdentifier(generation: generation),
+                content: content,
+                trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+            )
+            do {
+                try await notificationCenter.add(request)
+                guard !Task.isCancelled,
+                      balanceNotificationIsCurrent(redemptionID: redemptionID, generation: generation)
+                else {
+                    await removeBalanceNotificationIfGeneration(generation)
+                    return
+                }
+            } catch {
+                return
+            }
+        }
     }
 
-    private func redemptionIDSafeSuffix() -> String {
-        String(UUID().uuidString.prefix(12))
+    private func balanceNotificationIsCurrent(redemptionID: String, generation: String) -> Bool {
+        let defaults = EarnedAccessShared.defaults
+        let today = EarnedAccessShared.localDateKey()
+        return EarnedAccessShared.balanceNotificationGeneration == generation
+            && defaults.bool(forKey: EarnedAccessShared.protectionKey)
+            && defaults.bool(forKey: EarnedAccessShared.allowanceActiveKey)
+            && defaults.string(forKey: EarnedAccessShared.allowanceRedemptionIDKey) == redemptionID
+            && defaults.string(forKey: EarnedAccessShared.allowanceDateKey) == today
+            && defaults.integer(forKey: EarnedAccessShared.allowanceRemainingMinutesKey) > 0
+            && activityCenter.activities.contains(EarnedAccessShared.activityName)
+            && !truthReminderGateActive
+            && (!morningGateEnabled || morningFoundationCompleteToday)
+    }
+
+    private func removeBalanceNotificationIfGeneration(_ generation: String) async {
+        let identifier = EarnedAccessShared.balanceNotificationIdentifier(generation: generation)
+        notificationCenter.removePendingNotificationRequests(withIdentifiers: [identifier])
+        notificationCenter.removeDeliveredNotifications(withIdentifiers: [identifier])
     }
 
     func disableProtection() {
         activityCenter.stopMonitoring([EarnedAccessShared.activityName, EarnedAccessShared.dailyResetActivityName])
         EarnedAccessShared.clearAllowance()
+        clearEarnedAccessNotifications()
         EarnedAccessShared.clearShield(from: managedStore)
         protectionEnabled = false
         allowanceActive = false
@@ -406,6 +449,7 @@ final class EarnedAccessControlStore: ObservableObject {
         if protectionEnabled, !allowanceActive, hasSelection {
             EarnedAccessShared.applyShield(selection: selection, to: managedStore)
             isShielding = true
+            clearEarnedAccessNotifications()
         }
         refreshMorningGateShield()
         refreshTruthReminderGateShield()
@@ -458,6 +502,56 @@ final class EarnedAccessControlStore: ObservableObject {
         notificationAuthorizationStatus = await notificationCenter.notificationSettings().authorizationStatus
     }
 
+    private func clearEarnedAccessNotifications(includeWalking: Bool = false) {
+        EarnedAccessShared.advanceBalanceNotificationGeneration()
+        if includeWalking { EarnedAccessShared.advanceWalkingNotificationGeneration() }
+        earnedAccessNotificationTask?.cancel()
+        earnedAccessNotificationTask = Task { [weak self] in
+            await self?.removeEarnedAccessNotificationsNow(includeWalking: includeWalking)
+        }
+    }
+
+    private func removeEarnedAccessNotificationsNow(includeWalking: Bool = false) async {
+        var currentIDs = [EarnedAccessShared.balanceNotificationIdentifier]
+        if includeWalking { currentIDs.append(EarnedAccessShared.walkingNotificationIdentifier) }
+        notificationCenter.removePendingNotificationRequests(withIdentifiers: currentIDs)
+        notificationCenter.removeDeliveredNotifications(withIdentifiers: currentIDs)
+
+        let pending = await notificationCenter.pendingNotificationRequests()
+        guard !Task.isCancelled else { return }
+        let pendingIDs = pending.compactMap { request -> String? in
+            let identifier = request.identifier
+            let generation = request.content.userInfo[EarnedAccessShared.notificationGenerationUserInfoKey] as? String
+            return EarnedAccessShared.shouldRemoveOwnedNotification(
+                identifier: identifier,
+                generation: generation,
+                currentBalanceGeneration: EarnedAccessShared.balanceNotificationGeneration,
+                currentWalkingGeneration: EarnedAccessShared.walkingNotificationGeneration,
+                includeWalking: includeWalking
+            ) ? identifier : nil
+        }
+        if !pendingIDs.isEmpty {
+            notificationCenter.removePendingNotificationRequests(withIdentifiers: pendingIDs)
+        }
+
+        let delivered = await notificationCenter.deliveredNotifications()
+        guard !Task.isCancelled else { return }
+        let deliveredIDs = delivered.compactMap { notification -> String? in
+            let identifier = notification.request.identifier
+            let generation = notification.request.content.userInfo[EarnedAccessShared.notificationGenerationUserInfoKey] as? String
+            return EarnedAccessShared.shouldRemoveOwnedNotification(
+                identifier: identifier,
+                generation: generation,
+                currentBalanceGeneration: EarnedAccessShared.balanceNotificationGeneration,
+                currentWalkingGeneration: EarnedAccessShared.walkingNotificationGeneration,
+                includeWalking: includeWalking
+            ) ? identifier : nil
+        }
+        if !deliveredIDs.isEmpty {
+            notificationCenter.removeDeliveredNotifications(withIdentifiers: deliveredIDs)
+        }
+    }
+
     private func ensureProtectionSchedules() {
         if protectionEnabled { scheduleDailyReset() }
         if morningGateEnabled { scheduleMorningGate() }
@@ -504,6 +598,7 @@ final class EarnedAccessControlStore: ObservableObject {
 
         activityCenter.stopMonitoring([EarnedAccessShared.activityName])
         EarnedAccessShared.clearAllowance()
+        clearEarnedAccessNotifications()
         allowanceActive = false
         allowanceMinutes = 0
         allowanceRemainingMinutes = nil
@@ -523,6 +618,7 @@ final class EarnedAccessControlStore: ObservableObject {
         if let previousID, previousID != boundaryID {
             activityCenter.stopMonitoring([EarnedAccessShared.activityName])
             EarnedAccessShared.clearAllowance()
+            clearEarnedAccessNotifications(includeWalking: true)
             EarnedAccessShared.clearTruthReminderSafetyUnlock()
             if defaults.string(forKey: EarnedAccessShared.truthReminderGateDateKey) != today {
                 EarnedAccessShared.clearTruthReminderGate(from: truthReminderStore)
@@ -552,12 +648,14 @@ final class EarnedAccessControlStore: ObservableObject {
         if EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.morningFoundationCompleteDateKey) == EarnedAccessShared.localDateKey() {
             EarnedAccessShared.clearFoundationShield(from: foundationStore)
         } else {
+            clearEarnedAccessNotifications()
             EarnedAccessShared.applyFoundationShield(exceptions: essentialSelection, to: foundationStore)
         }
     }
 
     private func refreshTruthReminderGateShield() {
         if truthReminderGateActive {
+            clearEarnedAccessNotifications()
             if !EarnedAccessShared.applyFoundationShield(exceptions: essentialSelection, to: truthReminderStore) {
                 EarnedAccessShared.clearTruthReminderGate(from: truthReminderStore)
                 status = "Truth gate released—choose essential apps again. Waiting reminders were preserved."
@@ -571,6 +669,7 @@ final class EarnedAccessControlStore: ObservableObject {
     private func repairMissingAllowanceMonitor() {
         activityCenter.stopMonitoring([EarnedAccessShared.activityName])
         EarnedAccessShared.clearAllowance()
+        clearEarnedAccessNotifications()
         allowanceActive = false
         allowanceMinutes = 0
         allowanceRemainingMinutes = nil
@@ -588,6 +687,7 @@ final class EarnedAccessControlStore: ObservableObject {
     private func clearInvalidSelectionState() {
         activityCenter.stopMonitoring([EarnedAccessShared.activityName])
         EarnedAccessShared.clearAllowance()
+        clearEarnedAccessNotifications()
         EarnedAccessShared.clearShield(from: managedStore)
         allowanceActive = false
         allowanceMinutes = 0

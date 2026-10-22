@@ -53,6 +53,8 @@ Build 28 adds a review-before-sync plan, verified recovery snapshots that block 
 
 Build 31 makes morning and evening medication tasks match the surrounding routine rows, with the reminder dropdown immediately left of the completion circle. Build 30 added the dedicated picture-and-text truth-reminder review and optional separate Screen Time shield.
 
+Build 41 makes Earned Access notifications authoritative. One replaceable notice reports the current shared allowance, walking notifications explicitly report only the cumulative walking contribution, stale notices are removed when access changes, and availability copy is suppressed while a Morning or Truth Reminder gate is active.
+
 Build 27 restores the six-cup water goal and freezes numeric targets with each recorded day so later goal edits do not rewrite history. Private Sync merges convictions by stable item ID and saves a device-only recovery copy before any synced conviction change.
 
 Tapping a checkbox or medication row updates that exact routine; tapping a completed row reopens it. Medication taps record the current time, with an AM/PM confirmation on Watch when the time does not match the routine section. Linked-app routines remain on iPhone. All Watch actions remain locked until the Morning Foundation is completed on the iPhone for the local calendar day. If personal convictions are configured, they are part of that foundation. If the Watch companion is not installed yet, the iPhone keeps the latest routine context ready and sends it when Watch Connectivity reports the companion is available.

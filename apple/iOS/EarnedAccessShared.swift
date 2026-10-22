@@ -49,6 +49,18 @@ enum EarnedAccessShared {
     static let dailyResetActivityName = DeviceActivityName("dailyRoutine.earnedAccess.dailyReset")
     static let foundationActivityName = DeviceActivityName("dailyRoutine.morningFoundation.daily")
     static let truthReminderActivityName = DeviceActivityName("dailyRoutine.truthReminder.next")
+    static let balanceNotificationIdentifier = "dailyRoutine.earnedAccess.balance.current"
+    static let balanceNotificationIdentifierPrefix = "dailyRoutine.earnedAccess.balance."
+    static let balanceNotificationThreadIdentifier = "earned-access-usage"
+    static let balanceNotificationGenerationKey = "dailyRoutine.earnedAccess.balance.notificationGeneration.v2"
+    static let walkingNotificationIdentifier = "dailyRoutine.walking.progress.current"
+    static let walkingNotificationIdentifierPrefix = "dailyRoutine.walking.progress."
+    static let walkingNotificationThreadIdentifier = "earned-access-walking"
+    static let walkingNotificationGenerationKey = "dailyRoutine.walking.notificationGeneration.v2"
+    static let notificationGenerationUserInfoKey = "dailyRoutineNotificationGeneration"
+    static let legacyOpenedNotificationPrefix = "dailyRoutine.earnedAccess.opened."
+    static let legacyUsageNotificationPrefix = "dailyRoutine.earnedAccess.usage."
+    static let legacyWalkingNotificationPrefix = "dailyRoutine.walking."
 
     static var defaults: UserDefaults {
         UserDefaults(suiteName: suiteName) ?? .standard
@@ -160,6 +172,84 @@ enum EarnedAccessShared {
         var checkpoints = Array(stride(from: 5, through: safeMinutes, by: 5))
         if checkpoints.last != safeMinutes { checkpoints.append(safeMinutes) }
         return checkpoints
+    }
+
+    static func isBalanceNotification(identifier: String) -> Bool {
+        identifier == balanceNotificationIdentifier
+            || identifier.hasPrefix(balanceNotificationIdentifierPrefix)
+            || identifier.hasPrefix(legacyOpenedNotificationPrefix)
+            || identifier.hasPrefix(legacyUsageNotificationPrefix)
+    }
+
+    static func isWalkingNotification(identifier: String) -> Bool {
+        identifier == walkingNotificationIdentifier
+            || identifier.hasPrefix(walkingNotificationIdentifierPrefix)
+            || identifier.hasPrefix(legacyWalkingNotificationPrefix)
+    }
+
+    static func balanceNotificationIdentifier(generation: String) -> String {
+        balanceNotificationIdentifierPrefix + generation
+    }
+
+    static func walkingNotificationIdentifier(generation: String) -> String {
+        walkingNotificationIdentifierPrefix + generation
+    }
+
+    static func shouldRemoveOwnedNotification(
+        identifier: String,
+        generation: String?,
+        currentBalanceGeneration: String,
+        currentWalkingGeneration: String,
+        includeWalking: Bool
+    ) -> Bool {
+        if isBalanceNotification(identifier: identifier) {
+            return generation != currentBalanceGeneration
+        }
+        if includeWalking, isWalkingNotification(identifier: identifier) {
+            return generation != currentWalkingGeneration
+        }
+        return false
+    }
+
+    static func availableNotificationTitle(minutes: Int) -> String {
+        let safeMinutes = max(0, minutes)
+        return "\(safeMinutes) earned-app minute\(safeMinutes == 1 ? "" : "s") available now"
+    }
+
+    static func availableNotificationBody(label: String?) -> String {
+        let name = String((label ?? "Your selected earned apps").prefix(80))
+        return "\(name) share this current balance. Only foreground use counts."
+    }
+
+    static func remainingNotificationTitle(minutes: Int) -> String {
+        let safeMinutes = max(0, minutes)
+        return safeMinutes == 1
+            ? "About 1 earned-app minute remains"
+            : "About \(safeMinutes) earned-app minutes remain"
+    }
+
+    static var balanceNotificationGeneration: String {
+        defaults.string(forKey: balanceNotificationGenerationKey) ?? ""
+    }
+
+    @discardableResult
+    static func advanceBalanceNotificationGeneration() -> String {
+        advanceNotificationGeneration(forKey: balanceNotificationGenerationKey)
+    }
+
+    static var walkingNotificationGeneration: String {
+        defaults.string(forKey: walkingNotificationGenerationKey) ?? ""
+    }
+
+    @discardableResult
+    static func advanceWalkingNotificationGeneration() -> String {
+        advanceNotificationGeneration(forKey: walkingNotificationGenerationKey)
+    }
+
+    private static func advanceNotificationGeneration(forKey key: String) -> String {
+        let next = UUID().uuidString.lowercased()
+        defaults.set(next, forKey: key)
+        return next
     }
 
     static func localDateKey(_ date: Date = Date()) -> String {

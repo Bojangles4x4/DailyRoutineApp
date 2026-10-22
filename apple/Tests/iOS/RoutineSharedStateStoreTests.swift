@@ -249,6 +249,61 @@ final class RoutineSharedStateStoreTests: XCTestCase {
         XCTAssertFalse(EarnedAccessControlStore.shouldEndActiveAllowance(selectionChanged: true, allowanceActive: false))
     }
 
+    func testEarnedAccessNotificationCopySeparatesAvailableBalanceFromWalkingContribution() {
+        XCTAssertEqual(
+            EarnedAccessShared.availableNotificationTitle(minutes: 22),
+            "22 earned-app minutes available now"
+        )
+        XCTAssertEqual(
+            EarnedAccessShared.remainingNotificationTitle(minutes: 1),
+            "About 1 earned-app minute remains"
+        )
+        XCTAssertEqual(
+            HealthKitService.walkingProgressNotificationTitle(minutes: 10, maximum: 60),
+            "Walking contribution: 10 of 60 min"
+        )
+        XCTAssertTrue(HealthKitService.walkingProgressNotificationBody().contains("not your current usable balance"))
+    }
+
+    func testEarnedAccessNotificationCleanupMatchesOnlyOwnedIdentifiers() {
+        XCTAssertTrue(EarnedAccessShared.isBalanceNotification(identifier: EarnedAccessShared.balanceNotificationIdentifier))
+        XCTAssertTrue(EarnedAccessShared.isBalanceNotification(identifier: "dailyRoutine.earnedAccess.opened.legacy"))
+        XCTAssertTrue(EarnedAccessShared.isBalanceNotification(identifier: "dailyRoutine.earnedAccess.usage.legacy.5"))
+        XCTAssertTrue(EarnedAccessShared.isWalkingNotification(identifier: "dailyRoutine.walking.2026-10-22.5"))
+        XCTAssertFalse(EarnedAccessShared.isBalanceNotification(identifier: "dailyRoutine.truthReminder.630"))
+        XCTAssertFalse(EarnedAccessShared.isWalkingNotification(identifier: "dailyRoutine.sleepReview.2026-10-22"))
+    }
+
+    func testStalePublisherCannotDeleteTheNewerNotificationRequest() {
+        let stale = "publisher-a"
+        let current = "publisher-b"
+        let staleIdentifier = EarnedAccessShared.balanceNotificationIdentifier(generation: stale)
+        let currentIdentifier = EarnedAccessShared.balanceNotificationIdentifier(generation: current)
+
+        XCTAssertNotEqual(staleIdentifier, currentIdentifier)
+        XCTAssertTrue(EarnedAccessShared.shouldRemoveOwnedNotification(
+            identifier: staleIdentifier,
+            generation: stale,
+            currentBalanceGeneration: current,
+            currentWalkingGeneration: "walking-current",
+            includeWalking: false
+        ))
+        XCTAssertFalse(EarnedAccessShared.shouldRemoveOwnedNotification(
+            identifier: currentIdentifier,
+            generation: current,
+            currentBalanceGeneration: current,
+            currentWalkingGeneration: "walking-current",
+            includeWalking: false
+        ))
+        XCTAssertFalse(EarnedAccessShared.shouldRemoveOwnedNotification(
+            identifier: "dailyRoutine.truthReminder.630",
+            generation: nil,
+            currentBalanceGeneration: current,
+            currentWalkingGeneration: "walking-current",
+            includeWalking: true
+        ))
+    }
+
     func testMorningGateOffStillShowsEarnedAccessAsControllingState() {
         let locked = EarnedAccessProtectionSummary.title(
             isAuthorized: true,

@@ -8,6 +8,7 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
     private let store = ManagedSettingsStore(named: EarnedAccessShared.storeName)
     private let foundationStore = ManagedSettingsStore(named: EarnedAccessShared.foundationStoreName)
     private let truthReminderStore = ManagedSettingsStore(named: EarnedAccessShared.truthReminderStoreName)
+    private let notificationCenter = UNUserNotificationCenter.current()
 
     override func intervalDidStart(for activity: DeviceActivityName) {
         super.intervalDidStart(for: activity)
@@ -28,10 +29,12 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         let today = EarnedAccessShared.localDateKey()
         guard EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.morningFoundationCompleteDateKey) != today else { return }
 
-        EarnedAccessShared.applyFoundationShield(
+        if EarnedAccessShared.applyFoundationShield(
             exceptions: EarnedAccessShared.loadEssentialSelection(),
             to: foundationStore
-        )
+        ) {
+            clearEarnedAccessNotifications()
+        }
     }
 
     private func enforceTruthReminderGate() {
@@ -62,10 +65,12 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         if let entryID = EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.truthReminderGateNextEntryIDKey), !entryID.isEmpty {
             EarnedAccessShared.defaults.set(entryID, forKey: EarnedAccessShared.truthReminderGateEntryIDKey)
         }
-        if !EarnedAccessShared.applyFoundationShield(
+        if EarnedAccessShared.applyFoundationShield(
             exceptions: EarnedAccessShared.loadEssentialSelection(),
             to: truthReminderStore
         ) {
+            clearEarnedAccessNotifications()
+        } else {
             EarnedAccessShared.clearTruthReminderGate(from: truthReminderStore)
         }
     }
@@ -76,6 +81,7 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         let boundaryID = "\(today)|\(TimeZone.current.identifier)"
         let boundaryChanged = defaults.string(forKey: EarnedAccessShared.dayBoundaryIDKey) != boundaryID
         if boundaryChanged {
+            clearEarnedAccessNotifications(includeWalking: true)
             EarnedAccessShared.clearTruthReminderSafetyUnlock()
             if defaults.string(forKey: EarnedAccessShared.truthReminderGateDateKey) != today {
                 EarnedAccessShared.clearTruthReminderGate(from: truthReminderStore)
@@ -170,8 +176,8 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         let totalMinutes = EarnedAccessShared.defaults.integer(forKey: EarnedAccessShared.allowanceMinutesKey)
         guard totalMinutes > 0 else { return }
         if checkpoint.minute >= totalMinutes {
-            notifyUsage(remaining: 0, used: totalMinutes, redemptionID: checkpoint.redemptionID)
             restoreEarnedAccessShield(completed: true)
+            notifyUsage(remaining: 0, used: totalMinutes, redemptionID: checkpoint.redemptionID)
             return
         }
 
@@ -188,29 +194,124 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         }
     }
 
-    private func notifyUsage(remaining: Int, used: Int, redemptionID: String) {
+    private func notifyUsage(remaining: Int, used _: Int, redemptionID: String) {
+        let generation = EarnedAccessShared.advanceBalanceNotificationGeneration()
+        if remaining > 0,
+           !balanceNotificationIsCurrent(
+                remaining: remaining,
+                redemptionID: redemptionID,
+                generation: generation
+           ) {
+            clearEarnedAccessNotifications()
+            return
+        }
+
         let content = UNMutableNotificationContent()
         if remaining > 0 {
-            content.title = "About \(remaining) earned minutes remain"
+            content.title = EarnedAccessShared.remainingNotificationTitle(minutes: remaining)
             content.body = "This is your shared balance across all selected earned apps. Only foreground use counts, and the estimate updates every five minutes."
         } else {
             content.title = "Earned app balance used"
             content.body = "Your selected earned apps are locked again. Complete more routines or keep walking to earn additional time."
         }
         content.sound = .default
-        content.threadIdentifier = "earned-access-usage"
-        let safeID = String(redemptionID.suffix(20))
+        content.threadIdentifier = EarnedAccessShared.balanceNotificationThreadIdentifier
+        content.userInfo[EarnedAccessShared.notificationGenerationUserInfoKey] = generation
+        clearEarnedAccessNotifications(invalidateGeneration: false)
         let request = UNNotificationRequest(
-            identifier: "dailyRoutine.earnedAccess.usage.\(safeID).\(used)",
+            identifier: EarnedAccessShared.balanceNotificationIdentifier(generation: generation),
             content: content,
             trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
         )
-        UNUserNotificationCenter.current().add(request) { _ in }
+        notificationCenter.add(request) { [weak self] error in
+            guard error == nil, let self else { return }
+            let isCurrent = EarnedAccessShared.balanceNotificationGeneration == generation
+                && (remaining == 0 || self.balanceNotificationIsCurrent(
+                    remaining: remaining,
+                    redemptionID: redemptionID,
+                    generation: generation
+                ))
+            if !isCurrent {
+                self.removeBalanceNotificationIfGeneration(generation)
+            }
+        }
+    }
+
+    private func balanceNotificationIsCurrent(remaining: Int, redemptionID: String, generation: String) -> Bool {
+        let defaults = EarnedAccessShared.defaults
+        let today = EarnedAccessShared.localDateKey()
+        let morningBlocked = defaults.bool(forKey: EarnedAccessShared.morningGateEnabledKey)
+            && defaults.string(forKey: EarnedAccessShared.morningFoundationCompleteDateKey) != today
+        let truthBlocked = defaults.bool(forKey: EarnedAccessShared.truthReminderGateActiveKey)
+            && defaults.string(forKey: EarnedAccessShared.truthReminderGateDateKey) == today
+            && defaults.double(forKey: EarnedAccessShared.truthReminderSafetyUnlockUntilKey) <= Date().timeIntervalSince1970
+        return EarnedAccessShared.balanceNotificationGeneration == generation
+            && defaults.bool(forKey: EarnedAccessShared.protectionKey)
+            && defaults.bool(forKey: EarnedAccessShared.allowanceActiveKey)
+            && defaults.string(forKey: EarnedAccessShared.allowanceRedemptionIDKey) == redemptionID
+            && defaults.string(forKey: EarnedAccessShared.allowanceDateKey) == today
+            && defaults.integer(forKey: EarnedAccessShared.allowanceRemainingMinutesKey) == remaining
+            && defaults.object(forKey: EarnedAccessShared.allowanceExpiresAtKey) != nil
+            && defaults.double(forKey: EarnedAccessShared.allowanceExpiresAtKey) > Date().timeIntervalSince1970
+            && DeviceActivityCenter().activities.contains(EarnedAccessShared.activityName)
+            && !morningBlocked
+            && !truthBlocked
+    }
+
+    private func removeBalanceNotificationIfGeneration(_ generation: String) {
+        let identifier = EarnedAccessShared.balanceNotificationIdentifier(generation: generation)
+        notificationCenter.removePendingNotificationRequests(withIdentifiers: [identifier])
+        notificationCenter.removeDeliveredNotifications(withIdentifiers: [identifier])
     }
 
     private func restoreEarnedAccessShield(completed: Bool) {
         let selection = EarnedAccessShared.loadSelection()
         EarnedAccessShared.applyShield(selection: selection, to: store)
         EarnedAccessShared.clearAllowance(completed: completed)
+        clearEarnedAccessNotifications()
+    }
+
+    private func clearEarnedAccessNotifications(
+        includeWalking: Bool = false,
+        invalidateGeneration: Bool = true
+    ) {
+        if invalidateGeneration {
+            EarnedAccessShared.advanceBalanceNotificationGeneration()
+            if includeWalking { EarnedAccessShared.advanceWalkingNotificationGeneration() }
+        }
+        var currentIdentifiers = [EarnedAccessShared.balanceNotificationIdentifier]
+        if includeWalking { currentIdentifiers.append(EarnedAccessShared.walkingNotificationIdentifier) }
+        notificationCenter.removePendingNotificationRequests(withIdentifiers: currentIdentifiers)
+        notificationCenter.removeDeliveredNotifications(withIdentifiers: currentIdentifiers)
+        notificationCenter.getPendingNotificationRequests { requests in
+            let identifiers = requests.compactMap { request -> String? in
+                let generation = request.content.userInfo[EarnedAccessShared.notificationGenerationUserInfoKey] as? String
+                return EarnedAccessShared.shouldRemoveOwnedNotification(
+                    identifier: request.identifier,
+                    generation: generation,
+                    currentBalanceGeneration: EarnedAccessShared.balanceNotificationGeneration,
+                    currentWalkingGeneration: EarnedAccessShared.walkingNotificationGeneration,
+                    includeWalking: includeWalking
+                ) ? request.identifier : nil
+            }
+            if !identifiers.isEmpty {
+                self.notificationCenter.removePendingNotificationRequests(withIdentifiers: identifiers)
+            }
+        }
+        notificationCenter.getDeliveredNotifications { notifications in
+            let identifiers = notifications.compactMap { notification -> String? in
+                let generation = notification.request.content.userInfo[EarnedAccessShared.notificationGenerationUserInfoKey] as? String
+                return EarnedAccessShared.shouldRemoveOwnedNotification(
+                    identifier: notification.request.identifier,
+                    generation: generation,
+                    currentBalanceGeneration: EarnedAccessShared.balanceNotificationGeneration,
+                    currentWalkingGeneration: EarnedAccessShared.walkingNotificationGeneration,
+                    includeWalking: includeWalking
+                ) ? notification.request.identifier : nil
+            }
+            if !identifiers.isEmpty {
+                self.notificationCenter.removeDeliveredNotifications(withIdentifiers: identifiers)
+            }
+        }
     }
 }

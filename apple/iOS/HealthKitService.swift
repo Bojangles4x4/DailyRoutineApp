@@ -39,6 +39,8 @@ final class HealthKitService {
     private let sleepNotificationDayKey = "dailyRoutine.health.sleepReview.lastDay.v2"
     private var stepObserver: HKObserverQuery?
     private var sleepObserver: HKObserverQuery?
+    private var walkingPublicationDay = ""
+    private var walkingPublicationMilestone = 0
 
     var onStepRewardUpdate: (() -> Void)?
     var onHealthSummaryUpdate: (() -> Void)?
@@ -182,28 +184,135 @@ final class HealthKitService {
         let earned = min(configuration.maxMinutes, Int(floor((min(steps, Double(configuration.goalSteps)) / Double(configuration.goalSteps)) * Double(configuration.maxMinutes))))
         let milestone = (earned / 5) * 5
         let day = Self.localDateKey(now)
+        guard Self.localDateKey(Date()) == day else { return }
         let savedDay = automationDefaults.string(forKey: automationDayKey) ?? ""
-        let previousMilestone = savedDay == day ? automationDefaults.integer(forKey: automationMilestoneKey) : 0
         if savedDay != day {
             automationDefaults.set(day, forKey: automationDayKey)
             automationDefaults.set(0, forKey: automationMilestoneKey)
+            walkingPublicationDay = day
+            walkingPublicationMilestone = 0
+            EarnedAccessShared.advanceWalkingNotificationGeneration()
+            await removeWalkingProgressNotifications()
         }
+        if walkingPublicationDay != day {
+            walkingPublicationDay = day
+            walkingPublicationMilestone = automationDefaults.integer(forKey: automationMilestoneKey)
+        }
+        let previousMilestone = max(
+            automationDefaults.integer(forKey: automationMilestoneKey),
+            walkingPublicationMilestone
+        )
         guard milestone >= 5, milestone > previousMilestone else { return }
-        automationDefaults.set(milestone, forKey: automationMilestoneKey)
+        walkingPublicationMilestone = milestone
 
         let settings = await notificationCenter.notificationSettings()
-        guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else { return }
+        guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else {
+            resetWalkingPublicationIfCurrent(day: day, milestone: milestone)
+            return
+        }
+        guard Self.localDateKey(Date()) == day,
+              walkingPublicationDay == day,
+              walkingPublicationMilestone == milestone
+        else { return }
+        let generation = EarnedAccessShared.advanceWalkingNotificationGeneration()
+        await removeWalkingProgressNotifications()
+        guard EarnedAccessShared.walkingNotificationGeneration == generation,
+              Self.localDateKey(Date()) == day,
+              walkingPublicationDay == day,
+              walkingPublicationMilestone == milestone
+        else { return }
         let content = UNMutableNotificationContent()
-        content.title = "\(milestone) walking minutes earned"
-        content.body = "Your steps have earned \(milestone) of \(configuration.maxMinutes) minutes today. Daily Routine syncs the latest balance automatically while the app is active."
+        content.title = Self.walkingProgressNotificationTitle(minutes: milestone, maximum: configuration.maxMinutes)
+        content.body = Self.walkingProgressNotificationBody()
         content.sound = .default
-        content.threadIdentifier = "earned-access-walking"
+        content.threadIdentifier = EarnedAccessShared.walkingNotificationThreadIdentifier
+        content.userInfo[EarnedAccessShared.notificationGenerationUserInfoKey] = generation
         let request = UNNotificationRequest(
-            identifier: "dailyRoutine.walking.\(day).\(milestone)",
+            identifier: EarnedAccessShared.walkingNotificationIdentifier(generation: generation),
             content: content,
             trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
         )
-        try? await notificationCenter.add(request)
+        do {
+            try await notificationCenter.add(request)
+            guard EarnedAccessShared.walkingNotificationGeneration == generation,
+                  Self.localDateKey(Date()) == day,
+                  automationDefaults.string(forKey: automationDayKey) == day,
+                  walkingPublicationDay == day,
+                  walkingPublicationMilestone == milestone
+            else {
+                await removeWalkingNotificationIfGeneration(generation)
+                return
+            }
+            let savedMilestone = automationDefaults.integer(forKey: automationMilestoneKey)
+            automationDefaults.set(max(savedMilestone, milestone), forKey: automationMilestoneKey)
+        } catch {
+            resetWalkingPublicationIfCurrent(day: day, milestone: milestone)
+            return
+        }
+    }
+
+    private func resetWalkingPublicationIfCurrent(day: String, milestone: Int) {
+        guard walkingPublicationDay == day, walkingPublicationMilestone == milestone else { return }
+        walkingPublicationMilestone = automationDefaults.string(forKey: automationDayKey) == day
+            ? automationDefaults.integer(forKey: automationMilestoneKey)
+            : 0
+    }
+
+    private func removeWalkingProgressNotifications() async {
+        notificationCenter.removePendingNotificationRequests(
+            withIdentifiers: [EarnedAccessShared.walkingNotificationIdentifier]
+        )
+        notificationCenter.removeDeliveredNotifications(
+            withIdentifiers: [EarnedAccessShared.walkingNotificationIdentifier]
+        )
+        let pending = await notificationCenter.pendingNotificationRequests()
+        let pendingIDs = pending
+            .compactMap { request -> String? in
+                let generation = request.content.userInfo[EarnedAccessShared.notificationGenerationUserInfoKey] as? String
+                return EarnedAccessShared.shouldRemoveOwnedNotification(
+                    identifier: request.identifier,
+                    generation: generation,
+                    currentBalanceGeneration: EarnedAccessShared.balanceNotificationGeneration,
+                    currentWalkingGeneration: EarnedAccessShared.walkingNotificationGeneration,
+                    includeWalking: true
+                ) && EarnedAccessShared.isWalkingNotification(identifier: request.identifier)
+                    ? request.identifier
+                    : nil
+            }
+        if !pendingIDs.isEmpty {
+            notificationCenter.removePendingNotificationRequests(withIdentifiers: pendingIDs)
+        }
+        let delivered = await notificationCenter.deliveredNotifications()
+        let deliveredIDs = delivered
+            .compactMap { notification -> String? in
+                let generation = notification.request.content.userInfo[EarnedAccessShared.notificationGenerationUserInfoKey] as? String
+                return EarnedAccessShared.shouldRemoveOwnedNotification(
+                    identifier: notification.request.identifier,
+                    generation: generation,
+                    currentBalanceGeneration: EarnedAccessShared.balanceNotificationGeneration,
+                    currentWalkingGeneration: EarnedAccessShared.walkingNotificationGeneration,
+                    includeWalking: true
+                ) && EarnedAccessShared.isWalkingNotification(identifier: notification.request.identifier)
+                    ? notification.request.identifier
+                    : nil
+            }
+        if !deliveredIDs.isEmpty {
+            notificationCenter.removeDeliveredNotifications(withIdentifiers: deliveredIDs)
+        }
+    }
+
+    private func removeWalkingNotificationIfGeneration(_ generation: String) async {
+        let identifier = EarnedAccessShared.walkingNotificationIdentifier(generation: generation)
+        notificationCenter.removePendingNotificationRequests(withIdentifiers: [identifier])
+        notificationCenter.removeDeliveredNotifications(withIdentifiers: [identifier])
+    }
+
+    nonisolated static func walkingProgressNotificationTitle(minutes: Int, maximum: Int) -> String {
+        "Walking contribution: \(max(0, minutes)) of \(max(0, maximum)) min"
+    }
+
+    nonisolated static func walkingProgressNotificationBody() -> String {
+        "This is today’s cumulative walking contribution, not your current usable balance. Open Daily Routine to see the shared balance."
     }
 
     private static func localDateKey(_ date: Date) -> String {
