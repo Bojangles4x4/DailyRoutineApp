@@ -45,12 +45,9 @@ struct DailyRoutineProgressWidget: Widget {
         StaticConfiguration(kind: kind, provider: RoutineTimelineProvider()) { entry in
             DailyRoutineWidgetView(entry: entry)
                 .containerBackground(for: .widget) {
-                    LinearGradient(
-                        colors: [Color.indigo.opacity(0.8), Color.teal.opacity(0.35)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
+                    Color(red: 0.071, green: 0.110, blue: 0.137)
                 }
+                .tint(Color(red: 0.49, green: 0.75, blue: 0.93))
         }
         .configurationDisplayName("Today’s Routine")
         .description("See today’s progress and open your routine list at a glance.")
@@ -83,7 +80,7 @@ struct DailyRoutineWidgetView: View {
             Image(systemName: "lock.fill")
                 .font(.title3)
                 .widgetAccentable()
-                .accessibilityLabel("Morning Foundation is required on iPhone")
+                .accessibilityLabel("Truth Before Tasks is required on iPhone")
         } else {
             Gauge(value: entry.snapshot.progress) {
                 Image(systemName: "checkmark")
@@ -101,7 +98,7 @@ struct DailyRoutineWidgetView: View {
     @ViewBuilder
     private var inlineView: some View {
         if truthIsLocked {
-            Label("Morning Foundation", systemImage: "lock.fill")
+            Label("Truth Before Tasks", systemImage: "lock.fill")
         } else {
             Label(
                 "\(entry.snapshot.completed)/\(entry.snapshot.total) • Routine list",
@@ -118,15 +115,15 @@ struct DailyRoutineWidgetView: View {
                     .font(.title2)
                     .widgetAccentable()
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("MORNING FOUNDATION")
-                        .font(.system(size: 10, weight: .bold))
+                    Text("Truth Before Tasks")
+                        .font(.system(size: 10, weight: .medium))
                     Text(entry.snapshot.isCurrentDay ? "Begin on iPhone" : "Open iPhone to refresh")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
             }
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Complete Morning Foundation on iPhone")
+            .accessibilityLabel("Review Truth Before Tasks on iPhone")
         } else {
             HStack(spacing: 9) {
                 Gauge(value: entry.snapshot.progress) {
@@ -140,13 +137,15 @@ struct DailyRoutineWidgetView: View {
                 .frame(width: 42, height: 42)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("TODAY")
-                        .font(.system(size: 10, weight: .bold))
+                    Text("Suggested focus")
+                        .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(.secondary)
-                    Text("\(entry.snapshot.completed) of \(entry.snapshot.total) complete")
+                    Text(entry.snapshot.nextItemName ?? "Open routine list")
                         .font(.caption)
-                        .fontWeight(.semibold)
-                    Text("Open routine list")
+                        .fontWeight(.medium)
+                        .lineLimit(2)
+                        .privacySensitive()
+                    Text("\(entry.snapshot.completed) of \(entry.snapshot.total) complete")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)

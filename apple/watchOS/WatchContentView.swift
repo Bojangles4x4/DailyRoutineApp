@@ -1,10 +1,22 @@
 import SwiftUI
 import WatchKit
 
+private enum WatchLedgerPalette {
+    static let background = Color(red: 0.039, green: 0.059, blue: 0.075)
+    static let surface = Color(red: 0.071, green: 0.110, blue: 0.137)
+    static let soft = Color(red: 0.102, green: 0.169, blue: 0.208)
+    static let ink = Color(red: 0.957, green: 0.973, blue: 0.980)
+    static let muted = Color(red: 0.68, green: 0.76, blue: 0.81)
+    static let accent = Color(red: 0.49, green: 0.75, blue: 0.93)
+    static let button = Color(red: 0.173, green: 0.424, blue: 0.588)
+}
+
 struct WatchContentView: View {
     @ObservedObject var session: WatchSessionManager
     @State private var pendingMedicationItem: WatchRoutineItem?
     @State private var showAllTasks = false
+    @State private var medicationToReview: WatchRoutineItem?
+    private typealias Palette = WatchLedgerPalette
 
     private var progress: Double {
         guard let context = session.context, context.total > 0 else { return 0 }
@@ -45,12 +57,7 @@ struct WatchContentView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: [Color(red: 0.04, green: 0.13, blue: 0.17), Color.black],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            Palette.background.ignoresSafeArea()
 
             VStack(spacing: 6) {
                 summaryHeader
@@ -69,6 +76,24 @@ struct WatchContentView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .ignoresSafeArea(.container, edges: [.top, .bottom])
         }
+        .foregroundStyle(Palette.ink)
+        .sheet(item: $medicationToReview) { item in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(item.name).font(.headline)
+                    ForEach(Array(item.medicationList ?? []), id: \.self) { medication in
+                        Text(medication).font(.caption)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    Text("Reminder only. Complete the routine once after taking your medications.")
+                        .font(.caption2).foregroundStyle(Palette.muted)
+                    Button("Done") { medicationToReview = nil }
+                        .accessibilityIdentifier("dismissMedicationReview")
+                }.padding(12)
+            }
+            .background(Palette.background)
+            .accessibilityIdentifier("watchMedicationReview")
+        }
         .alert(item: $pendingMedicationItem) { item in
             Alert(
                 title: Text("Check medication time"),
@@ -82,16 +107,13 @@ struct WatchContentView: View {
     private var summaryHeader: some View {
         VStack(spacing: 5) {
             HStack(alignment: .center, spacing: 4) {
-                Image(systemName: "sun.max.fill")
-                    .font(.caption2)
-                    .foregroundStyle(.yellow)
-                Text("Today").font(.system(size: 11, weight: .bold))
+                Text("Today").font(.system(size: 12, weight: .medium))
                 Text("\(Int((progress * 100).rounded()))%")
                     .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundStyle(.mint)
+                    .foregroundStyle(Palette.accent)
                 Text("\(session.context?.completed ?? 0)/\(session.context?.total ?? 0)")
                     .font(.system(size: 8, weight: .medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Palette.muted)
                 Circle()
                     .fill(session.isReachable ? Color.green : Color.orange)
                     .frame(width: 5, height: 5)
@@ -102,8 +124,8 @@ struct WatchContentView: View {
 
             GeometryReader { proxy in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(Color.teal.opacity(0.4))
-                    Capsule().fill(Color.mint).frame(width: proxy.size.width * progress)
+                    Capsule().fill(Palette.soft)
+                    Capsule().fill(Palette.accent).frame(width: proxy.size.width * progress)
                 }
             }
             .frame(height: 4)
@@ -116,57 +138,47 @@ struct WatchContentView: View {
     private var suggestedFocus: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 7) {
-                HStack {
-                    Text("SUGGESTED FOCUS")
-                        .font(.system(size: 8, weight: .bold))
-                        .tracking(0.8)
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    stepsSummary
-                }
+                focusSummary
 
                 if let item = suggestedItem {
                     VStack(alignment: .leading, spacing: 7) {
+                        Text("Suggested focus · \(sectionTitle(item.section))")
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundStyle(Palette.muted)
                         Text(item.name)
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .font(.system(size: 17, weight: .medium, design: .serif))
                             .lineLimit(2)
-                        Text(sectionTitle(item.section))
-                            .font(.system(size: 9, weight: .semibold))
-                            .foregroundStyle(.secondary)
-
-                        if item.action == .takeMedication, let medications = item.medicationList, !medications.isEmpty {
-                            VStack(alignment: .leading, spacing: 3) {
-                                ForEach(Array(medications.prefix(3)), id: \.self) { medication in
-                                    Label(medication, systemImage: "pills.fill")
-                                        .font(.system(size: 9, weight: .medium))
-                                        .lineLimit(1)
+                        HStack(spacing: 6) {
+                            if item.action == .takeMedication, !(item.medicationList ?? []).isEmpty {
+                                Button { medicationToReview = item } label: {
+                                    Text("Review list").font(.system(size: 10, weight: .medium))
+                                        .frame(maxWidth: .infinity, minHeight: 42)
+                                        .background(Palette.soft, in: RoundedRectangle(cornerRadius: 11))
                                 }
+                                .buttonStyle(.plain)
+                                .accessibilityIdentifier("reviewWatchMedications")
                             }
-                            .padding(7)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            Button { performRoutineAction(item) } label: {
+                                Text("Mark complete")
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .frame(maxWidth: .infinity, minHeight: 42)
+                                    .background(Palette.button, in: RoundedRectangle(cornerRadius: 11))
+                                    .foregroundStyle(Palette.ink)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("suggestedRoutineAction")
                         }
-
-                        Button { performRoutineAction(item) } label: {
-                            Label("Mark complete", systemImage: "checkmark.circle.fill")
-                                .font(.system(size: 11, weight: .bold))
-                                .frame(maxWidth: .infinity, minHeight: 42)
-                                .background(Color.mint.opacity(0.9), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                .foregroundStyle(.black)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("suggestedRoutineAction")
                     }
                     .padding(11)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.white.opacity(0.10), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .background(Palette.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 } else {
                     Label("All Watch-ready tasks complete", systemImage: "checkmark.circle.fill")
                         .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(.mint)
+                        .foregroundStyle(Palette.accent)
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .background(Palette.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
 
                 if let status = session.deliveryStatus {
@@ -176,6 +188,25 @@ struct WatchContentView: View {
         }
         .scrollIndicators(.hidden)
         .frame(maxHeight: .infinity)
+    }
+
+    private var focusSummary: some View {
+        let morning = routineItems.filter { $0.section == "morning" }
+        return HStack(spacing: 6) {
+            summaryTile("Morning", value: "\(morning.filter(\.completed).count) of \(morning.count)")
+            summaryTile("Steps", value: session.context?.stepCount?.formatted() ?? "Open iPhone")
+        }
+        .accessibilityIdentifier("watchFocusSummary")
+    }
+
+    private func summaryTile(_ title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title).font(.system(size: 8)).foregroundStyle(Palette.muted)
+            Text(value).font(.system(size: 12, weight: .medium)).lineLimit(1)
+        }
+        .padding(.horizontal, 9).padding(.vertical, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Palette.surface, in: RoundedRectangle(cornerRadius: 10))
     }
 
     @ViewBuilder
@@ -227,7 +258,7 @@ struct WatchContentView: View {
         Button { performRoutineAction(item) } label: {
             HStack(spacing: 9) {
                 Image(systemName: item.completed ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(item.completed ? Color.mint : Color.secondary)
+                    .foregroundStyle(item.completed ? Palette.accent : Palette.muted)
                     .font(.system(size: 17, weight: .semibold))
                 Text(item.name)
                     .font(.system(size: 12, weight: .semibold))
@@ -239,7 +270,7 @@ struct WatchContentView: View {
             }
             .frame(maxWidth: .infinity, minHeight: 42, alignment: .leading)
             .padding(.horizontal, 9)
-            .background(.white.opacity(item.completed ? 0.06 : 0.1), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .background(item.completed ? Palette.surface : Palette.soft, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("routine-\(item.id)")
@@ -249,13 +280,13 @@ struct WatchContentView: View {
 
     private var actionBar: some View {
         HStack(spacing: 6) {
-            compactAction(title: customAction.title, systemImage: customActionIcon, color: .cyan, identifier: "customWatchAction") {
+            compactAction(title: customAction.title, systemImage: customActionIcon, color: Palette.soft, identifier: "customWatchAction") {
                 performCustomAction()
             }
             compactAction(
                 title: showAllTasks ? "Focus" : "All tasks",
                 systemImage: showAllTasks ? "scope" : "list.bullet",
-                color: .mint,
+                color: Palette.soft,
                 identifier: "toggleWatchTaskView"
             ) { showAllTasks.toggle() }
         }
@@ -272,9 +303,9 @@ struct WatchContentView: View {
             Label(title, systemImage: systemImage)
                 .font(.system(size: 10, weight: .bold))
                 .lineLimit(1)
-                .foregroundStyle(.white)
+                .foregroundStyle(Palette.ink)
                 .frame(maxWidth: .infinity, minHeight: 40)
-                .background(color.opacity(0.88), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                .background(color, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier(identifier)
@@ -327,7 +358,7 @@ struct WatchContentView: View {
         VStack(spacing: 8) {
             Image(systemName: "lock.shield.fill")
                 .font(.title2)
-                .foregroundStyle(.yellow)
+                .foregroundStyle(Palette.accent)
             Text("Review Truth Before Tasks on iPhone")
                 .font(.headline)
                 .multilineTextAlignment(.center)
@@ -338,7 +369,7 @@ struct WatchContentView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(12)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(Palette.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("truthBeforeTasksLock")
     }

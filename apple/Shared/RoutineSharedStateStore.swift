@@ -29,6 +29,8 @@ struct RoutineSharedSnapshot: Codable, Equatable, Sendable {
     let waterItemID: String?
     let waterCurrent: Int?
     let waterTarget: Int?
+    let stepCount: Int?
+    let stepGoal: Int?
     let nextItem: RoutineSharedItemSnapshot?
     let eligibleItems: [RoutineSharedItemSnapshot]
     let updatedAt: String
@@ -47,6 +49,8 @@ struct RoutineSharedSnapshot: Codable, Equatable, Sendable {
         waterItemID: String? = nil,
         waterCurrent: Int? = nil,
         waterTarget: Int? = nil,
+        stepCount: Int? = nil,
+        stepGoal: Int? = nil,
         nextItem: RoutineSharedItemSnapshot?,
         eligibleItems: [RoutineSharedItemSnapshot],
         updatedAt: String
@@ -64,6 +68,8 @@ struct RoutineSharedSnapshot: Codable, Equatable, Sendable {
         self.waterItemID = waterItemID
         self.waterCurrent = waterCurrent
         self.waterTarget = waterTarget
+        self.stepCount = stepCount
+        self.stepGoal = stepGoal
         self.nextItem = nextItem
         self.eligibleItems = eligibleItems
         self.updatedAt = updatedAt
@@ -85,6 +91,9 @@ struct RoutineSharedSnapshot: Codable, Equatable, Sendable {
                 current: waterCurrent,
                 target: waterTarget
             )
+            && ((stepCount == nil && stepGoal == nil)
+                || (stepCount.map { (0...1_000_000).contains($0) } == true
+                    && stepGoal.map { (1...1_000_000).contains($0) } == true))
             && RoutineSharedDate.parse(updatedAt) != nil
             && eligibleItems.count <= 24
             && Set(eligibleItems.map(\.id)).count == eligibleItems.count

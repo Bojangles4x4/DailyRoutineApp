@@ -45,7 +45,7 @@ final class WatchSessionManager: NSObject, ObservableObject {
             lastActionMessage: nil,
             items: truthComplete ? [
                 WatchRoutineItem(id: "morning-prayer", name: "Prayer", section: "morning", completed: true, action: .toggleRoutine),
-                WatchRoutineItem(id: "morning-teeth", name: "Brush teeth", section: "morning", completed: false, action: .toggleRoutine),
+                WatchRoutineItem(id: "morning-teeth", name: "Brush teeth", section: "morning", completed: arguments.contains("UI_TESTING_MEDICATION_FOCUS"), action: .toggleRoutine),
                 WatchRoutineItem(
                     id: "morning-meds",
                     name: "Take morning medicine",

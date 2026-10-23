@@ -1,4 +1,7 @@
 import XCTest
+import SwiftUI
+import WidgetKit
+import UIKit
 @testable import DailyRoutine
 
 final class RoutineSharedStateStoreTests: XCTestCase {
@@ -642,6 +645,91 @@ final class RoutineSharedStateStoreTests: XCTestCase {
         for reference in references {
             let resourceURL = try XCTUnwrap(bundle.resourceURL?.appendingPathComponent(reference))
             XCTAssertTrue(FileManager.default.fileExists(atPath: resourceURL.path), "Missing bundled web resource: \(reference)")
+        }
+    }
+
+    func testWidgetStepSummaryValidationAndLegacyCompatibility() throws {
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(makeSnapshot())) as? [String: Any])
+        object["stepCount"] = 5740
+        object["stepGoal"] = 8000
+        let snapshot = try JSONDecoder().decode(RoutineSharedSnapshot.self, from: JSONSerialization.data(withJSONObject: object))
+        XCTAssertTrue(snapshot.isValid)
+        try store.save(snapshot: snapshot)
+        XCTAssertEqual(try store.loadSnapshot()?.stepCount, 5740)
+        object["stepCount"] = -1
+        let invalid = try JSONDecoder().decode(RoutineSharedSnapshot.self, from: JSONSerialization.data(withJSONObject: object))
+        XCTAssertFalse(invalid.isValid)
+        object.removeValue(forKey: "stepCount")
+        let incomplete = try JSONDecoder().decode(RoutineSharedSnapshot.self, from: JSONSerialization.data(withJSONObject: object))
+        XCTAssertFalse(incomplete.isValid)
+        XCTAssertTrue(makeSnapshot().isValid)
+    }
+
+    @MainActor
+    func testWidgetContrastAndNativeRenderings() throws {
+        func luminance(_ color: Color, traits: UITraitCollection) -> Double {
+            var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+            UIColor(color).resolvedColor(with: traits).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+            func linear(_ channel: CGFloat) -> Double {
+                let value = Double(channel)
+                return value <= 0.04045 ? value / 12.92 : pow((value + 0.055) / 1.055, 2.4)
+            }
+            return linear(red) * 0.2126 + linear(green) * 0.7152 + linear(blue) * 0.0722
+        }
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let traits = UITraitCollection(userInterfaceStyle: style)
+            let pairs: [(Color, Color)] = [
+                (RoutineHomeWidgetPalette.ink, RoutineHomeWidgetPalette.background),
+                (RoutineHomeWidgetPalette.ink, RoutineHomeWidgetPalette.surface),
+                (RoutineHomeWidgetPalette.muted, RoutineHomeWidgetPalette.background),
+                (RoutineHomeWidgetPalette.onAccent, RoutineHomeWidgetPalette.accent),
+                (RoutineHomeWidgetPalette.accent, RoutineHomeWidgetPalette.soft)
+            ]
+            for (foreground, background) in pairs {
+                let first = luminance(foreground, traits: traits), second = luminance(background, traits: traits)
+                XCTAssertGreaterThanOrEqual((max(first, second) + 0.05) / (min(first, second) + 0.05), 4.5)
+            }
+            for (family, size, name) in [
+                (WidgetFamily.systemLarge, CGSize(width: 364, height: 382), "large"),
+                (.systemLarge, CGSize(width: 338, height: 354), "large-compact"),
+                (.systemMedium, CGSize(width: 364, height: 170), "medium"),
+                (.systemSmall, CGSize(width: 170, height: 170), "small"),
+                (.systemLarge, CGSize(width: 364, height: 382), "locked"),
+                (.systemLarge, CGSize(width: 364, height: 382), "refresh")
+            ] {
+                var entry = RoutineHomeEntry.preview
+                if name == "refresh" { entry = RoutineHomeEntry(date: .now, snapshot: nil) }
+                if name == "locked" {
+                    var object = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(RoutineHomeEntry.preview.snapshot)) as? [String: Any])
+                    object["foundationComplete"] = false
+                    object.removeValue(forKey: "nextItem")
+                    entry = RoutineHomeEntry(date: .now, snapshot: try JSONDecoder().decode(RoutineSharedSnapshot.self, from: JSONSerialization.data(withJSONObject: object)))
+                }
+                let content = RoutineHomeWidgetView(entry: entry, previewFamily: family)
+                    .environment(\.colorScheme, style == .dark ? .dark : .light)
+                    .padding(16)
+                    .background(RoutineHomeWidgetPalette.background)
+                    .frame(width: size.width, height: size.height)
+                let host = UIHostingController(rootView: content)
+                // WidgetKit supplies content margins, not an iPhone status-bar safe area.
+                host.safeAreaRegions = []
+                host.overrideUserInterfaceStyle = style
+                let window = UIWindow(frame: CGRect(origin: .zero, size: size))
+                window.rootViewController = host
+                window.makeKeyAndVisible()
+                host.view.frame = window.bounds
+                host.view.setNeedsLayout()
+                host.view.layoutIfNeeded()
+                RunLoop.main.run(until: Date().addingTimeInterval(0.2))
+                let image = UIGraphicsImageRenderer(size: size).image { _ in
+                    host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
+                }
+                let attachment = XCTAttachment(image: image)
+                attachment.name = "widget-\(name)-\(style == .dark ? "dark" : "light")"
+                attachment.lifetime = XCTAttachment.Lifetime.keepAlways
+                add(attachment)
+                window.isHidden = true
+            }
         }
     }
 

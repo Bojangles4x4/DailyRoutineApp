@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D445C0A10000000000000002 /* RoutineHomeWidgetContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = D445C0A10000000000000001 /* RoutineHomeWidgetContent.swift */; };
+		D445C0A10000000000000003 /* RoutineHomeWidgetContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = D445C0A10000000000000001 /* RoutineHomeWidgetContent.swift */; };
 		0500D84ACCED224BEFA8BB37 /* WidgetSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8096AA8C4DC525F750013EEC /* WidgetSnapshotStore.swift */; };
 		059C8124E19621D2E1602BF0 /* RoutineSharedStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9F755FFA4F84C96051EB74 /* RoutineSharedStateStore.swift */; };
 		05F62511934122D09C2E3D93 /* PhoneWatchSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17CD184FE3D8B6273C7708A1 /* PhoneWatchSessionManager.swift */; };
@@ -143,6 +145,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		D445C0A10000000000000001 /* RoutineHomeWidgetContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineHomeWidgetContent.swift; sourceTree = "<group>"; };
 		08074A312C8759C6DAAC1741 /* icon-512.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon-512.png"; sourceTree = "<group>"; };
 		0AB50D90125AC93C7EB08335 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		10E6F55D19A361D999DC14D5 /* app.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = app.js; sourceTree = "<group>"; };
@@ -196,6 +199,7 @@
 			isa = PBXGroup;
 			children = (
 				79F87834C14ABD05F5A7A313 /* RoutineWidgetAction.swift */,
+				D445C0A10000000000000001 /* RoutineHomeWidgetContent.swift */,
 			);
 			path = iOSWidgetShared;
 			sourceTree = "<group>";
@@ -609,6 +613,7 @@
 				C660A33CA547ED518643AE7B /* DailyRoutineHomeWidget.swift in Sources */,
 				059C8124E19621D2E1602BF0 /* RoutineSharedStateStore.swift in Sources */,
 				57A2803AE41C5623F47EBE1B /* RoutineWidgetAction.swift in Sources */,
+				D445C0A10000000000000003 /* RoutineHomeWidgetContent.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -634,6 +639,7 @@
 				05F62511934122D09C2E3D93 /* PhoneWatchSessionManager.swift in Sources */,
 				1BE1148D092D96B6E29FE3B4 /* RoutineSharedStateStore.swift in Sources */,
 				4FB72872BDAE84DB76087AB4 /* RoutineWidgetAction.swift in Sources */,
+				D445C0A10000000000000002 /* RoutineHomeWidgetContent.swift in Sources */,
 				6F2D687C7D464A6EB537B0CE /* TruthReminderStore.swift in Sources */,
 				4D6B1C691FEAB9C754AFBD5A /* TruthReminderView.swift in Sources */,
 				27949F733E0D9FAD11666B58 /* WebAppView.swift in Sources */,
@@ -787,7 +793,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 44;
+				CURRENT_PROJECT_VERSION = 45;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -800,7 +806,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.42.0;
+				MARKETING_VERSION = 1.43.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1039,7 +1045,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 44;
+				CURRENT_PROJECT_VERSION = 45;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -1058,7 +1064,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.42.0;
+				MARKETING_VERSION = 1.43.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

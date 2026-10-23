@@ -24,6 +24,10 @@ final class WatchQuickActionsUITests: XCTestCase {
         let suggested = app.descendants(matching: .any)["suggestedRoutineAction"]
         XCTAssertTrue(suggested.waitForExistence(timeout: 10))
         XCTAssertTrue(suggested.isEnabled)
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = "Build45-Watch-Ultra-focus"
+        attachment.lifetime = .keepAlways
+        add(attachment)
         suggested.tap()
     }
 
@@ -63,5 +67,29 @@ final class WatchQuickActionsUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["suggestedRoutineAction"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.descendants(matching: .any)["captureWatchNote"].exists)
         XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "earned")).firstMatch.exists)
+    }
+
+    func testMedicationReviewDoesNotCompleteTheRoutine() {
+        let app = XCUIApplication()
+        app.launchArguments += ["UI_TESTING_TRUTH_COMPLETE", "UI_TESTING_MEDICATION_FOCUS"]
+        app.launch()
+        let review = app.buttons["reviewWatchMedications"]
+        XCTAssertTrue(review.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.descendants(matching: .any)["watchFocusSummary"].exists)
+        let focusAttachment = XCTAttachment(screenshot: app.screenshot())
+        focusAttachment.name = "Build45-Watch-medication-focus"
+        focusAttachment.lifetime = .keepAlways
+        add(focusAttachment)
+        review.tap()
+        XCTAssertTrue(app.staticTexts["Vitamin D · 1 capsule"].waitForExistence(timeout: 5))
+        let listAttachment = XCTAttachment(screenshot: app.screenshot())
+        listAttachment.name = "Build45-Watch-medication-list"
+        listAttachment.lifetime = .keepAlways
+        add(listAttachment)
+        let done = app.buttons["dismissMedicationReview"]
+        if !done.isHittable { app.swipeUp() }
+        done.tap()
+        XCTAssertTrue(app.buttons["suggestedRoutineAction"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["Sent to iPhone"].exists)
     }
 }
