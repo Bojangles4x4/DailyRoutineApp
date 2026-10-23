@@ -2,7 +2,9 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.43.0 development features
+## Version 1.44.0 development features
+
+- Build 46 groups each theme’s saved Scripture passages directly below its body and skips the redundant Scripture-only page. Existing conviction indexes, reflection timers, theme assignments, and completion history are preserved. The iPhone background extends around the Dynamic Island while header controls respect its safe area, and native Truth Reminder review/settings/editing screens use the Clear Ledger blue-gray palette.
 
 - Build 45 corrects the native iPhone widget’s light/dark contrast and Clear Ledger layout, adds the aggregate daily step goal strip, and checks the actual SwiftUI renderings and text contrast across widget sizes. Step summaries remain on the device and are optional for compatibility with previous widget snapshots.
 - The Watch app now matches the approved blue-gray focus design, shows morning completion and step tiles, and opens a separate read-only medication reminder list without completing the task. Watch-face widgets use matching styling and Truth Before Tasks wording; no Earned Access or Capture controls were added to the Watch focus screen.

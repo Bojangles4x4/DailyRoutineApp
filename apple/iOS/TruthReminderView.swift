@@ -2,6 +2,7 @@ import SwiftUI
 import PhotosUI
 
 struct TruthReminderView: View {
+    private typealias Palette = RoutineHomeWidgetPalette
     @ObservedObject var store: TruthReminderStore
     var onDone: () -> Void = {}
     @Environment(\.dismiss) private var dismiss
@@ -111,6 +112,9 @@ struct TruthReminderView: View {
                     Text("Tap an entry to edit it. When shuffle is off, select the entries you want and save the schedule.")
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Palette.background)
+            .tint(Palette.accent)
             .disabled(store.busy)
             .navigationTitle("Truth reminders")
             .navigationBarTitleDisplayMode(.inline)
@@ -134,6 +138,7 @@ struct TruthReminderView: View {
 }
 
 struct TruthReminderReviewView: View {
+    private typealias Palette = RoutineHomeWidgetPalette
     @ObservedObject var store: TruthReminderStore
     let presentation: TruthReminderPresentation
     @Environment(\.scenePhase) private var scenePhase
@@ -151,12 +156,7 @@ struct TruthReminderReviewView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: [Color(red: 0.93, green: 0.97, blue: 0.95), Color(red: 0.98, green: 0.95, blue: 0.89)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            Palette.background.ignoresSafeArea()
 
             ScrollView {
                 VStack(spacing: 16) {
@@ -164,20 +164,20 @@ struct TruthReminderReviewView: View {
                         HStack(spacing: 9) {
                             Image(systemName: "pause.circle.fill")
                                 .font(.system(size: 22, weight: .semibold))
-                                .foregroundStyle(Color(red: 0.12, green: 0.35, blue: 0.30))
+                                .foregroundStyle(Palette.accent)
                             Text("Pause for a few seconds to reset your mind on what is true.")
                                 .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Palette.muted)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         if blocking && presentation.queueTotal > 1 {
                             Text("Reminder \(presentation.queuePosition) of \(presentation.queueTotal) waiting")
                                 .font(.caption.weight(.semibold))
-                                .foregroundStyle(Color(red: 0.12, green: 0.35, blue: 0.30))
+                                .foregroundStyle(Palette.accent)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
-                                .background(.white.opacity(0.72), in: Capsule())
+                                .background(Palette.soft, in: Capsule())
                         }
                     }
 
@@ -187,20 +187,20 @@ struct TruthReminderReviewView: View {
                             Image(uiImage: image)
                                 .resizable()
                                 .scaledToFit()
-                                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                                 .accessibilityLabel("Truth reminder picture")
                         }
                         if !entry.text.isEmpty {
                             Text(entry.text)
                                 .font(.system(.title3, design: .serif, weight: .medium))
-                                .foregroundStyle(Color(red: 0.10, green: 0.25, blue: 0.22))
+                                .foregroundStyle(Palette.ink)
                                 .multilineTextAlignment(.center)
                                 .lineSpacing(6)
                                 .frame(maxWidth: .infinity)
                         }
                     }
-                    .padding(22)
-                    .background(.white.opacity(0.84), in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+                    .padding(20)
+                    .background(Palette.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
 
                     Button {
                         store.acknowledge(presentation)
@@ -209,9 +209,10 @@ struct TruthReminderReviewView: View {
                             .font(.headline)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 15)
+                            .foregroundStyle(secondsRemaining > 0 ? Palette.muted : Palette.onAccent)
+                            .background(secondsRemaining > 0 ? Palette.soft : Palette.accent, in: RoundedRectangle(cornerRadius: 14))
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color(red: 0.12, green: 0.35, blue: 0.30))
+                    .buttonStyle(.plain)
                     .disabled(secondsRemaining > 0)
                     .accessibilityLabel(secondsRemaining > 0 ? "Reflection timer" : "I've read this")
                     .accessibilityValue(secondsRemaining > 0 ? "\(secondsRemaining) seconds remaining" : "Ready")
@@ -222,19 +223,21 @@ struct TruthReminderReviewView: View {
                             store.safetyUnlockForFifteenMinutes()
                         }
                         .buttonStyle(.bordered)
+                        .tint(Palette.accent)
                         .accessibilityIdentifier("truthReminderUnlockButton")
                     } else {
                         Button("Close") {
                             store.dismissPresentation()
                         }
                         .buttonStyle(.bordered)
+                        .tint(Palette.accent)
                     }
 
                     Text(blocking
                          ? "Review every waiting reminder to resume your apps. Safety unlock pauses this gate for 15 minutes without marking anything reviewed."
                          : "This reminder did not pause your other apps.")
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Palette.muted)
                         .multilineTextAlignment(.center)
                 }
                 .padding(.horizontal, 22)
@@ -265,6 +268,7 @@ enum TruthReminderCountdown {
 }
 
 private struct TruthReminderEditor: View {
+    private typealias Palette = RoutineHomeWidgetPalette
     @ObservedObject var store: TruthReminderStore
     let entry: TruthReminder
     @Environment(\.dismiss) private var dismiss
@@ -292,6 +296,9 @@ private struct TruthReminderEditor: View {
                 }
                 if !error.isEmpty { Text(error).foregroundStyle(.red) }
             }
+            .scrollContentBackground(.hidden)
+            .background(Palette.background)
+            .tint(Palette.accent)
             .navigationTitle("Edit truth")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

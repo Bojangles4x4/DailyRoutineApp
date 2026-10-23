@@ -2,6 +2,16 @@ import Foundation
 
 @MainActor
 final class AppModel: ObservableObject {
+    @Published private(set) var usesDarkAppearance = UserDefaults.standard.bool(forKey: "routine.native.darkAppearance")
+
+    func updateAppearance(theme: String) {
+        guard ["calm", "sunrise", "dusk", "minimal", "midnight"].contains(theme) else { return }
+        let dark = theme == "midnight"
+        guard usesDarkAppearance != dark else { return }
+        usesDarkAppearance = dark
+        UserDefaults.standard.set(dark, forKey: "routine.native.darkAppearance")
+    }
+
     let health = HealthKitService()
     let watch = PhoneWatchSessionManager()
     let reminders = TruthReminderStore()

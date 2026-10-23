@@ -10,8 +10,8 @@
   const DAY_BOUNDARY_DEVICE_KEY = 'dailyRoutine.dayBoundary.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.43.0';
-  const APP_BUILD = 45;
+  const APP_VERSION = '1.44.0';
+  const APP_BUILD = 46;
   const PRIVATE_SYNC_COMPONENT_MESSAGE = 'This build is missing a required sync component. No routine data on this device or in the cloud was changed. Update the app to continue.';
   const PRIVATE_SYNC_LEGACY_RECOVERY_MESSAGE = 'The previous build could not sync. Your local data is preserved—review and sync now.';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
@@ -1369,6 +1369,7 @@
     window.addEventListener('dailyRoutine:native', event => {
       const detail = event.detail || {};
       if (detail.name === 'native.ready') {
+        sendNativeBridgeMessage('app.appearance.update', { theme: document.body.dataset.theme || 'calm' });
         const value = detail.value || {};
         els.appleHealthStatus.textContent = value.healthAvailable ? 'Apple Health is available and ready to connect.' : 'Apple Health is not available on this device.';
         els.appleWatchStatus.textContent = value.watchReachable ? 'Apple Watch is connected and reachable.' : value.watchInstalled ? 'Open Daily Routine on Apple Watch to enable live quick actions.' : 'Install the Daily Routine Watch companion to begin quick-action testing.';
@@ -4459,6 +4460,9 @@
 
   function applyPersonalization() {
     document.body.dataset.theme = state.settings.theme || 'calm';
+    document.documentElement.style.colorScheme = document.body.dataset.theme === 'midnight' ? 'dark' : 'light';
+    document.documentElement.style.backgroundColor = getComputedStyle(document.body).getPropertyValue('--bg').trim();
+    sendNativeBridgeMessage('app.appearance.update', { theme: document.body.dataset.theme });
     document.body.dataset.handedness = state.settings.handedness === 'left' ? 'left' : 'right';
     document.body.style.setProperty('--custom-bg', state.settings.backgroundImage ? `url("${state.settings.backgroundImage}")` : 'none');
     document.body.classList.toggle('has-custom-bg', Boolean(state.settings.backgroundImage));
@@ -6001,6 +6005,9 @@
     const TRUTH_MINIMUM_MS = 3 * 60 * 1000;
     const CONVICTION_MINIMUM_MS = 2 * 60 * 1000;
     const TRUTH_STEP_COUNT = 5;
+    // Preserve stored conviction indexes from earlier builds. Step 4's Scripture
+    // content now lives at step 2; navigation skips the old standalone page.
+    const LEGACY_SCRIPTURE_STEP = 4;
     const GOVERNING_REMINDER = 'Not for righteousness. Because of righteousness.';
     const RIGHTNESS_REMINDER = 'Faithfulness, not infallibility. Trust, not certainty. The Lord, not being right. I do not need to agonize over every choice; the sovereign Lord is able to guide and keep me.';
     const DEFAULTS = {
@@ -6306,13 +6313,15 @@
       if (!Number.isFinite(Number(session.startedAt))) session.startedAt = Date.now();
       session.visited = Array.isArray(session.visited) ? session.visited.map(Number).filter(Number.isInteger) : [0];
       const lastStep = Math.max(0, totalStepCount() - 1);
-      const currentStep = Math.min(lastStep, Math.max(0, Number.isInteger(Number(session.currentStep)) ? Number(session.currentStep) : 0));
+      const savedStep = Number.isInteger(Number(session.currentStep)) ? Number(session.currentStep) : 0;
+      const currentStep = savedStep === LEGACY_SCRIPTURE_STEP ? 2 : Math.min(lastStep, Math.max(0, savedStep));
       session.currentStep = currentStep;
       // Navigation is sequential. If an interrupted sync preserved the current step but
       // only part of the visited array, every earlier step was necessarily reviewed.
       // Repair that recoverable state instead of leaving Enter the Day disabled forever.
       const visited = new Set(session.visited.filter(index => index >= 0 && index <= lastStep));
       for (let index = 0; index <= currentStep; index += 1) visited.add(index);
+      if (visited.has(2)) visited.add(LEGACY_SCRIPTURE_STEP);
       session.visited = [...visited].sort((a, b) => a - b);
       // If an earlier interrupted save advanced into convictions without saving the
       // phase timer, restart the two-minute conviction interval once and persist the
@@ -6333,9 +6342,13 @@
       const key = todayKey();
       const previous = config().sessions[key] ? clone(config().sessions[key]) : undefined;
       const candidate = clone(getSession(key));
-      candidate.currentStep = Math.min(totalStepCount() - 1, Math.max(0, nextStep));
+      const targetStep = nextStep === LEGACY_SCRIPTURE_STEP
+        ? (nextStep > stepIndex && convictionItems().length ? TRUTH_STEP_COUNT : 3)
+        : nextStep;
+      candidate.currentStep = Math.min(totalStepCount() - 1, Math.max(0, targetStep));
       const visited = new Set(Array.isArray(candidate.visited) ? candidate.visited : []);
       visited.add(candidate.currentStep);
+      if (visited.has(2)) visited.add(LEGACY_SCRIPTURE_STEP);
       candidate.visited = [...visited].sort((a, b) => a - b);
       if (candidate.currentStep >= TRUTH_STEP_COUNT && !Number.isFinite(Number(candidate.convictionsStartedAt))) {
         candidate.convictionsStartedAt = Date.now();
@@ -6408,10 +6421,21 @@
       const session = getSession(activeDateKey || todayKey());
       const body = el('truthStepBody');
       body.replaceChildren();
+      function appendScripture(scripture) {
+        if (!scripture) return;
+        const quote = document.createElement('blockquote');
+        quote.className = 'truth-theme-scripture';
+        quote.append(textNode('p', scripture.text));
+        quote.append(textNode('cite', scripture.reference));
+        body.append(quote);
+      }
       const steps = [
         { phase: 'truth', title: 'A plea from a clear moment', render() { body.append(textNode('p', currentConfig.personalPlea, 'truth-lead')); } },
         { phase: 'truth', title: 'Ask the Father for help', render() { body.append(textNode('p', currentConfig.openingPrayer, 'truth-lead')); } },
-        { phase: 'truth', title: 'Hold today’s theme', render() { body.append(textNode('p', theme.body, 'truth-lead')); } },
+        { phase: 'truth', title: 'Hold today’s theme', render() {
+          body.append(textNode('p', theme.body, 'truth-lead'));
+          theme.scriptures.forEach(appendScripture);
+        } },
         {
           phase: 'truth',
           title: 'Remember what remains true',
@@ -6426,12 +6450,8 @@
           phase: 'truth',
           title: 'Receive the Word',
           render() {
-            theme.scriptures.forEach(scripture => {
-              const quote = document.createElement('blockquote');
-              quote.append(textNode('p', scripture.text));
-              quote.append(textNode('cite', scripture.reference));
-              body.append(quote);
-            });
+            // Defensive fallback only; the old index is skipped by navigation.
+            theme.scriptures.forEach(appendScripture);
           }
         }
       ];
@@ -6464,14 +6484,14 @@
         ? 'Now spend a few moments recommitting to the convictions you have held true and will continue to hold true in this day.'
         : 'Before plans, pressure, or productivity, take a few quiet minutes to remember who God is and what Christ has done.';
       const phaseStep = convictionsPhase ? stepIndex - TRUTH_STEP_COUNT + 1 : stepIndex + 1;
-      const phaseCount = convictionsPhase ? convictionItems().length : TRUTH_STEP_COUNT;
+      const phaseCount = convictionsPhase ? convictionItems().length : TRUTH_STEP_COUNT - 1;
       el('truthStepLabel').textContent = convictionsPhase
         ? `Convictions · ${phaseStep} of ${phaseCount}`
         : `${theme.name} · Step ${phaseStep} of ${phaseCount}`;
       el('truthStepTitle').textContent = step.title;
       step.render();
       el('truthPreviousButton').disabled = stepIndex === 0;
-      el('truthContinueButton').hidden = stepIndex === steps.length - 1;
+      el('truthContinueButton').hidden = stepIndex === steps.length - 1 || (!convictionItems().length && stepIndex === 3);
       updateProgress();
     }
 

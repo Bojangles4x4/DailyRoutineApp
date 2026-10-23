@@ -1,6 +1,7 @@
 import Foundation
 
 enum NativeBridgeAction: String, Codable {
+    case updateAppearance = "app.appearance.update"
     case requestHealthAuthorization = "health.authorization.request"
     case requestHealthSummary = "health.summary.request"
     case configureStepRewards = "health.step-rewards.configure"

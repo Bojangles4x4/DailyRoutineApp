@@ -26,7 +26,7 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#truthHeroTitle').textContent(), 'Truth Before Tasks');
   assert.equal(await page.locator('#truthEnterDayButton').isDisabled(), true);
   assert.equal(await page.locator('#accountabilitySharingCard').count(), 1);
-  assert.equal(await page.locator('#appVersion').textContent(), 'v1.43.0 · Build 45');
+  assert.equal(await page.locator('#appVersion').textContent(), 'v1.44.0 · Build 46');
   assert.match(await page.locator('#openAccountabilityFromSetupButton').textContent(), /Open private accountability/);
   assert.equal(await page.locator('#accountabilitySharingSignedOut').evaluate(element => element.hidden), false);
   assert.match(await page.locator('#accountabilitySharingSignedOut').textContent(), /Connect Private Sync first/);
@@ -835,7 +835,7 @@ function localDateKey(date = new Date()) {
   }, today);
   await page.reload({ waitUntil: 'networkidle' });
   assert.equal(await page.evaluate(() => [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action.startsWith('morning.foundation'))?.action), 'morning.foundation.lock');
-  for (let index = 0; index < 5; index += 1) await page.locator('#truthContinueButton').click();
+  for (let index = 0; index < 4; index += 1) await page.locator('#truthContinueButton').click();
   assert.equal(await page.locator('#truthHeroTitle').textContent(), 'Convictions Before Circumstances');
   assert.equal((await page.locator('#pageTitle').textContent()).trim(), 'Daily Routine');
   assert.equal(await page.locator('#pageContext').isHidden(), true);

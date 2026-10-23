@@ -167,6 +167,8 @@ struct WebAppView: UIViewRepresentable {
         configuration.userContentController.addUserScript(bridgeScript)
 
         let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.isOpaque = false
+        webView.backgroundColor = UIColor(RoutineHomeWidgetPalette.background)
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
         webView.scrollView.contentInsetAdjustmentBehavior = .never
@@ -289,6 +291,10 @@ struct WebAppView: UIViewRepresentable {
             }
 
             switch action {
+            case .updateAppearance:
+                guard let value = payload["value"] as? [String: Any],
+                      let theme = value["theme"] as? String else { return }
+                model.updateAppearance(theme: theme)
             case .publishRoutineSnapshot:
                 guard
                     let value = payload["value"],

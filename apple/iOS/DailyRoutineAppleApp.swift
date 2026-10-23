@@ -11,8 +11,8 @@ struct DailyRoutineAppleApp: App {
     }
 }
 
-private struct DailyRoutineRootView: View {
-    let model: AppModel
+struct DailyRoutineRootView: View {
+    @ObservedObject var model: AppModel
     @ObservedObject private var reminders: TruthReminderStore
     @Environment(\.scenePhase) private var scenePhase
 
@@ -23,7 +23,9 @@ private struct DailyRoutineRootView: View {
 
     var body: some View {
         WebAppView(model: model)
-            .ignoresSafeArea(.container, edges: .bottom)
+            .ignoresSafeArea(.container)
+            .background(RoutineHomeWidgetPalette.background.ignoresSafeArea())
+            .preferredColorScheme(model.usesDarkAppearance ? .dark : .light)
             .task {
                 await reminders.appDidBecomeActive()
             }

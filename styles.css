@@ -472,6 +472,9 @@ body.accountability-partner-mode .accountability-shared-routines span,body.accou
 /* Build 44: match the approved Clear Ledger layout, including existing Calm users. */
 body[data-theme="calm"]{--bg:#f5f7f9;--surface:#fff;--surface-solid:#fff;--brand:#2d678f;--brand-2:#2d678f;--brand-soft:#e5f0f7;--ink:#1e3443;--muted:#71818d;--line:#dbe3e8;--radius:14px}
 body[data-theme="calm"]:not(.has-custom-bg){background:var(--bg)}
+
+/* Build 46 — extend the header background around the Island, not its controls. */
+.topbar{padding-top:calc(7px + env(safe-area-inset-top,0px))}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 .topbar h1,.section-heading h2,.setup-overview-heading h2,.task-name,.setup-category-grid b{font-weight:550}
 .eyebrow{font-weight:600}.card{border-color:var(--line);border-radius:14px;box-shadow:0 3px 12px rgba(31,55,70,.035)}

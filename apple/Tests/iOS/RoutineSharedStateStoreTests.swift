@@ -2,6 +2,7 @@ import XCTest
 import SwiftUI
 import WidgetKit
 import UIKit
+import WebKit
 @testable import DailyRoutine
 
 final class RoutineSharedStateStoreTests: XCTestCase {
@@ -731,6 +732,95 @@ final class RoutineSharedStateStoreTests: XCTestCase {
                 window.isHidden = true
             }
         }
+    }
+
+    @MainActor
+    func testTruthReminderClearLedgerRenderings() throws {
+        let reminderStore = TruthReminderStore()
+        reminderStore.settings.reflectionSeconds = 10
+        let entry = TruthReminder(text: "Remember that your worth is not in what you do, but in what Christ did for you.")
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let presentation = TruthReminderPresentation(presentationID: "render-only", entry: entry, blocking: true, slotMinute: 600, queuePosition: 1, queueTotal: 2)
+            let content = TruthReminderReviewView(store: reminderStore, presentation: presentation)
+                .environment(\.colorScheme, style == .dark ? .dark : .light)
+            let host = UIHostingController(rootView: content)
+            host.overrideUserInterfaceStyle = style
+            let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+            let window = UIWindow(windowScene: scene)
+            window.frame = scene.coordinateSpace.bounds
+            window.rootViewController = host
+            window.makeKeyAndVisible()
+            host.view.frame = window.bounds
+            host.view.layoutIfNeeded()
+            RunLoop.main.run(until: Date().addingTimeInterval(0.3))
+            let image = UIGraphicsImageRenderer(size: window.bounds.size).image { _ in
+                host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
+            }
+            let attachment = XCTAttachment(image: image)
+            attachment.name = "build46-truth-reminder-\(style == .dark ? "dark" : "light")"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            window.isHidden = true
+        }
+    }
+
+    @MainActor
+    func testEdgeToEdgeWebViewKeepsHeaderBelowTheIsland() async throws {
+        let savedAppearance = UserDefaults.standard.object(forKey: "routine.native.darkAppearance")
+        defer { UserDefaults.standard.set(savedAppearance, forKey: "routine.native.darkAppearance") }
+        let model = AppModel()
+        model.updateAppearance(theme: "calm")
+        let host = UIHostingController(rootView: DailyRoutineRootView(model: model))
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene)
+        window.frame = scene.coordinateSpace.bounds
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        host.view.frame = window.bounds
+        host.view.layoutIfNeeded()
+        func findWebView(_ view: UIView) -> WKWebView? {
+            if let webView = view as? WKWebView { return webView }
+            return view.subviews.lazy.compactMap(findWebView).first
+        }
+        let webView = try XCTUnwrap(findWebView(host.view))
+        for _ in 0..<150 {
+            if (try? await webView.evaluateJavaScript("Boolean(window.DailyRoutineApp && document.querySelector('.topbar-brand'))")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        try await Task.sleep(for: .milliseconds(200))
+        host.view.layoutIfNeeded()
+        let result = try await webView.evaluateJavaScript("""
+            (() => {
+              const header = document.querySelector('.topbar-brand').getBoundingClientRect();
+              return { top: header.top, padding: parseFloat(getComputedStyle(document.querySelector('.topbar')).paddingTop),
+                width: document.documentElement.scrollWidth, viewport: innerWidth };
+            })()
+            """)
+        let metrics = try XCTUnwrap(result as? [String: Double])
+        XCTAssertEqual(webView.convert(webView.bounds, to: window).minY, 0, accuracy: 1)
+        XCTAssertEqual(webView.bounds.height, window.bounds.height, accuracy: 1)
+        XCTAssertGreaterThanOrEqual(window.safeAreaInsets.top, 40)
+        XCTAssertGreaterThanOrEqual(try XCTUnwrap(metrics["top"]), Double(window.safeAreaInsets.top))
+        XCTAssertLessThanOrEqual(try XCTUnwrap(metrics["width"]), try XCTUnwrap(metrics["viewport"]))
+        XCTAssertEqual(webView.scrollView.contentInsetAdjustmentBehavior, .never)
+        let geometry = XCTAttachment(string: "Window safe area: \(window.safeAreaInsets); web geometry: \(metrics)")
+        geometry.name = "build46-native-safe-area-geometry"
+        geometry.lifetime = .keepAlways
+        add(geometry)
+        let image = UIGraphicsImageRenderer(size: window.bounds.size).image { _ in
+            host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
+        }
+        let attachment = XCTAttachment(image: image)
+        attachment.name = "build46-edge-to-edge-truth-screen"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        model.updateAppearance(theme: "midnight")
+        XCTAssertTrue(model.usesDarkAppearance)
+        model.updateAppearance(theme: "unsupported")
+        XCTAssertTrue(model.usesDarkAppearance)
+        model.updateAppearance(theme: "calm")
+        XCTAssertFalse(model.usesDarkAppearance)
     }
 
     private func makeSnapshot() -> RoutineSharedSnapshot {
