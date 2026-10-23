@@ -26,7 +26,7 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#truthHeroTitle').textContent(), 'Truth Before Tasks');
   assert.equal(await page.locator('#truthEnterDayButton').isDisabled(), true);
   assert.equal(await page.locator('#accountabilitySharingCard').count(), 1);
-  assert.equal(await page.locator('#appVersion').textContent(), 'v1.41.0 · Build 43');
+  assert.equal(await page.locator('#appVersion').textContent(), 'v1.42.0 · Build 44');
   assert.match(await page.locator('#openAccountabilityFromSetupButton').textContent(), /Open private accountability/);
   assert.equal(await page.locator('#accountabilitySharingSignedOut').evaluate(element => element.hidden), false);
   assert.match(await page.locator('#accountabilitySharingSignedOut').textContent(), /Connect Private Sync first/);
@@ -458,6 +458,27 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#todayView .task-row.skipped').count(), 0);
   assert.equal(await page.locator('.day-mode-card').count(), 0);
   assert.equal(await page.locator('.date-nav #dayModeInput').count(), 1);
+  assert.equal((await page.locator('#pageTitle').textContent()).trim(), 'Today');
+  assert.equal(await page.locator('#actualTimeDetails').isHidden(), true);
+  const ledgerLayout = await page.evaluate(() => {
+    const box = selector => document.querySelector(selector).getBoundingClientRect();
+    return {
+      foundationTop: box('.foundation-card').top,
+      foundationMarkBottom: box('.foundation-mark').bottom,
+      foundationCopyTop: box('.foundation-copy').top,
+      morningTop: box('#morningRoutineSection').top,
+      sleepTop: box('.actual-time-card').top,
+      background: getComputedStyle(document.body).backgroundColor
+    };
+  });
+  assert.ok(ledgerLayout.foundationTop < 70, 'Foundation should follow the single compact header');
+  assert.ok(ledgerLayout.foundationMarkBottom <= ledgerLayout.foundationCopyTop, '100% belongs above the full paragraph');
+  assert.ok(ledgerLayout.sleepTop < ledgerLayout.morningTop, 'Compact sleep summary belongs above Morning');
+  assert.ok((await page.locator('.actual-time-card').boundingBox()).height <= 64, 'Collapsed sleep summary should stay compact');
+  assert.equal(ledgerLayout.background, 'rgb(245, 247, 249)');
+  await page.locator('#todayDateMenu summary').click();
+  assert.equal(await page.locator('#datePickerInput').isVisible(), true);
+  await page.locator('#todayDateMenu summary').click();
   assert.equal(await page.locator('.summary-card').count(), 0);
   assert.equal((await page.locator('#morningRoutineSection .check-all').textContent()).trim(), 'All');
   assert.equal(await page.locator('#morningRoutineSection .check-all').getAttribute('aria-label'), 'Complete all unchecked tasks');
@@ -465,6 +486,14 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#memoryTodayPreview').count(), 0);
   assert.equal(await page.locator('#todayView .linked-more-actions').count(), 1);
   assert.equal(await page.locator('#todayView .linked-more-actions .manual-linked-button').count(), 1);
+  const bibleRow = page.locator('#todayView .compact-bible-row');
+  assert.ok((await bibleRow.boundingBox()).height <= 110, 'Bible reading should use the compact approved layout');
+  assert.equal(await bibleRow.getByRole('progressbar', { name: 'Bible reading progress' }).count(), 1);
+  assert.ok((await bibleRow.locator('.open-linked-button').boundingBox()).height >= 44);
+  await bibleRow.locator('.linked-more-actions summary').click();
+  assert.equal(await bibleRow.locator('.manual-linked-button').isVisible(), true);
+  assert.equal(await bibleRow.locator('.sync-linked-button').isVisible(), true);
+  await bibleRow.locator('.linked-more-actions summary').click();
   const medicationRow = page.locator('#todayView .medication-row').first();
   assert.equal(await medicationRow.isVisible(), true);
   assert.doesNotMatch(await medicationRow.textContent(), /optional/i);
@@ -889,6 +918,8 @@ function localDateKey(date = new Date()) {
   await page.evaluate(() => {
     window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'health.summary', value: { date: new Date().toISOString(), stepCount: 0, sleepHours: 0, workoutCount: 0 } } }));
   });
+  assert.equal(await page.locator('#actualTimeDetails').isHidden(), true);
+  await page.locator('#toggleActualTimeButton').click();
   assert.equal(await page.locator('#healthSleepSuggestion').isVisible(), true);
   assert.equal((await page.locator('#healthSleepSuggestionTitle').textContent()).trim(), 'No sleep record found yet');
   assert.match(await page.locator('#healthSleepSuggestionText').textContent(), /wearable finishes syncing|enter either time manually/);
@@ -902,6 +933,11 @@ function localDateKey(date = new Date()) {
   await page.evaluate(({ start, end }) => {
     window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'health.summary', value: { date: new Date().toISOString(), stepCount: 0, sleepHours: 7.8, workoutCount: 0, sleepStart: start, sleepEnd: end } } }));
   }, { start: sleepStart.toISOString(), end: sleepEnd.toISOString() });
+  await page.locator('#toggleActualTimeButton').click();
+  assert.equal(await page.locator('#healthSleepSuggestion').isHidden(), true);
+  assert.equal((await page.locator('#toggleActualTimeButton').textContent()).trim(), 'Review');
+  assert.ok((await page.locator('.actual-time-card').boundingBox()).height <= 64, 'Pending Health review must also stay compact');
+  await page.locator('#toggleActualTimeButton').click();
   await page.locator('#applyHealthSleepButton').click();
   assert.equal(await page.locator('#healthSleepDialog').isVisible(), true);
   assert.equal(await page.locator('#healthBedDateInput').inputValue(), localDateKey(sleepStart));
@@ -918,6 +954,8 @@ function localDateKey(date = new Date()) {
   assert.doesNotMatch(await page.locator('.actual-time-card .micro-copy').textContent(), /medication/i);
 
   // A second review preserves existing times unless the person explicitly chooses replacement.
+  assert.equal(await page.locator('#actualTimeDetails').isHidden(), true);
+  await page.locator('#toggleActualTimeButton').click();
   await page.locator('#applyHealthSleepButton').click();
   assert.equal(await page.locator('#confirmHealthBedInput').isChecked(), false);
   assert.equal(await page.locator('#confirmHealthWakeInput').isChecked(), false);
@@ -927,6 +965,7 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#healthSleepDialog').isVisible(), false);
 
   // Actual sleep fields remain separate from Now at phone widths, including 12-hour text.
+  assert.equal(await page.locator('#actualTimeDetails').isVisible(), true);
   for (const width of [320, 390, 440]) {
     await page.setViewportSize({ width, height: 844 });
     const timeRows = await page.locator('.actual-time-field').evaluateAll(rows => rows.map(row => {

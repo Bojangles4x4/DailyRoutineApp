@@ -2,7 +2,13 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.41.0 development features
+## Version 1.42.0 development features
+
+- Approved finishing polish adds the blue header mark, lighter Morning check-ins, a compact Bible-reading row, and matching accessible expand controls for sleep, medication reminders, and routine sections.
+
+- Truth Before Tasks and Convictions use the shared theme palette for meditation text, Scripture panels, conviction cards, progress, and editing screens.
+
+- Build 44 corrects the Clear Ledger implementation to match the approved screen design: blue-gray Calm palette, one Today/date header, full-width Foundation text with 100% in its heading, compact expandable sleep review and entry above Morning. Task targets, medication controls, date navigation, Health review, and existing themes remain available.
 
 - Build 43 introduces the Clear Ledger visual system across Today, Notes, Progress, Setup, and Earned Access; redesigns the large Home Screen widget around private status, a suggested task, a real Water +1 action, and View all tasks; and gives Apple Watch a focused suggested task, Health step freshness, medication reminders, Water +1, and an All Tasks view without Capture or Earned Access details.
 - Build 42 makes the active app-access gate explicit, adds a private daily earned-minute ledger, shows Truth Reminder queue and next-schedule status, and provides a locally generated diagnostic summary that excludes app identities, reminder content, routine details, Health measurements, and account data.

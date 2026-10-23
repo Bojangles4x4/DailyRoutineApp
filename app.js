@@ -10,8 +10,8 @@
   const DAY_BOUNDARY_DEVICE_KEY = 'dailyRoutine.dayBoundary.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.41.0';
-  const APP_BUILD = 43;
+  const APP_VERSION = '1.42.0';
+  const APP_BUILD = 44;
   const PRIVATE_SYNC_COMPONENT_MESSAGE = 'This build is missing a required sync component. No routine data on this device or in the cloud was changed. Update the app to continue.';
   const PRIVATE_SYNC_LEGACY_RECOVERY_MESSAGE = 'The previous build could not sync. Your local data is preserved—review and sync now.';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
@@ -1102,6 +1102,9 @@
     });
     document.querySelectorAll('.view').forEach(node => node.classList.remove('active'));
     $(`${view}View`).classList.add('active');
+    document.body.dataset.view = view;
+    $('todayDateMenu').open = false;
+    els.pageTitle.textContent = accountabilityPartnerOnlyMode ? 'Accountability' : (view === 'today' ? 'Today' : 'Daily Routine');
     els.pageContext.hidden = false;
     els.pageContext.textContent = contexts[view] || 'Today';
     if (view === 'setup') activeSetupCategory = '';
@@ -2506,6 +2509,11 @@
     const matchesDay = suggestion && [dateKey(suggestion.start), dateKey(suggestion.end)].includes(dateKey(selectedDate));
     const todaySelected = isSameDay(selectedDate, startOfToday());
     const connected = Boolean(healthDeviceSettings().connected);
+    const day = state.days[dateKey(selectedDate)] || {};
+    const recorded = Boolean(day.actualWakeTime || day.actualBedTime);
+    els.toggleActualTimeButton.textContent = actualTimesExpanded ? 'Done' : recorded || matchesDay ? 'Review' : 'Enter';
+    els.toggleActualTimeButton.setAttribute('aria-label', actualTimesExpanded ? 'Collapse sleep times' : 'Review or enter sleep times');
+    if (!recorded) els.actualTimeSummary.textContent = matchesDay ? 'Health times ready' : 'Not recorded';
     els.healthSleepSuggestion.hidden = !(suggestion && matchesDay) && !(todaySelected && connected);
     if (!suggestion || !matchesDay) {
       if (!todaySelected || !connected) return;
@@ -2575,6 +2583,7 @@
     });
     saveState();
     $('healthSleepDialog').close();
+    actualTimesExpanded = false;
     renderToday(); renderHistory();
     showToast('Confirmed times saved to their calendar dates.');
   }
@@ -3361,13 +3370,12 @@
     els.heroDate.textContent = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric' }).format(selectedDate);
     els.actualWakeInput.value = day.actualWakeTime || '';
     els.actualBedInput.value = day.actualBedTime || '';
-    const sleepTimesComplete = Boolean(day.actualWakeTime && day.actualBedTime);
     els.actualTimeSummary.textContent = day.actualWakeTime || day.actualBedTime
       ? [day.actualWakeTime ? `Woke ${formatTime(day.actualWakeTime)}` : '', day.actualBedTime ? `Bed ${formatTime(day.actualBedTime)}` : ''].filter(Boolean).join(' · ')
       : 'Not recorded';
-    els.actualTimeDetails.hidden = sleepTimesComplete && !actualTimesExpanded;
-    els.toggleActualTimeButton.hidden = !sleepTimesComplete;
-    els.toggleActualTimeButton.textContent = actualTimesExpanded ? 'Done' : 'Edit';
+    els.actualTimeDetails.hidden = !actualTimesExpanded;
+    els.toggleActualTimeButton.hidden = false;
+    els.toggleActualTimeButton.setAttribute('aria-expanded', String(actualTimesExpanded));
     els.dayModeInput.value = day.mode || 'normal';
     els.datePickerInput.value = dateKey(selectedDate);
     renderWeekFocusBanner();
@@ -3399,7 +3407,7 @@
       const checkboxItems = routineItems.filter(item => item.type === 'checkbox' && !entryIsLogged(item, day.entries?.[item.id]));
       wrapper.className = `routine-section${isCollapsed ? ' collapsed' : ''}`;
       wrapper.dataset.routineSection = section;
-      wrapper.innerHTML = `<div class="card"><div class="section-heading routine-heading"><h2>${escapeHtml(title)}</h2><div class="section-tools"><span class="section-progress">${logged}/${required.length}</span>${checkboxItems.length ? '<button class="tiny-action check-all section-all-action" type="button" aria-label="Complete all unchecked tasks" title="Complete all unchecked tasks">All</button>' : ''}<button class="tiny-action collapse-section icon-action" type="button" aria-label="${isCollapsed ? 'Show' : 'Hide'} ${escapeHtml(title)}" title="${isCollapsed ? 'Show' : 'Hide'}">${isCollapsed ? '⌄' : '⌃'}</button></div></div><div class="section-body"><div class="task-list routine-task-list"></div><div class="checkin-slot"></div></div></div>`;
+      wrapper.innerHTML = `<div class="card"><div class="section-heading routine-heading"><h2>${escapeHtml(title)}</h2><div class="section-tools"><span class="section-progress">${logged}/${required.length}</span>${checkboxItems.length ? '<button class="tiny-action check-all section-all-action" type="button" aria-label="Complete all unchecked tasks" title="Complete all unchecked tasks">All</button>' : ''}<button class="tiny-action collapse-section icon-action" type="button" aria-expanded="${!isCollapsed}" aria-label="${isCollapsed ? 'Show' : 'Hide'} ${escapeHtml(title)}" title="${isCollapsed ? 'Show' : 'Hide'}">${isCollapsed ? '⌄' : '⌃'}</button></div></div><div class="section-body"><div class="task-list routine-task-list"></div><div class="checkin-slot"></div></div></div>`;
       const routineList = wrapper.querySelector('.routine-task-list');
       const checkinSlot = wrapper.querySelector('.checkin-slot');
       if (!routineItems.length) routineList.innerHTML = '<div class="empty-state compact-empty">No routine items scheduled.</div>';
@@ -4593,6 +4601,7 @@
     button.addEventListener('click', () => {
       const open = button.getAttribute('aria-expanded') === 'true';
       button.setAttribute('aria-expanded', String(!open));
+      button.setAttribute('aria-label', open ? 'Show medication reminder' : 'Hide medication reminder');
       panel.hidden = open;
       button.querySelector('span').textContent = open ? '⌄' : '⌃';
     });
@@ -4928,7 +4937,17 @@
     const detail = metaForItem(item, { showRequirement: false, showFrequency: false });
     row.classList.toggle('done', progress.completed);
     const meta = [detail, next].filter(Boolean).join(' · ');
+    row.classList.toggle('compact-bible-row', item.linkedTemplate === 'bible');
     row.innerHTML = `<div class="linked-main"><span class="linked-icon" aria-hidden="true">${templateIcon}</span><span class="task-name">${escapeHtml(item.name)}${meta ? `<span class="task-meta">${escapeHtml(meta)}</span>` : ''}</span>${timing.status ? `<span class="due-pill ${timing.status}">${escapeHtml(timing.shortLabel)}</span>` : ''}</div><div class="linked-progress"><div class="linked-progress-copy"><strong>${escapeHtml(progress.label)}</strong><span>${progress.completed ? 'Complete' : item.linkedTemplate === 'bible' ? 'Reading progress' : 'Action status'}</span></div><div class="linked-progress-track"><span style="width:${Math.min(100, Math.round(progress.current / Math.max(1, progress.total) * 100))}%"></span></div></div><div class="linked-actions compact-linked-actions"><button class="primary-button open-linked-button" type="button">${escapeHtml(item.linkedButtonLabel || (item.linkedTemplate === 'bible' ? 'Continue reading' : 'Open'))}</button><details class="linked-more-actions"><summary aria-label="More actions" title="More actions">•••</summary><div><button class="secondary-button manual-linked-button" type="button">${progress.completed ? 'Mark incomplete' : 'Mark complete'}</button>${item.linkedTemplate === 'bible' ? '<button class="small-button sync-linked-button" type="button">Sync</button>' : ''}</div></details></div>`;
+    if (item.linkedTemplate === 'bible') {
+      row.querySelector('.linked-icon').remove();
+      row.querySelector('.linked-main').appendChild(row.querySelector('.linked-progress-copy'));
+      row.querySelector('.linked-progress-track').setAttribute('role', 'progressbar');
+      row.querySelector('.linked-progress-track').setAttribute('aria-label', 'Bible reading progress');
+      row.querySelector('.linked-progress-track').setAttribute('aria-valuemin', '0');
+      row.querySelector('.linked-progress-track').setAttribute('aria-valuemax', String(progress.total));
+      row.querySelector('.linked-progress-track').setAttribute('aria-valuenow', String(progress.current));
+    }
     row.querySelector('.open-linked-button').addEventListener('click', () => openLinkedAction(item));
     row.querySelector('.manual-linked-button').addEventListener('click', () => saveEntry(item, progress.completed ? { completed: false, progress: 0, total: progress.total, source: 'manual' } : { completed: true, progress: progress.total, completedCount: progress.total, total: progress.total, completedAt: new Date().toISOString(), source: 'manual' }));
     row.querySelector('.sync-linked-button')?.addEventListener('click', () => { syncLinkedIntegrations(true); renderAll(); });
@@ -6341,6 +6360,9 @@
       const session = getSession(activeDateKey);
       stepIndex = Math.min(totalStepCount() - 1, Math.max(0, Number(session.currentStep) || 0));
       document.body.classList.add('truth-locked');
+      document.body.dataset.view = 'truth';
+      el('pageTitle').textContent = 'Daily Routine';
+      el('todayDateMenu').open = false;
       document.querySelectorAll('.nav-button').forEach(button => {
         button.classList.remove('active');
         button.removeAttribute('aria-current');

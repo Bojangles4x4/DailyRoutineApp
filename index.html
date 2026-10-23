@@ -11,17 +11,28 @@
   <link rel="stylesheet" href="styles.css" />
   <title>Daily Routine</title>
 </head>
-<body data-theme="calm">
+<body data-theme="calm" data-view="today">
   <div class="background-overlay" aria-hidden="true"></div>
   <div class="app-shell">
     <header class="topbar">
       <div class="topbar-brand">
-        <span class="topbar-mark" aria-hidden="true">☀</span>
+        <span class="topbar-mark" aria-hidden="true">✓</span>
         <div>
-          <h1 id="pageTitle">Daily Routine</h1>
+          <h1 id="pageTitle">Today</h1>
           <p id="pageContext">Today</p>
         </div>
       </div>
+      <details id="todayDateMenu" class="today-date-menu">
+        <summary><span id="heroDate">Today</span><span aria-hidden="true">⌄</span></summary>
+        <div class="date-nav date-nav-v15" aria-label="Choose date">
+          <button id="prevDay" class="ghost-button" type="button" aria-label="Previous day">‹</button>
+          <button id="selectedDateButton" class="date-button" type="button" aria-label="Return to today"></button>
+          <select id="dayModeInput" aria-label="How this day should count"><option value="normal">Normal day</option><option value="sick">Sick day</option><option value="travel">Travel day</option><option value="vacation">Vacation</option><option value="rest">Planned rest</option></select>
+          <button id="undoButton" class="ghost-button undo-button" type="button" disabled aria-label="Undo last change" title="Undo">↶</button>
+          <label class="calendar-button" aria-label="Jump to a date">📅<input id="datePickerInput" type="date" /></label>
+          <button id="nextDay" class="ghost-button" type="button" aria-label="Next day">›</button>
+        </div>
+      </details>
       <button class="icon-button" id="installButton" type="button" hidden aria-label="Install app">＋</button>
     </header>
 
@@ -54,7 +65,6 @@
         <section class="hero-card">
           <div class="hero-copy">
             <p class="hero-kicker" id="heroGreeting">Good morning</p>
-            <h2 id="heroDate">Today</h2>
             <p class="week-focus-banner" id="weekFocusBanner" hidden></p>
           </div>
           <div class="progress-ring" id="progressRing" aria-label="0 percent complete"><span id="progressPercent">0%</span></div>
@@ -62,10 +72,9 @@
 
         <section class="card foundation-card" aria-label="Today's foundation">
           <div>
-            <p class="eyebrow">Today’s foundation</p>
+            <div class="foundation-heading"><p class="eyebrow">Today’s foundation</p><span class="foundation-mark" aria-label="Foundation complete">100%</span></div>
             <p class="foundation-copy">Remember that your worth is not in what you do, but in what Christ did for you. Because of Him, you can do these tasks not to earn merit but to live out a life merited by grace. For it is from His fullness you have received grace upon grace.</p>
           </div>
-          <div class="foundation-mark" aria-label="Foundation complete">100%</div>
         </section>
 
         <section id="backupReminder" class="card backup-reminder" hidden>
@@ -73,27 +82,18 @@
           <button id="openBackupButton" class="small-button" type="button">Back up now</button>
         </section>
 
-        <div class="date-nav date-nav-v15" aria-label="Choose date">
-          <button id="prevDay" class="ghost-button" type="button" aria-label="Previous day">‹</button>
-          <button id="selectedDateButton" class="date-button" type="button" aria-label="Return to today"></button>
-          <select id="dayModeInput" aria-label="How this day should count"><option value="normal">Normal day</option><option value="sick">Sick day</option><option value="travel">Travel day</option><option value="vacation">Vacation</option><option value="rest">Planned rest</option></select>
-          <button id="undoButton" class="ghost-button undo-button" type="button" disabled aria-label="Undo last change" title="Undo">↶</button>
-          <label class="calendar-button" aria-label="Jump to a date">📅<input id="datePickerInput" type="date" /></label>
-          <button id="nextDay" class="ghost-button" type="button" aria-label="Next day">›</button>
-        </div>
-
         <section class="card actual-time-card">
-          <div class="section-heading actual-time-heading"><div><p class="eyebrow">Timing</p><h2>Actual sleep times</h2></div><div class="actual-time-summary"><span id="actualTimeSummary">Not recorded</span><button id="toggleActualTimeButton" class="small-button" type="button">Enter times</button></div></div>
+          <div class="section-heading actual-time-heading"><h2>Sleep times</h2><div class="actual-time-summary"><span id="actualTimeSummary">Not recorded</span><button id="toggleActualTimeButton" class="small-button" type="button" aria-expanded="false" aria-controls="actualTimeDetails">Enter</button></div></div>
           <div id="actualTimeDetails" class="actual-time-details">
             <div class="actual-time-grid compact-time-grid">
               <div class="actual-time-field compact-time-field"><label for="actualWakeInput">Woke up</label><div><input id="actualWakeInput" type="time" /><button id="wakeNowButton" class="small-button" type="button">Now</button></div></div>
               <div class="actual-time-field compact-time-field"><label for="actualBedInput">Went to bed</label><div><input id="actualBedInput" type="time" /><button id="bedNowButton" class="small-button" type="button">Now</button></div></div>
             </div>
             <p class="muted micro-copy">Last night’s bedtime belongs to yesterday; this morning’s wake time belongs here. Enter either when Health has no recording.</p>
-          </div>
-          <div id="healthSleepSuggestion" class="health-sleep-suggestion" hidden>
-            <div><strong id="healthSleepSuggestionTitle">Apple Health suggestion</strong><span id="healthSleepSuggestionText"></span></div>
-            <button id="applyHealthSleepButton" class="small-button" type="button">Review times</button>
+            <div id="healthSleepSuggestion" class="health-sleep-suggestion" hidden>
+              <div><strong id="healthSleepSuggestionTitle">Apple Health suggestion</strong><span id="healthSleepSuggestionText"></span></div>
+              <button id="applyHealthSleepButton" class="small-button" type="button">Review times</button>
+            </div>
           </div>
         </section>
 
@@ -448,7 +448,7 @@
         </section>
 
         <section class="card iphone-widget-card" id="iphoneWidgetCard" data-setup-category="health" hidden>
-          <div class="section-heading"><div><p class="eyebrow">Home Screen</p><h2>Today’s Rhythm widget</h2></div><span class="native-badge">Build 43</span></div>
+          <div class="section-heading"><div><p class="eyebrow">Home Screen</p><h2>Today’s Rhythm widget</h2></div><span class="native-badge">Build 44</span></div>
           <p class="muted setup-help">See Truth Before Tasks, today’s progress, and your private earned-time balance. The large widget also offers a suggested routine, Water +1, and a direct path to every task.</p>
           <div class="widget-size-options" aria-label="Available iPhone widget sizes">
             <div><span class="widget-size-shape large" aria-hidden="true"></span><strong>Large</strong><small>Status, suggested focus, Water +1, and all tasks</small></div>
@@ -456,7 +456,7 @@
             <div><span class="widget-size-shape small" aria-hidden="true"></span><strong>Small</strong><small>Foundation and progress at a glance</small></div>
           </div>
           <details class="widget-install-guide">
-            <summary>How to add it after installing Build 43</summary>
+            <summary>How to add it after installing Build 44</summary>
             <ol>
               <li>Touch and hold an empty area of your iPhone Home Screen.</li>
               <li>Tap <b>Edit</b>, then <b>Add Widget</b>.</li>
@@ -702,7 +702,7 @@
             <a href="privacy.html">Privacy Policy</a>
             <a href="support.html">Support</a>
           </div>
-          <p class="app-version">Daily Routine <b id="appVersion">v1.41.0 · Build 43</b></p>
+          <p class="app-version">Daily Routine <b id="appVersion">v1.42.0 · Build 44</b></p>
         </section>
 
 
@@ -918,6 +918,6 @@
   <script src="sync-core.js" defer></script>
   <script src="sync-cloud.js" defer></script>
   <script src="data-health.js" defer></script>
-  <script src="app.js?v=1.41.0-build43-clear-ledger" defer></script>
+  <script src="app.js?v=1.42.0-build44-clear-ledger-correction" defer></script>
 </body>
 </html>
