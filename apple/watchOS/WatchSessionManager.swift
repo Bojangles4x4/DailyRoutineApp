@@ -46,11 +46,20 @@ final class WatchSessionManager: NSObject, ObservableObject {
             items: truthComplete ? [
                 WatchRoutineItem(id: "morning-prayer", name: "Prayer", section: "morning", completed: true, action: .toggleRoutine),
                 WatchRoutineItem(id: "morning-teeth", name: "Brush teeth", section: "morning", completed: false, action: .toggleRoutine),
-                WatchRoutineItem(id: "morning-meds", name: "Take morning medicine", section: "morning", completed: false, action: .takeMedication),
+                WatchRoutineItem(
+                    id: "morning-meds",
+                    name: "Take morning medicine",
+                    section: "morning",
+                    completed: false,
+                    action: .takeMedication,
+                    medicationList: ["Medication A · 1 tablet", "Vitamin D · 1 capsule"]
+                ),
                 WatchRoutineItem(id: "day-movement", name: "Movement / exercise", section: "day", completed: false, action: .toggleRoutine),
                 WatchRoutineItem(id: "evening-prepare", name: "Prepare for tomorrow", section: "evening", completed: false, action: .toggleRoutine)
             ] : [],
-            customAction: WatchCustomAction(title: "Water +1", action: .addWater, itemId: nil, value: 1)
+            customAction: WatchCustomAction(title: "Water +1", action: .addWater, itemId: nil, value: 1),
+            stepCount: 4_850,
+            healthUpdatedAt: ISO8601DateFormatter().string(from: Date())
         )
     }
 #endif

@@ -1,9 +1,10 @@
 import SwiftUI
+import WatchKit
 
 struct WatchContentView: View {
     @ObservedObject var session: WatchSessionManager
-    @State private var isCapturing = false
     @State private var pendingMedicationItem: WatchRoutineItem?
+    @State private var showAllTasks = false
 
     private var progress: Double {
         guard let context = session.context, context.total > 0 else { return 0 }
@@ -25,8 +26,12 @@ struct WatchContentView: View {
         return formatter.string(from: Date())
     }
 
-    private var routineItems: [WatchRoutineItem] {
-        session.context?.items ?? []
+    private var routineItems: [WatchRoutineItem] { session.context?.items ?? [] }
+    private var suggestedItem: WatchRoutineItem? { routineItems.first { !$0.completed } }
+
+    private var healthUpdatedDate: Date? {
+        guard let value = session.context?.healthUpdatedAt else { return nil }
+        return ISO8601DateFormatter().date(from: value)
     }
 
     private var customAction: WatchCustomAction {
@@ -47,51 +52,40 @@ struct WatchContentView: View {
             )
             .ignoresSafeArea()
 
-            VStack(spacing: 4) {
+            VStack(spacing: 6) {
                 summaryHeader
 
                 if truthBeforeTasksComplete {
-                    routineList
+                    if showAllTasks { routineList } else { suggestedFocus }
                     actionBar
                 } else {
                     truthLockCard
                     Spacer(minLength: 0)
                 }
             }
-            .padding(.horizontal, 6)
+            .padding(.horizontal, 7)
             .padding(.top, 8)
-            .padding(.bottom, 4)
+            .padding(.bottom, 3)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            // watchOS owns the clock and does not expose a public way for apps
-            // to hide it. Use the open leading side for the summary and end
-            // the progress bar before the clock instead of underneath it.
             .ignoresSafeArea(.container, edges: [.top, .bottom])
-        }
-        .sheet(isPresented: $isCapturing) {
-            WatchCaptureView { text, noteType in
-                session.send(WatchEvent(action: .captureNote, text: text, noteType: noteType))
-            }
         }
         .alert(item: $pendingMedicationItem) { item in
             Alert(
                 title: Text("Check medication time"),
                 message: Text(medicationConfirmationMessage(item)),
                 primaryButton: .cancel(),
-                secondaryButton: .default(Text("Log now")) {
-                    sendRoutineAction(item)
-                }
+                secondaryButton: .default(Text("Log now")) { sendRoutineAction(item) }
             )
         }
     }
 
     private var summaryHeader: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 5) {
             HStack(alignment: .center, spacing: 4) {
                 Image(systemName: "sun.max.fill")
                     .font(.caption2)
                     .foregroundStyle(.yellow)
-                Text("Today")
-                    .font(.system(size: 11, weight: .bold))
+                Text("Today").font(.system(size: 11, weight: .bold))
                 Text("\(Int((progress * 100).rounded()))%")
                     .font(.system(size: 14, weight: .bold, design: .rounded))
                     .foregroundStyle(.mint)
@@ -104,44 +98,123 @@ struct WatchContentView: View {
                     .accessibilityLabel(session.isReachable ? "Live" : "Will sync")
                 Spacer(minLength: 42)
             }
-            .padding(.leading, 8)
+            .padding(.leading, 7)
+
             GeometryReader { proxy in
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color.teal.opacity(0.4))
-                    Capsule()
-                        .fill(Color.mint)
-                        .frame(width: proxy.size.width * progress)
+                    Capsule().fill(Color.mint).frame(width: proxy.size.width * progress)
                 }
             }
             .frame(height: 4)
-            .padding(.leading, 2)
             .padding(.trailing, 48)
             .accessibilityLabel("Routine progress")
             .accessibilityValue("\(session.context?.completed ?? 0) of \(session.context?.total ?? 0) complete")
         }
     }
 
+    private var suggestedFocus: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 7) {
+                HStack {
+                    Text("SUGGESTED FOCUS")
+                        .font(.system(size: 8, weight: .bold))
+                        .tracking(0.8)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    stepsSummary
+                }
+
+                if let item = suggestedItem {
+                    VStack(alignment: .leading, spacing: 7) {
+                        Text(item.name)
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .lineLimit(2)
+                        Text(sectionTitle(item.section))
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundStyle(.secondary)
+
+                        if item.action == .takeMedication, let medications = item.medicationList, !medications.isEmpty {
+                            VStack(alignment: .leading, spacing: 3) {
+                                ForEach(Array(medications.prefix(3)), id: \.self) { medication in
+                                    Label(medication, systemImage: "pills.fill")
+                                        .font(.system(size: 9, weight: .medium))
+                                        .lineLimit(1)
+                                }
+                            }
+                            .padding(7)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        }
+
+                        Button { performRoutineAction(item) } label: {
+                            Label("Mark complete", systemImage: "checkmark.circle.fill")
+                                .font(.system(size: 11, weight: .bold))
+                                .frame(maxWidth: .infinity, minHeight: 42)
+                                .background(Color.mint.opacity(0.9), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .foregroundStyle(.black)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("suggestedRoutineAction")
+                    }
+                    .padding(11)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.white.opacity(0.10), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                } else {
+                    Label("All Watch-ready tasks complete", systemImage: "checkmark.circle.fill")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.mint)
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                }
+
+                if let status = session.deliveryStatus {
+                    Text(status).font(.system(size: 8)).foregroundStyle(.secondary)
+                }
+            }
+        }
+        .scrollIndicators(.hidden)
+        .frame(maxHeight: .infinity)
+    }
+
+    @ViewBuilder
+    private var stepsSummary: some View {
+        if let steps = session.context?.stepCount {
+            VStack(alignment: .trailing, spacing: 0) {
+                Text("\(steps.formatted()) steps").font(.system(size: 9, weight: .bold))
+                if let updated = healthUpdatedDate {
+                    Text(updated.formatted(date: .omitted, time: .shortened))
+                        .font(.system(size: 7, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(steps) steps, last updated \(healthUpdatedDate?.formatted(date: .omitted, time: .shortened) ?? "recently")")
+        }
+    }
+
     private var routineList: some View {
         ScrollView {
-            LazyVStack(spacing: 5) {
+            LazyVStack(spacing: 6) {
+                HStack {
+                    Text("ALL TASKS")
+                        .font(.system(size: 8, weight: .bold))
+                        .tracking(0.8)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    stepsSummary
+                }
                 if routineItems.isEmpty {
                     Text("No Watch-ready routines today")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity)
                         .padding(.vertical, 18)
                 } else {
-                    ForEach(routineItems) { item in
-                        routineButton(item)
-                    }
+                    ForEach(routineItems) { item in routineButton(item) }
                 }
-
                 if let deliveryStatus = session.deliveryStatus {
-                    Text(deliveryStatus)
-                        .font(.system(size: 9))
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 5)
+                    Text(deliveryStatus).font(.system(size: 8)).foregroundStyle(.secondary)
                 }
             }
         }
@@ -151,25 +224,20 @@ struct WatchContentView: View {
     }
 
     private func routineButton(_ item: WatchRoutineItem) -> some View {
-        Button {
-            performRoutineAction(item)
-        } label: {
+        Button { performRoutineAction(item) } label: {
             HStack(spacing: 9) {
                 Image(systemName: item.completed ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(item.completed ? Color.mint : Color.secondary)
                     .font(.system(size: 17, weight: .semibold))
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(item.name)
-                        .font(.system(size: 12, weight: .semibold))
-                        .lineLimit(1)
-                }
+                Text(item.name)
+                    .font(.system(size: 12, weight: .semibold))
+                    .lineLimit(1)
                 Spacer(minLength: 2)
                 Text(sectionTitle(item.section))
                     .font(.system(size: 8, weight: .medium))
                     .foregroundStyle(.secondary)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(minHeight: 38)
+            .frame(maxWidth: .infinity, minHeight: 42, alignment: .leading)
             .padding(.horizontal, 9)
             .background(.white.opacity(item.completed ? 0.06 : 0.1), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
         }
@@ -180,24 +248,16 @@ struct WatchContentView: View {
     }
 
     private var actionBar: some View {
-        HStack(spacing: 5) {
-            compactAction(
-                title: customAction.title,
-                systemImage: customActionIcon,
-                color: .cyan,
-                identifier: "customWatchAction"
-            ) {
+        HStack(spacing: 6) {
+            compactAction(title: customAction.title, systemImage: customActionIcon, color: .cyan, identifier: "customWatchAction") {
                 performCustomAction()
             }
-
             compactAction(
-                title: "Capture",
-                systemImage: "mic.fill",
+                title: showAllTasks ? "Focus" : "All tasks",
+                systemImage: showAllTasks ? "scope" : "list.bullet",
                 color: .mint,
-                identifier: "captureWatchNote"
-            ) {
-                isCapturing = true
-            }
+                identifier: "toggleWatchTaskView"
+            ) { showAllTasks.toggle() }
         }
     }
 
@@ -208,21 +268,15 @@ struct WatchContentView: View {
         identifier: String,
         action: @escaping () -> Void
     ) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: systemImage)
-            Text(title)
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .font(.system(size: 10, weight: .bold))
                 .lineLimit(1)
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity, minHeight: 40)
+                .background(color.opacity(0.88), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
         }
-        .font(.system(size: 9, weight: .bold))
-        .foregroundStyle(.white)
-        .frame(maxWidth: .infinity)
-        .frame(height: 26)
-        .background(color.opacity(0.88), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .onTapGesture(perform: action)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(title)
-        .accessibilityAddTraits(.isButton)
+        .buttonStyle(.plain)
         .accessibilityIdentifier(identifier)
     }
 
@@ -236,15 +290,14 @@ struct WatchContentView: View {
     }
 
     private func performCustomAction() {
-        if
-            customAction.action == .takeMedication,
-            let itemId = customAction.itemId,
-            let item = routineItems.first(where: { $0.id == itemId })
-        {
+        if customAction.action == .takeMedication,
+           let itemId = customAction.itemId,
+           let item = routineItems.first(where: { $0.id == itemId }) {
             performRoutineAction(item)
             return
         }
         session.send(WatchEvent(action: customAction.action, value: customAction.value, itemId: customAction.itemId))
+        WKInterfaceDevice.current().play(.success)
     }
 
     private func performRoutineAction(_ item: WatchRoutineItem) {
@@ -257,6 +310,7 @@ struct WatchContentView: View {
 
     private func sendRoutineAction(_ item: WatchRoutineItem) {
         session.send(WatchEvent(action: item.action, itemId: item.id))
+        WKInterfaceDevice.current().play(.click)
     }
 
     private func medicationPeriodDoesNotMatch(_ item: WatchRoutineItem) -> Bool {
@@ -274,8 +328,7 @@ struct WatchContentView: View {
             Image(systemName: "lock.shield.fill")
                 .font(.title2)
                 .foregroundStyle(.yellow)
-                .accessibilityHidden(true)
-            Text("Complete Morning Foundation on iPhone")
+            Text("Review Truth Before Tasks on iPhone")
                 .font(.headline)
                 .multilineTextAlignment(.center)
             Text("Your routine list and actions will unlock automatically.")
@@ -295,54 +348,6 @@ struct WatchContentView: View {
         case "morning": "Morning"
         case "evening": "Evening"
         default: "Day"
-        }
-    }
-}
-
-private struct WatchCaptureView: View {
-    enum CaptureType: String, CaseIterable, Identifiable {
-        case general
-        case prayer
-        case action
-
-        var id: String { rawValue }
-
-        var title: String {
-            switch self {
-            case .general: "Note"
-            case .prayer: "Prayer"
-            case .action: "Action item"
-            }
-        }
-    }
-
-    @Environment(\.dismiss) private var dismiss
-    @State private var text = ""
-    @State private var type = CaptureType.general
-    let onSave: (String, String) -> Void
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Picker("Save as", selection: $type) {
-                    ForEach(CaptureType.allCases) { type in
-                        Text(type.title).tag(type)
-                    }
-                }
-
-                TextField("Speak or type…", text: $text, axis: .vertical)
-                    .lineLimit(2...4)
-                    .accessibilityIdentifier("watchCaptureText")
-
-                Button("Save \(type.title)") {
-                    let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-                    onSave(trimmed, type.rawValue)
-                    dismiss()
-                }
-                .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                .accessibilityIdentifier("saveWatchCapture")
-            }
-            .navigationTitle("Capture")
         }
     }
 }

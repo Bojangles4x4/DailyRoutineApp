@@ -63,6 +63,23 @@ struct WatchRoutineItem: Codable, Identifiable, Sendable, Hashable {
     let section: String
     let completed: Bool
     let action: WatchQuickAction
+    let medicationList: [String]?
+
+    init(
+        id: String,
+        name: String,
+        section: String,
+        completed: Bool,
+        action: WatchQuickAction,
+        medicationList: [String]? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.section = section
+        self.completed = completed
+        self.action = action
+        self.medicationList = medicationList
+    }
 }
 
 struct WatchCustomAction: Codable, Sendable, Hashable {
@@ -117,6 +134,8 @@ struct WatchRoutineContext: Codable, Sendable {
     let lastActionMessage: String?
     let items: [WatchRoutineItem]?
     let customAction: WatchCustomAction?
+    let stepCount: Int?
+    let healthUpdatedAt: String?
 
     init(
         dateKey: String,
@@ -128,7 +147,9 @@ struct WatchRoutineContext: Codable, Sendable {
         truthBeforeTasksComplete: Bool? = nil,
         lastActionMessage: String?,
         items: [WatchRoutineItem]? = nil,
-        customAction: WatchCustomAction? = nil
+        customAction: WatchCustomAction? = nil,
+        stepCount: Int? = nil,
+        healthUpdatedAt: String? = nil
     ) {
         self.dateKey = dateKey
         self.timeZoneIdentifier = timeZoneIdentifier
@@ -140,5 +161,7 @@ struct WatchRoutineContext: Codable, Sendable {
         self.lastActionMessage = lastActionMessage
         self.items = items
         self.customAction = customAction
+        self.stepCount = stepCount
+        self.healthUpdatedAt = healthUpdatedAt
     }
 }

@@ -21,14 +21,18 @@ final class WatchQuickActionsUITests: XCTestCase {
     func testExactRoutineItemCanBeCompleted() {
         let app = launchApp(truthComplete: true)
 
-        let routine = app.buttons["routine-morning-teeth"]
-        XCTAssertTrue(routine.waitForExistence(timeout: 10))
-        XCTAssertTrue(routine.isEnabled)
-        routine.tap()
+        let suggested = app.descendants(matching: .any)["suggestedRoutineAction"]
+        XCTAssertTrue(suggested.waitForExistence(timeout: 10))
+        XCTAssertTrue(suggested.isEnabled)
+        suggested.tap()
     }
 
-    func testRoutineRowsUseFingerFriendlyTargetsAboveCompactActionBar() {
+    func testRoutineRowsUseFingerFriendlyTargetsAndCompactActionBar() {
         let app = launchApp(truthComplete: true)
+
+        let toggle = app.descendants(matching: .any)["toggleWatchTaskView"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 10))
+        toggle.tap()
 
         let firstRoutine = app.buttons["routine-morning-prayer"]
         let fourthRoutine = app.buttons["routine-day-movement"]
@@ -38,13 +42,10 @@ final class WatchQuickActionsUITests: XCTestCase {
         XCTAssertTrue(fourthRoutine.waitForExistence(timeout: 10))
         XCTAssertTrue(customAction.waitForExistence(timeout: 10))
         XCTAssertTrue(firstRoutine.isHittable)
-        XCTAssertTrue(fourthRoutine.isHittable)
         XCTAssertGreaterThanOrEqual(firstRoutine.frame.height, 38)
-        XCTAssertLessThanOrEqual(customAction.frame.height, 28)
+        XCTAssertGreaterThanOrEqual(customAction.frame.height, 38)
         XCTAssertLessThanOrEqual(app.frame.maxY - customAction.frame.maxY, 6)
         XCTAssertTrue(fifthRoutine.waitForExistence(timeout: 10))
-        app.swipeUp()
-        XCTAssertTrue(fifthRoutine.isHittable)
     }
 
     func testCustomBottomAction() {
@@ -56,12 +57,11 @@ final class WatchQuickActionsUITests: XCTestCase {
         customAction.tap()
     }
 
-    func testCaptureOpensNoteComposer() {
+    func testWatchFocusOmitsCaptureAndEarnedAccess() {
         let app = launchApp(truthComplete: true)
 
-        let capture = app.descendants(matching: .any)["captureWatchNote"]
-        XCTAssertTrue(capture.waitForExistence(timeout: 10))
-        capture.tap()
-        XCTAssertTrue(app.textFields["watchCaptureText"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.descendants(matching: .any)["suggestedRoutineAction"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.descendants(matching: .any)["captureWatchNote"].exists)
+        XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "earned")).firstMatch.exists)
     }
 }

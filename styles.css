@@ -411,3 +411,60 @@ body.accountability-partner-mode .accountability-shared-routines span,body.accou
 #medicationListInput{display:block;width:100%;min-height:98px;resize:vertical}
 @media(max-width:390px){#todayView .medication-row>.medication-main,#todayView .medication-row:not(.done)>.medication-main{grid-template-columns:minmax(0,1fr) 40px 32px;gap:6px}.medication-inline-confirm{padding-inline:6px;gap:4px}.medication-inline-confirm .med-time-edit{gap:4px}.medication-confirm-actions{gap:3px}.medication-confirm-actions button{padding-inline:5px;min-width:50px}.medication-confirm-actions .medication-confirm{min-width:64px}}
 .truth-theme-card-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}.truth-theme-card-heading h4{margin:0}.truth-theme-next-badge{flex:0 0 auto}.earned-access-reliability-disclosure #runEarnedAccessChecksButton{margin-top:12px}
+
+/* Build 43 — Clear Ledger across Today, Notes, Progress, Setup, and Earned Access */
+:root{--ledger-rule:color-mix(in srgb,var(--brand) 14%,var(--line));--ledger-wash:color-mix(in srgb,var(--brand-soft) 24%,var(--surface-solid))}
+.topbar{min-height:51px;padding:max(7px,env(safe-area-inset-top)) 13px 6px;border-bottom-color:var(--ledger-rule)}
+.topbar-brand{gap:8px}.topbar-mark{width:24px;height:24px;border-radius:8px;font-size:12px}.topbar h1{font-size:14px}.topbar #pageContext{margin-top:1px;font-size:8px}
+.main-content{padding-top:8px}.card{box-shadow:0 3px 12px rgba(29,71,61,.035)}
+
+#todayView .hero-card{min-height:68px;padding:10px 13px;border-radius:16px;background:linear-gradient(145deg,color-mix(in srgb,var(--brand-soft) 36%,var(--surface-solid)),var(--surface-solid))}
+#todayView .hero-card::after{width:88px;height:88px;right:-38px;top:-47px;opacity:.55}
+#todayView .hero-copy h2{font-size:16px}.hero-kicker{font-size:9px}
+#todayView .progress-ring{width:46px;height:46px;flex-basis:46px}.progress-ring span{font-size:12px}
+#todayView .foundation-card{position:relative;grid-template-columns:minmax(0,1fr) 48px;gap:12px;margin:8px 0;padding:14px 14px 13px;border-radius:16px;background:var(--surface-solid)}
+#todayView .foundation-card::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;border-radius:16px 0 0 16px;background:var(--brand)}
+#todayView .foundation-copy{margin-top:5px;font-size:12px;line-height:1.58}
+#todayView .foundation-mark{width:45px;height:45px;border:1px solid color-mix(in srgb,var(--brand) 28%,var(--line));background:var(--brand-soft);color:var(--brand);font-size:11px}
+#todayView .routine-section>.card{padding:12px 13px}.routine-section .section-heading{margin-bottom:8px}.routine-section .section-heading h2{font-size:15px}
+#todayView .routine-task-list .task-row{min-height:48px}.task-main{min-height:44px}.check-control,.medication-complete{min-width:30px;min-height:30px}
+#todayView .water-task-row{padding-block:5px}.water-stepper .number-step{min-width:44px;min-height:44px}
+
+#notesView>.card{border-radius:16px;background:var(--surface-solid)}
+#notesView .notes-intro-card{background:var(--surface-solid);border-top:4px solid var(--brand)}
+#notesView .notes-intro-card .setup-help{font-size:11px;line-height:1.5}
+#notesView .notes-stats{border-top:1px solid var(--ledger-rule);padding-top:10px}
+#notesView .notes-stats div{padding:8px 5px;background:transparent;border-radius:0;border-left:1px solid var(--ledger-rule)}
+#notesView .notes-stats div:first-child{border-left:0}
+#notesView .notes-filter-card{position:sticky;top:52px;z-index:8;padding:10px!important;background:color-mix(in srgb,var(--bg) 92%,var(--surface-solid));backdrop-filter:blur(14px)}
+#notesView .note-card{border-width:0 0 1px;border-radius:0;padding:13px 4px;background:transparent}
+#notesView .note-card:last-child{border-bottom:0}.note-card>p{font-size:13px}.note-card h3{font-size:12px}
+
+#historyView.active{display:flex;flex-direction:column}
+#historyView.active>*{order:3}#historyView.active>section:nth-child(2){order:1}#historyView.active>.progress-overview-card{order:2}
+#historyView .card{border-radius:16px;background:var(--surface-solid)}
+#historyView>section:nth-child(2){border-top:4px solid var(--brand)}
+#historyView .progress-overview-card{background:var(--ledger-wash)}
+#historyView .progress-stats-grid div{background:transparent;border-left:1px solid var(--ledger-rule);border-radius:0}
+#historyView .progress-stats-grid div:first-child{border-left:0}
+#historyView .week-track{width:18px;background:var(--ledger-wash)}
+#historyView .habit-columns h3{font-size:11px;color:var(--muted)}
+
+#setupView .setup-overview{gap:10px}.setup-overview-heading h2{font-size:18px}.setup-overview-intro{font-size:11px}
+#setupView .setup-category-grid{grid-template-columns:minmax(0,1fr);gap:0;overflow:hidden;border:1px solid var(--ledger-rule);border-radius:17px;background:var(--surface-solid)}
+#setupView .setup-category-grid>button,#setupView .setup-category-grid>button:last-child{grid-column:auto;grid-template-columns:36px minmax(0,1fr) auto;grid-template-rows:auto;min-height:62px;padding:10px 12px;border:0;border-top:1px solid var(--ledger-rule);border-radius:0;background:transparent;box-shadow:none;align-items:center}
+#setupView .setup-category-grid>button:first-child{border-top:0}.setup-category-grid b{font-size:13px}.setup-category-grid small{font-size:10px;line-height:1.35}
+#setupView .setup-category-icon{width:34px;height:34px;border-radius:10px}
+#setupView .card{border-radius:16px}
+
+#earnedAccessCard{gap:10px!important;background:var(--surface-solid)}
+#earnedAccessCard .earned-access-gate{border-left:4px solid var(--brand);border-radius:13px;background:var(--ledger-wash)}
+#earnedAccessCard .earned-access-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+#earnedAccessCard .earned-access-metrics>div:first-child{display:none}
+#earnedAccessCard .earned-access-metrics>div{padding:9px;background:transparent;border-bottom:1px solid var(--ledger-rule);border-radius:0;text-align:left}
+#earnedAccessCard .earned-access-bank{border:0;border-left:4px solid var(--brand);border-radius:13px;background:var(--ledger-wash)}
+#earnedAccessCard .earned-access-bank strong{font-size:15px}.earned-access-ledger{background:transparent}.earned-access-ledger summary{min-height:44px}
+#earnedAccessCard .earned-access-truth-status{background:transparent}.earned-access-rule-heading{margin-top:2px}
+
+@media(max-width:430px){#todayView .foundation-card{grid-template-columns:minmax(0,1fr) 45px}#notesView .notes-filter-card{top:51px}#historyView .progress-stats-grid span{font-size:8px}#setupView .setup-category-grid small{white-space:normal}}
+@media(max-width:350px){#todayView .foundation-card{grid-template-columns:minmax(0,1fr)}#todayView .foundation-mark{display:grid;position:absolute;right:12px;top:12px;width:39px;height:39px}#todayView .foundation-card .eyebrow{padding-right:46px}}

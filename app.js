@@ -10,8 +10,8 @@
   const DAY_BOUNDARY_DEVICE_KEY = 'dailyRoutine.dayBoundary.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.40.0';
-  const APP_BUILD = 42;
+  const APP_VERSION = '1.41.0';
+  const APP_BUILD = 43;
   const PRIVATE_SYNC_COMPONENT_MESSAGE = 'This build is missing a required sync component. No routine data on this device or in the cloud was changed. Update the app to continue.';
   const PRIVATE_SYNC_LEGACY_RECOVERY_MESSAGE = 'The previous build could not sync. Your local data is preserved—review and sync now.';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
@@ -2641,6 +2641,19 @@
     const nextItem = foundationComplete
       ? eligibleItems.find(item => !item.completed) || null
       : null;
+    const today = startOfToday();
+    const day = state.days[context.dateKey] || { entries: {}, skippedItems: {} };
+    const water = scheduledItemsForDate(today).find(item => (
+      item.kind === 'routine'
+        && item.type === 'number'
+        && (item.id === 'day-water' || /water/i.test(item.name))
+    ));
+    const waterTarget = water && Number.isFinite(Number(water.target))
+      ? Math.min(100, Math.max(1, Math.round(Number(water.target))))
+      : null;
+    const waterCurrent = waterTarget === null
+      ? null
+      : Math.min(waterTarget, Math.max(0, Math.round(Number(day.entries?.[water.id]) || 0)));
     return {
       schemaVersion: 1,
       revision: sharedStateRevision(),
@@ -2652,6 +2665,9 @@
       total: Math.max(0, Number(context.total) || 0),
       earnedAccessRemainingMinutes: earnedAccess.remainingMinutes,
       earnedAccessDailyLimitMinutes: earnedAccess.dailyLimitMinutes,
+      waterItemID: water?.id || null,
+      waterCurrent,
+      waterTarget,
       nextItem,
       eligibleItems,
       updatedAt: new Date().toISOString()
@@ -2703,7 +2719,8 @@
     };
     const today = dateKey(startOfToday());
     if (Number(command.schemaVersion) !== 1) return finish('rejected', 'Unsupported command schema.');
-    if (String(command.actionID || '') !== 'routine.checkbox.set') return finish('rejected', 'Unsupported routine action.');
+    const actionID = String(command.actionID || '');
+    if (!['routine.checkbox.set', 'routine.water.add'].includes(actionID)) return finish('rejected', 'Unsupported routine action.');
     if (String(command.localDateKey || '') !== today) return finish('rejected', 'The command belongs to a different local day.');
     if (String(command.timeZoneIdentifier || '') !== sharedStateTimeZone()) return finish('rejected', 'The time zone changed before the action ran.');
     if (command.expectedRevision === null || command.expectedRevision === undefined
@@ -2719,6 +2736,23 @@
 
     const targetID = String(command.targetID || '');
     const day = ensureDay(today);
+    if (actionID === 'routine.water.add') {
+      if (String(command.payload?.delta || '') !== '1') return finish('rejected', 'Water can only be added one serving at a time.');
+      const water = scheduledItemsForDate(startOfToday()).find(candidate => (
+        candidate.id === targetID
+          && candidate.kind === 'routine'
+          && candidate.type === 'number'
+          && (candidate.id === 'day-water' || /water/i.test(candidate.name))
+      ));
+      if (!water) return finish('rejected', 'Today’s water item is unavailable.');
+      const target = Math.min(100, Math.max(1, Math.round(Number(water.target) || 1)));
+      const current = Math.min(target, Math.max(0, Math.round(Number(day.entries?.[water.id]) || 0)));
+      if (current >= target) return finish('applied', `Water is already at ${target} of ${target}.`);
+      day.entries[water.id] = current + 1;
+      saveState();
+      renderAll();
+      return finish('applied', `Water is now ${current + 1} of ${target}.`);
+    }
     const item = scheduledItemsForDate(startOfToday()).find(candidate => (
       candidate.id === targetID
         && candidate.kind === 'routine'
@@ -2798,9 +2832,14 @@
         name: item.name,
         section: item.section,
         completed: entryMeetsTarget(item, day.entries?.[item.id], day),
-        action: item.type === 'medication' ? 'takeMedication' : 'toggleRoutine'
+        action: item.type === 'medication' ? 'takeMedication' : 'toggleRoutine',
+        medicationList: item.type === 'medication' ? medicationReminderLines(item) : null
       })),
-      customAction: watchCustomAction(today, day)
+      customAction: watchCustomAction(today, day),
+      stepCount: Math.max(0, Math.round(Number(latestHealthSummary?.stepCount) || 0)),
+      healthUpdatedAt: latestHealthSummary?.date
+        ? new Date(latestHealthSummary.date).toISOString()
+        : null
     };
   }
 

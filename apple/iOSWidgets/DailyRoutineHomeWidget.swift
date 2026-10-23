@@ -25,6 +25,9 @@ struct RoutineHomeEntry: TimelineEntry {
             total: 10,
             earnedAccessRemainingMinutes: 25,
             earnedAccessDailyLimitMinutes: 60,
+            waterItemID: "day-water",
+            waterCurrent: 4,
+            waterTarget: 6,
             nextItem: RoutineSharedItemSnapshot(
                 id: "preview-next",
                 title: "Morning walk",
@@ -87,7 +90,7 @@ struct DailyRoutineHomeWidget: Widget {
             RoutineHomeWidgetView(entry: entry)
                 .containerBackground(for: .widget) {
                     LinearGradient(
-                        colors: [Color(red: 0.055, green: 0.075, blue: 0.13), Color(red: 0.06, green: 0.16, blue: 0.18)],
+                        colors: [Color(red: 0.94, green: 0.96, blue: 0.94), Color(red: 0.86, green: 0.92, blue: 0.89)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -154,15 +157,18 @@ struct RoutineHomeWidgetView: View {
     }
 
     private func largeView(_ snapshot: RoutineSharedSnapshot) -> some View {
-        VStack(alignment: .leading, spacing: 11) {
+        VStack(alignment: .leading, spacing: 10) {
             header(snapshot, compact: false)
 
             ProgressView(value: progress(snapshot))
-                .tint(.mint)
-
-            foundationStatus(snapshot)
+                .tint(Color(red: 0.10, green: 0.39, blue: 0.33))
 
             HStack(spacing: 8) {
+                metricTile(
+                    title: "Truth Before Tasks",
+                    value: snapshot.foundationComplete ? "Reviewed" : "Review first",
+                    highlighted: snapshot.foundationComplete
+                )
                 metricTile(
                     title: "Earned apps",
                     value: earnedAccessSummary(snapshot),
@@ -170,46 +176,59 @@ struct RoutineHomeWidgetView: View {
                 )
                 .privacySensitive()
                 metricTile(
-                    title: "Remaining",
-                    value: "\(max(0, snapshot.total - snapshot.completed)) routines"
-                )
-                metricTile(
-                    title: "Available",
-                    value: "\(snapshot.eligibleItems.filter { !$0.completed }.count) actions"
+                    title: "Today",
+                    value: "\(snapshot.completed) of \(snapshot.total)"
                 )
             }
 
             if snapshot.foundationComplete {
-                let items = Array(snapshot.eligibleItems.filter { !$0.completed }.prefix(3))
-                if items.isEmpty {
-                    completedView
-                } else {
-                    VStack(spacing: 8) {
-                        ForEach(items, id: \.id) { item in
-                            taskButton(item, snapshot: snapshot, compact: false)
-                        }
+                if let item = firstIncompleteItem(snapshot) {
+                    VStack(alignment: .leading, spacing: 7) {
+                        Text("SUGGESTED FOCUS")
+                            .font(.caption2.weight(.bold))
+                            .tracking(0.8)
+                            .foregroundStyle(.secondary)
+                        taskButton(item, snapshot: snapshot, compact: false)
                     }
+                } else {
+                    completedView
                 }
             } else {
                 lockedFoundationView
             }
 
             Spacer(minLength: 0)
-            HStack {
-                if let updated = updatedDate(snapshot) {
-                    Text("Updated \(updated.formatted(date: .omitted, time: .shortened))")
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(.secondary)
-                }
-                Spacer(minLength: 8)
-                Link(destination: Self.appURL) {
-                    HStack(spacing: 4) {
-                        Text("Open routine")
-                        Image(systemName: "chevron.right")
+            HStack(spacing: 8) {
+                if let waterItemID = snapshot.waterItemID,
+                   let current = snapshot.waterCurrent,
+                   let target = snapshot.waterTarget,
+                   snapshot.foundationComplete {
+                    Button(intent: AddWaterIntent(
+                        targetID: waterItemID,
+                        expectedRevision: snapshot.revision,
+                        localDateKey: snapshot.localDateKey,
+                        timeZoneIdentifier: snapshot.timeZoneIdentifier
+                    )) {
+                        Label("Water +1 · \(current)/\(target)", systemImage: "drop.fill")
+                            .font(.caption.weight(.bold))
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .background(.white.opacity(0.64), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
                     }
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .buttonStyle(.plain)
+                    .privacySensitive()
                 }
+                Link(destination: Self.appURL) {
+                    Label("View all tasks", systemImage: "list.bullet")
+                        .font(.caption.weight(.bold))
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .background(.white.opacity(0.64), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                }
+            }
+            if let updated = updatedDate(snapshot) {
+                Text("Updated \(updated.formatted(date: .omitted, time: .shortened)) · unused minutes expire at midnight")
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
         }
     }
@@ -218,7 +237,7 @@ struct RoutineHomeWidgetView: View {
         HStack(spacing: 8) {
             Image(systemName: "sun.max.fill")
                 .foregroundStyle(.yellow)
-            Text(compact ? "TODAY" : "TODAY’S RHYTHM")
+            Text(compact ? "TODAY" : "DAILY RHYTHMS")
                 .font(compact ? .caption.weight(.bold) : .subheadline.weight(.bold))
                 .tracking(compact ? 0.8 : 0.4)
             Spacer(minLength: 0)
@@ -227,7 +246,7 @@ struct RoutineHomeWidgetView: View {
                     ? "\(Int((progress(snapshot) * 100).rounded()))% · \(snapshot.completed)/\(snapshot.total)"
                     : "\(Int((progress(snapshot) * 100).rounded()))%")
                     .font(.system(.headline, design: .rounded, weight: .bold))
-                    .foregroundStyle(.mint)
+                    .foregroundStyle(Color(red: 0.10, green: 0.39, blue: 0.33))
             }
         }
     }
@@ -264,7 +283,7 @@ struct RoutineHomeWidgetView: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 9)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+        .background(.white.opacity(0.62), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
     }
 
     private func earnedAccessSummary(_ snapshot: RoutineSharedSnapshot) -> String {
@@ -313,7 +332,7 @@ struct RoutineHomeWidgetView: View {
             }
             .padding(.horizontal, 12)
             .frame(maxWidth: .infinity, minHeight: compact ? 68 : 48, alignment: .leading)
-            .background(.white.opacity(0.09), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(.white.opacity(0.68), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .contentShape(Rectangle())
             .privacySensitive()
         }

@@ -57,6 +57,62 @@ final class RoutineSharedStateStoreTests: XCTestCase {
         XCTAssertNil(snapshot.convictionsEnabled)
         XCTAssertNil(snapshot.earnedAccessRemainingMinutes)
         XCTAssertNil(snapshot.earnedAccessDailyLimitMinutes)
+        XCTAssertNil(snapshot.waterItemID)
+        XCTAssertNil(snapshot.waterCurrent)
+        XCTAssertNil(snapshot.waterTarget)
+    }
+
+    func testWaterSnapshotAndCommandRequireOneValidatedServing() throws {
+        let snapshot = RoutineSharedSnapshot(
+            schemaVersion: 1,
+            revision: 8,
+            localDateKey: "2026-09-14",
+            timeZoneIdentifier: "America/Chicago",
+            foundationComplete: true,
+            convictionsEnabled: true,
+            completed: 4,
+            total: 10,
+            earnedAccessRemainingMinutes: 25,
+            earnedAccessDailyLimitMinutes: 60,
+            waterItemID: "day-water",
+            waterCurrent: 4,
+            waterTarget: 6,
+            nextItem: nil,
+            eligibleItems: [],
+            updatedAt: "2026-09-14T12:00:00Z"
+        )
+        XCTAssertTrue(snapshot.isValid)
+        XCTAssertNoThrow(try store.save(snapshot: snapshot))
+
+        let valid = RoutineSharedCommand(
+            schemaVersion: 1,
+            id: "add-water",
+            actionID: RoutineSharedActionID.addWater,
+            origin: "widget",
+            createdAt: "2026-09-14T12:00:00Z",
+            localDateKey: "2026-09-14",
+            timeZoneIdentifier: "America/Chicago",
+            targetID: "day-water",
+            expectedRevision: 8,
+            requiresFoundationComplete: true,
+            payload: ["delta": "1"]
+        )
+        XCTAssertNoThrow(try store.enqueue(valid))
+
+        let invalid = RoutineSharedCommand(
+            schemaVersion: 1,
+            id: "add-too-much-water",
+            actionID: RoutineSharedActionID.addWater,
+            origin: "widget",
+            createdAt: "2026-09-14T12:00:00Z",
+            localDateKey: "2026-09-14",
+            timeZoneIdentifier: "America/Chicago",
+            targetID: "day-water",
+            expectedRevision: 8,
+            requiresFoundationComplete: true,
+            payload: ["delta": "2"]
+        )
+        XCTAssertThrowsError(try store.enqueue(invalid))
     }
 
     func testIncompleteOrExcessiveWidgetBalanceIsRejected() throws {

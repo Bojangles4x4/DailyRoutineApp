@@ -2,6 +2,7 @@ import Foundation
 
 enum RoutineSharedActionID {
     static let setCheckboxCompletion = "routine.checkbox.set"
+    static let addWater = "routine.water.add"
 }
 
 struct RoutineSharedItemSnapshot: Codable, Equatable, Sendable {
@@ -25,9 +26,48 @@ struct RoutineSharedSnapshot: Codable, Equatable, Sendable {
     let total: Int
     let earnedAccessRemainingMinutes: Int?
     let earnedAccessDailyLimitMinutes: Int?
+    let waterItemID: String?
+    let waterCurrent: Int?
+    let waterTarget: Int?
     let nextItem: RoutineSharedItemSnapshot?
     let eligibleItems: [RoutineSharedItemSnapshot]
     let updatedAt: String
+
+    init(
+        schemaVersion: Int,
+        revision: Int,
+        localDateKey: String,
+        timeZoneIdentifier: String,
+        foundationComplete: Bool,
+        convictionsEnabled: Bool?,
+        completed: Int,
+        total: Int,
+        earnedAccessRemainingMinutes: Int?,
+        earnedAccessDailyLimitMinutes: Int?,
+        waterItemID: String? = nil,
+        waterCurrent: Int? = nil,
+        waterTarget: Int? = nil,
+        nextItem: RoutineSharedItemSnapshot?,
+        eligibleItems: [RoutineSharedItemSnapshot],
+        updatedAt: String
+    ) {
+        self.schemaVersion = schemaVersion
+        self.revision = revision
+        self.localDateKey = localDateKey
+        self.timeZoneIdentifier = timeZoneIdentifier
+        self.foundationComplete = foundationComplete
+        self.convictionsEnabled = convictionsEnabled
+        self.completed = completed
+        self.total = total
+        self.earnedAccessRemainingMinutes = earnedAccessRemainingMinutes
+        self.earnedAccessDailyLimitMinutes = earnedAccessDailyLimitMinutes
+        self.waterItemID = waterItemID
+        self.waterCurrent = waterCurrent
+        self.waterTarget = waterTarget
+        self.nextItem = nextItem
+        self.eligibleItems = eligibleItems
+        self.updatedAt = updatedAt
+    }
 
     var isValid: Bool {
         schemaVersion == Self.currentSchemaVersion
@@ -39,6 +79,11 @@ struct RoutineSharedSnapshot: Codable, Equatable, Sendable {
             && Self.isValidEarnedAccessBalance(
                 remaining: earnedAccessRemainingMinutes,
                 dailyLimit: earnedAccessDailyLimitMinutes
+            )
+            && Self.isValidWater(
+                itemID: waterItemID,
+                current: waterCurrent,
+                target: waterTarget
             )
             && RoutineSharedDate.parse(updatedAt) != nil
             && eligibleItems.count <= 24
@@ -72,6 +117,16 @@ struct RoutineSharedSnapshot: Codable, Equatable, Sendable {
             && (1...120).contains(dailyLimit)
             && remaining <= dailyLimit
     }
+
+    private static func isValidWater(itemID: String?, current: Int?, target: Int?) -> Bool {
+        guard itemID != nil || current != nil || target != nil else { return true }
+        guard let itemID, let current, let target else { return false }
+        return !itemID.isEmpty
+            && itemID.count <= 160
+            && (0...100).contains(current)
+            && (1...100).contains(target)
+            && current <= target
+    }
 }
 
 enum RoutineSharedCommandStatus: String, Codable, Sendable {
@@ -99,15 +154,21 @@ struct RoutineSharedCommand: Codable, Equatable, Identifiable, Sendable {
     var validationMessage: String? {
         guard schemaVersion == Self.currentSchemaVersion else { return "Unsupported command schema." }
         guard !id.isEmpty, id.count <= 160 else { return "Invalid command ID." }
-        guard actionID == RoutineSharedActionID.setCheckboxCompletion else { return "Unsupported action." }
+        guard [RoutineSharedActionID.setCheckboxCompletion, RoutineSharedActionID.addWater].contains(actionID) else {
+            return "Unsupported action."
+        }
         guard ["widget", "app-intent", "shortcut", "watch", "web", "test"].contains(origin) else { return "Unsupported command origin." }
         guard RoutineSharedDate.parse(createdAt) != nil else { return "Invalid creation date." }
         guard RoutineSharedSnapshot.isValidDateKey(localDateKey) else { return "Invalid local date." }
         guard !timeZoneIdentifier.isEmpty, timeZoneIdentifier.count <= 100 else { return "Invalid time zone." }
         guard let targetID, !targetID.isEmpty, targetID.count <= 160 else { return "A target is required." }
         guard let expectedRevision, expectedRevision >= 0 else { return "An expected state revision is required." }
-        guard requiresFoundationComplete else { return "Checkbox actions must require the Morning Foundation." }
-        guard ["true", "false"].contains(payload["completed"]) else { return "A completed value is required." }
+        guard requiresFoundationComplete else { return "Routine actions must require the Morning Foundation." }
+        if actionID == RoutineSharedActionID.setCheckboxCompletion {
+            guard ["true", "false"].contains(payload["completed"]) else { return "A completed value is required." }
+        } else {
+            guard payload["delta"] == "1" else { return "Water actions must add one serving." }
+        }
         return nil
     }
 }

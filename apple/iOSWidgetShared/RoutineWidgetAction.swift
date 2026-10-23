@@ -53,3 +53,43 @@ struct CompleteRoutineItemIntent: AppIntent {
         return .result()
     }
 }
+
+struct AddWaterIntent: AppIntent {
+    static var title: LocalizedStringResource = "Add Water"
+    static var description = IntentDescription("Adds one serving to today’s Daily Routine water goal.")
+    static var openAppWhenRun = true
+    static var isDiscoverable = false
+
+    @Parameter(title: "Water Item") var targetID: String
+    @Parameter(title: "State Revision") var expectedRevision: Int
+    @Parameter(title: "Local Date") var localDateKey: String
+    @Parameter(title: "Time Zone") var timeZoneIdentifier: String
+
+    init() {}
+
+    init(targetID: String, expectedRevision: Int, localDateKey: String, timeZoneIdentifier: String) {
+        self.targetID = targetID
+        self.expectedRevision = expectedRevision
+        self.localDateKey = localDateKey
+        self.timeZoneIdentifier = timeZoneIdentifier
+    }
+
+    func perform() async throws -> some IntentResult {
+        let command = RoutineSharedCommand(
+            schemaVersion: RoutineSharedCommand.currentSchemaVersion,
+            id: UUID().uuidString,
+            actionID: RoutineSharedActionID.addWater,
+            origin: "widget",
+            createdAt: ISO8601DateFormatter.bridge.string(from: Date()),
+            localDateKey: localDateKey,
+            timeZoneIdentifier: timeZoneIdentifier,
+            targetID: targetID,
+            expectedRevision: expectedRevision,
+            requiresFoundationComplete: true,
+            payload: ["delta": "1"]
+        )
+        _ = try RoutineSharedStateStore().enqueue(command)
+        WidgetCenter.shared.reloadTimelines(ofKind: RoutineHomeWidgetConstants.kind)
+        return .result()
+    }
+}
