@@ -2,7 +2,9 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.44.0 development features
+## Version 1.45.0 development features
+
+- Build 47 keeps Today’s title and date below the iPhone status bar while retaining the edge-to-edge background, and keeps the phone-sized note editor clear of both the Dynamic Island and Home indicator. Automated native coverage now audits Truth Before Tasks, Today, Notes, Progress, Setup, and the note editor across the full safe area.
 
 - Build 46 groups each theme’s saved Scripture passages directly below its body and skips the redundant Scripture-only page. Existing conviction indexes, reflection timers, theme assignments, and completion history are preserved. The iPhone background extends around the Dynamic Island while header controls respect its safe area, and native Truth Reminder review/settings/editing screens use the Clear Ledger blue-gray palette.
 

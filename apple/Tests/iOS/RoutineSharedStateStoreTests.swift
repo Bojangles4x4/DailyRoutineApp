@@ -757,7 +757,7 @@ final class RoutineSharedStateStoreTests: XCTestCase {
                 host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
             }
             let attachment = XCTAttachment(image: image)
-            attachment.name = "build46-truth-reminder-\(style == .dark ? "dark" : "light")"
+            attachment.name = "build47-truth-reminder-\(style == .dark ? "dark" : "light")"
             attachment.lifetime = .keepAlways
             add(attachment)
             window.isHidden = true
@@ -788,33 +788,84 @@ final class RoutineSharedStateStoreTests: XCTestCase {
             if (try? await webView.evaluateJavaScript("Boolean(window.DailyRoutineApp && document.querySelector('.topbar-brand'))")) as? Bool == true { break }
             try await Task.sleep(for: .milliseconds(100))
         }
-        try await Task.sleep(for: .milliseconds(200))
-        host.view.layoutIfNeeded()
-        let result = try await webView.evaluateJavaScript("""
-            (() => {
-              const header = document.querySelector('.topbar-brand').getBoundingClientRect();
-              return { top: header.top, padding: parseFloat(getComputedStyle(document.querySelector('.topbar')).paddingTop),
-                width: document.documentElement.scrollWidth, viewport: innerWidth };
-            })()
-            """)
-        let metrics = try XCTUnwrap(result as? [String: Double])
         XCTAssertEqual(webView.convert(webView.bounds, to: window).minY, 0, accuracy: 1)
         XCTAssertEqual(webView.bounds.height, window.bounds.height, accuracy: 1)
         XCTAssertGreaterThanOrEqual(window.safeAreaInsets.top, 40)
-        XCTAssertGreaterThanOrEqual(try XCTUnwrap(metrics["top"]), Double(window.safeAreaInsets.top))
-        XCTAssertLessThanOrEqual(try XCTUnwrap(metrics["width"]), try XCTUnwrap(metrics["viewport"]))
         XCTAssertEqual(webView.scrollView.contentInsetAdjustmentBehavior, .never)
-        let geometry = XCTAttachment(string: "Window safe area: \(window.safeAreaInsets); web geometry: \(metrics)")
-        geometry.name = "build46-native-safe-area-geometry"
-        geometry.lifetime = .keepAlways
-        add(geometry)
-        let image = UIGraphicsImageRenderer(size: window.bounds.size).image { _ in
+
+        let screens = [
+            (key: "truth", dataView: "today", viewID: "truthView", title: "Daily Routine", locked: true),
+            (key: "today", dataView: "today", viewID: "todayView", title: "Today", locked: false),
+            (key: "notes", dataView: "notes", viewID: "notesView", title: "Notes", locked: false),
+            (key: "progress", dataView: "history", viewID: "historyView", title: "Progress", locked: false),
+            (key: "setup", dataView: "setup", viewID: "setupView", title: "Setup", locked: false)
+        ]
+        for screen in screens {
+            try await webView.evaluateJavaScript("""
+                document.body.dataset.view = '\(screen.dataView)';
+                document.body.classList.toggle('truth-locked', \(screen.locked));
+                document.getElementById('pageTitle').textContent = '\(screen.title)';
+                document.getElementById('heroDate').textContent = 'Wednesday, October 28';
+                document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+                document.getElementById('\(screen.viewID)').classList.add('active');
+                """)
+            try await Task.sleep(for: .milliseconds(100))
+            host.view.layoutIfNeeded()
+            let result = try await webView.evaluateJavaScript("""
+                (() => {
+                  const header = document.querySelector('.topbar-brand').getBoundingClientRect();
+                  const title = document.getElementById('pageTitle').getBoundingClientRect();
+                  const date = document.querySelector('#todayDateMenu > summary').getBoundingClientRect();
+                  return { top: header.top, padding: parseFloat(getComputedStyle(document.querySelector('.topbar')).paddingTop),
+                    titleTop: title.top, dateTop: date.top,
+                    width: document.documentElement.scrollWidth, viewport: innerWidth };
+                })()
+                """)
+            let metrics = try XCTUnwrap(result as? [String: Double])
+            XCTAssertGreaterThanOrEqual(try XCTUnwrap(metrics["top"]), Double(window.safeAreaInsets.top), screen.key)
+            XCTAssertGreaterThanOrEqual(try XCTUnwrap(metrics["titleTop"]), Double(window.safeAreaInsets.top), screen.key)
+            if screen.key == "today" {
+                XCTAssertGreaterThanOrEqual(try XCTUnwrap(metrics["dateTop"]), Double(window.safeAreaInsets.top), screen.key)
+            }
+            XCTAssertLessThanOrEqual(try XCTUnwrap(metrics["width"]), try XCTUnwrap(metrics["viewport"]), screen.key)
+            let geometry = XCTAttachment(string: "Window safe area: \(window.safeAreaInsets); web geometry: \(metrics)")
+            geometry.name = "build47-safe-area-\(screen.key)-geometry"
+            geometry.lifetime = .keepAlways
+            add(geometry)
+            let image = UIGraphicsImageRenderer(size: window.bounds.size).image { _ in
+                host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
+            }
+            let attachment = XCTAttachment(image: image)
+            attachment.name = "build47-safe-area-\(screen.key)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+        }
+
+        let dialogResult = try await webView.evaluateJavaScript("""
+            (() => {
+              const dialog = document.getElementById('noteDialog');
+              if (!dialog.open) dialog.showModal();
+              const heading = dialog.querySelector('.dialog-header').getBoundingClientRect();
+              const actions = dialog.querySelector('.dialog-actions').getBoundingClientRect();
+              return { headingTop: heading.top, actionsBottom: actions.bottom, viewportHeight: innerHeight };
+            })()
+            """)
+        let dialogMetrics = try XCTUnwrap(dialogResult as? [String: Double])
+        XCTAssertGreaterThanOrEqual(try XCTUnwrap(dialogMetrics["headingTop"]), Double(window.safeAreaInsets.top))
+        XCTAssertLessThanOrEqual(
+            try XCTUnwrap(dialogMetrics["actionsBottom"]),
+            try XCTUnwrap(dialogMetrics["viewportHeight"]) - Double(window.safeAreaInsets.bottom)
+        )
+        try await Task.sleep(for: .milliseconds(150))
+        host.view.layoutIfNeeded()
+        let dialogImage = UIGraphicsImageRenderer(size: window.bounds.size).image { _ in
             host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
         }
-        let attachment = XCTAttachment(image: image)
-        attachment.name = "build46-edge-to-edge-truth-screen"
-        attachment.lifetime = .keepAlways
-        add(attachment)
+        let dialogAttachment = XCTAttachment(image: dialogImage)
+        dialogAttachment.name = "build47-safe-area-note-dialog"
+        dialogAttachment.lifetime = .keepAlways
+        add(dialogAttachment)
+        try await webView.evaluateJavaScript("document.getElementById('noteDialog').close()")
         model.updateAppearance(theme: "midnight")
         XCTAssertTrue(model.usesDarkAppearance)
         model.updateAppearance(theme: "unsupported")
