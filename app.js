@@ -10,8 +10,8 @@
   const DAY_BOUNDARY_DEVICE_KEY = 'dailyRoutine.dayBoundary.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.45.0';
-  const APP_BUILD = 47;
+  const APP_VERSION = '1.46.0';
+  const APP_BUILD = 48;
   const PRIVATE_SYNC_COMPONENT_MESSAGE = 'This build is missing a required sync component. No routine data on this device or in the cloud was changed. Update the app to continue.';
   const PRIVATE_SYNC_LEGACY_RECOVERY_MESSAGE = 'The previous build could not sync. Your local data is preserved—review and sync now.';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
@@ -137,9 +137,9 @@
     progressRing: $('progressRing'), progressPercent: $('progressPercent'),
     selectedDateButton: $('selectedDateButton'), datePickerInput: $('datePickerInput'), prevDay: $('prevDay'), nextDay: $('nextDay'), routineSections: $('routineSections'), morningRoutineSection: $('morningRoutineSection'), laterRoutineSections: $('laterRoutineSections'), dayModeInput: $('dayModeInput'), undoButton: $('undoButton'), weekFocusBanner: $('weekFocusBanner'), onThisDayMemory: $('onThisDayMemory'),
     statCompleted: $('statCompleted'), statOptional: $('statOptional'), statStreak: $('statStreak'), statMood: $('statMood'), copySummaryButton: $('copySummaryButton'),
-    historyList: $('historyList'), rangeSelector: $('rangeSelector'), progressOverall: $('progressOverall'), progress80Days: $('progress80Days'), progressTrackedDays: $('progressTrackedDays'),
+    historyList: $('historyList'), rangeSelector: $('rangeSelector'), progressOverall: $('progressOverall'), progress80Days: $('progress80Days'), progressTrackedDays: $('progressTrackedDays'), progressStoryKicker: $('progressStoryKicker'), progressStoryTitle: $('progressStoryTitle'), progressStoryText: $('progressStoryText'), progressStoryPercent: $('progressStoryPercent'), progressStoryChange: $('progressStoryChange'),
     progressRangeNote: $('progressRangeNote'), weekSummary: $('weekSummary'), weekOverall: $('weekOverall'), sectionBreakdown: $('sectionBreakdown'), strongHabits: $('strongHabits'), weakHabits: $('weakHabits'), trendList: $('trendList'), patternInsights: $('patternInsights'),
-    setupView: $('setupView'), setupOverview: $('setupOverview'), setupCategoryBar: $('setupCategoryBar'), setupCategoryTitle: $('setupCategoryTitle'), setupBackButton: $('setupBackButton'), setupScheduleSummary: $('setupScheduleSummary'), setupAppearanceSummary: $('setupAppearanceSummary'), setupFaithSummary: $('setupFaithSummary'), setupHealthSummary: $('setupHealthSummary'), setupDataSummary: $('setupDataSummary'),
+    setupView: $('setupView'), setupOverview: $('setupOverview'), setupCategoryBar: $('setupCategoryBar'), setupCategoryTitle: $('setupCategoryTitle'), setupBackButton: $('setupBackButton'), setupScheduleSummary: $('setupScheduleSummary'), setupAppearanceSummary: $('setupAppearanceSummary'), setupFaithSummary: $('setupFaithSummary'), setupHealthSummary: $('setupHealthSummary'), setupRemindersSummary: $('setupRemindersSummary'), setupSharingSummary: $('setupSharingSummary'), setupDataSummary: $('setupDataSummary'),
     wakeTimeInput: $('wakeTimeInput'), bedTimeInput: $('bedTimeInput'), streakThresholdInput: $('streakThresholdInput'), streakModeInput: $('streakModeInput'), streakWeekdaysOnlyInput: $('streakWeekdaysOnlyInput'), themeInput: $('themeInput'), handednessInput: $('handednessInput'), backgroundImageInput: $('backgroundImageInput'), clearBackgroundButton: $('clearBackgroundButton'),
     routineEditor: $('routineEditor'), checkinEditor: $('checkinEditor'), addItemButton: $('addItemButton'), addCheckinButton: $('addCheckinButton'),
     exportCsvButton: $('exportCsvButton'), exportJsonButton: $('exportJsonButton'), importJsonInput: $('importJsonInput'), resetDataButton: $('resetDataButton'), connectRoutineAgentButton: $('connectRoutineAgentButton'), routineAgentFileStatus: $('routineAgentFileStatus'),
@@ -151,7 +151,7 @@
     actualWakeInput: $('actualWakeInput'), actualBedInput: $('actualBedInput'), wakeNowButton: $('wakeNowButton'), bedNowButton: $('bedNowButton'), actualTimeSummary: $('actualTimeSummary'), actualTimeDetails: $('actualTimeDetails'), toggleActualTimeButton: $('toggleActualTimeButton'), badgeEnabledInput: $('badgeEnabledInput'),
     quickNoteButton: $('quickNoteButton'), quickMemoryButton: $('quickMemoryButton'), memoryTodayPreview: $('memoryTodayPreview'), addMemoryButton: $('addMemoryButton'), memoryCount: $('memoryCount'), memoryArchive: $('memoryArchive'), exportMemoriesButton: $('exportMemoriesButton'), memorySearchInput: $('memorySearchInput'), memoryFilterInput: $('memoryFilterInput'), memoryFavoritesOnlyInput: $('memoryFavoritesOnlyInput'),
     godMomentReminder: $('godMomentReminder'), godMomentReminderText: $('godMomentReminderText'), godMomentReminderDate: $('godMomentReminderDate'), openGodMomentsButton: $('openGodMomentsButton'), backupReminder: $('backupReminder'), backupReminderText: $('backupReminderText'), openBackupButton: $('openBackupButton'),
-    addNoteButton: $('addNoteButton'), notesOpenCount: $('notesOpenCount'), godMomentCount: $('godMomentCount'), notesDueCount: $('notesDueCount'), notesSearchInput: $('notesSearchInput'), notesTypeFilter: $('notesTypeFilter'), notesStatusFilter: $('notesStatusFilter'), notesResultsTitle: $('notesResultsTitle'), notesResultCount: $('notesResultCount'), notesList: $('notesList'), importGodMomentsInput: $('importGodMomentsInput'),
+    addNoteButton: $('addNoteButton'), notesOpenCount: $('notesOpenCount'), godMomentCount: $('godMomentCount'), notesDueCount: $('notesDueCount'), notesSearchInput: $('notesSearchInput'), clearNotesFiltersButton: $('clearNotesFiltersButton'), notesTypeFilter: $('notesTypeFilter'), notesStatusFilter: $('notesStatusFilter'), notesResultsTitle: $('notesResultsTitle'), notesResultCount: $('notesResultCount'), notesList: $('notesList'), importGodMomentsInput: $('importGodMomentsInput'),
     reflectionReviewCard: $('reflectionReviewCard'), toggleReflectionReviewButton: $('toggleReflectionReviewButton'), reflectionReviewStatus: $('reflectionReviewStatus'), reflectionReviewPanel: $('reflectionReviewPanel'), reflectionReviewLists: $('reflectionReviewLists'), reviewDueCount: $('reviewDueCount'), reviewActionCount: $('reviewActionCount'), reviewPrayerCount: $('reviewPrayerCount'), reviewMomentCount: $('reviewMomentCount'), weeklyReflectionInput: $('weeklyReflectionInput'), finishReflectionReviewButton: $('finishReflectionReviewButton'),
     noteDialog: $('noteDialog'), noteForm: $('noteForm'), noteDialogTitle: $('noteDialogTitle'), closeNoteDialogButton: $('closeNoteDialogButton'), editingNoteId: $('editingNoteId'), noteTextInput: $('noteTextInput'), noteTypeInput: $('noteTypeInput'), noteScriptureField: $('noteScriptureField'), noteScriptureInput: $('noteScriptureInput'), notePrayerStatusField: $('notePrayerStatusField'), notePrayerStatusInput: $('notePrayerStatusInput'), noteReviewAtInput: $('noteReviewAtInput'), noteSnoozeField: $('noteSnoozeField'), noteSnoozedUntilInput: $('noteSnoozedUntilInput'), noteOptionalDetails: $('noteOptionalDetails'), noteSourceInput: $('noteSourceInput'), notePinnedInput: $('notePinnedInput'), noteResurfaceField: $('noteResurfaceField'), noteResurfaceInput: $('noteResurfaceInput'), deleteNoteButton: $('deleteNoteButton'),
     medicationInsights: $('medicationInsights'), weeklyReviewLabel: $('weeklyReviewLabel'), weeklyReviewSummary: $('weeklyReviewSummary'), weeklyFocusInput: $('weeklyFocusInput'), saveWeeklyFocusButton: $('saveWeeklyFocusButton'), memoryDialog: $('memoryDialog'), memoryForm: $('memoryForm'), closeMemoryDialogButton: $('closeMemoryDialogButton'), memoryTextInput: $('memoryTextInput'), memoryCategoryCaptureInput: $('memoryCategoryCaptureInput'), memoryDateTimeInput: $('memoryDateTimeInput'),
@@ -1093,7 +1093,7 @@
   }
 
   function switchView(view, { scrollToTop = true } = {}) {
-    const contexts = { today: 'Today', notes: 'Notes', history: 'Progress', setup: 'Setup' };
+    const titles = { today: 'Today', notes: 'Notes', history: 'Progress', setup: 'Setup' };
     document.querySelectorAll('.nav-button').forEach(button => {
       const active = button.dataset.view === view;
       button.classList.toggle('active', active);
@@ -1104,9 +1104,9 @@
     $(`${view}View`).classList.add('active');
     document.body.dataset.view = view;
     $('todayDateMenu').open = false;
-    els.pageTitle.textContent = accountabilityPartnerOnlyMode ? 'Accountability' : (view === 'today' ? 'Today' : 'Daily Routine');
+    els.pageTitle.textContent = accountabilityPartnerOnlyMode ? 'Accountability' : titles[view] || 'Today';
     els.pageContext.hidden = false;
-    els.pageContext.textContent = contexts[view] || 'Today';
+    els.pageContext.textContent = accountabilityPartnerOnlyMode ? 'Shared progress' : 'Daily Rhythms';
     if (view === 'setup') activeSetupCategory = '';
     if (view === 'notes') renderNotes();
     if (view === 'history') renderHistory();
@@ -1148,6 +1148,13 @@
     els.notesSearchInput.addEventListener('input', renderNotes);
     els.notesTypeFilter.addEventListener('change', renderNotes);
     els.notesStatusFilter.addEventListener('change', renderNotes);
+    els.clearNotesFiltersButton.addEventListener('click', () => {
+      els.notesSearchInput.value = '';
+      els.notesTypeFilter.value = 'all';
+      els.notesStatusFilter.value = 'all';
+      renderNotes();
+      els.notesSearchInput.focus();
+    });
     els.importGodMomentsInput.addEventListener('change', importGodMoments);
     els.toggleReflectionReviewButton.addEventListener('click', () => { reflectionReviewExpanded = !reflectionReviewExpanded; renderReflectionReview(); });
     els.finishReflectionReviewButton.addEventListener('click', finishReflectionReview);
@@ -1157,7 +1164,10 @@
     els.saveWeeklyFocusButton.addEventListener('click', saveWeeklyFocus);
     els.openAccountabilityFromSetupButton.addEventListener('click', () => {
       switchView('history', { scrollToTop: false });
-      requestAnimationFrame(() => els.accountabilitySharingCard?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      requestAnimationFrame(() => {
+        if (els.accountabilitySharingCard) els.accountabilitySharingCard.open = true;
+        els.accountabilitySharingCard?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
     });
     els.openPrivateSyncForAccountabilityButton.addEventListener('click', () => {
       switchView('setup');
@@ -3048,6 +3058,7 @@
     const search = els.notesSearchInput.value.trim().toLowerCase();
     const typeFilter = els.notesTypeFilter.value;
     const statusFilter = els.notesStatusFilter.value;
+    els.clearNotesFiltersButton.hidden = !search && typeFilter === 'all' && statusFilter === 'all';
     const standaloneOpen = state.notes.filter(note => !noteIsClosed(note)).length;
     const godMoments = state.notes.filter(note => note.type === 'god-moment').length;
     const due = state.notes.filter(note => noteIsDue(note, now)).length;
@@ -3074,8 +3085,9 @@
       const bDue = noteIsDue(b, now) ? 1 : 0;
       return Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)) || bDue - aDue || new Date(b.createdAt) - new Date(a.createdAt);
     });
-    els.notesResultsTitle.textContent = typeFilter === 'all' ? 'All notes' : noteTypeLabels[typeFilter] || 'Notes';
-    els.notesResultCount.textContent = `${records.length} shown`;
+    const statusTitles = { open: 'Open notes', completed: 'Completed notes', due: 'Ready to review', snoozed: 'Snoozed notes', pinned: 'Pinned notes', answered: 'Answered prayers' };
+    els.notesResultsTitle.textContent = search ? 'Search results' : typeFilter !== 'all' ? noteTypeLabels[typeFilter] || 'Notes' : statusTitles[statusFilter] || 'Recent notes';
+    els.notesResultCount.textContent = String(records.length);
     if (!records.length) {
       els.notesList.innerHTML = '<div class="empty-state notes-empty">No notes match these filters. Capture a thought or clear a filter to begin.</div>';
       renderReflectionReview();
@@ -3111,7 +3123,16 @@
         : `<button class="secondary-button" type="button" data-prayer-status="${escapeHtml(note.id)}" data-status="active">Pray again</button>${note.prayerStatus === 'answered' ? `<button class="small-button" type="button" data-god-moment-from-prayer="${escapeHtml(note.id)}">Save as God Moment</button>` : ''}`;
     }
     const actions = note.kind === 'standalone' ? `<div class="note-actions">${actionable ? `<button class="${completed ? 'secondary-button' : 'primary-button'}" type="button" data-toggle-note="${escapeHtml(note.id)}">${completed ? 'Reopen' : 'Complete'}</button>` : ''}${prayerActions}<button class="small-button pin-note-button" type="button" data-pin-note="${escapeHtml(note.id)}">${note.pinned ? 'Unpin' : 'Pin'}</button><button class="small-button" type="button" data-edit-note="${escapeHtml(note.id)}">Edit / move</button></div>` : '<span class="read-only-note">Shown from its original source</span>';
-    return `<article class="${classes}"><div class="note-card-head"><span class="note-type-badge">${escapeHtml(noteTypeLabels[note.type] || note.title)}</span>${note.pinned || note.favorite ? '<span class="note-favorite" aria-label="Pinned">★</span>' : ''}</div>${note.title && !['standalone'].includes(note.kind) ? `<h3>${escapeHtml(note.title)}</h3>` : ''}${scripture}<p>${escapeHtml(note.text)}</p><div class="note-meta"><span>${escapeHtml(formatNoteDate(note.createdAt))}</span><span>${escapeHtml(note.source || 'Daily Routine')}</span>${review}${snooze}${prayerLabel}${status}</div>${actions}</article>`;
+    const display = noteDisplayCopy(note);
+    return `<article class="${classes}"><div class="note-card-head"><span class="note-type-badge">${escapeHtml(noteTypeLabels[note.type] || note.title)}</span>${note.pinned || note.favorite ? '<span class="note-favorite" aria-label="Pinned">★</span>' : ''}</div>${display.title ? `<h3>${escapeHtml(display.title)}</h3>` : ''}${scripture}${display.body ? `<p>${escapeHtml(display.body)}</p>` : ''}<div class="note-meta"><span>${escapeHtml(formatNoteDate(note.createdAt))}</span><span>${escapeHtml(note.source || 'Daily Routine')}</span>${review}${snooze}${prayerLabel}${status}</div>${actions}</article>`;
+  }
+
+  function noteDisplayCopy(note) {
+    const text = String(note.text || '').trim();
+    if (note.kind !== 'standalone') return { title: note.title || '', body: text };
+    const lines = text.split(/\n+/).map(line => line.trim()).filter(Boolean);
+    if (lines.length < 2 || lines[0].length > 90) return { title: '', body: text };
+    return { title: lines[0], body: lines.slice(1).join('\n') };
   }
 
   function formatNoteDate(value) {
@@ -3624,11 +3645,25 @@
   function renderProgressOverview() {
     const dates = activeRangeDates();
     const aggregate = aggregateCompletion(dates);
+    const previous = aggregateCompletion(previousRangeDates());
+    const threshold = Math.max(1, Math.min(100, Number(state.settings.streakThreshold) || 80));
+    const delta = aggregate.percent !== null && previous.percent !== null ? aggregate.percent - previous.percent : null;
     els.progressOverall.textContent = aggregate.percent === null ? '—' : `${aggregate.percent}%`;
     els.progress80Days.textContent = `${aggregate.days80}/${aggregate.scoredDays || 0}`;
-    els.progressTrackedDays.textContent = dates.length;
+    els.progressTrackedDays.textContent = aggregate.scoredDays;
     const first = dates[0], last = dates[dates.length - 1];
     els.progressRangeNote.textContent = first && last ? `${formatShortDate(first)} – ${formatShortDate(last)} · Required items drive completion scores.` : 'Log a day to start building your progress history.';
+    els.progressStoryKicker.textContent = analyticsRange === 7 ? 'This week' : `Past ${analyticsRange} days`;
+    els.progressStoryPercent.textContent = aggregate.percent === null ? '—' : `${aggregate.percent}%`;
+    if (aggregate.percent === null || aggregate.scoredDays === 0) {
+      els.progressStoryTitle.textContent = 'Your rhythm will appear here';
+      els.progressStoryText.textContent = 'Record an ordinary day and Progress will begin showing patterns without turning them into a scorecard.';
+      els.progressStoryChange.textContent = 'Start where you are';
+      return;
+    }
+    els.progressStoryTitle.textContent = aggregate.percent >= 80 ? 'A strong, steady rhythm' : delta !== null && delta >= 5 ? 'A steadier rhythm' : delta !== null && delta <= -5 ? 'A gentler week' : 'A consistent rhythm';
+    els.progressStoryText.textContent = `${aggregate.days80} of ${aggregate.scoredDays} tracked day${aggregate.scoredDays === 1 ? '' : 's'} reached your ${threshold}% rhythm. This is a guide for reflection, not a measure of your worth.`;
+    els.progressStoryChange.textContent = delta === null ? 'Keep building the pattern' : delta === 0 ? 'Even with the previous period' : `${delta > 0 ? '+' : ''}${delta}% from the previous period`;
   }
 
   function startOfCurrentWeek() {
@@ -3810,13 +3845,13 @@
   }
 
   function openSetupCategory(category) {
-    activeSetupCategory = ['routine', 'appearance', 'faith', 'health', 'data'].includes(category) ? category : '';
+    activeSetupCategory = ['routine', 'appearance', 'faith', 'health', 'reminders', 'sharing', 'data'].includes(category) ? category : '';
     renderSetupNavigation();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function renderSetupNavigation() {
-    const titles = { routine: 'Routine & schedule', appearance: 'Appearance & accessibility', faith: 'Faith foundation', health: 'Health & access', data: 'Account & data' };
+    const titles = { routine: 'Routine & schedule', appearance: 'Appearance & accessibility', faith: 'Faith foundation', health: 'Health & access', reminders: 'Truth reminders', sharing: 'Private accountability', data: 'Data & privacy' };
     if (activeSetupCategory) els.setupView.dataset.category = activeSetupCategory;
     else delete els.setupView.dataset.category;
     els.setupOverview.hidden = Boolean(activeSetupCategory);
@@ -3828,7 +3863,12 @@
     els.setupFaithSummary.textContent = `Truth Before Tasks · ${convictionCount} conviction${convictionCount === 1 ? '' : 's'}`;
     const sources = latestHealthSummary?.sourceNames || [];
     els.setupHealthSummary.textContent = sources.length ? `Health · ${sources.slice(0, 2).join(', ')}` : 'Health sources, Watch, widgets, and connections';
-    els.setupDataSummary.textContent = privateSyncSession ? 'Private sync connected · Backups & sharing' : 'Local first · Private sync, backups, and sharing';
+    if (els.setupRemindersSummary) {
+      const reminderCount = Number(earnedAccessNativeState.truthReminderWaitingCount) || 0;
+      els.setupRemindersSummary.textContent = earnedAccessNativeState.truthReminderEnabled ? `${earnedAccessNativeState.truthReminderScheduleSummary || 'Scheduled'} · ${reminderCount ? `${reminderCount} waiting` : 'Acknowledgements on'}` : 'Schedule acknowledgements and protection';
+    }
+    if (els.setupSharingSummary) els.setupSharingSummary.textContent = accountabilityRelationships.length ? `${accountabilityRelationships.length} partner${accountabilityRelationships.length === 1 ? '' : 's'} · Shared progress` : 'Partners and shared progress';
+    els.setupDataSummary.textContent = privateSyncSession ? 'Private sync connected · Backups protected' : 'Local first · Private sync and backups';
   }
 
   function privateSyncDependencyStatus() {
@@ -3986,9 +4026,9 @@
       els.pageContext.textContent = 'Shared progress';
       requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
     } else if (changed) {
-      els.pageTitle.textContent = 'Daily Routine';
+      els.pageTitle.textContent = 'Today';
       els.installButton.hidden = !deferredInstallPrompt;
-      els.pageContext.textContent = 'Today';
+      els.pageContext.textContent = 'Daily Rhythms';
     }
     if (changed) document.dispatchEvent(new CustomEvent('dailyRoutine:accountability-partner-mode', { detail: { active: next } }));
   }
@@ -5010,7 +5050,12 @@
     if (target === 'notes') { switchView('notes'); openNoteDialog(); return; }
     if (target === 'memory') { switchView('today'); openMemoryDialog('blessing'); return; }
     if (target === 'weekly') { switchView('history'); els.weeklyReviewCard?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
-    if (target === 'medication') { switchView('history'); els.medicationProgressCard?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    if (target === 'medication') {
+      switchView('history');
+      if (els.medicationProgressCard) els.medicationProgressCard.open = true;
+      els.medicationProgressCard?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
     if (target === 'backup') { switchView('setup'); els.dataBackupCard?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     switchView('today');
   }
@@ -6378,7 +6423,7 @@
       stepIndex = Math.min(totalStepCount() - 1, Math.max(0, Number(session.currentStep) || 0));
       document.body.classList.add('truth-locked');
       document.body.dataset.view = 'truth';
-      el('pageTitle').textContent = 'Daily Routine';
+      el('pageTitle').textContent = 'Daily Rhythms';
       el('todayDateMenu').open = false;
       document.querySelectorAll('.nav-button').forEach(button => {
         button.classList.remove('active');

@@ -525,7 +525,14 @@ body[data-view="today"] .main-content{padding-top:0}
 @media(max-width:350px){.today-date-menu>summary{font-size:10px}body[data-view="today"] .topbar{padding-inline:12px}body[data-view="today"] .topbar h1{font-size:18px}}
 
 /* Approved Build 44 finishing polish. */
-.topbar-mark{background:var(--brand-soft);color:var(--brand);font-weight:500}
+.topbar-mark{overflow:hidden;background:var(--brand-soft);color:var(--brand);font-weight:500}
+.topbar-mark img{display:block;width:100%;height:100%;object-fit:cover}
+
+/* Build 48 — use the quiet Today header across every primary screen. */
+.topbar{min-height:48px;gap:10px;padding:calc(8px + env(safe-area-inset-top,0px)) 16px 8px;background:var(--bg);border-bottom:0}
+.topbar-brand{gap:0}
+.topbar h1{font-size:20px;font-weight:550;letter-spacing:-.025em}
+.topbar-mark,.topbar #pageContext{display:none}
 #todayView .morning-checkin-panel{border:0;padding:8px 2px;background:transparent}
 #todayView .morning-checkin-panel .checkin-list{gap:0}
 #todayView .morning-checkin-panel .scale-checkin-row{padding:5px 8px;border:0;border-radius:0;background:transparent}
@@ -554,3 +561,144 @@ body[data-view="today"] .main-content{padding-top:0}
 #todayView .actual-time-summary{gap:5px}
 #todayView .actual-time-summary #toggleActualTimeButton{min-height:38px}
 @media(max-width:350px){#todayView .morning-checkin-panel .scale-checkin-row{padding-inline:3px}#todayView .compact-bible-row{column-gap:7px}#todayView .compact-bible-row .open-linked-button{padding-inline:8px}}
+
+/* Build 48 — Clear Ledger Notes, Progress, and Setup. */
+#notesView .notes-ledger-header{padding:14px 15px 13px;border-top:4px solid var(--brand);background:var(--surface-solid);box-shadow:none}
+#notesView .notes-ledger-header .section-heading{align-items:flex-start;margin-bottom:6px}
+#notesView .notes-ledger-header h2{font-family:Georgia,"Times New Roman",serif;font-size:20px;font-weight:500;line-height:1.18}
+#notesView .notes-ledger-header .primary-button{min-height:44px;padding-inline:14px;font-weight:550}
+#notesView .notes-ledger-header .setup-help{max-width:55ch;margin:0;color:var(--muted)}
+#notesView .notes-stats{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+#notesView .notes-stats div{padding:5px 7px;background:transparent;border:0;border-left:1px solid var(--line)}
+#notesView .notes-stats div:first-child{border-left:0}
+#notesView .notes-stats strong{font-size:17px;font-weight:550}
+#notesView .notes-stats span{font-size:10px;font-weight:500;letter-spacing:.06em}
+#notesView .reflection-review-card{position:relative;padding:14px 15px!important;border:0;border-left:4px solid color-mix(in srgb,#b8832f 74%,var(--brand));background:color-mix(in srgb,#f2dfae 30%,var(--surface-solid));box-shadow:none}
+#notesView .reflection-review-card .section-heading{align-items:flex-start;margin-bottom:5px}
+#notesView .reflection-review-card h2{font-family:Georgia,"Times New Roman",serif;font-size:18px;font-weight:500}
+#notesView .reflection-review-card .primary-button{min-height:44px;background:color-mix(in srgb,#9b6b23 82%,var(--brand));font-weight:550}
+#notesView .reflection-review-stats{margin-top:10px;padding-top:9px;border-top:1px solid color-mix(in srgb,#b8832f 22%,var(--line))}
+#notesView .reflection-review-stats>div{background:transparent;border:0;border-left:1px solid color-mix(in srgb,#b8832f 22%,var(--line));border-radius:0;padding:5px}
+#notesView .reflection-review-stats>div:first-child{border-left:0}
+#notesView .notes-filter-card{top:calc(48px + env(safe-area-inset-top,0px));padding:9px!important;border:1px solid var(--line);background:color-mix(in srgb,var(--bg) 91%,var(--surface-solid));box-shadow:0 4px 14px rgba(31,55,70,.045)}
+#notesView .notes-search-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:7px}
+#notesView .notes-search-field{min-width:0}
+#notesView .notes-search-field input{min-height:44px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent;padding:9px 5px;font-size:13px}
+#notesView #clearNotesFiltersButton{min-height:44px;padding-inline:11px;background:var(--surface-solid);font-weight:550}
+#notesView .notes-filter-row{gap:7px;margin-top:7px}
+#notesView .notes-filter-row select{min-height:42px;border:0;border-radius:10px;background:var(--brand-soft);color:var(--brand);font-weight:500}
+#notesView .notes-library-tool{overflow:hidden;padding:0!important;border:0;background:var(--brand-soft);box-shadow:none}
+#notesView .notes-library-tool>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;color:var(--ink);cursor:pointer;list-style:none}
+#notesView .notes-library-tool>summary::-webkit-details-marker{display:none}
+#notesView .notes-library-tool>summary span,#notesView .notes-library-tool>summary strong,#notesView .notes-library-tool>summary small{display:block}
+#notesView .notes-library-tool>summary strong{margin-top:3px;font-size:13px;font-weight:550}
+#notesView .notes-library-tool>summary small{margin-top:3px;color:var(--muted);font-size:9px;line-height:1.35}
+#notesView .notes-library-tool>summary i{color:var(--brand);font-size:20px;font-style:normal;transition:transform .15s ease}
+#notesView .notes-library-tool[open]>summary i{transform:rotate(90deg)}
+#notesView .notes-import-body{padding:0 14px 13px;border-top:1px solid color-mix(in srgb,var(--brand) 14%,var(--line))}
+#notesView .notes-import-body .setup-help{margin:10px 0 0}
+#notesView .notes-library-tool .import-god-moments{display:inline-flex;width:auto;min-height:42px;align-items:center;margin-top:10px;padding:8px 11px;background:var(--surface-solid);font-weight:500}
+#notesView .notes-results-section{margin-top:14px;padding:0 2px}
+#notesView .notes-results-heading{margin-bottom:4px;padding:0 3px}
+#notesView .notes-results-heading h2{font-size:15px;font-weight:550}
+#notesView .notes-list{gap:0;overflow:hidden;border:1px solid var(--line);border-radius:14px;background:var(--surface-solid)}
+#notesView .note-card{margin:0;padding:13px 12px;border:0;border-top:1px solid var(--line);border-radius:0;background:transparent;box-shadow:none}
+#notesView .note-card:first-child{border-top:0}
+#notesView .note-card-head{margin-bottom:7px}
+#notesView .note-card h3{margin:0 0 5px;font-family:Georgia,"Times New Roman",serif;font-size:15px;font-weight:500;line-height:1.35}
+#notesView .note-card>p{margin:0 0 9px;font-family:Georgia,"Times New Roman",serif;font-size:13px;line-height:1.52}
+#notesView .note-type-badge{padding:4px 7px;font-weight:550}
+#notesView .note-actions{display:flex;flex-wrap:wrap;justify-content:flex-start;gap:6px;margin-top:9px}
+#notesView .note-actions button{width:auto;min-height:44px;padding:7px 10px;font-weight:500}
+
+#historyView.active{display:flex;flex-direction:column}
+#historyView.active>*,#historyView.active>section:nth-child(2),#historyView.active>.progress-overview-card{order:initial}
+#historyView .progress-story-card{padding:16px 15px;border:0;border-radius:16px;background:color-mix(in srgb,var(--brand) 55%,#163a33);color:#fff;box-shadow:none}
+#historyView .progress-story-card .eyebrow{color:#fff;font-weight:500}
+#historyView .progress-story-card h2{margin:5px 0 7px;font-family:Georgia,"Times New Roman",serif;font-size:22px;font-weight:500;letter-spacing:-.02em}
+#historyView .progress-story-card>p:not(.eyebrow){margin:0;font-size:12px;line-height:1.5;color:#fff}
+#historyView .progress-story-metric{display:flex;align-items:baseline;gap:7px;margin-top:14px}
+#historyView .progress-story-metric strong{font-size:26px;font-weight:550}
+#historyView .progress-story-metric span{font-size:10px;color:#fff}
+#historyView .progress-story-metric b{margin-left:auto;font-size:10px;font-weight:500}
+#historyView .progress-ledger-card{padding:13px 14px;background:var(--surface-solid);box-shadow:none}
+#historyView .progress-ledger-card .section-heading{margin-bottom:9px}
+#historyView .progress-ledger-card h2{font-size:15px;font-weight:550}
+#historyView .progress-stats-grid{border-top:1px solid var(--line);padding-top:9px}
+#historyView .progress-stats-grid div{padding:7px 5px;background:transparent}
+#historyView .progress-stats-grid strong{font-size:17px;font-weight:550}
+#historyView .progress-range-note{margin:8px 2px 0}
+#historyView .progress-week-card{padding:14px 13px;box-shadow:none}
+#historyView .progress-week-card .section-heading{margin-bottom:9px}
+#historyView .progress-week-card h2{font-size:15px;font-weight:550}
+#historyView .week-summary{gap:7px}
+#historyView .week-track{width:100%;max-width:24px;height:92px;border-radius:7px;background:var(--brand-soft)}
+#historyView .week-track>span{border-radius:7px 7px 3px 3px}
+#historyView .progress-routine-card,#historyView .progress-habits-card{box-shadow:none}
+#historyView .progress-routine-card h2,#historyView .progress-habits-card h2{font-size:16px;font-weight:550}
+#historyView .breakdown-row{padding:4px 0}
+#historyView .breakdown-bar{height:6px}
+#historyView .habit-columns{gap:9px}
+#historyView .habit-columns>div{padding:10px;border-radius:13px;background:color-mix(in srgb,var(--brand-soft) 28%,var(--surface-solid))}
+#historyView .habit-columns>div.habit-grace-column{background:color-mix(in srgb,#f2dfae 28%,var(--surface-solid))}
+#historyView .habit-columns h3{min-height:28px;margin:0 0 7px;font-weight:500;line-height:1.3}
+#historyView .habit-row{padding:8px;border:0;border-top:1px solid var(--line);border-radius:0;background:transparent}
+#historyView .habit-row:first-child{border-top:0}
+#historyView .habit-row strong,#historyView .habit-row>b{font-weight:550}
+#historyView .progress-detail-disclosure{overflow:hidden;margin:0 0 10px;padding:0;border:1px solid var(--line);border-radius:15px;background:var(--surface-solid);box-shadow:none}
+#historyView .progress-detail-disclosure>summary{display:grid;min-height:60px;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:0 14px;cursor:pointer;list-style:none}
+#historyView .progress-detail-disclosure>summary::-webkit-details-marker{display:none}
+#historyView .progress-detail-disclosure>summary span,#historyView .progress-detail-disclosure>summary strong,#historyView .progress-detail-disclosure>summary small{display:block}
+#historyView .progress-detail-disclosure>summary strong{font-size:12px;font-weight:550}
+#historyView .progress-detail-disclosure>summary small{margin-top:3px;color:var(--muted);font-size:10px;line-height:1.35}
+#historyView .progress-detail-disclosure>summary>b{color:var(--brand);font-size:9px;font-weight:550;text-align:right}
+#historyView .progress-detail-disclosure>summary>i{color:var(--muted);font-size:18px;font-style:normal;transition:transform .15s ease}
+#historyView .progress-detail-disclosure[open]>summary>i{transform:rotate(90deg)}
+#historyView .progress-detail-body{padding:12px 14px 14px;border-top:1px solid var(--line);background:color-mix(in srgb,var(--brand-soft) 12%,var(--surface-solid))}
+#historyView .progress-detail-body>.setup-help:first-child,#historyView .accountability-progress-body>.accountability-intro:first-child{margin-top:0}
+#historyView .accountability-sharing-card{background:var(--surface-solid)}
+#historyView .accountability-sharing-card>summary #accountabilitySharingBadge{padding:0;background:transparent}
+#historyView .accountability-progress-body{padding-top:14px}
+
+#setupView .setup-overview{gap:12px}
+#setupView .setup-overview-heading{align-items:flex-start;padding:7px 4px 2px}
+#setupView .setup-overview-heading h2{font-family:Georgia,"Times New Roman",serif;font-size:20px;font-weight:500;line-height:1.2}
+#setupView .setup-overview-heading>span{display:flex;align-items:center;gap:5px;padding-top:3px;color:var(--muted);font-weight:500}
+#setupView .setup-overview-intro{max-width:42ch;margin:5px 0 0;line-height:1.45}
+#setupView .setup-category-groups{display:grid;gap:11px}
+#setupView .setup-category-group{overflow:hidden;border:1px solid var(--line);border-radius:15px;background:var(--surface-solid);box-shadow:0 3px 12px rgba(31,55,70,.035)}
+#setupView .setup-category-group>header{padding:12px 13px 9px}
+#setupView .setup-category-group>header span{display:block;margin-top:4px;color:var(--muted);font-size:10px}
+#setupView .setup-category-grid{border:0;border-top:1px solid var(--line);border-radius:0;box-shadow:none}
+#setupView .setup-category-grid>button,#setupView .setup-category-grid>button:last-child{min-height:67px;padding:8px 11px}
+#setupView .setup-category-grid>button:active{background:var(--brand-soft)}
+#setupView .setup-category-grid b{font-size:12px;font-weight:550}
+#setupView .setup-category-grid small{margin-top:4px;font-size:10px;line-height:1.4}
+#setupView .setup-category-icon{background:var(--brand-soft);color:var(--brand)}
+#setupView .setup-category-icon.warm{background:color-mix(in srgb,#f2dfae 54%,var(--surface-solid));color:#87662f}
+#setupView .setup-category-bar{top:calc(48px + env(safe-area-inset-top,0px));background:color-mix(in srgb,var(--bg) 94%,transparent)}
+#setupView .setup-category-bar strong{font-weight:550}
+#setupView .setup-section-card,#setupView[data-category]>.card{box-shadow:none}
+#setupView[data-category="reminders"]>[data-setup-category]:not([data-setup-category="reminders"]),#setupView[data-category="sharing"]>[data-setup-category]:not([data-setup-category="sharing"]){display:none}
+
+/* Build 48 — approved Floating Dock navigation. */
+.main-content{padding-bottom:calc(102px + env(safe-area-inset-bottom))}
+.bottom-nav{inset-inline:12px;bottom:max(10px,env(safe-area-inset-bottom));width:auto;max-width:736px;gap:2px;padding:5px;border:1px solid var(--line);border-radius:20px;background:color-mix(in srgb,var(--surface-solid) 97%,transparent);box-shadow:0 9px 26px rgba(31,55,70,.14);backdrop-filter:blur(20px)}
+.bottom-nav .nav-button{min-height:55px;border-radius:15px;padding:6px 4px}
+.bottom-nav .nav-button.active{background:var(--brand);color:var(--surface-solid)}
+.bottom-nav .nav-button b{font-size:10px;font-weight:550}
+.range-button{min-height:44px;min-width:44px}
+
+@media(max-width:430px){
+  #notesView .notes-ledger-header .section-heading,#notesView .reflection-review-card .section-heading{gap:8px}
+  #notesView .notes-ledger-header h2{font-size:18px}
+  #notesView .notes-filter-card{top:calc(47px + env(safe-area-inset-top,0px))}
+  #notesView .note-actions{display:flex;grid-template-columns:none}
+  #notesView .note-actions button{width:auto}
+  #historyView .progress-story-card h2{font-size:20px}
+  #historyView .progress-story-metric{flex-wrap:wrap}
+  #historyView .progress-story-metric b{width:100%;margin-left:0}
+  #historyView .habit-columns{grid-template-columns:minmax(0,1fr)}
+  #historyView .habit-columns h3{min-height:0}
+  #setupView .setup-overview-heading{gap:8px}
+}

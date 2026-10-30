@@ -9,14 +9,13 @@
   <link rel="icon" href="icon-192.png" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <link rel="stylesheet" href="styles.css" />
-  <title>Daily Routine</title>
+  <title>Daily Rhythms</title>
 </head>
 <body data-theme="calm" data-view="today">
   <div class="background-overlay" aria-hidden="true"></div>
   <div class="app-shell">
     <header class="topbar">
       <div class="topbar-brand">
-        <span class="topbar-mark" aria-hidden="true">✓</span>
         <div>
           <h1 id="pageTitle">Today</h1>
           <p id="pageContext">Today</p>
@@ -119,12 +118,12 @@
       </section>
 
       <section id="notesView" class="view" aria-labelledby="pageTitle">
-        <section class="card notes-intro-card">
+        <section class="card notes-intro-card notes-ledger-header">
           <div class="section-heading">
-            <div><p class="eyebrow">Notes & Thoughts</p><h2>Capture it. Preserve it. Release it.</h2></div>
+            <div><p class="eyebrow">Notes & Thoughts</p><h2>A quiet place for what matters</h2></div>
             <button id="addNoteButton" class="primary-button" type="button">+ Note</button>
           </div>
-          <p class="muted setup-help">Routine comments, journal entries, Memory Bank items, and standalone notes live together here without being duplicated.</p>
+          <p class="muted setup-help">Keep prayers, actions, memories, and thoughts together without turning reflection into another task list.</p>
           <div class="notes-stats">
             <div><strong id="notesOpenCount">0</strong><span>Open notes</span></div>
             <div><strong id="godMomentCount">0</strong><span>God Moments</span></div>
@@ -152,7 +151,10 @@
         </section>
 
         <section class="card notes-filter-card">
-          <label class="notes-search-field"><span class="sr-only">Search notes</span><input id="notesSearchInput" type="search" placeholder="Search everything you’ve captured…" /></label>
+          <div class="notes-search-row">
+            <label class="notes-search-field"><span class="sr-only">Search notes</span><input id="notesSearchInput" type="search" placeholder="Search everything you’ve captured…" /></label>
+            <button id="clearNotesFiltersButton" class="small-button" type="button" hidden>Clear</button>
+          </div>
           <div class="notes-filter-row">
             <label><span>Type</span><select id="notesTypeFilter">
               <option value="all">All notes</option><option value="routine">Routine notes</option><option value="memory">Memory Bank</option><option value="entrust">Entrust to the Lord</option><option value="review">Review later</option><option value="action">Action items</option><option value="prayer">Prayers</option><option value="god-moment">God Moments</option><option value="general">General notes</option>
@@ -161,11 +163,13 @@
           </div>
         </section>
 
-        <section id="godMomentsLibrary" class="card god-moments-library">
-          <div class="section-heading"><div><p class="eyebrow">God Moments</p><h2>Remember His faithfulness</h2></div></div>
-          <p class="muted setup-help">Export individual Apple Notes as Markdown, then select them here. Each file becomes one God Moment and can resurface occasionally.</p>
-          <label class="secondary-button file-button import-god-moments">Import Apple Notes (.md or .txt)<input id="importGodMomentsInput" type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" multiple /></label>
-        </section>
+        <details id="godMomentsLibrary" class="card god-moments-library notes-library-tool">
+          <summary><span><span class="eyebrow">Import</span><strong>Bring in Apple Notes</strong><small>Markdown or text · one file becomes one God Moment</small></span><i aria-hidden="true">›</i></summary>
+          <div class="notes-import-body">
+            <p class="muted setup-help">Imported notes keep their text, are labeled Apple Notes, and can resurface as reminders of God’s faithfulness.</p>
+            <label class="secondary-button file-button import-god-moments">Choose Apple Notes files<input id="importGodMomentsInput" type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" multiple /></label>
+          </div>
+        </details>
 
         <section class="notes-results-section">
           <div class="section-heading notes-results-heading"><div><p class="eyebrow">Your library</p><h2 id="notesResultsTitle">All notes</h2></div><span id="notesResultCount" class="section-progress">0</span></div>
@@ -174,9 +178,16 @@
       </section>
 
       <section id="historyView" class="view" aria-labelledby="pageTitle">
-        <section class="card progress-overview-card">
+        <section class="card progress-story-card" id="progressStoryCard">
+          <p id="progressStoryKicker" class="eyebrow">This week</p>
+          <h2 id="progressStoryTitle">Your rhythm is taking shape</h2>
+          <p id="progressStoryText">Progress will become more meaningful as you continue recording ordinary days.</p>
+          <div class="progress-story-metric"><strong id="progressStoryPercent">—</strong><span>completion</span><b id="progressStoryChange">Start where you are</b></div>
+        </section>
+
+        <section class="card progress-overview-card progress-ledger-card">
           <div class="section-heading progress-heading">
-            <div><p class="eyebrow">Progress</p><h2>Your patterns</h2></div>
+            <div><p class="eyebrow">The ledger</p><h2>At a glance</h2></div>
             <div id="rangeSelector" class="range-selector" aria-label="Analytics range">
               <button class="range-button active" type="button" data-range="7">7D</button>
               <button class="range-button" type="button" data-range="30">30D</button>
@@ -185,46 +196,50 @@
           </div>
           <div class="progress-stats-grid">
             <div><strong id="progressOverall">—</strong><span>Overall</span></div>
-            <div><strong id="progress80Days">—</strong><span>Well-established days</span></div>
+            <div><strong id="progress80Days">—</strong><span>At rhythm</span></div>
             <div><strong id="progressTrackedDays">—</strong><span>Days tracked</span></div>
           </div>
           <p id="progressRangeNote" class="muted progress-range-note"></p>
         </section>
 
-        <section class="card">
-          <div class="section-heading"><div><p class="eyebrow">This week</p><h2>Daily completion</h2></div><strong id="weekOverall" class="section-progress">—</strong></div>
+        <section class="card progress-week-card">
+          <div class="section-heading"><div><p class="eyebrow">This week</p><h2>Daily rhythm</h2></div><strong id="weekOverall" class="section-progress">—</strong></div>
           <div id="weekSummary" class="week-summary"></div>
         </section>
 
-        <section class="card">
+        <section class="card progress-routine-card">
           <div class="section-heading"><div><p class="eyebrow">Routine</p><h2>By part of day</h2></div></div>
           <div id="sectionBreakdown" class="breakdown-list"></div>
         </section>
 
-        <section class="card">
-          <div class="section-heading"><div><p class="eyebrow">Consistency</p><h2>Habit performance</h2></div></div>
+        <section class="card progress-habits-card">
+          <div class="section-heading"><div><p class="eyebrow">Consistency</p><h2>What is becoming steady</h2></div></div>
           <div class="habit-columns">
-            <div><h3>More consistent</h3><div id="strongHabits" class="habit-list"></div></div>
-            <div><h3>Still forming</h3><div id="weakHabits" class="habit-list"></div></div>
+            <div><h3>Strong rhythms</h3><div id="strongHabits" class="habit-list"></div></div>
+            <div class="habit-grace-column"><h3>Still forming</h3><div id="weakHabits" class="habit-list"></div></div>
           </div>
         </section>
 
-        <section class="card">
-          <div class="section-heading"><div><p class="eyebrow">Check-ins</p><h2>Rating trends</h2></div></div>
-          <div id="trendList" class="trend-list"></div>
-        </section>
+        <details class="card progress-detail-disclosure">
+          <summary><span><strong>Check-ins</strong><small>Mood, focus, stress, and sleep patterns</small></span><b>View trends</b><i aria-hidden="true">›</i></summary>
+          <div class="progress-detail-body"><div id="trendList" class="trend-list"></div></div>
+        </details>
 
-        <section class="card" id="medicationProgressCard">
-          <div class="section-heading"><div><p class="eyebrow">Medication</p><h2>Timing & next wake</h2></div></div>
-          <p class="muted setup-help">A descriptive look at your logged timing. It does not establish that medication timing caused a particular wake time.</p>
-          <div id="medicationInsights" class="medication-insights"></div>
-        </section>
+        <details class="card progress-detail-disclosure" id="medicationProgressCard">
+          <summary><span><strong>Medication</strong><small>Completion history and timing patterns</small></span><b>View history</b><i aria-hidden="true">›</i></summary>
+          <div class="progress-detail-body">
+            <p class="muted setup-help">A descriptive look at your logged timing. It does not establish that medication timing caused a particular wake time.</p>
+            <div id="medicationInsights" class="medication-insights"></div>
+          </div>
+        </details>
 
-        <section class="card">
-          <div class="section-heading"><div><p class="eyebrow">Patterns</p><h2>What seems connected?</h2></div></div>
-          <p class="muted setup-help">These are associations in your own logs, not proof that one habit caused the other result.</p>
-          <div id="patternInsights" class="insight-list"></div>
-        </section>
+        <details class="card progress-detail-disclosure">
+          <summary><span><strong>Patterns</strong><small>Simple associations found in your own logs</small></span><b>Explore</b><i aria-hidden="true">›</i></summary>
+          <div class="progress-detail-body">
+            <p class="muted setup-help">These are associations in your own logs, not proof that one habit caused the other result.</p>
+            <div id="patternInsights" class="insight-list"></div>
+          </div>
+        </details>
 
         <section class="card weekly-review-card" id="weeklyReviewCard">
           <div class="section-heading"><div><p class="eyebrow">Weekly review</p><h2>Close the loop</h2></div><span id="weeklyReviewLabel" class="section-progress"></span></div>
@@ -233,11 +248,9 @@
           <button id="saveWeeklyFocusButton" class="primary-button weekly-focus-save" type="button">Save weekly focus</button>
         </section>
 
-        <section class="card accountability-sharing-card" id="accountabilitySharingCard">
-          <div class="section-heading accountability-sharing-heading">
-            <div><p class="eyebrow">Private accountability</p><h2>Share progress, not private details</h2></div>
-            <span id="accountabilitySharingBadge" class="privacy-pill">Sign in needed</span>
-          </div>
+        <details class="card progress-detail-disclosure accountability-sharing-card" id="accountabilitySharingCard">
+          <summary><span><strong>Private accountability</strong><small>Approved trends and shared routines</small></span><b id="accountabilitySharingBadge">Sign in needed</b><i aria-hidden="true">›</i></summary>
+          <div class="progress-detail-body accountability-progress-body">
           <p class="muted accountability-intro">Connect one person or several. Each connection receives only the progress categories you turn on.</p>
 
           <div id="accountabilitySharingSignedOut" class="accountability-sharing-notice">
@@ -292,7 +305,8 @@
               </div>
             </details>
           </div>
-        </section>
+          </div>
+        </details>
 
         <section class="card accountability-dashboard-card" id="accountabilityDashboardCard" hidden>
           <div class="section-heading accountability-partner-dashboard-heading">
@@ -315,8 +329,9 @@
           </div>
         </section>
 
-        <section class="card accountability-report-card" id="accountabilityReportCard">
-          <div class="section-heading"><div><p class="eyebrow">Accountability</p><h2>Share a progress report</h2></div><span class="privacy-pill">On device</span></div>
+        <details class="card progress-detail-disclosure accountability-report-card" id="accountabilityReportCard">
+          <summary><span><strong>Manual progress report</strong><small>Preview an on-device report before sharing</small></span><b>On device</b><i aria-hidden="true">›</i></summary>
+          <div class="progress-detail-body accountability-progress-body">
           <p class="muted accountability-intro">Choose what to include, then preview the exact report before sharing it. Nothing is sent automatically.</p>
 
           <label class="text-field compact accountability-period-field"><span>Report period</span><select id="accountabilityPeriodInput"><option value="week">This week</option><option value="today">Today</option></select></label>
@@ -347,23 +362,41 @@
               <button id="shareAccountabilityButton" class="primary-button" type="button">Share report</button>
             </div>
           </section>
-        </section>
+          </div>
+        </details>
 
-        <section class="card">
-          <div class="section-heading"><div><p class="eyebrow">History</p><h2>Recent days</h2></div></div>
-          <div id="historyList" class="history-list"></div>
-        </section>
+        <details class="card progress-detail-disclosure">
+          <summary><span><strong>Daily history</strong><small>Review a specific day when needed</small></span><b>Recent days</b><i aria-hidden="true">›</i></summary>
+          <div class="progress-detail-body"><div id="historyList" class="history-list"></div></div>
+        </details>
       </section>
 
       <section id="setupView" class="view" aria-labelledby="pageTitle">
         <section id="setupOverview" class="setup-overview" aria-label="Setup categories">
-          <header class="setup-overview-heading"><div><h2>Everything in its place</h2><p class="muted setup-overview-intro">Choose an area to make a change.</p></div><span>All saved</span></header>
-          <div class="setup-category-grid">
-            <button type="button" data-setup-target="routine"><span class="setup-category-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" /></svg></span><span><b>Routine</b><small id="setupScheduleSummary">Wake 6:00 AM · Bed 10:30 PM</small></span><i>›</i></button>
-            <button type="button" data-setup-target="faith"><span class="setup-category-icon warm" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v18M8 7h8" /></svg></span><span><b>Faith</b><small id="setupFaithSummary">Truth Before Tasks · Convictions</small></span><i>›</i></button>
-            <button type="button" data-setup-target="health"><span class="setup-category-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z" /></svg></span><span><b>Health & access</b><small id="setupHealthSummary">Health, Watch, widgets, and earned apps</small></span><i>›</i></button>
-            <button type="button" data-setup-target="appearance"><span class="setup-category-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 22a10 10 0 1 0 0-20 4 4 0 0 0 0 8h1.5a2.5 2.5 0 0 1 0 5H12a3.5 3.5 0 0 0 0 7Z" /><path d="M7.5 10.5h.01M9 6.5h.01M14 5.5h.01M17.5 9h.01" /></svg></span><span><b>Appearance</b><small id="setupAppearanceSummary">Calm theme · Right-handed controls</small></span><i>›</i></button>
-            <button type="button" data-setup-target="data"><span class="setup-category-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z" /><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20" /></svg></span><span><b>Account & data</b><small id="setupDataSummary">Private sync, backups, and sharing</small></span><i>›</i></button>
+          <header class="setup-overview-heading"><div><h2>Make the app fit your life</h2><p class="muted setup-overview-intro">Core settings stay visible. Details open only when you need them.</p></div><span>Settings</span></header>
+          <div class="setup-category-groups">
+            <section class="setup-category-group" aria-labelledby="setupDailyRhythmHeading">
+              <header><p id="setupDailyRhythmHeading" class="eyebrow">Daily rhythm</p><span>What shapes the ordinary day</span></header>
+              <div class="setup-category-grid">
+                <button type="button" data-setup-target="routine"><span class="setup-category-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" /></svg></span><span><b>Routine & schedule</b><small id="setupScheduleSummary">Wake 6:00 AM · Bed 10:30 PM</small></span><i>›</i></button>
+                <button type="button" data-setup-target="faith"><span class="setup-category-icon warm" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v18M8 7h8" /></svg></span><span><b>Faith foundation</b><small id="setupFaithSummary">Truth Before Tasks · Convictions</small></span><i>›</i></button>
+                <button type="button" data-setup-target="reminders"><span class="setup-category-icon warm" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg></span><span><b>Truth reminders</b><small id="setupRemindersSummary">Scheduled acknowledgements and protection</small></span><i>›</i></button>
+              </div>
+            </section>
+            <section class="setup-category-group" aria-labelledby="setupConnectionsHeading">
+              <header><p id="setupConnectionsHeading" class="eyebrow">Connections</p><span>Health, access, and the people you choose</span></header>
+              <div class="setup-category-grid">
+                <button type="button" data-setup-target="health"><span class="setup-category-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z" /></svg></span><span><b>Health, devices & access</b><small id="setupHealthSummary">Health, Watch, widgets, and earned apps</small></span><i>›</i></button>
+                <button type="button" data-setup-target="sharing"><span class="setup-category-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span><b>Private accountability</b><small id="setupSharingSummary">Partners and shared progress</small></span><i>›</i></button>
+              </div>
+            </section>
+            <section class="setup-category-group" aria-labelledby="setupAppPrivacyHeading">
+              <header><p id="setupAppPrivacyHeading" class="eyebrow">App & privacy</p><span>Appearance, backups, and private sync</span></header>
+              <div class="setup-category-grid">
+                <button type="button" data-setup-target="appearance"><span class="setup-category-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 22a10 10 0 1 0 0-20 4 4 0 0 0 0 8h1.5a2.5 2.5 0 0 1 0 5H12a3.5 3.5 0 0 0 0 7Z" /><path d="M7.5 10.5h.01M9 6.5h.01M14 5.5h.01M17.5 9h.01" /></svg></span><span><b>Appearance & accessibility</b><small id="setupAppearanceSummary">Calm theme · Right-handed controls</small></span><i>›</i></button>
+                <button type="button" data-setup-target="data"><span class="setup-category-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z" /><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20" /></svg></span><span><b>Data & privacy</b><small id="setupDataSummary">Private sync, backups, and protection</small></span><i>›</i></button>
+              </div>
+            </section>
           </div>
         </section>
         <div id="setupCategoryBar" class="setup-category-bar" hidden><button id="setupBackButton" class="small-button" type="button">‹ Setup</button><strong id="setupCategoryTitle">Routine & schedule</strong></div>
@@ -398,7 +431,7 @@
           <p class="muted setup-help">A background photo stays only on this device. It is compressed before being saved.</p>
         </section>
 
-        <section id="truthRemindersCard" class="card" data-setup-category="faith">
+        <section id="truthRemindersCard" class="card" data-setup-category="reminders">
           <div class="section-heading"><div><p class="eyebrow">Throughout the day</p><h2>Truth reminders</h2></div></div>
           <p class="muted setup-help">Keep a library of words and pictures to return to. Choose your entries or shuffle them, with reminders every 30 minutes from 8 AM to 8 PM by default.</p>
           <button id="openTruthRemindersButton" class="secondary-button" type="button">Manage iPhone reminders</button>
@@ -749,7 +782,7 @@
           </div>
         </section>
 
-        <section class="card private-sharing-card" data-setup-category="data">
+        <section class="card private-sharing-card" data-setup-category="sharing">
           <div class="section-heading"><div><p class="eyebrow">Private sharing</p><h2>Private accountability</h2></div></div>
           <p>Invite one accountability partner or support several people from the private sharing area in Progress.</p>
           <button id="openAccountabilityFromSetupButton" class="primary-button" type="button">Open private accountability</button>
@@ -918,6 +951,6 @@
   <script src="sync-core.js" defer></script>
   <script src="sync-cloud.js" defer></script>
   <script src="data-health.js" defer></script>
-  <script src="app.js?v=1.45.0-build47-safe-areas" defer></script>
+  <script src="app.js?v=1.46.0-build48-clear-ledger" defer></script>
 </body>
 </html>

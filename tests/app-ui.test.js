@@ -24,9 +24,49 @@ function localDateKey(date = new Date()) {
 
   await page.goto(baseURL, { waitUntil: 'networkidle' });
   assert.equal(await page.locator('#truthHeroTitle').textContent(), 'Truth Before Tasks');
+  assert.equal(await page.title(), 'Daily Rhythms');
+  assert.equal(await page.locator('.topbar-mark').count(), 0);
   assert.equal(await page.locator('#truthEnterDayButton').isDisabled(), true);
   assert.equal(await page.locator('#accountabilitySharingCard').count(), 1);
-  assert.equal(await page.locator('#appVersion').textContent(), 'v1.45.0 · Build 47');
+  assert.equal(await page.locator('#medicationProgressCard').evaluate(element => element.tagName), 'DETAILS');
+  assert.equal(await page.locator('#medicationProgressCard').evaluate(element => element.open), false);
+  assert.equal(await page.locator('#accountabilitySharingCard').evaluate(element => element.open), false);
+  assert.equal(await page.locator('#accountabilityReportCard').evaluate(element => element.open), false);
+  assert.equal(await page.locator('#appVersion').textContent(), 'v1.46.0 · Build 48');
+  assert.equal(await page.locator('#progressStoryCard').count(), 1);
+  assert.match(await page.locator('#progressStoryTitle').textContent(), /rhythm/i);
+  assert.equal(await page.locator('#clearNotesFiltersButton').count(), 1);
+  assert.equal(await page.locator('#godMomentsLibrary').evaluate(element => element.tagName), 'DETAILS');
+  const notesFilterReset = await page.evaluate(() => {
+    const search = document.querySelector('#notesSearchInput');
+    const type = document.querySelector('#notesTypeFilter');
+    const status = document.querySelector('#notesStatusFilter');
+    const clear = document.querySelector('#clearNotesFiltersButton');
+    search.value = 'grace';
+    search.dispatchEvent(new Event('input', { bubbles: true }));
+    type.value = 'prayer';
+    type.dispatchEvent(new Event('change', { bubbles: true }));
+    status.value = 'open';
+    status.dispatchEvent(new Event('change', { bubbles: true }));
+    const visibleBeforeReset = !clear.hidden;
+    clear.click();
+    return {
+      visibleBeforeReset,
+      search: search.value,
+      type: type.value,
+      status: status.value,
+      hiddenAfterReset: clear.hidden
+    };
+  });
+  assert.deepEqual(notesFilterReset, {
+    visibleBeforeReset: true,
+    search: '',
+    type: 'all',
+    status: 'all',
+    hiddenAfterReset: true
+  });
+  assert.equal(await page.locator('[data-setup-target="reminders"]').count(), 1);
+  assert.equal(await page.locator('[data-setup-target="sharing"]').count(), 1);
   assert.match(await page.locator('#openAccountabilityFromSetupButton').textContent(), /Open private accountability/);
   assert.equal(await page.locator('#accountabilitySharingSignedOut').evaluate(element => element.hidden), false);
   assert.match(await page.locator('#accountabilitySharingSignedOut').textContent(), /Connect Private Sync first/);
@@ -599,9 +639,15 @@ function localDateKey(date = new Date()) {
   }
 
   await page.locator('[data-view="setup"]').click();
-  assert.equal((await page.locator('#pageTitle').textContent()).trim(), 'Daily Routine');
-  assert.equal((await page.locator('#pageContext').textContent()).trim(), 'Setup');
+  assert.equal((await page.locator('#pageTitle').textContent()).trim(), 'Setup');
+  assert.equal(await page.locator('#pageContext').isHidden(), true);
   assert.equal(await page.locator('#setupOverview').isVisible(), true);
+  await page.locator('[data-setup-target="sharing"]').click();
+  await page.locator('#openAccountabilityFromSetupButton').click();
+  await page.waitForTimeout(50);
+  assert.equal(await page.locator('#historyView').evaluate(element => element.classList.contains('active')), true);
+  assert.equal(await page.locator('#accountabilitySharingCard').evaluate(element => element.open), true);
+  await page.locator('[data-view="setup"]').click();
   await page.locator('[data-setup-target="health"]').click();
   assert.equal((await page.locator('#setupCategoryTitle').textContent()).trim(), 'Health & access');
   assert.equal(await page.locator('#iphoneWidgetCard').isVisible(), true);
@@ -764,9 +810,12 @@ function localDateKey(date = new Date()) {
   assert.ok(earnedAccessLayout.left >= 0);
   assert.ok(earnedAccessLayout.right <= earnedAccessLayout.viewport);
   await page.locator('#setupBackButton').click();
-  await page.locator('[data-setup-target="faith"]').click();
+  await page.locator('[data-setup-target="reminders"]').click();
+  assert.equal((await page.locator('#setupCategoryTitle').textContent()).trim(), 'Truth reminders');
   await page.locator('#openTruthRemindersButton').click();
   assert.equal(await page.evaluate(() => window.__dailyRoutineNativeMessages.at(-1).action), 'truth.reminders.open');
+  await page.locator('#setupBackButton').click();
+  await page.locator('[data-setup-target="faith"]').click();
   assert.match(await page.locator('#truthCoreInput').inputValue(), /Not for righteousness\. Because of righteousness\./);
   assert.match(await page.locator('#truthCoreInput').inputValue(), /Faithfulness, not infallibility/);
   assert.match(await page.locator('#truthCoreInput').inputValue(), /I do not need to agonize over every choice/);
@@ -837,7 +886,7 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.evaluate(() => [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action.startsWith('morning.foundation'))?.action), 'morning.foundation.lock');
   for (let index = 0; index < 4; index += 1) await page.locator('#truthContinueButton').click();
   assert.equal(await page.locator('#truthHeroTitle').textContent(), 'Convictions Before Circumstances');
-  assert.equal((await page.locator('#pageTitle').textContent()).trim(), 'Daily Routine');
+  assert.equal((await page.locator('#pageTitle').textContent()).trim(), 'Daily Rhythms');
   assert.equal(await page.locator('#pageContext').isHidden(), true);
   assert.equal(await page.locator('#truthHeroEyebrow').isHidden(), true);
   assert.equal(await page.locator('#truthStepLabel').isHidden(), true);
@@ -980,10 +1029,14 @@ function localDateKey(date = new Date()) {
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   const navPosition = await page.locator('.bottom-nav').evaluate(node => {
     const rect = node.getBoundingClientRect();
-    return { position: getComputedStyle(node).position, bottom: rect.bottom, viewport: innerHeight };
+    const style = getComputedStyle(node);
+    return { position: style.position, left: rect.left, right: rect.right, bottom: rect.bottom, viewportWidth: innerWidth, viewportHeight: innerHeight, radius: parseFloat(style.borderRadius) };
   });
   assert.equal(navPosition.position, 'fixed');
-  assert.ok(Math.abs(navPosition.bottom - navPosition.viewport) < 2);
+  assert.ok(navPosition.left > 0);
+  assert.ok(navPosition.right < navPosition.viewportWidth);
+  assert.ok(navPosition.bottom < navPosition.viewportHeight);
+  assert.ok(navPosition.radius >= 15);
 
   const automaticPage = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
   await automaticPage.addInitScript(() => {
