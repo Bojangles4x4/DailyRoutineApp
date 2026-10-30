@@ -25,40 +25,27 @@ final class WatchQuickActionsUITests: XCTestCase {
         XCTAssertTrue(suggested.waitForExistence(timeout: 10))
         XCTAssertTrue(suggested.isEnabled)
         let attachment = XCTAttachment(screenshot: app.screenshot())
-        attachment.name = "Build45-Watch-Ultra-focus"
+        attachment.name = "Build49-Watch-Ultra-focus"
         attachment.lifetime = .keepAlways
         add(attachment)
         suggested.tap()
     }
 
-    func testRoutineRowsUseFingerFriendlyTargetsAndCompactActionBar() {
+    func testLaterAdvancesSuggestionAndActionsStayOnScreen() {
         let app = launchApp(truthComplete: true)
 
-        let toggle = app.descendants(matching: .any)["toggleWatchTaskView"]
-        XCTAssertTrue(toggle.waitForExistence(timeout: 10))
-        toggle.tap()
-
-        let firstRoutine = app.buttons["routine-morning-prayer"]
-        let fourthRoutine = app.buttons["routine-day-movement"]
-        let fifthRoutine = app.buttons["routine-evening-prepare"]
-        let customAction = app.descendants(matching: .any)["customWatchAction"]
-        XCTAssertTrue(firstRoutine.waitForExistence(timeout: 10))
-        XCTAssertTrue(fourthRoutine.waitForExistence(timeout: 10))
-        XCTAssertTrue(customAction.waitForExistence(timeout: 10))
-        XCTAssertTrue(firstRoutine.isHittable)
-        XCTAssertGreaterThanOrEqual(firstRoutine.frame.height, 38)
-        XCTAssertGreaterThanOrEqual(customAction.frame.height, 38)
-        XCTAssertLessThanOrEqual(app.frame.maxY - customAction.frame.maxY, 6)
-        XCTAssertTrue(fifthRoutine.waitForExistence(timeout: 10))
-    }
-
-    func testCustomBottomAction() {
-        let app = launchApp(truthComplete: true)
-
-        let customAction = app.descendants(matching: .any)["customWatchAction"]
-        XCTAssertTrue(customAction.waitForExistence(timeout: 10))
-        XCTAssertTrue(customAction.isEnabled)
-        customAction.tap()
+        let later = app.buttons["deferSuggestedRoutineAction"]
+        let complete = app.buttons["suggestedRoutineAction"]
+        XCTAssertTrue(later.waitForExistence(timeout: 10))
+        XCTAssertTrue(complete.waitForExistence(timeout: 10))
+        XCTAssertTrue(later.isHittable)
+        XCTAssertTrue(complete.isHittable)
+        XCTAssertGreaterThanOrEqual(later.frame.height, 42)
+        XCTAssertGreaterThanOrEqual(complete.frame.height, 42)
+        XCTAssertLessThanOrEqual(complete.frame.maxY, app.frame.maxY)
+        XCTAssertTrue(app.staticTexts["Brush teeth"].exists)
+        later.tap()
+        XCTAssertTrue(app.staticTexts["Take morning medicine"].waitForExistence(timeout: 5))
     }
 
     func testWatchFocusOmitsCaptureAndEarnedAccess() {
@@ -75,15 +62,15 @@ final class WatchQuickActionsUITests: XCTestCase {
         app.launch()
         let review = app.buttons["reviewWatchMedications"]
         XCTAssertTrue(review.waitForExistence(timeout: 10))
-        XCTAssertTrue(app.descendants(matching: .any)["watchFocusSummary"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["watchStepsSummary"].exists)
         let focusAttachment = XCTAttachment(screenshot: app.screenshot())
-        focusAttachment.name = "Build45-Watch-medication-focus"
+        focusAttachment.name = "Build49-Watch-medication-focus"
         focusAttachment.lifetime = .keepAlways
         add(focusAttachment)
         review.tap()
         XCTAssertTrue(app.staticTexts["Vitamin D · 1 capsule"].waitForExistence(timeout: 5))
         let listAttachment = XCTAttachment(screenshot: app.screenshot())
-        listAttachment.name = "Build45-Watch-medication-list"
+        listAttachment.name = "Build49-Watch-medication-list"
         listAttachment.lifetime = .keepAlways
         add(listAttachment)
         let done = app.buttons["dismissMedicationReview"]

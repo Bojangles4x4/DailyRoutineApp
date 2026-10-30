@@ -11,11 +11,18 @@ private enum WatchLedgerPalette {
     static let button = Color(red: 0.173, green: 0.424, blue: 0.588)
 }
 
+private struct WatchDeferredSuggestions: Codable {
+    let localDateKey: String
+    let timeZoneIdentifier: String
+    let itemIDs: [String]
+}
+
 struct WatchContentView: View {
     @ObservedObject var session: WatchSessionManager
+    @AppStorage("watch-deferred-suggestions-v1") private var deferredSuggestionPayload = ""
     @State private var pendingMedicationItem: WatchRoutineItem?
-    @State private var showAllTasks = false
     @State private var medicationToReview: WatchRoutineItem?
+    @State private var deferredSuggestionIDs: [String] = []
     private typealias Palette = WatchLedgerPalette
 
     private var progress: Double {
@@ -39,40 +46,39 @@ struct WatchContentView: View {
     }
 
     private var routineItems: [WatchRoutineItem] { session.context?.items ?? [] }
-    private var suggestedItem: WatchRoutineItem? { routineItems.first { !$0.completed } }
-
-    private var healthUpdatedDate: Date? {
-        guard let value = session.context?.healthUpdatedAt else { return nil }
-        return ISO8601DateFormatter().date(from: value)
+    private var incompleteItems: [WatchRoutineItem] { routineItems.filter { !$0.completed } }
+    private var suggestedItem: WatchRoutineItem? {
+        orderedSuggestionItems.first
     }
-
-    private var customAction: WatchCustomAction {
-        session.context?.customAction ?? WatchCustomAction(
-            title: "Water +1",
-            action: .addWater,
-            itemId: nil,
-            value: 1
-        )
+    private var nextSuggestedItem: WatchRoutineItem? {
+        orderedSuggestionItems.dropFirst().first
+    }
+    private var orderedSuggestionItems: [WatchRoutineItem] {
+        let active = incompleteItems.filter { !deferredSuggestionIDs.contains($0.id) }
+        let deferred = deferredSuggestionIDs.compactMap { id in
+            incompleteItems.first { $0.id == id }
+        }
+        return active + deferred
     }
 
     var body: some View {
         ZStack {
             Palette.background.ignoresSafeArea()
 
-            VStack(spacing: 6) {
-                summaryHeader
-
+            VStack(spacing: 5) {
                 if truthBeforeTasksComplete {
-                    if showAllTasks { routineList } else { suggestedFocus }
-                    actionBar
+                    summaryHeader
+                    stepsStrip
+                    suggestedFocus
                 } else {
+                    lockedHeader
                     truthLockCard
                     Spacer(minLength: 0)
                 }
             }
-            .padding(.horizontal, 7)
-            .padding(.top, 8)
-            .padding(.bottom, 3)
+            .padding(.horizontal, 8)
+            .padding(.top, 5)
+            .padding(.bottom, 2)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .ignoresSafeArea(.container, edges: [.top, .bottom])
         }
@@ -102,25 +108,26 @@ struct WatchContentView: View {
                 secondaryButton: .default(Text("Log now")) { sendRoutineAction(item) }
             )
         }
+        .onChange(of: session.context?.dateKey) {
+            restoreDeferredSuggestions()
+        }
+        .onAppear(perform: restoreDeferredSuggestions)
     }
 
     private var summaryHeader: some View {
-        VStack(spacing: 5) {
+        VStack(spacing: 3) {
             HStack(alignment: .center, spacing: 4) {
-                Text("Today").font(.system(size: 12, weight: .medium))
+                Text("Today").font(.system(size: 14, weight: .semibold))
+                Spacer(minLength: 4)
                 Text("\(Int((progress * 100).rounded()))%")
                     .font(.system(size: 14, weight: .bold, design: .rounded))
                     .foregroundStyle(Palette.accent)
-                Text("\(session.context?.completed ?? 0)/\(session.context?.total ?? 0)")
-                    .font(.system(size: 8, weight: .medium))
-                    .foregroundStyle(Palette.muted)
                 Circle()
                     .fill(session.isReachable ? Color.green : Color.orange)
                     .frame(width: 5, height: 5)
                     .accessibilityLabel(session.isReachable ? "Live" : "Will sync")
-                Spacer(minLength: 42)
             }
-            .padding(.leading, 7)
+            .padding(.horizontal, 5)
 
             GeometryReader { proxy in
                 ZStack(alignment: .leading) {
@@ -129,206 +136,170 @@ struct WatchContentView: View {
                 }
             }
             .frame(height: 4)
-            .padding(.trailing, 48)
             .accessibilityLabel("Routine progress")
             .accessibilityValue("\(session.context?.completed ?? 0) of \(session.context?.total ?? 0) complete")
         }
     }
 
+    private var lockedHeader: some View {
+        VStack(spacing: 3) {
+            HStack {
+                Text("Today").font(.system(size: 14, weight: .semibold))
+                Spacer()
+                Label("Locked", systemImage: "lock.fill")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(Palette.muted)
+            }
+            .padding(.horizontal, 5)
+            Capsule().fill(Palette.soft).frame(height: 4)
+        }
+    }
+
+    private var stepsStrip: some View {
+        HStack {
+            Text("Steps")
+                .font(.system(size: 9, weight: .medium))
+                .foregroundStyle(Palette.muted)
+                .textCase(.uppercase)
+            Spacer()
+            if let steps = session.context?.stepCount {
+                Text(steps.formatted())
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+            } else {
+                Text("Open iPhone")
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(Palette.muted)
+            }
+        }
+        .padding(.horizontal, 10)
+        .frame(maxWidth: .infinity, minHeight: 28)
+        .background(Palette.surface, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+        .accessibilityIdentifier("watchStepsSummary")
+    }
+
     private var suggestedFocus: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 7) {
-                focusSummary
-
-                if let item = suggestedItem {
-                    VStack(alignment: .leading, spacing: 7) {
-                        Text("Suggested focus · \(sectionTitle(item.section))")
-                            .font(.system(size: 9, weight: .medium))
-                            .foregroundStyle(Palette.muted)
-                        Text(item.name)
-                            .font(.system(size: 17, weight: .medium, design: .serif))
-                            .lineLimit(2)
-                        HStack(spacing: 6) {
-                            if item.action == .takeMedication, !(item.medicationList ?? []).isEmpty {
-                                Button { medicationToReview = item } label: {
-                                    Text("Review list").font(.system(size: 10, weight: .medium))
-                                        .frame(maxWidth: .infinity, minHeight: 42)
-                                        .background(Palette.soft, in: RoundedRectangle(cornerRadius: 11))
-                                }
-                                .buttonStyle(.plain)
-                                .accessibilityIdentifier("reviewWatchMedications")
-                            }
-                            Button { performRoutineAction(item) } label: {
-                                Text("Mark complete")
-                                    .font(.system(size: 10, weight: .semibold))
-                                    .frame(maxWidth: .infinity, minHeight: 42)
-                                    .background(Palette.button, in: RoundedRectangle(cornerRadius: 11))
-                                    .foregroundStyle(Palette.ink)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityIdentifier("suggestedRoutineAction")
-                        }
-                    }
-                    .padding(11)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Palette.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                } else {
-                    Label("All Watch-ready tasks complete", systemImage: "checkmark.circle.fill")
-                        .font(.system(size: 12, weight: .bold))
+        VStack(spacing: 7) {
+            if let item = suggestedItem {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(sectionTitle(item.section))
+                        .font(.system(size: 9, weight: .medium))
                         .foregroundStyle(Palette.accent)
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Palette.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                }
+                    Text(item.name)
+                        .font(.system(size: 15, weight: .semibold))
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.82)
+                        .padding(.top, 4)
 
-                if let status = session.deliveryStatus {
-                    Text(status).font(.system(size: 8)).foregroundStyle(.secondary)
+                    Spacer(minLength: 4)
+
+                    if item.action == .takeMedication, !(item.medicationList ?? []).isEmpty {
+                        Button { medicationToReview = item } label: {
+                            Text("Review medications")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(Palette.ink)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("reviewWatchMedications")
+                    } else if let nextSuggestedItem {
+                        HStack(spacing: 3) {
+                            Text("Up next ·")
+                                .foregroundStyle(Palette.muted)
+                            Text(nextSuggestedItem.name)
+                                .foregroundStyle(Palette.ink)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                        }
+                        .font(.system(size: 12, weight: .medium))
+                        .padding(.top, 6)
+                        .overlay(alignment: .top) { Divider().overlay(Palette.soft) }
+                        .accessibilityIdentifier("watchUpNext")
+                    }
                 }
+                .padding(.horizontal, 11)
+                .padding(.vertical, 9)
+                .frame(maxWidth: .infinity, minHeight: 108, maxHeight: .infinity, alignment: .leading)
+                .background(Palette.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+                HStack(spacing: 7) {
+                    focusActionButton(
+                        title: "Later",
+                        color: Palette.soft,
+                        identifier: "deferSuggestedRoutineAction",
+                        enabled: nextSuggestedItem != nil
+                    ) { deferSuggestion(item) }
+                    focusActionButton(
+                        title: "Complete",
+                        color: Palette.button,
+                        identifier: "suggestedRoutineAction"
+                    ) { performRoutineAction(item) }
+                }
+            } else {
+                Label("All Watch-ready tasks complete", systemImage: "checkmark.circle.fill")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Palette.accent)
+                    .padding(12)
+                    .frame(maxWidth: .infinity, minHeight: 108, alignment: .leading)
+                    .background(Palette.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
         }
-        .scrollIndicators(.hidden)
         .frame(maxHeight: .infinity)
     }
 
-    private var focusSummary: some View {
-        let morning = routineItems.filter { $0.section == "morning" }
-        return HStack(spacing: 6) {
-            summaryTile("Morning", value: "\(morning.filter(\.completed).count) of \(morning.count)")
-            summaryTile("Steps", value: session.context?.stepCount?.formatted() ?? "Open iPhone")
-        }
-        .accessibilityIdentifier("watchFocusSummary")
-    }
-
-    private func summaryTile(_ title: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title).font(.system(size: 8)).foregroundStyle(Palette.muted)
-            Text(value).font(.system(size: 12, weight: .medium)).lineLimit(1)
-        }
-        .padding(.horizontal, 9).padding(.vertical, 6)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Palette.surface, in: RoundedRectangle(cornerRadius: 10))
-    }
-
-    @ViewBuilder
-    private var stepsSummary: some View {
-        if let steps = session.context?.stepCount {
-            VStack(alignment: .trailing, spacing: 0) {
-                Text("\(steps.formatted()) steps").font(.system(size: 9, weight: .bold))
-                if let updated = healthUpdatedDate {
-                    Text(updated.formatted(date: .omitted, time: .shortened))
-                        .font(.system(size: 7, weight: .medium))
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("\(steps) steps, last updated \(healthUpdatedDate?.formatted(date: .omitted, time: .shortened) ?? "recently")")
-        }
-    }
-
-    private var routineList: some View {
-        ScrollView {
-            LazyVStack(spacing: 6) {
-                HStack {
-                    Text("ALL TASKS")
-                        .font(.system(size: 8, weight: .bold))
-                        .tracking(0.8)
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    stepsSummary
-                }
-                if routineItems.isEmpty {
-                    Text("No Watch-ready routines today")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .padding(.vertical, 18)
-                } else {
-                    ForEach(routineItems) { item in routineButton(item) }
-                }
-                if let deliveryStatus = session.deliveryStatus {
-                    Text(deliveryStatus).font(.system(size: 8)).foregroundStyle(.secondary)
-                }
-            }
-        }
-        .scrollIndicators(.hidden)
-        .frame(maxHeight: .infinity)
-        .clipped()
-    }
-
-    private func routineButton(_ item: WatchRoutineItem) -> some View {
-        Button { performRoutineAction(item) } label: {
-            HStack(spacing: 9) {
-                Image(systemName: item.completed ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(item.completed ? Palette.accent : Palette.muted)
-                    .font(.system(size: 17, weight: .semibold))
-                Text(item.name)
-                    .font(.system(size: 12, weight: .semibold))
-                    .lineLimit(1)
-                Spacer(minLength: 2)
-                Text(sectionTitle(item.section))
-                    .font(.system(size: 8, weight: .medium))
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity, minHeight: 42, alignment: .leading)
-            .padding(.horizontal, 9)
-            .background(item.completed ? Palette.surface : Palette.soft, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("routine-\(item.id)")
-        .accessibilityLabel(item.completed ? "\(item.name), completed" : item.name)
-        .accessibilityHint(item.completed ? "Tap to reopen" : "Tap to complete")
-    }
-
-    private var actionBar: some View {
-        HStack(spacing: 6) {
-            compactAction(title: customAction.title, systemImage: customActionIcon, color: Palette.soft, identifier: "customWatchAction") {
-                performCustomAction()
-            }
-            compactAction(
-                title: showAllTasks ? "Focus" : "All tasks",
-                systemImage: showAllTasks ? "scope" : "list.bullet",
-                color: Palette.soft,
-                identifier: "toggleWatchTaskView"
-            ) { showAllTasks.toggle() }
-        }
-    }
-
-    private func compactAction(
+    private func focusActionButton(
         title: String,
-        systemImage: String,
         color: Color,
         identifier: String,
+        enabled: Bool = true,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Label(title, systemImage: systemImage)
-                .font(.system(size: 10, weight: .bold))
-                .lineLimit(1)
+            Text(title)
+                .font(.system(size: 12, weight: .semibold))
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .background(color, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
                 .foregroundStyle(Palette.ink)
-                .frame(maxWidth: .infinity, minHeight: 40)
-                .background(color, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
         }
         .buttonStyle(.plain)
+        .disabled(!enabled)
+        .opacity(enabled ? 1 : 0.45)
         .accessibilityIdentifier(identifier)
     }
 
-    private var customActionIcon: String {
-        switch customAction.action {
-        case .addWater: "drop.fill"
-        case .takeMedication: "pills.fill"
-        case .recordMood: "face.smiling"
-        default: "bolt.fill"
+    private func deferSuggestion(_ item: WatchRoutineItem) {
+        guard incompleteItems.contains(where: { $0.id != item.id }) else { return }
+        deferredSuggestionIDs.removeAll { $0 == item.id }
+        deferredSuggestionIDs.append(item.id)
+        if incompleteItems.allSatisfy({ deferredSuggestionIDs.contains($0.id) }) {
+            deferredSuggestionIDs = [item.id]
         }
+        saveDeferredSuggestions()
+        WKInterfaceDevice.current().play(.click)
     }
 
-    private func performCustomAction() {
-        if customAction.action == .takeMedication,
-           let itemId = customAction.itemId,
-           let item = routineItems.first(where: { $0.id == itemId }) {
-            performRoutineAction(item)
+    private func restoreDeferredSuggestions() {
+        guard
+            let data = deferredSuggestionPayload.data(using: .utf8),
+            let saved = try? JSONDecoder().decode(WatchDeferredSuggestions.self, from: data),
+            saved.localDateKey == session.context?.dateKey,
+            saved.timeZoneIdentifier == session.context?.timeZoneIdentifier
+        else {
+            deferredSuggestionIDs = []
+            deferredSuggestionPayload = ""
             return
         }
-        session.send(WatchEvent(action: customAction.action, value: customAction.value, itemId: customAction.itemId))
-        WKInterfaceDevice.current().play(.success)
+        deferredSuggestionIDs = saved.itemIDs
+    }
+
+    private func saveDeferredSuggestions() {
+        guard let context = session.context else { return }
+        let saved = WatchDeferredSuggestions(
+            localDateKey: context.dateKey,
+            timeZoneIdentifier: context.timeZoneIdentifier ?? TimeZone.current.identifier,
+            itemIDs: deferredSuggestionIDs
+        )
+        guard let data = try? JSONEncoder().encode(saved) else { return }
+        deferredSuggestionPayload = String(decoding: data, as: UTF8.self)
     }
 
     private func performRoutineAction(_ item: WatchRoutineItem) {

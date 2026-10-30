@@ -77,7 +77,12 @@ struct RoutineHomeWidgetView: View {
                 .foregroundStyle(Palette.ink)
                 .lineLimit(1)
             Spacer(minLength: 0)
-            if family == .systemLarge, let updated = updatedDate(snapshot) {
+            if family == .systemLarge, snapshot.foundationComplete {
+                Text("✓ Truth reviewed · \(Int((progress(snapshot) * 100).rounded()))%")
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(Palette.accent)
+                    .lineLimit(1)
+            } else if family == .systemLarge, let updated = updatedDate(snapshot) {
                 Text(updated, style: .time)
                     .font(.caption2)
                     .foregroundStyle(Palette.muted)
@@ -89,32 +94,48 @@ struct RoutineHomeWidgetView: View {
     private func largeView(_ snapshot: RoutineSharedSnapshot) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             header(snapshot)
-            HStack(spacing: 7) {
-                metric("Truth Before Tasks", value: snapshot.foundationComplete ? "Reviewed" : "Review first", primary: true)
-                metric("Earned apps", value: snapshot.earnedAccessRemainingMinutes.map { "\($0)m" } ?? "Open app")
-                    .privacySensitive()
-                metric("Today", value: "\(Int((progress(snapshot) * 100).rounded()))%")
-            }
             focusCard(snapshot)
-            Spacer(minLength: 0)
-            stepsSummary(snapshot)
-            HStack(spacing: 8) {
-                if let id = snapshot.waterItemID, let current = snapshot.waterCurrent,
-                   let target = snapshot.waterTarget, snapshot.foundationComplete {
-                    Button(intent: AddWaterIntent(targetID: id, expectedRevision: snapshot.revision,
-                        localDateKey: snapshot.localDateKey, timeZoneIdentifier: snapshot.timeZoneIdentifier)) {
-                        Label("Water +1 · \(current)/\(target)", systemImage: "drop")
-                            .font(.caption.weight(.medium))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                            .frame(maxWidth: .infinity, minHeight: 44)
-                            .foregroundStyle(Palette.accent)
-                            .background(Palette.soft, in: RoundedRectangle(cornerRadius: 11))
+            if snapshot.foundationComplete {
+                upcomingCard(snapshot)
+                Spacer(minLength: 0)
+                HStack(alignment: .bottom, spacing: 12) {
+                    stepsSummary(snapshot)
+                    if let minutes = snapshot.earnedAccessRemainingMinutes {
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("Earned apps").font(.caption2).foregroundStyle(Palette.muted)
+                            Text("\(minutes) min").font(.subheadline.weight(.medium)).foregroundStyle(Palette.ink)
+                        }
+                        .privacySensitive()
                     }
-                    .buttonStyle(.plain)
-                    .privacySensitive()
                 }
-                appLink("View all tasks", symbol: "list.bullet", primary: false)
+                HStack(spacing: 8) {
+                    if let id = snapshot.waterItemID, let current = snapshot.waterCurrent,
+                       let target = snapshot.waterTarget {
+                        Button(intent: AddWaterIntent(targetID: id, expectedRevision: snapshot.revision,
+                            localDateKey: snapshot.localDateKey, timeZoneIdentifier: snapshot.timeZoneIdentifier)) {
+                            Label("Water +1 · \(current)/\(target)", systemImage: "drop")
+                                .font(.caption.weight(.medium))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                                .frame(maxWidth: .infinity, minHeight: 44)
+                                .foregroundStyle(Palette.accent)
+                                .background(Palette.soft, in: RoundedRectangle(cornerRadius: 11))
+                        }
+                        .buttonStyle(.plain)
+                        .privacySensitive()
+                    }
+                    appLink("View all tasks", symbol: "list.bullet", primary: false)
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Today’s routine is waiting").font(.caption.weight(.medium))
+                    Text("Tasks and quick actions appear after the opening review.")
+                        .font(.caption2).foregroundStyle(Palette.muted)
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Palette.surface.opacity(0.7), in: RoundedRectangle(cornerRadius: 13))
+                Spacer(minLength: 0)
             }
         }
     }
@@ -136,19 +157,31 @@ struct RoutineHomeWidgetView: View {
     private func focusCard(_ snapshot: RoutineSharedSnapshot) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             if !snapshot.foundationComplete {
-                Text("Begin with truth").font(.headline.weight(.medium))
-                Text("Review on iPhone to begin today.").font(.caption).foregroundStyle(Palette.muted)
+                Text("Morning foundation").font(.caption2.weight(.medium)).foregroundStyle(Palette.accent)
+                Text("Truth Before Tasks").font(.headline.weight(.medium))
+                Text("Begin with what is true before opening today’s routine.")
+                    .font(.caption).foregroundStyle(Palette.muted)
                 appLink("Begin on iPhone", symbol: "arrow.up.forward", primary: true)
-            } else if let item = snapshot.eligibleItems.first(where: { !$0.completed }) {
+            } else if let item = suggestedItem(snapshot) {
                 HStack {
-                    Text("Suggested focus").font(.caption2).foregroundStyle(Palette.muted)
-                    Spacer(minLength: 2)
-                    Text(item.section).font(.caption2).foregroundStyle(Palette.muted)
+                    Text(item.section).font(.caption2).foregroundStyle(Palette.accent)
+                    Spacer(minLength: 0)
                 }
                 Text(item.title).font(.headline.weight(.medium)).lineLimit(2)
                     .privacySensitive()
                 HStack(spacing: 7) {
-                    appLink("Open routine", symbol: nil, primary: false)
+                    Button(intent: DeferRoutineSuggestionIntent(
+                        targetID: item.id,
+                        eligibleItemIDs: incompleteItems(snapshot).map(\.id),
+                        localDateKey: snapshot.localDateKey,
+                        timeZoneIdentifier: snapshot.timeZoneIdentifier
+                    )) {
+                        Text("Later").font(.caption.weight(.medium))
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .foregroundStyle(Palette.accent)
+                            .background(Palette.soft, in: RoundedRectangle(cornerRadius: 10))
+                    }
+                    .buttonStyle(.plain)
                     completeButton(item, snapshot: snapshot)
                 }
             } else {
@@ -161,6 +194,32 @@ struct RoutineHomeWidgetView: View {
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Palette.surface, in: RoundedRectangle(cornerRadius: 13))
+    }
+
+    @ViewBuilder
+    private func upcomingCard(_ snapshot: RoutineSharedSnapshot) -> some View {
+        let items = upcomingItems(snapshot)
+        if !items.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Coming up").font(.caption2).foregroundStyle(Palette.muted)
+                ForEach(items, id: \.id) { item in
+                    HStack(spacing: 7) {
+                        Image(systemName: "circle")
+                            .font(.system(size: 8, weight: .medium))
+                            .foregroundStyle(Palette.accent)
+                        Text(item.title).font(.caption.weight(.medium)).lineLimit(1)
+                            .privacySensitive()
+                        Spacer(minLength: 4)
+                        Text(item.section).font(.caption2).foregroundStyle(Palette.muted)
+                    }
+                    .frame(minHeight: 27)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Palette.surface, in: RoundedRectangle(cornerRadius: 13))
+        }
     }
 
     private func stepsSummary(_ snapshot: RoutineSharedSnapshot) -> some View {
@@ -260,6 +319,29 @@ struct RoutineHomeWidgetView: View {
                 Text("Refresh today’s private widget summary.").font(.caption).foregroundStyle(Palette.muted)
             }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         }
+    }
+
+    private func incompleteItems(_ snapshot: RoutineSharedSnapshot) -> [RoutineSharedItemSnapshot] {
+        snapshot.eligibleItems.filter { !$0.completed }
+    }
+
+    private func suggestedItem(_ snapshot: RoutineSharedSnapshot) -> RoutineSharedItemSnapshot? {
+        orderedSuggestionItems(snapshot).first
+    }
+
+    private func upcomingItems(_ snapshot: RoutineSharedSnapshot) -> [RoutineSharedItemSnapshot] {
+        Array(orderedSuggestionItems(snapshot).dropFirst().prefix(2))
+    }
+
+    private func orderedSuggestionItems(_ snapshot: RoutineSharedSnapshot) -> [RoutineSharedItemSnapshot] {
+        let items = incompleteItems(snapshot)
+        let deferredIDs = RoutineSuggestionPreferenceStore.itemIDs(
+            localDateKey: snapshot.localDateKey,
+            timeZoneIdentifier: snapshot.timeZoneIdentifier
+        )
+        let active = items.filter { !deferredIDs.contains($0.id) }
+        let deferred = deferredIDs.compactMap { id in items.first { $0.id == id } }
+        return active + deferred
     }
 
     private func progress(_ snapshot: RoutineSharedSnapshot) -> Double {
