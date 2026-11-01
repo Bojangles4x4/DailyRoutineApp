@@ -29,6 +29,19 @@ final class WatchQuickActionsUITests: XCTestCase {
         attachment.lifetime = .keepAlways
         add(attachment)
         suggested.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["watchDeliveryStatus"].waitForExistence(timeout: 3))
+        XCTAssertFalse(suggested.isEnabled)
+    }
+
+    func testStaleContextRequestsRefreshInsteadOfTruthReview() {
+        let app = XCUIApplication()
+        app.launchArguments.append("UI_TESTING_STALE_CONTEXT")
+        app.launch()
+
+        let refresh = app.descendants(matching: .any)["watchRefreshRequired"]
+        XCTAssertTrue(refresh.waitForExistence(timeout: 10))
+        XCTAssertFalse(app.descendants(matching: .any)["truthBeforeTasksLock"].exists)
+        XCTAssertFalse(app.buttons["suggestedRoutineAction"].exists)
     }
 
     func testLaterAdvancesSuggestionAndActionsStayOnScreen() {
@@ -36,13 +49,21 @@ final class WatchQuickActionsUITests: XCTestCase {
 
         let later = app.buttons["deferSuggestedRoutineAction"]
         let complete = app.buttons["suggestedRoutineAction"]
+        let header = app.descendants(matching: .any)["watchSummaryHeader"]
+        let progressPercent = app.staticTexts["watchProgressPercent"]
         XCTAssertTrue(later.waitForExistence(timeout: 10))
         XCTAssertTrue(complete.waitForExistence(timeout: 10))
+        XCTAssertTrue(header.waitForExistence(timeout: 10))
+        XCTAssertTrue(progressPercent.exists)
         XCTAssertTrue(later.isHittable)
         XCTAssertTrue(complete.isHittable)
         XCTAssertGreaterThanOrEqual(later.frame.height, 42)
         XCTAssertGreaterThanOrEqual(complete.frame.height, 42)
-        XCTAssertLessThanOrEqual(complete.frame.maxY, app.frame.maxY)
+        XCTAssertGreaterThanOrEqual(header.frame.minY, app.frame.minY + 8)
+        XCTAssertLessThanOrEqual(progressPercent.frame.maxX, app.frame.midX)
+        XCTAssertGreaterThanOrEqual(later.frame.minX, app.frame.minX + 4)
+        XCTAssertLessThanOrEqual(complete.frame.maxX, app.frame.maxX - 4)
+        XCTAssertLessThanOrEqual(complete.frame.maxY, app.frame.maxY - 4)
         XCTAssertTrue(app.staticTexts["Brush teeth"].exists)
         later.tap()
         XCTAssertTrue(app.staticTexts["Take morning medicine"].waitForExistence(timeout: 5))

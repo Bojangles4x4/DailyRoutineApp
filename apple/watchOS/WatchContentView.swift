@@ -23,6 +23,8 @@ struct WatchContentView: View {
     @State private var pendingMedicationItem: WatchRoutineItem?
     @State private var medicationToReview: WatchRoutineItem?
     @State private var deferredSuggestionIDs: [String] = []
+    @State private var pendingDeliveryItemID: String?
+    @State private var deliveryFeedback: String?
     private typealias Palette = WatchLedgerPalette
 
     private var progress: Double {
@@ -31,9 +33,13 @@ struct WatchContentView: View {
     }
 
     private var truthBeforeTasksComplete: Bool {
+        contextIsCurrentDay
+            && session.context?.truthBeforeTasksComplete == true
+    }
+
+    private var contextIsCurrentDay: Bool {
         session.context?.dateKey == localDateKey
             && session.context?.timeZoneIdentifier == TimeZone.current.identifier
-            && session.context?.truthBeforeTasksComplete == true
     }
 
     private var localDateKey: String {
@@ -66,7 +72,11 @@ struct WatchContentView: View {
             Palette.background.ignoresSafeArea()
 
             VStack(spacing: 5) {
-                if truthBeforeTasksComplete {
+                if !contextIsCurrentDay {
+                    refreshHeader
+                    refreshCard
+                    Spacer(minLength: 0)
+                } else if truthBeforeTasksComplete {
                     summaryHeader
                     stepsStrip
                     suggestedFocus
@@ -77,10 +87,8 @@ struct WatchContentView: View {
                 }
             }
             .padding(.horizontal, 8)
-            .padding(.top, 5)
-            .padding(.bottom, 2)
+            .padding(.vertical, 3)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .ignoresSafeArea(.container, edges: [.top, .bottom])
         }
         .foregroundStyle(Palette.ink)
         .sheet(item: $medicationToReview) { item in
@@ -111,6 +119,10 @@ struct WatchContentView: View {
         .onChange(of: session.context?.dateKey) {
             restoreDeferredSuggestions()
         }
+        .onChange(of: session.context?.completed) {
+            pendingDeliveryItemID = nil
+            deliveryFeedback = nil
+        }
         .onAppear(perform: restoreDeferredSuggestions)
     }
 
@@ -118,14 +130,15 @@ struct WatchContentView: View {
         VStack(spacing: 3) {
             HStack(alignment: .center, spacing: 4) {
                 Text("Today").font(.system(size: 14, weight: .semibold))
-                Spacer(minLength: 4)
                 Text("\(Int((progress * 100).rounded()))%")
                     .font(.system(size: 14, weight: .bold, design: .rounded))
                     .foregroundStyle(Palette.accent)
+                    .accessibilityIdentifier("watchProgressPercent")
                 Circle()
                     .fill(session.isReachable ? Color.green : Color.orange)
                     .frame(width: 5, height: 5)
                     .accessibilityLabel(session.isReachable ? "Live" : "Will sync")
+                Spacer(minLength: 4)
             }
             .padding(.horizontal, 5)
 
@@ -139,20 +152,38 @@ struct WatchContentView: View {
             .accessibilityLabel("Routine progress")
             .accessibilityValue("\(session.context?.completed ?? 0) of \(session.context?.total ?? 0) complete")
         }
+        .accessibilityIdentifier("watchSummaryHeader")
     }
 
     private var lockedHeader: some View {
         VStack(spacing: 3) {
             HStack {
                 Text("Today").font(.system(size: 14, weight: .semibold))
-                Spacer()
                 Label("Locked", systemImage: "lock.fill")
                     .font(.system(size: 9, weight: .semibold))
                     .foregroundStyle(Palette.muted)
+                    .accessibilityIdentifier("watchLockStatus")
+                Spacer()
             }
             .padding(.horizontal, 5)
             Capsule().fill(Palette.soft).frame(height: 4)
         }
+        .accessibilityIdentifier("watchLockedHeader")
+    }
+
+    private var refreshHeader: some View {
+        VStack(spacing: 3) {
+            HStack(spacing: 5) {
+                Text("Today").font(.system(size: 14, weight: .semibold))
+                Label("Refresh", systemImage: "arrow.clockwise")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(Palette.accent)
+                Spacer()
+            }
+            .padding(.horizontal, 5)
+            Capsule().fill(Palette.soft).frame(height: 4)
+        }
+        .accessibilityIdentifier("watchRefreshHeader")
     }
 
     private var stepsStrip: some View {
@@ -192,7 +223,14 @@ struct WatchContentView: View {
 
                     Spacer(minLength: 4)
 
-                    if item.action == .takeMedication, !(item.medicationList ?? []).isEmpty {
+                    if pendingDeliveryItemID == item.id, let deliveryFeedback {
+                        Label(deliveryFeedback, systemImage: "checkmark.circle.fill")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Color.green)
+                            .padding(.top, 6)
+                            .overlay(alignment: .top) { Divider().overlay(Palette.soft) }
+                            .accessibilityIdentifier("watchDeliveryStatus")
+                    } else if item.action == .takeMedication, !(item.medicationList ?? []).isEmpty {
                         Button { medicationToReview = item } label: {
                             Text("Review medications")
                                 .font(.system(size: 11, weight: .semibold))
@@ -226,12 +264,13 @@ struct WatchContentView: View {
                         title: "Later",
                         color: Palette.soft,
                         identifier: "deferSuggestedRoutineAction",
-                        enabled: nextSuggestedItem != nil
+                        enabled: nextSuggestedItem != nil && pendingDeliveryItemID != item.id
                     ) { deferSuggestion(item) }
                     focusActionButton(
                         title: "Complete",
                         color: Palette.button,
-                        identifier: "suggestedRoutineAction"
+                        identifier: "suggestedRoutineAction",
+                        enabled: pendingDeliveryItemID != item.id
                     ) { performRoutineAction(item) }
                 }
             } else {
@@ -311,8 +350,19 @@ struct WatchContentView: View {
     }
 
     private func sendRoutineAction(_ item: WatchRoutineItem) {
+        guard pendingDeliveryItemID != item.id else { return }
+        pendingDeliveryItemID = item.id
         session.send(WatchEvent(action: item.action, itemId: item.id))
+        deliveryFeedback = session.deliveryStatus ?? "Sent to iPhone"
         WKInterfaceDevice.current().play(.click)
+
+        let itemID = item.id
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 4_000_000_000)
+            guard pendingDeliveryItemID == itemID else { return }
+            pendingDeliveryItemID = nil
+            deliveryFeedback = nil
+        }
     }
 
     private func medicationPeriodDoesNotMatch(_ item: WatchRoutineItem) -> Bool {
@@ -332,10 +382,14 @@ struct WatchContentView: View {
                 .foregroundStyle(Palette.accent)
             Text("Review Truth Before Tasks on iPhone")
                 .font(.headline)
+                .lineLimit(2)
+                .minimumScaleFactor(0.82)
                 .multilineTextAlignment(.center)
             Text("Your routine list and actions will unlock automatically.")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
+                .lineLimit(3)
+                .minimumScaleFactor(0.82)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
@@ -343,6 +397,30 @@ struct WatchContentView: View {
         .background(Palette.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("truthBeforeTasksLock")
+    }
+
+    private var refreshCard: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "arrow.clockwise.circle.fill")
+                .font(.title2)
+                .foregroundStyle(Palette.accent)
+            Text("Open iPhone to refresh")
+                .font(.headline)
+                .lineLimit(2)
+                .minimumScaleFactor(0.82)
+                .multilineTextAlignment(.center)
+            Text("Today’s routine will appear automatically. Yesterday’s data is unchanged.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(3)
+                .minimumScaleFactor(0.82)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(12)
+        .background(Palette.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("watchRefreshRequired")
     }
 
     private func sectionTitle(_ section: String) -> String {

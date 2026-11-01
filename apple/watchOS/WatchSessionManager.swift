@@ -25,8 +25,9 @@ final class WatchSessionManager: NSObject, ObservableObject {
 #if DEBUG
     private static func uiTestContext() -> WatchRoutineContext? {
         let arguments = ProcessInfo.processInfo.arguments
+        let staleContext = arguments.contains("UI_TESTING_STALE_CONTEXT")
         let truthComplete: Bool
-        if arguments.contains("UI_TESTING_TRUTH_COMPLETE") {
+        if staleContext || arguments.contains("UI_TESTING_TRUTH_COMPLETE") {
             truthComplete = true
         } else if arguments.contains("UI_TESTING_TRUTH_REQUIRED") {
             truthComplete = false
@@ -35,7 +36,9 @@ final class WatchSessionManager: NSObject, ObservableObject {
         }
 
         return WatchRoutineContext(
-            dateKey: Self.localDateKey(),
+            dateKey: staleContext
+                ? Self.localDateKey(Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date())
+                : Self.localDateKey(),
             timeZoneIdentifier: TimeZone.current.identifier,
             completed: 4,
             total: 9,
