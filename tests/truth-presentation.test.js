@@ -17,7 +17,7 @@ const { chromium } = require('playwright');
       localStorage.setItem('truth-presentation-fixture-seeded', 'true');
       localStorage.setItem('dailyRoutineApp.v1', JSON.stringify({
         settings: { truthBeforeTasks: {
-          personalPlea: 'Begin quietly.', openingPrayer: 'Father, help me remember.', coreTruths: ['Grace is not earned.'],
+          personalPlea: 'Lord, there will be a thousand things to try and take my eyes off You. I plead by Your Grace that I see my goodness as refuse and cling to the righteousness You’ve provided in Jesus.', openingPrayer: 'Father, help me remember.', coreTruths: ['Grace is not earned.'],
           themes: [{ id: 'test-theme', name: 'Remember grace', body: 'God’s grace is the ground beneath every faithful step.',
             scriptures: Array.from({ length: count }, (_, index) => ({ reference: `Passage ${index + 1}`, text: `Saved verse ${index + 1}.` })) }],
           convictions: { intro: 'Remember.', items: convictions ? [{ id: 'first', text: 'Keep trusting.' }, { id: 'second', text: 'Do the next thing in faith.' }] : [] },
@@ -31,6 +31,21 @@ const { chromium } = require('playwright');
   }
   for (const count of [1, 2, 3]) {
     const page = await fixture({ count });
+    if (count === 1) {
+      assert.match(await page.locator('#truthStepBody').textContent(), /there will be a thousand things to try and take my eyes off You/);
+      assert.equal(await page.locator('#truthStepBody cite').textContent(), 'Proverbs 14:12');
+      await page.evaluate(() => {
+        window.__nativeMessages = [];
+        document.body.classList.remove('truth-locked');
+        window.DailyRoutineApp.switchView('today');
+        window.dispatchEvent(new Event('focus'));
+      });
+      assert.equal(await page.evaluate(() => document.body.classList.contains('truth-locked')), true);
+      assert.equal(await page.locator('#truthView').evaluate(view => view.classList.contains('active')), true);
+      assert.equal(await page.evaluate(() => window.DailyRoutineTruthGate.status().complete), false);
+      assert.equal(await page.evaluate(() => window.__nativeMessages.some(message => message.action === 'morning.foundation.complete')), false);
+      assert.match(await page.locator('#earnedAccessFoundationStatus').textContent(), /Required today/);
+    }
     const before = await page.evaluate(() => Object.values(window.DailyRoutineApp.getState().settings.truthBeforeTasks.sessions)[0].startedAt);
     await page.locator('#truthContinueButton').click();
     await page.locator('#truthContinueButton').click();

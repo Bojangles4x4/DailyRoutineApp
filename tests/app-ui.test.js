@@ -518,7 +518,10 @@ function localDateKey(date = new Date()) {
   assert.equal(ledgerLayout.background, 'rgb(245, 247, 249)');
   await page.locator('#todayDateMenu summary').click();
   assert.equal(await page.locator('#datePickerInput').isVisible(), true);
-  await page.locator('#todayDateMenu summary').click();
+  await page.locator('#datePickerInput').evaluate(input => input.dispatchEvent(new Event('change', { bubbles: true })));
+  await page.waitForTimeout(50);
+  assert.equal(await page.locator('#todayDateMenu').getAttribute('open'), null);
+  assert.equal(await page.evaluate(() => document.activeElement?.id), 'todayDateMenuButton');
   assert.equal(await page.locator('.summary-card').count(), 0);
   assert.equal((await page.locator('#morningRoutineSection .check-all').textContent()).trim(), 'All');
   assert.equal(await page.locator('#morningRoutineSection .check-all').getAttribute('aria-label'), 'Complete all unchecked tasks');

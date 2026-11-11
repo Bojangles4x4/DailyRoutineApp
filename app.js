@@ -159,7 +159,7 @@
     privateSyncCard: $('privateSyncCard'), privateSyncBadge: $('privateSyncBadge'), privateSyncStatus: $('privateSyncStatus'), privateSyncDevice: $('privateSyncDevice'), privateSyncLastSync: $('privateSyncLastSync'), privateSyncHealthBadge: $('privateSyncHealthBadge'), privateSyncLocalDays: $('privateSyncLocalDays'), privateSyncLocalRecords: $('privateSyncLocalRecords'), privateSyncCloudHealth: $('privateSyncCloudHealth'), privateSyncPendingHealth: $('privateSyncPendingHealth'), privateSyncHealthDetail: $('privateSyncHealthDetail'), createSyncSnapshotButton: $('createSyncSnapshotButton'), privateSyncNowButton: $('privateSyncNowButton'), privateSyncSignIn: $('privateSyncSignIn'), privateSyncEmailInput: $('privateSyncEmailInput'), privateSyncPasswordInput: $('privateSyncPasswordInput'), privateSyncSendCodeButton: $('privateSyncSendCodeButton'), privateSyncVerifyButton: $('privateSyncVerifyButton'), privateSyncHelp: $('privateSyncHelp'), privateSyncAccount: $('privateSyncAccount'), privateSyncSignOutButton: $('privateSyncSignOutButton'), privateSyncDeleteCloudButton: $('privateSyncDeleteCloudButton'), syncPreviewDialog: $('syncPreviewDialog'), syncPreviewTitle: $('syncPreviewTitle'), syncPreviewDescription: $('syncPreviewDescription'), syncPreviewCounts: $('syncPreviewCounts'), syncPreviewChanges: $('syncPreviewChanges'), closeSyncPreviewButton: $('closeSyncPreviewButton'), cancelSyncPreviewButton: $('cancelSyncPreviewButton'), confirmSyncPreviewButton: $('confirmSyncPreviewButton'),
     connectionsCard: $('connectionsCard'), syncConnectionsButton: $('syncConnectionsButton'), bibleConnectionStatus: $('bibleConnectionStatus'), openBibleConnectionButton: $('openBibleConnectionButton'), bibleAppUrlInput: $('bibleAppUrlInput'), saveBibleConnectionButton: $('saveBibleConnectionButton'), testBibleConnectionButton: $('testBibleConnectionButton'), connectionTemplates: $('connectionTemplates'),
     appleNativeCard: $('appleNativeCard'), iphoneWidgetCard: $('iphoneWidgetCard'), appleWatchCard: $('appleWatchCard'), appleStepCount: $('appleStepCount'), appleSleepHours: $('appleSleepHours'), appleWorkoutCount: $('appleWorkoutCount'), appleHealthStatus: $('appleHealthStatus'), healthSourceSummary: $('healthSourceSummary'), healthSourceDetail: $('healthSourceDetail'), connectAppleHealthButton: $('connectAppleHealthButton'), refreshAppleHealthButton: $('refreshAppleHealthButton'), appleWatchStatus: $('appleWatchStatus'), appleStepsGoalInput: $('appleStepsGoalInput'), saveAppleStepsGoalButton: $('saveAppleStepsGoalButton'), appleWatchQuickActionInput: $('appleWatchQuickActionInput'),
-    earnedAccessCard: $('earnedAccessCard'), earnedAccessBadge: $('earnedAccessBadge'), earnedAccessNativeStatus: $('earnedAccessNativeStatus'), earnedAccessGateStatus: $('earnedAccessGateStatus'), earnedAccessGateDetail: $('earnedAccessGateDetail'), earnedAccessAvailableNow: $('earnedAccessAvailableNow'), earnedAccessUsableNow: $('earnedAccessUsableNow'), earnedAccessStepMetric: $('earnedAccessStepMetric'), earnedAccessLedgerSummary: $('earnedAccessLedgerSummary'), earnedAccessTaskEarned: $('earnedAccessTaskEarned'), earnedAccessWalkingEarned: $('earnedAccessWalkingEarned'), earnedAccessUsedToday: $('earnedAccessUsedToday'), earnedAccessBalanceRemaining: $('earnedAccessBalanceRemaining'), earnedAccessLedgerNote: $('earnedAccessLedgerNote'), earnedAccessTruthStatus: $('earnedAccessTruthStatus'), earnedAccessTruthDetail: $('earnedAccessTruthDetail'), earnedAccessTruthCount: $('earnedAccessTruthCount'), openEarnedAccessControlsButton: $('openEarnedAccessControlsButton'), earnedAccessLabelInput: $('earnedAccessLabelInput'), earnedAccessTaskMinutesInput: $('earnedAccessTaskMinutesInput'), earnedAccessDailyLimitInput: $('earnedAccessDailyLimitInput'), earnedAccessAutomaticStepsInput: $('earnedAccessAutomaticStepsInput'), earnedAccessAutomaticUseInput: $('earnedAccessAutomaticUseInput'), earnedAccessStepsInput: $('earnedAccessStepsInput'), earnedAccessMinutesInput: $('earnedAccessMinutesInput'), earnedAccessModeInput: $('earnedAccessModeInput'), earnedAccessBankStatus: $('earnedAccessBankStatus'), earnedAccessBankDetail: $('earnedAccessBankDetail'), useEarnedAccessButton: $('useEarnedAccessButton'), earnedAccessStatus: $('earnedAccessStatus'), earnedAccessDetail: $('earnedAccessDetail'), earnedAccessProgressBar: $('earnedAccessProgressBar'), startEarnedAccessButton: $('startEarnedAccessButton'), checkEarnedAccessButton: $('checkEarnedAccessButton'), cancelEarnedAccessButton: $('cancelEarnedAccessButton'), earnedAccessMorningTasks: $('earnedAccessMorningTasks'), earnedAccessLaterTasks: $('earnedAccessLaterTasks'), earnedAccessMorningStatus: $('earnedAccessMorningStatus'), earnedAccessLaterStatus: $('earnedAccessLaterStatus'), earnedAccessHealthSyncStatus: $('earnedAccessHealthSyncStatus'), earnedAccessStepSampleStatus: $('earnedAccessStepSampleStatus'), earnedAccessScreenTimeStatus: $('earnedAccessScreenTimeStatus'), earnedAccessScheduleStatus: $('earnedAccessScheduleStatus'), earnedAccessNotificationStatus: $('earnedAccessNotificationStatus'), earnedAccessWidgetStatus: $('earnedAccessWidgetStatus'), earnedAccessDayBoundaryStatus: $('earnedAccessDayBoundaryStatus'), earnedAccessTruthDiagnosticStatus: $('earnedAccessTruthDiagnosticStatus'), runEarnedAccessChecksButton: $('runEarnedAccessChecksButton'), copyEarnedAccessDiagnosticsButton: $('copyEarnedAccessDiagnosticsButton'),
+    earnedAccessCard: $('earnedAccessCard'), earnedAccessBadge: $('earnedAccessBadge'), earnedAccessNativeStatus: $('earnedAccessNativeStatus'), earnedAccessGateStatus: $('earnedAccessGateStatus'), earnedAccessGateDetail: $('earnedAccessGateDetail'), earnedAccessAvailableNow: $('earnedAccessAvailableNow'), earnedAccessUsableNow: $('earnedAccessUsableNow'), earnedAccessStepMetric: $('earnedAccessStepMetric'), earnedAccessLedgerSummary: $('earnedAccessLedgerSummary'), earnedAccessTaskEarned: $('earnedAccessTaskEarned'), earnedAccessWalkingEarned: $('earnedAccessWalkingEarned'), earnedAccessUsedToday: $('earnedAccessUsedToday'), earnedAccessBalanceRemaining: $('earnedAccessBalanceRemaining'), earnedAccessLedgerNote: $('earnedAccessLedgerNote'), earnedAccessTruthStatus: $('earnedAccessTruthStatus'), earnedAccessTruthDetail: $('earnedAccessTruthDetail'), earnedAccessTruthCount: $('earnedAccessTruthCount'), openEarnedAccessControlsButton: $('openEarnedAccessControlsButton'), earnedAccessLabelInput: $('earnedAccessLabelInput'), earnedAccessTaskMinutesInput: $('earnedAccessTaskMinutesInput'), earnedAccessDailyLimitInput: $('earnedAccessDailyLimitInput'), earnedAccessAutomaticStepsInput: $('earnedAccessAutomaticStepsInput'), earnedAccessAutomaticUseInput: $('earnedAccessAutomaticUseInput'), earnedAccessStepsInput: $('earnedAccessStepsInput'), earnedAccessMinutesInput: $('earnedAccessMinutesInput'), earnedAccessModeInput: $('earnedAccessModeInput'), earnedAccessBankStatus: $('earnedAccessBankStatus'), earnedAccessBankDetail: $('earnedAccessBankDetail'), useEarnedAccessButton: $('useEarnedAccessButton'), earnedAccessStatus: $('earnedAccessStatus'), earnedAccessDetail: $('earnedAccessDetail'), earnedAccessProgressBar: $('earnedAccessProgressBar'), startEarnedAccessButton: $('startEarnedAccessButton'), checkEarnedAccessButton: $('checkEarnedAccessButton'), cancelEarnedAccessButton: $('cancelEarnedAccessButton'), earnedAccessMorningTasks: $('earnedAccessMorningTasks'), earnedAccessLaterTasks: $('earnedAccessLaterTasks'), earnedAccessMorningStatus: $('earnedAccessMorningStatus'), earnedAccessLaterStatus: $('earnedAccessLaterStatus'), earnedAccessHealthSyncStatus: $('earnedAccessHealthSyncStatus'), earnedAccessStepSampleStatus: $('earnedAccessStepSampleStatus'), earnedAccessScreenTimeStatus: $('earnedAccessScreenTimeStatus'), earnedAccessScheduleStatus: $('earnedAccessScheduleStatus'), earnedAccessNotificationStatus: $('earnedAccessNotificationStatus'), earnedAccessWidgetStatus: $('earnedAccessWidgetStatus'), earnedAccessDayBoundaryStatus: $('earnedAccessDayBoundaryStatus'), earnedAccessFoundationStatus: $('earnedAccessFoundationStatus'), earnedAccessTruthDiagnosticStatus: $('earnedAccessTruthDiagnosticStatus'), runEarnedAccessChecksButton: $('runEarnedAccessChecksButton'), copyEarnedAccessDiagnosticsButton: $('copyEarnedAccessDiagnosticsButton'),
     healthSleepSuggestion: $('healthSleepSuggestion'), healthSleepSuggestionTitle: $('healthSleepSuggestionTitle'), healthSleepSuggestionText: $('healthSleepSuggestionText'), applyHealthSleepButton: $('applyHealthSleepButton'),
     linkedActionFields: $('linkedActionFields'), linkedTemplateInput: $('linkedTemplateInput'), linkedCompletionInput: $('linkedCompletionInput'), linkedUrlField: $('linkedUrlField'), linkedUrlInput: $('linkedUrlInput'), linkedInternalField: $('linkedInternalField'), linkedInternalTargetInput: $('linkedInternalTargetInput'), linkedButtonLabelInput: $('linkedButtonLabelInput'), timeWindowFields: $('timeWindowFields'), timeWindowStartInput: $('timeWindowStartInput'), timeWindowEndInput: $('timeWindowEndInput'),
     medicationProgressCard: $('medicationProgressCard'), weeklyReviewCard: $('weeklyReviewCard'), memoryBankCard: $('memoryBankCard'), dataBackupCard: $('dataBackupCard'),
@@ -825,6 +825,9 @@
   function fromDateKey(key) { const [y, m, d] = key.split('-').map(Number); return new Date(y, m - 1, d, 12, 0, 0, 0); }
   function shiftDate(date, days) { const d = new Date(date); d.setDate(d.getDate() + days); return d; }
   function isSameDay(a, b) { return dateKey(a) === dateKey(b); }
+  function morningFoundationComplete(key = dateKey(startOfToday())) {
+    return Boolean(state.settings.truthBeforeTasks?.completions?.[key]);
+  }
   function historicalItemDefinition(item, source = 'recorded') {
     const normalized = normalizeItem(item, Number(item?.order) || 0);
     const fields = [
@@ -1119,7 +1122,30 @@
     els.prevDay.addEventListener('click', () => { selectedDate = shiftDate(selectedDate, -1); actualTimesExpanded = false; renderToday(); });
     els.nextDay.addEventListener('click', () => { selectedDate = shiftDate(selectedDate, 1); actualTimesExpanded = false; renderToday(); });
     els.selectedDateButton.addEventListener('click', () => { selectedDate = startOfToday(); actualTimesExpanded = false; renderToday(); });
-    els.datePickerInput.addEventListener('change', () => { if (!els.datePickerInput.value) return; const picked = fromDateKey(els.datePickerInput.value); if (dateKey(picked) <= dateKey(startOfToday())) { selectedDate = picked; actualTimesExpanded = false; renderToday(); } });
+    const dismissDatePicker = () => {
+      els.datePickerInput.blur();
+      $('todayDateMenu').open = false;
+      window.requestAnimationFrame(() => {
+        els.datePickerInput.blur();
+        $('todayDateMenuButton').focus({ preventScroll: true });
+      });
+    };
+    els.datePickerInput.addEventListener('change', () => {
+      const value = els.datePickerInput.value;
+      if (value) {
+        const picked = fromDateKey(value);
+        if (dateKey(picked) <= dateKey(startOfToday())) {
+          selectedDate = picked;
+          actualTimesExpanded = false;
+          renderToday();
+        } else {
+          els.datePickerInput.value = dateKey(selectedDate);
+          showToast('Choose today or an earlier date.');
+        }
+      }
+      dismissDatePicker();
+    });
+    els.datePickerInput.addEventListener('cancel', dismissDatePicker);
     els.dayModeInput.addEventListener('change', () => setDayMode(els.dayModeInput.value));
     els.undoButton.addEventListener('click', performUndo);
     els.copySummaryButton?.addEventListener('click', copyDailySummary);
@@ -1363,6 +1389,7 @@
     });
     const refreshNativeState = () => {
       const boundary = reconcileDayBoundary('app became active');
+      window.DailyRoutineTruthGate?.reconcile('app became active');
       sendNativeBridgeMessage('earned.access.status.request');
       sendNativeBridgeMessage('routine.commands.request');
       if (healthDeviceSettings().connected) requestHealthSummary();
@@ -1523,7 +1550,8 @@
           }
         }
         els.earnedAccessNativeStatus.textContent = value.message || 'Earned Access status updated.';
-        syncMorningFoundation(!document.body.classList.contains('truth-locked'));
+        window.DailyRoutineTruthGate?.reconcile('native status refresh');
+        syncMorningFoundation(morningFoundationComplete());
         renderEarnedAccess();
       } else if (detail.name === 'routine.commands.pending') {
         const commands = Array.isArray(detail.value) ? detail.value : [];
@@ -1839,7 +1867,7 @@
   }
 
   function automaticallyOpenEarnedAccess(settings) {
-    if (!settings.automaticAccess || settings.active || document.body.classList.contains('truth-locked')) return settings;
+    if (!settings.automaticAccess || settings.active || !morningFoundationComplete()) return settings;
     const today = dateKey(startOfToday());
     const bank = Math.max(0, Math.round(Number(settings.bankByDate[today]) || 0));
     if (!bank) return settings;
@@ -2104,6 +2132,16 @@
         ? `${boundary.lastResult || 'Current day verified'} · ${formatRelativeTime(checkedAt)}`
         : 'Waiting for first check';
     }
+    if (els.earnedAccessFoundationStatus) {
+      const boundary = dayBoundaryStatus();
+      const checkedAt = boundary.lastCheckedAt ? new Date(boundary.lastCheckedAt) : null;
+      const checked = checkedAt && !Number.isNaN(checkedAt.getTime()) ? ` · checked ${formatRelativeTime(checkedAt)}` : '';
+      const completedAt = state.settings.truthBeforeTasks?.completions?.[dateKey(startOfToday())];
+      const completed = completedAt ? new Date(completedAt) : null;
+      els.earnedAccessFoundationStatus.textContent = completed && !Number.isNaN(completed.getTime())
+        ? `Complete today · ${completed.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`
+        : `Required today${checked}`;
+    }
     if (els.earnedAccessTruthDiagnosticStatus) {
       const waiting = Math.max(0, Number(earnedAccessNativeState.truthReminderWaitingCount) || 0);
       const next = earnedAccessNativeState.truthReminderNextAt;
@@ -2126,7 +2164,7 @@
     return `${day} at ${date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
   }
 
-  function earnedAccessLedgerSnapshot(settings, foundationLocked = document.body.classList.contains('truth-locked')) {
+  function earnedAccessLedgerSnapshot(settings, foundationLocked = !morningFoundationComplete()) {
     const today = dateKey(startOfToday());
     const earned = Math.max(0, Math.round(Number(settings.earnedByDate[today]) || 0));
     const bank = Math.max(0, Math.round(Number(settings.bankByDate[today]) || 0));
@@ -2263,7 +2301,7 @@
     if (editing !== els.earnedAccessModeInput) els.earnedAccessModeInput.value = settings.mode;
 
     const active = settings.active;
-    const foundationLocked = document.body.classList.contains('truth-locked');
+    const foundationLocked = !morningFoundationComplete();
     const accessIsEarned = Boolean(settings.activeAllowance) && !foundationLocked;
     const ledger = earnedAccessLedgerSnapshot(settings, foundationLocked);
     const bankMinutes = ledger.bank;
@@ -2428,7 +2466,7 @@
 
   function syncNativeEarnedAccess(settings, accessIsEarned) {
     if (!window.DailyRoutineNative?.postMessage) return;
-    const foundationLocked = document.body.classList.contains('truth-locked');
+    const foundationLocked = !morningFoundationComplete();
     const directive = !foundationLocked && accessIsEarned && settings.activeAllowance?.id ? `allow:${settings.activeAllowance.id}` : 'lock';
     if (directive === lastEarnedAccessNativeDirective) return;
     lastEarnedAccessNativeDirective = directive;
@@ -2752,8 +2790,7 @@
       || Number(command.expectedRevision) !== sharedStateRevision()) {
       return finish('rejected', 'The routine changed before the action ran. Open Daily Routine to refresh.');
     }
-    const foundationComplete = Boolean(state.settings.truthBeforeTasks?.completions?.[today])
-      && !document.body.classList.contains('truth-locked');
+    const foundationComplete = morningFoundationComplete(today);
     if (command.requiresFoundationComplete !== true || !foundationComplete) {
       return finish('rejected', 'Complete the Morning Foundation on iPhone first.');
     }
@@ -2841,7 +2878,7 @@
     const completion = completionForDate(today);
     const next = watchActionableItems(today, day)[0];
     const watchItems = watchRoutineItems(today, day);
-    const truthBeforeTasksComplete = !document.body.classList.contains('truth-locked');
+    const truthBeforeTasksComplete = morningFoundationComplete(dateKey(today));
     return {
       dateKey: dateKey(today),
       timeZoneIdentifier: sharedStateTimeZone(),
@@ -2941,7 +2978,7 @@
     processedWatchEventIds.add(eventId);
     if (processedWatchEventIds.size > 200) processedWatchEventIds.delete(processedWatchEventIds.values().next().value);
 
-    if (document.body.classList.contains('truth-locked')) {
+    if (!morningFoundationComplete()) {
       watchLastActionMessage = 'Complete Morning Foundation on iPhone first';
       els.appleWatchStatus.textContent = watchLastActionMessage;
       syncWatchContext();
@@ -6055,8 +6092,14 @@
     const LEGACY_SCRIPTURE_STEP = 4;
     const GOVERNING_REMINDER = 'Not for righteousness. Because of righteousness.';
     const RIGHTNESS_REMINDER = 'Faithfulness, not infallibility. Trust, not certainty. The Lord, not being right. I do not need to agonize over every choice; the sovereign Lord is able to guide and keep me.';
+    const LEGACY_DEFAULT_PLEA = 'Taylor, I wrote this while thinking clearly. I may not feel clear or steady every time I read it, but I will trust what the Lord led me to write when I could see these truths clearly. I plead with you now: set everything else aside for these few minutes and meditate on what is true.';
+    const DAILY_RIGHTEOUSNESS_PLEA = 'Lord, there will be a thousand things to try and take my eyes off You. Bad things and seemingly good things. For me is this tree of self righteousness. The draw to find good in myself to rest upon. Whether that be keeping the critical thought from spewing forth from my mouth or acting out the anger for something getting in my way or manage my anxieties somehow. I plead by Your Grace that I see my goodness as refuse and cling to the righteousness You’ve provided in Jesus.';
+    const DAILY_RIGHTEOUSNESS_SCRIPTURE = {
+      reference: 'Proverbs 14:12',
+      text: 'There is a way which seems right to a man, but its end is the way of death.'
+    };
     const DEFAULTS = {
-      personalPlea: 'Taylor, I wrote this while thinking clearly. I may not feel clear or steady every time I read it, but I will trust what the Lord led me to write when I could see these truths clearly. I plead with you now: set everything else aside for these few minutes and meditate on what is true.',
+      personalPlea: DAILY_RIGHTEOUSNESS_PLEA,
       openingPrayer: 'Father, quiet my heart. Help me receive what is true rather than follow what feels urgent. Fix my eyes on Christ and lead me by Your Word today.',
       coreTruths: [
         GOVERNING_REMINDER,
@@ -6248,8 +6291,9 @@
       const coreTruths = Array.isArray(stored.coreTruths) && stored.coreTruths.length ? stored.coreTruths.filter(Boolean).map(String) : clone(DEFAULTS.coreTruths);
       if (!coreTruths.some(truth => truth.toLowerCase().includes('not for righteousness'))) coreTruths.unshift(GOVERNING_REMINDER);
       if (!coreTruths.some(truth => truth.includes('Faithfulness, not infallibility'))) coreTruths.push(RIGHTNESS_REMINDER);
+      const storedPlea = typeof stored.personalPlea === 'string' ? stored.personalPlea.trim() : '';
       const result = {
-        personalPlea: typeof stored.personalPlea === 'string' && stored.personalPlea.trim() ? stored.personalPlea : DEFAULTS.personalPlea,
+        personalPlea: !storedPlea || storedPlea === LEGACY_DEFAULT_PLEA ? DEFAULTS.personalPlea : storedPlea,
         openingPrayer: typeof stored.openingPrayer === 'string' && stored.openingPrayer.trim() ? stored.openingPrayer : DEFAULTS.openingPrayer,
         coreTruths,
         convictions: {
@@ -6415,6 +6459,17 @@
       return TRUTH_STEP_COUNT + convictionItems().length;
     }
 
+    function resetTruthScrollPosition() {
+      const reset = () => {
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        el('appMain').scrollTop = 0;
+        window.scrollTo({ top: 0, behavior: 'auto' });
+      };
+      reset();
+      window.requestAnimationFrame(reset);
+    }
+
     function showTruth() {
       if (document.body.classList.contains('accountability-partner-mode')) return;
       activeDateKey = todayKey();
@@ -6440,7 +6495,7 @@
       if (!timer) timer = window.setInterval(tick, 1000);
       api.syncWatchContext();
       el('appMain')?.focus({ preventScroll: true });
-      window.scrollTo({ top: 0, behavior: 'auto' });
+      resetTruthScrollPosition();
     }
 
     function unlock() {
@@ -6475,7 +6530,10 @@
         body.append(quote);
       }
       const steps = [
-        { phase: 'truth', title: 'A plea from a clear moment', render() { body.append(textNode('p', currentConfig.personalPlea, 'truth-lead')); } },
+        { phase: 'truth', title: 'A plea from a clear moment', render() {
+          body.append(textNode('p', currentConfig.personalPlea, 'truth-lead'));
+          if (currentConfig.personalPlea.toLowerCase().includes('there will be a thousand things')) appendScripture(DAILY_RIGHTEOUSNESS_SCRIPTURE);
+        } },
         { phase: 'truth', title: 'Ask the Father for help', render() { body.append(textNode('p', currentConfig.openingPrayer, 'truth-lead')); } },
         { phase: 'truth', title: 'Hold today’s theme', render() {
           body.append(textNode('p', theme.body, 'truth-lead'));
@@ -6579,7 +6637,28 @@
         return;
       }
       if (isComplete()) unlock();
+      else if (!document.body.classList.contains('truth-locked') || todayKey() !== activeDateKey) showTruth();
       else updateProgress();
+    }
+
+    function reconcileTruthGate(reason = 'refresh') {
+      if (document.body.classList.contains('accountability-partner-mode')) {
+        unlock();
+        return { dateKey: todayKey(), complete: false, locked: false, reason, partnerMode: true };
+      }
+      const key = todayKey();
+      const complete = isComplete(key);
+      if (complete) {
+        unlock();
+        api.syncMorningFoundation(true, key);
+      } else if (!document.body.classList.contains('truth-locked') || key !== activeDateKey || !el('truthView').classList.contains('active')) {
+        showTruth();
+      } else {
+        api.syncMorningFoundation(false, key);
+        updateProgress();
+      }
+      api.syncWatchContext();
+      return { dateKey: key, complete, locked: !complete, reason, partnerMode: false };
     }
 
     function enterDay() {
@@ -6628,9 +6707,9 @@
         moveToStep(stepIndex + 1);
       });
       el('truthEnterDayButton').addEventListener('click', enterDay);
-      window.addEventListener('focus', tick);
+      window.addEventListener('focus', () => reconcileTruthGate('window focus'));
       document.addEventListener('visibilitychange', () => {
-        if (!document.hidden && !isComplete()) showTruth();
+        if (!document.hidden) reconcileTruthGate('document visible');
       });
     }
 
@@ -6888,19 +6967,23 @@
     normalizeConfig();
     bindGate();
     bindSettings();
+    window.DailyRoutineTruthGate = {
+      reconcile: reconcileTruthGate,
+      status: () => ({
+        dateKey: todayKey(),
+        complete: isComplete(),
+        locked: document.body.classList.contains('truth-locked'),
+        activeDateKey
+      })
+    };
     document.addEventListener('dailyRoutine:accountability-partner-mode', event => {
       if (event.detail?.active) unlock();
-      else if (!isComplete()) showTruth();
+      else reconcileTruthGate('accountability mode ended');
     });
     renderSettings();
-    if (isComplete()) {
-      unlock();
-      api.syncMorningFoundation(true, todayKey());
-    } else showTruth();
+    reconcileTruthGate('launch');
     window.setInterval(() => {
-      if (document.body.classList.contains('accountability-partner-mode')) return;
-      const key = todayKey();
-      if (!isComplete(key) && (!document.body.classList.contains('truth-locked') || key !== activeDateKey)) showTruth();
+      reconcileTruthGate('minute check');
     }, 60000);
   })();
 })();

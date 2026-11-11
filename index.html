@@ -22,7 +22,7 @@
         </div>
       </div>
       <details id="todayDateMenu" class="today-date-menu">
-        <summary><span id="heroDate">Today</span><span aria-hidden="true">⌄</span></summary>
+        <summary id="todayDateMenuButton"><span id="heroDate">Today</span><span aria-hidden="true">⌄</span></summary>
         <div class="date-nav date-nav-v15" aria-label="Choose date">
           <button id="prevDay" class="ghost-button" type="button" aria-label="Previous day">‹</button>
           <button id="selectedDateButton" class="date-button" type="button" aria-label="Return to today"></button>
@@ -618,6 +618,7 @@
               <div><span>Notifications</span><strong id="earnedAccessNotificationStatus">Checking</strong></div>
               <div><span>Widget snapshot</span><strong id="earnedAccessWidgetStatus">Waiting to sync</strong></div>
               <div><span>Today check</span><strong id="earnedAccessDayBoundaryStatus">Waiting for first check</strong></div>
+              <div><span>Morning foundation</span><strong id="earnedAccessFoundationStatus">Checking today</strong></div>
               <div><span>Truth queue</span><strong id="earnedAccessTruthDiagnosticStatus">Checking</strong></div>
             </div>
             <div class="earned-access-reliability-actions">
@@ -951,6 +952,6 @@
   <script src="sync-core.js" defer></script>
   <script src="sync-cloud.js" defer></script>
   <script src="data-health.js" defer></script>
-  <script src="app.js?v=1.48.0-build50-watch-safe-area" defer></script>
+  <script src="app.js?v=1.49.0-build51-daily-gate" defer></script>
 </body>
 </html>
