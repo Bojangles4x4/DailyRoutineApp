@@ -10,8 +10,8 @@
   const DAY_BOUNDARY_DEVICE_KEY = 'dailyRoutine.dayBoundary.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.48.0';
-  const APP_BUILD = 50;
+  const APP_VERSION = '1.50.0';
+  const APP_BUILD = 52;
   const PRIVATE_SYNC_COMPONENT_MESSAGE = 'This build is missing a required sync component. No routine data on this device or in the cloud was changed. Update the app to continue.';
   const PRIVATE_SYNC_LEGACY_RECOVERY_MESSAGE = 'The previous build could not sync. Your local data is preserved—review and sync now.';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
@@ -1119,10 +1119,7 @@
   }
 
   function bindTodayControls() {
-    els.prevDay.addEventListener('click', () => { selectedDate = shiftDate(selectedDate, -1); actualTimesExpanded = false; renderToday(); });
-    els.nextDay.addEventListener('click', () => { selectedDate = shiftDate(selectedDate, 1); actualTimesExpanded = false; renderToday(); });
-    els.selectedDateButton.addEventListener('click', () => { selectedDate = startOfToday(); actualTimesExpanded = false; renderToday(); });
-    const dismissDatePicker = () => {
+    const dismissTodayDateMenu = () => {
       els.datePickerInput.blur();
       $('todayDateMenu').open = false;
       window.requestAnimationFrame(() => {
@@ -1130,6 +1127,9 @@
         $('todayDateMenuButton').focus({ preventScroll: true });
       });
     };
+    els.prevDay.addEventListener('click', () => { selectedDate = shiftDate(selectedDate, -1); actualTimesExpanded = false; renderToday(); dismissTodayDateMenu(); });
+    els.nextDay.addEventListener('click', () => { selectedDate = shiftDate(selectedDate, 1); actualTimesExpanded = false; renderToday(); dismissTodayDateMenu(); });
+    els.selectedDateButton.addEventListener('click', () => { selectedDate = startOfToday(); actualTimesExpanded = false; renderToday(); dismissTodayDateMenu(); });
     els.datePickerInput.addEventListener('change', () => {
       const value = els.datePickerInput.value;
       if (value) {
@@ -1143,10 +1143,10 @@
           showToast('Choose today or an earlier date.');
         }
       }
-      dismissDatePicker();
+      dismissTodayDateMenu();
     });
-    els.datePickerInput.addEventListener('cancel', dismissDatePicker);
-    els.dayModeInput.addEventListener('change', () => setDayMode(els.dayModeInput.value));
+    els.datePickerInput.addEventListener('cancel', dismissTodayDateMenu);
+    els.dayModeInput.addEventListener('change', () => { setDayMode(els.dayModeInput.value); dismissTodayDateMenu(); });
     els.undoButton.addEventListener('click', performUndo);
     els.copySummaryButton?.addEventListener('click', copyDailySummary);
     els.toggleActualTimeButton.addEventListener('click', () => { actualTimesExpanded = !actualTimesExpanded; renderToday(); });
@@ -6242,6 +6242,39 @@
       return JSON.parse(JSON.stringify(value));
     }
 
+    function truthTextKey(value) {
+      return String(value || '')
+        .normalize('NFKC')
+        .toLowerCase()
+        .replace(/[‘’]/g, "'")
+        .replace(/[“”]/g, '"')
+        .replace(/[–—]/g, '-')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/[.!?;:,]+$/g, '')
+        .trim();
+    }
+
+    function uniqueConvictionItems(items, excludedTexts = []) {
+      const seen = new Map(excludedTexts.map(text => [truthTextKey(text), -1]).filter(([key]) => key));
+      const result = [];
+      items.forEach((item, index) => {
+        const normalized = normalizeConvictionItem(item, index);
+        if (!normalized) return;
+        const key = truthTextKey(normalized.text);
+        if (!key || seen.has(key)) {
+          const existingIndex = seen.get(key);
+          if (existingIndex >= 0 && !result[existingIndex].scripture && normalized.scripture) {
+            result[existingIndex].scripture = normalized.scripture;
+          }
+          return;
+        }
+        seen.set(key, result.length);
+        result.push(normalized);
+      });
+      return result;
+    }
+
     function normalizeTheme(theme) {
       if (!theme || typeof theme !== 'object') return null;
       const scriptures = Array.isArray(theme.scriptures)
@@ -6286,14 +6319,19 @@
           : null;
       const useSuppliedDefaults = !hasStoredConvictions
         || (Array.isArray(storedConvictions.points) && storedConvictions.points.length === 0 && storedConvictions.intro === previousScaffoldIntro);
-      const convictionItems = (useSuppliedDefaults ? DEFAULTS.convictions.items : storedItems || [])
-        .map(normalizeConvictionItem).filter(Boolean);
-      const coreTruths = Array.isArray(stored.coreTruths) && stored.coreTruths.length ? stored.coreTruths.filter(Boolean).map(String) : clone(DEFAULTS.coreTruths);
+      const storedPlea = typeof stored.personalPlea === 'string' ? stored.personalPlea.trim() : '';
+      const personalPlea = !storedPlea || storedPlea === LEGACY_DEFAULT_PLEA ? DEFAULTS.personalPlea : storedPlea;
+      const convictionItems = uniqueConvictionItems(
+        useSuppliedDefaults ? DEFAULTS.convictions.items : storedItems || [],
+        [personalPlea]
+      );
+      const pleaKey = truthTextKey(personalPlea);
+      const coreTruths = (Array.isArray(stored.coreTruths) && stored.coreTruths.length ? stored.coreTruths.filter(Boolean).map(String) : clone(DEFAULTS.coreTruths))
+        .filter(truth => truthTextKey(truth) !== pleaKey);
       if (!coreTruths.some(truth => truth.toLowerCase().includes('not for righteousness'))) coreTruths.unshift(GOVERNING_REMINDER);
       if (!coreTruths.some(truth => truth.includes('Faithfulness, not infallibility'))) coreTruths.push(RIGHTNESS_REMINDER);
-      const storedPlea = typeof stored.personalPlea === 'string' ? stored.personalPlea.trim() : '';
       const result = {
-        personalPlea: !storedPlea || storedPlea === LEGACY_DEFAULT_PLEA ? DEFAULTS.personalPlea : storedPlea,
+        personalPlea,
         openingPrayer: typeof stored.openingPrayer === 'string' && stored.openingPrayer.trim() ? stored.openingPrayer : DEFAULTS.openingPrayer,
         coreTruths,
         convictions: {

@@ -201,6 +201,20 @@ test('merges convictions individually by stable id', () => {
   assert.equal(merged.conflicts.length, 0);
 });
 
+test('deduplicates identical convictions that arrive under different ids', () => {
+  const text = 'Lord, there will be a thousand things to try and take my eyes off You.';
+  const base = sampleState();
+  base.settings.truthBeforeTasks = { convictions: { items: [] } };
+  const local = copy(base);
+  const remote = copy(base);
+  local.settings.truthBeforeTasks.convictions.items.push({ id: 'local-copy', text, scripture: '' });
+  remote.settings.truthBeforeTasks.convictions.items.push({ id: 'remote-copy', text: `  ${text}  `, scripture: 'Proverbs 14:12' });
+  const merged = mergeRoutineStates(base, local, remote);
+  assert.deepEqual(merged.state.settings.truthBeforeTasks.convictions.items, [
+    { id: 'local-copy', text, scripture: 'Proverbs 14:12' }
+  ]);
+});
+
 test('uses the saved daily target in accountability history', () => {
   const state = sampleState();
   state.items.push({ id: 'water', name: 'Water', kind: 'routine', type: 'number', section: 'day', frequency: 'daily', optional: false, target: 8 });

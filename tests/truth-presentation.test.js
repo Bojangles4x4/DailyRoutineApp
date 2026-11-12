@@ -5,27 +5,28 @@ const { chromium } = require('playwright');
 (async () => {
   const browser = await chromium.launch({ headless: true, executablePath: '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser' });
   const baseURL = process.env.DAILY_ROUTINE_TEST_URL || 'http://127.0.0.1:9878/';
-  async function fixture({ count = 3, currentStep = 0, convictions = true } = {}) {
+  async function fixture({ count = 3, currentStep = 0, convictions = true, duplicatePlea = false } = {}) {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
-    await page.addInitScript(({ count, currentStep, convictions }) => {
+    await page.addInitScript(({ count, currentStep, convictions, duplicatePlea }) => {
       const now = Date.now();
       const date = new Date();
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      const plea = 'Lord, there will be a thousand things to try and take my eyes off You. I plead by Your Grace that I see my goodness as refuse and cling to the righteousness You’ve provided in Jesus.';
       window.__nativeMessages = [];
       window.DailyRoutineNative = { postMessage: message => window.__nativeMessages.push(message) };
       if (localStorage.getItem('truth-presentation-fixture-seeded')) return;
       localStorage.setItem('truth-presentation-fixture-seeded', 'true');
       localStorage.setItem('dailyRoutineApp.v1', JSON.stringify({
         settings: { truthBeforeTasks: {
-          personalPlea: 'Lord, there will be a thousand things to try and take my eyes off You. I plead by Your Grace that I see my goodness as refuse and cling to the righteousness You’ve provided in Jesus.', openingPrayer: 'Father, help me remember.', coreTruths: ['Grace is not earned.'],
+          personalPlea: plea, openingPrayer: 'Father, help me remember.', coreTruths: duplicatePlea ? ['Grace is not earned.', plea] : ['Grace is not earned.'],
           themes: [{ id: 'test-theme', name: 'Remember grace', body: 'God’s grace is the ground beneath every faithful step.',
             scriptures: Array.from({ length: count }, (_, index) => ({ reference: `Passage ${index + 1}`, text: `Saved verse ${index + 1}.` })) }],
-          convictions: { intro: 'Remember.', items: convictions ? [{ id: 'first', text: 'Keep trusting.' }, { id: 'second', text: 'Do the next thing in faith.' }] : [] },
+          convictions: { intro: 'Remember.', items: convictions ? [...(duplicatePlea ? [{ id: 'duplicate-plea', text: plea, scripture: 'Duplicate should not replace Proverbs 14:12.' }] : []), { id: 'first', text: 'Keep trusting.' }, { id: 'second', text: 'Do the next thing in faith.' }] : [] },
           sessions: { [key]: { startedAt: now - 600000, convictionsStartedAt: now - 300000, currentStep,
             visited: Array.from({ length: currentStep + 1 }, (_, index) => index) } }, completions: {}
         } }, items: [], days: {}, memories: [], notes: [], weeklyReviews: {}
       }));
-    }, { count, currentStep, convictions });
+    }, { count, currentStep, convictions, duplicatePlea });
     await page.goto(baseURL, { waitUntil: 'networkidle' });
     return page;
   }
@@ -91,6 +92,15 @@ const { chromium } = require('playwright');
   await noConvictions.locator('#truthEnterDayButton').click();
   assert.equal(await noConvictions.evaluate(() => document.body.classList.contains('truth-locked')), false);
   assert.equal(await noConvictions.evaluate(() => window.__nativeMessages.some(message => message.action === 'app.appearance.update' && message.value.theme === 'calm')), true);
+  await noConvictions.close();
+  const duplicatePlea = await fixture({ duplicatePlea: true });
+  const normalizedTruth = await duplicatePlea.evaluate(() => window.DailyRoutineApp.getState().settings.truthBeforeTasks);
+  assert.equal(normalizedTruth.convictions.items.length, 2);
+  assert.equal(normalizedTruth.convictions.items.some(item => item.id === 'duplicate-plea'), false);
+  assert.equal(normalizedTruth.coreTruths.includes(normalizedTruth.personalPlea), false);
+  assert.equal(await duplicatePlea.locator('#truthStepBody').getByText(/there will be a thousand things/i).count(), 1);
+  assert.equal(await duplicatePlea.locator('#truthStepBody cite').textContent(), 'Proverbs 14:12');
+  await duplicatePlea.close();
   await browser.close();
   console.log('Truth presentation: verse visibility, legacy sessions, navigation, timers, and completion passed.');
 })().catch(error => { console.error(error); process.exitCode = 1; });

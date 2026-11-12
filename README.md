@@ -2,7 +2,9 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.45.0 development features
+## Version 1.50.0 development features
+
+- Build 52 closes the Today/date menu after every completed date or day-mode action and restores focus to its compact summary. It also keeps the “Lord, there will be a thousand things…” passage in one opening location with Proverbs 14:12, removes an identical saved conviction or core-truth copy, and prevents Private Sync from restoring identical convictions under different internal IDs.
 
 - Build 47 keeps Today’s title and date below the iPhone status bar while retaining the edge-to-edge background, and keeps the phone-sized note editor clear of both the Dynamic Island and Home indicator. Automated native coverage now audits Truth Before Tasks, Today, Notes, Progress, Setup, and the note editor across the full safe area.
 

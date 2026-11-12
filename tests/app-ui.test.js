@@ -32,7 +32,7 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#medicationProgressCard').evaluate(element => element.open), false);
   assert.equal(await page.locator('#accountabilitySharingCard').evaluate(element => element.open), false);
   assert.equal(await page.locator('#accountabilityReportCard').evaluate(element => element.open), false);
-  assert.equal(await page.locator('#appVersion').textContent(), 'v1.48.0 · Build 50');
+  assert.equal(await page.locator('#appVersion').textContent(), 'v1.50.0 · Build 52');
   assert.equal(await page.locator('#progressStoryCard').count(), 1);
   assert.match(await page.locator('#progressStoryTitle').textContent(), /rhythm/i);
   assert.equal(await page.locator('#clearNotesFiltersButton').count(), 1);
@@ -516,6 +516,12 @@ function localDateKey(date = new Date()) {
   assert.ok(ledgerLayout.sleepTop < ledgerLayout.morningTop, 'Compact sleep summary belongs above Morning');
   assert.ok((await page.locator('.actual-time-card').boundingBox()).height <= 64, 'Collapsed sleep summary should stay compact');
   assert.equal(ledgerLayout.background, 'rgb(245, 247, 249)');
+  await page.locator('#todayDateMenu summary').click();
+  await page.locator('#dayModeInput').selectOption('vacation');
+  await page.waitForTimeout(50);
+  assert.equal(await page.locator('#todayDateMenu').getAttribute('open'), null);
+  assert.equal(await page.evaluate(() => document.activeElement?.id), 'todayDateMenuButton');
+  assert.equal(await page.locator('#dayModeInput').inputValue(), 'vacation');
   await page.locator('#todayDateMenu summary').click();
   assert.equal(await page.locator('#datePickerInput').isVisible(), true);
   await page.locator('#datePickerInput').evaluate(input => input.dispatchEvent(new Event('change', { bubbles: true })));

@@ -91,13 +91,13 @@
 
     if (path === 'settings.truthBeforeTasks.convictions.items'
       && [base, local, remote].every(value => value === MISSING || Array.isArray(value))) {
-      return mergeEntityArray(
+      return dedupeConvictionItems(mergeEntityArray(
         base === MISSING ? [] : base,
         local === MISSING ? [] : local,
         remote === MISSING ? [] : remote,
         path,
         conflicts
-      );
+      ));
     }
 
     const valuesAreObjects = [base, local, remote].every(value => value === MISSING || isPlainObject(value));
@@ -132,6 +132,35 @@
 
   function entityMap(items) {
     return new Map((Array.isArray(items) ? items : []).filter(item => item?.id).map(item => [String(item.id), item]));
+  }
+
+  function convictionTextKey(value) {
+    return String(value || '')
+      .normalize('NFKC')
+      .toLowerCase()
+      .replace(/[‘’]/g, "'")
+      .replace(/[“”]/g, '"')
+      .replace(/[–—]/g, '-')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .replace(/[.!?;:,]+$/g, '')
+      .trim();
+  }
+
+  function dedupeConvictionItems(items) {
+    const result = [], positions = new Map();
+    (Array.isArray(items) ? items : []).forEach(item => {
+      const key = convictionTextKey(item?.text);
+      if (!key) return;
+      if (!positions.has(key)) {
+        positions.set(key, result.length);
+        result.push(clone(item));
+        return;
+      }
+      const existing = result[positions.get(key)];
+      if (!String(existing.scripture || '').trim() && String(item?.scripture || '').trim()) existing.scripture = item.scripture;
+    });
+    return result;
   }
 
   function mergeEntityArray(baseItems, localItems, remoteItems, path, conflicts) {
