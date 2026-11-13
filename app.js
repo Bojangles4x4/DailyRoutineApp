@@ -10,8 +10,8 @@
   const DAY_BOUNDARY_DEVICE_KEY = 'dailyRoutine.dayBoundary.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.50.0';
-  const APP_BUILD = 52;
+  const APP_VERSION = '1.51.0';
+  const APP_BUILD = 53;
   const PRIVATE_SYNC_COMPONENT_MESSAGE = 'This build is missing a required sync component. No routine data on this device or in the cloud was changed. Update the app to continue.';
   const PRIVATE_SYNC_LEGACY_RECOVERY_MESSAGE = 'The previous build could not sync. Your local data is preserved—review and sync now.';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
@@ -2779,33 +2779,47 @@
       acknowledgeRoutineSharedCommand(result);
       return status === 'applied';
     };
-    const today = dateKey(startOfToday());
+    const todayDate = startOfToday();
+    const today = dateKey(todayDate);
+    const yesterday = dateKey(shiftDate(todayDate, -1));
     if (Number(command.schemaVersion) !== 1) return finish('rejected', 'Unsupported command schema.');
     const actionID = String(command.actionID || '');
     if (!['routine.checkbox.set', 'routine.water.add'].includes(actionID)) return finish('rejected', 'Unsupported routine action.');
-    if (String(command.localDateKey || '') !== today) return finish('rejected', 'The command belongs to a different local day.');
+    const commandDateKey = String(command.localDateKey || '');
+    const commandDate = fromDateKey(commandDateKey);
+    const commandCreatedAt = new Date(command.createdAt);
+    const carryover = commandDateKey === yesterday;
+    if (![today, yesterday].includes(commandDateKey)
+      || Number.isNaN(commandDate.getTime())
+      || dateKey(commandDate) !== commandDateKey
+      || Number.isNaN(commandCreatedAt.getTime())
+      || dateKey(commandCreatedAt) !== commandDateKey
+      || Date.now() - commandCreatedAt.getTime() > 36 * 60 * 60 * 1000
+      || commandCreatedAt.getTime() - Date.now() > 5 * 60 * 1000) {
+      return finish('rejected', 'The command belongs to a different local day.');
+    }
     if (String(command.timeZoneIdentifier || '') !== sharedStateTimeZone()) return finish('rejected', 'The time zone changed before the action ran.');
     if (command.expectedRevision === null || command.expectedRevision === undefined
       || !Number.isSafeInteger(Number(command.expectedRevision))
-      || Number(command.expectedRevision) !== sharedStateRevision()) {
+      || (!carryover && Number(command.expectedRevision) !== sharedStateRevision())) {
       return finish('rejected', 'The routine changed before the action ran. Open Daily Routine to refresh.');
     }
-    const foundationComplete = morningFoundationComplete(today);
+    const foundationComplete = morningFoundationComplete(commandDateKey);
     if (command.requiresFoundationComplete !== true || !foundationComplete) {
       return finish('rejected', 'Complete the Morning Foundation on iPhone first.');
     }
 
     const targetID = String(command.targetID || '');
-    const day = ensureDay(today);
+    const day = ensureDay(commandDateKey);
     if (actionID === 'routine.water.add') {
       if (String(command.payload?.delta || '') !== '1') return finish('rejected', 'Water can only be added one serving at a time.');
-      const water = scheduledItemsForDate(startOfToday()).find(candidate => (
+      const water = scheduledItemsForDate(commandDate).find(candidate => (
         candidate.id === targetID
           && candidate.kind === 'routine'
           && candidate.type === 'number'
           && (candidate.id === 'day-water' || /water/i.test(candidate.name))
       ));
-      if (!water) return finish('rejected', 'Today’s water item is unavailable.');
+      if (!water) return finish('rejected', 'That day’s water item is unavailable.');
       const target = Math.min(100, Math.max(1, Math.round(Number(water.target) || 1)));
       const current = Math.min(target, Math.max(0, Math.round(Number(day.entries?.[water.id]) || 0)));
       if (current >= target) return finish('applied', `Water is already at ${target} of ${target}.`);
@@ -2814,7 +2828,7 @@
       renderAll();
       return finish('applied', `Water is now ${current + 1} of ${target}.`);
     }
-    const item = scheduledItemsForDate(startOfToday()).find(candidate => (
+    const item = scheduledItemsForDate(commandDate).find(candidate => (
       candidate.id === targetID
         && candidate.kind === 'routine'
         && candidate.type === 'checkbox'

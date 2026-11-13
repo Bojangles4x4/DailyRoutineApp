@@ -32,7 +32,7 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#medicationProgressCard').evaluate(element => element.open), false);
   assert.equal(await page.locator('#accountabilitySharingCard').evaluate(element => element.open), false);
   assert.equal(await page.locator('#accountabilityReportCard').evaluate(element => element.open), false);
-  assert.equal(await page.locator('#appVersion').textContent(), 'v1.50.0 · Build 52');
+  assert.equal(await page.locator('#appVersion').textContent(), 'v1.51.0 · Build 53');
   assert.equal(await page.locator('#progressStoryCard').count(), 1);
   assert.match(await page.locator('#progressStoryTitle').textContent(), /rhythm/i);
   assert.equal(await page.locator('#clearNotesFiltersButton').count(), 1);
@@ -470,6 +470,40 @@ function localDateKey(date = new Date()) {
   assert.match(sharedCommandResult.staleAcknowledgement.message, /changed before/);
   assert.equal(sharedCommandResult.eveningTeeth, undefined);
   assert.ok(sharedCommandResult.latestSnapshot.revision > sharedCommandResult.initialSnapshot.revision);
+
+  await page.evaluate(key => {
+    const state = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
+    state.settings.truthBeforeTasks.completions[key] = `${key}T23:50:00.000Z`;
+    state.days[key] = state.days[key] || { entries: {}, skippedItems: {} };
+    delete state.days[key].entries['evening-prepare'];
+    const item = state.items.find(candidate => candidate.id === 'evening-prepare');
+    state.days[key].itemDefinitions = { ...(state.days[key].itemDefinitions || {}), [item.id]: structuredClone(item) };
+    localStorage.setItem('dailyRoutineApp.v1', JSON.stringify(state));
+  }, yesterday);
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForFunction(() => Boolean(window.DailyRoutineApp?.getState()?.settings?.truthBeforeTasks));
+  const carryoverCommandResult = await page.evaluate(key => {
+    const snapshot = [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'routine.snapshot.publish')?.value;
+    const createdAt = new Date(`${key}T23:50:00`).toISOString();
+    window.dispatchEvent(new CustomEvent('dailyRoutine:native', { detail: { name: 'routine.commands.pending', value: [{
+      schemaVersion: 1,
+      id: 'carryover-checkbox-command-1',
+      actionID: 'routine.checkbox.set',
+      origin: 'widget',
+      createdAt,
+      localDateKey: key,
+      timeZoneIdentifier: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      targetID: 'evening-prepare',
+      expectedRevision: Math.max(0, Number(snapshot.revision) - 1),
+      requiresFoundationComplete: true,
+      payload: { completed: 'true' }
+    }] } }));
+    const acknowledgement = [...window.__dailyRoutineNativeMessages].reverse().find(message => message.action === 'routine.command.acknowledge')?.value;
+    const state = JSON.parse(localStorage.getItem('dailyRoutineApp.v1'));
+    return { acknowledgement, completed: state.days[key]?.entries?.['evening-prepare'] };
+  }, yesterday);
+  assert.equal(carryoverCommandResult.acknowledgement.status, 'applied');
+  assert.equal(carryoverCommandResult.completed, true);
 
   assert.equal(await page.locator('#todayView .hero-targets').count(), 0);
   assert.equal(await page.locator('#todayView #heroStatus').count(), 0);

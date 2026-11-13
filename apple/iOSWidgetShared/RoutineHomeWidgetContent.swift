@@ -111,17 +111,29 @@ struct RoutineHomeWidgetView: View {
                 HStack(spacing: 8) {
                     if let id = snapshot.waterItemID, let current = snapshot.waterCurrent,
                        let target = snapshot.waterTarget {
-                        Button(intent: AddWaterIntent(targetID: id, expectedRevision: snapshot.revision,
-                            localDateKey: snapshot.localDateKey, timeZoneIdentifier: snapshot.timeZoneIdentifier)) {
-                            Label("Water +1 · \(current)/\(target)", systemImage: "drop")
-                                .font(.caption.weight(.medium))
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.8)
-                                .frame(maxWidth: .infinity, minHeight: 44)
-                                .foregroundStyle(Palette.accent)
-                                .background(Palette.soft, in: RoundedRectangle(cornerRadius: 11))
+                        Group {
+                            if current < target {
+                                Button(intent: AddWaterIntent(targetID: id, expectedRevision: snapshot.revision,
+                                    localDateKey: snapshot.localDateKey, timeZoneIdentifier: snapshot.timeZoneIdentifier)) {
+                                    Label("Water +1 · \(current)/\(target)", systemImage: "drop")
+                                        .font(.caption.weight(.medium))
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.8)
+                                        .frame(maxWidth: .infinity, minHeight: 44)
+                                        .foregroundStyle(Palette.accent)
+                                        .background(Palette.soft, in: RoundedRectangle(cornerRadius: 11))
+                                }
+                                .buttonStyle(.plain)
+                            } else {
+                                Label("Water complete · \(current)/\(target)", systemImage: "checkmark.circle.fill")
+                                    .font(.caption.weight(.medium))
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.8)
+                                    .frame(maxWidth: .infinity, minHeight: 44)
+                                    .foregroundStyle(Palette.accent)
+                                    .background(Palette.soft, in: RoundedRectangle(cornerRadius: 11))
+                            }
                         }
-                        .buttonStyle(.plain)
                         .privacySensitive()
                     }
                     appLink("View all tasks", symbol: "list.bullet", primary: false)
@@ -187,7 +199,7 @@ struct RoutineHomeWidgetView: View {
             } else {
                 Text("Today’s routine").font(.caption2).foregroundStyle(Palette.muted)
                 Text("Shared tasks complete").font(.headline.weight(.medium))
-                appLink("Review today", symbol: "checkmark.circle", primary: false)
+                appLink("View all tasks", symbol: "list.bullet", primary: false)
             }
         }
         .foregroundStyle(Palette.ink)

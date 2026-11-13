@@ -136,6 +136,75 @@ struct RoutineSharedSnapshot: Codable, Equatable, Sendable {
             && (1...100).contains(target)
             && current <= target
     }
+
+    func applyingWidgetWaterIncrement(targetID: String, updatedAt: String) -> Self? {
+        guard
+            foundationComplete,
+            waterItemID == targetID,
+            let waterCurrent,
+            let waterTarget,
+            waterCurrent < waterTarget
+        else { return nil }
+
+        let nextWater = waterCurrent + 1
+        return Self(
+            schemaVersion: schemaVersion,
+            revision: revision + 1,
+            localDateKey: localDateKey,
+            timeZoneIdentifier: timeZoneIdentifier,
+            foundationComplete: foundationComplete,
+            convictionsEnabled: convictionsEnabled,
+            completed: min(total, completed + (nextWater == waterTarget ? 1 : 0)),
+            total: total,
+            earnedAccessRemainingMinutes: earnedAccessRemainingMinutes,
+            earnedAccessDailyLimitMinutes: earnedAccessDailyLimitMinutes,
+            waterItemID: waterItemID,
+            waterCurrent: nextWater,
+            waterTarget: waterTarget,
+            stepCount: stepCount,
+            stepGoal: stepGoal,
+            nextItem: nextItem,
+            eligibleItems: eligibleItems,
+            updatedAt: updatedAt
+        )
+    }
+
+    func applyingWidgetCompletion(targetID: String, updatedAt: String) -> Self? {
+        guard foundationComplete,
+              let target = eligibleItems.first(where: { $0.id == targetID }),
+              !target.completed else { return nil }
+
+        let updatedItems = eligibleItems.map { item in
+            guard item.id == targetID else { return item }
+            return RoutineSharedItemSnapshot(
+                id: item.id,
+                title: item.title,
+                section: item.section,
+                completed: true,
+                actionID: item.actionID
+            )
+        }
+        return Self(
+            schemaVersion: schemaVersion,
+            revision: revision + 1,
+            localDateKey: localDateKey,
+            timeZoneIdentifier: timeZoneIdentifier,
+            foundationComplete: foundationComplete,
+            convictionsEnabled: convictionsEnabled,
+            completed: min(total, completed + 1),
+            total: total,
+            earnedAccessRemainingMinutes: earnedAccessRemainingMinutes,
+            earnedAccessDailyLimitMinutes: earnedAccessDailyLimitMinutes,
+            waterItemID: waterItemID,
+            waterCurrent: waterCurrent,
+            waterTarget: waterTarget,
+            stepCount: stepCount,
+            stepGoal: stepGoal,
+            nextItem: updatedItems.first(where: { !$0.completed }),
+            eligibleItems: updatedItems,
+            updatedAt: updatedAt
+        )
+    }
 }
 
 enum RoutineSharedCommandStatus: String, Codable, Sendable {

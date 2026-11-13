@@ -119,6 +119,69 @@ final class RoutineSharedStateStoreTests: XCTestCase {
         XCTAssertThrowsError(try store.enqueue(invalid))
     }
 
+    func testWidgetWaterIncrementUpdatesSnapshotWithoutOpeningApp() throws {
+        let snapshot = RoutineSharedSnapshot(
+            schemaVersion: 1,
+            revision: 8,
+            localDateKey: "2026-09-14",
+            timeZoneIdentifier: "America/Chicago",
+            foundationComplete: true,
+            convictionsEnabled: true,
+            completed: 4,
+            total: 10,
+            earnedAccessRemainingMinutes: 25,
+            earnedAccessDailyLimitMinutes: 60,
+            waterItemID: "day-water",
+            waterCurrent: 4,
+            waterTarget: 6,
+            nextItem: nil,
+            eligibleItems: [],
+            updatedAt: "2026-09-14T12:00:00Z"
+        )
+
+        let updated = try XCTUnwrap(snapshot.applyingWidgetWaterIncrement(
+            targetID: "day-water",
+            updatedAt: "2026-09-14T12:01:00Z"
+        ))
+
+        XCTAssertEqual(updated.waterCurrent, 5)
+        XCTAssertEqual(updated.completed, 4)
+        XCTAssertEqual(updated.revision, snapshot.revision + 1)
+        let completed = try XCTUnwrap(updated.applyingWidgetWaterIncrement(
+            targetID: "day-water",
+            updatedAt: "2026-09-14T12:02:00Z"
+        ))
+        XCTAssertEqual(completed.waterCurrent, 6)
+        XCTAssertEqual(completed.completed, 5)
+        XCTAssertEqual(completed.revision, snapshot.revision + 2)
+        XCTAssertNil(completed.applyingWidgetWaterIncrement(
+            targetID: "day-water",
+            updatedAt: "2026-09-14T12:03:00Z"
+        ))
+        XCTAssertNil(updated.applyingWidgetWaterIncrement(
+            targetID: "different-water",
+            updatedAt: "2026-09-14T12:04:00Z"
+        ))
+    }
+
+    func testWidgetCompletionUpdatesProgressAndSuggestionWithoutOpeningApp() throws {
+        let snapshot = makeSnapshot()
+
+        let updated = try XCTUnwrap(snapshot.applyingWidgetCompletion(
+            targetID: "morning-teeth",
+            updatedAt: "2026-09-14T12:01:00Z"
+        ))
+
+        XCTAssertEqual(updated.completed, 3)
+        XCTAssertTrue(try XCTUnwrap(updated.eligibleItems.first).completed)
+        XCTAssertNil(updated.nextItem)
+        XCTAssertEqual(updated.revision, snapshot.revision + 1)
+        XCTAssertNil(updated.applyingWidgetCompletion(
+            targetID: "morning-teeth",
+            updatedAt: "2026-09-14T12:02:00Z"
+        ))
+    }
+
     func testIncompleteOrExcessiveWidgetBalanceIsRejected() throws {
         let invalid = RoutineSharedSnapshot(
             schemaVersion: 1,

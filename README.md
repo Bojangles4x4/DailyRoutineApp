@@ -2,7 +2,9 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.50.0 development features
+## Version 1.51.0 development features
+
+- Build 53 keeps Water +1, Later, and eligible task completion inside the large iPhone widget while View all tasks remains the intentional app-opening control. Direct actions update the private snapshot immediately, advance revisions in sequence, reject accidental repeat taps, reconcile a validated previous-day command after midnight, and replace Water +1 with a noninteractive completion state at the daily target. Stale widget actions reload the current timeline instead of opening the app.
 
 - Build 52 closes the Today/date menu after every completed date or day-mode action and restores focus to its compact summary. It also keeps the “Lord, there will be a thousand things…” passage in one opening location with Proverbs 14:12, removes an identical saved conviction or core-truth copy, and prevents Private Sync from restoring identical convictions under different internal IDs.
 

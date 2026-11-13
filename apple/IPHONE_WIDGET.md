@@ -23,15 +23,15 @@ There is no full-screen iPhone WidgetKit family in the verified SDK. `.systemExt
 
 ## Interaction contract
 
-The only interactive mutation is completing an eligible unchecked checkbox. A tap:
+The large widget can complete an eligible unchecked checkbox or add one water serving without opening Daily Rhythms. A tap:
 
-1. enqueues one versioned `routine.checkbox.set` command with the snapshot revision, local day, and time zone;
-2. opens Daily Routine;
-3. lets the existing web authority revalidate and apply or reject the command;
-4. records the result in the bounded App Group journal;
-5. publishes a refreshed snapshot.
+1. revalidates the private snapshot revision, local day, time zone, and completed Morning Foundation;
+2. enqueues one versioned `routine.checkbox.set` or `routine.water.add` command;
+3. advances the shared revision, updates the privacy-minimized widget snapshot immediately, and reloads the timeline in place;
+4. briefly rejects accidental repeat taps while the first update settles;
+5. lets the existing web authority revalidate, apply, and acknowledge the queued command when Daily Rhythms is next opened, including a validated previous-day command opened after midnight.
 
-The widget cannot complete Truth Before Tasks or Convictions, update medication, consume Earned Access, or write Health data. Repeated delivery is safe because the command sets a final value rather than toggling it.
+`View all tasks` remains the intentional app-opening control. At the water target, the action becomes a noninteractive “Water complete” status. The widget cannot complete Truth Before Tasks or Convictions, update medication, consume Earned Access, or write Health data. Repeated checkbox delivery is safe because the command sets a final value rather than toggling it; water commands are limited to one validated serving and cannot exceed the saved daily target.
 
 ## Remaining physical checks
 
