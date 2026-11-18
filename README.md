@@ -2,7 +2,9 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.51.0 development features
+## Version 1.52.0 development features
+
+- Build 54 turns elapsed Truth Reminders into one persistent “Needs your attention” item on Today, lets one intentional review clear everything elapsed, supports a visible 15-minute “I’m occupied” defer, and adds private reminder diagnostics plus a harmless ten-second notification test. Earned Access now reserves minutes, waits for Apple to confirm the allowance, and only then spends the bank; rejected or interrupted handoffs keep the minutes instead of silently losing them, while older ambiguous allowances remain visible for reconciliation.
 
 - Build 53 keeps Water +1, Later, and eligible task completion inside the large iPhone widget while View all tasks remains the intentional app-opening control. Direct actions update the private snapshot immediately, advance revisions in sequence, reject accidental repeat taps, reconcile a validated previous-day command after midnight, and replace Water +1 with a noninteractive completion state at the daily target. Stale widget actions reload the current timeline instead of opening the app.
 

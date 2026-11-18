@@ -86,6 +86,28 @@ struct TruthReminderView: View {
                 } footer: {
                     Text("Reminder text and pictures may appear on your lock screen. Tap the notification or “Review now” to open the full reminder, then acknowledge it inside the app. Your library stays on this iPhone and is separate from routine backups and Private sync.")
                 }
+                Section("Reminder diagnostics") {
+                    LabeledContent("Notifications", value: store.notificationAuthorizationSummary)
+                    LabeledContent("Next reminder", value: store.nextScheduledReminderAt?.formatted(date: .abbreviated, time: .shortened) ?? "None scheduled")
+                    if let date = store.settings.lastScheduleUpdatedAt {
+                        LabeledContent("Last schedule update", value: date.formatted(date: .abbreviated, time: .shortened))
+                    }
+                    if let date = store.settings.lastOpenedAt {
+                        LabeledContent("Last reminder opened", value: date.formatted(date: .abbreviated, time: .shortened))
+                    }
+                    if let date = store.settings.lastAcknowledgedAt {
+                        LabeledContent("Last reviewed", value: date.formatted(date: .abbreviated, time: .shortened))
+                    }
+                    if let error = store.settings.lastScheduleError, !error.isEmpty {
+                        Text(error).font(.footnote).foregroundStyle(.red)
+                    }
+                    Button("Send one test in 10 seconds") {
+                        Task { await store.sendDiagnosticTest() }
+                    }
+                    Text("The test does not affect app gates, review status, or earned minutes. Apple controls Watch mirroring and whether an alert interrupts audio.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
                 Section {
                     ForEach(store.settings.entries) { entry in
                         HStack(alignment: .top) {
@@ -219,7 +241,7 @@ struct TruthReminderReviewView: View {
                     .accessibilityIdentifier("truthReminderAcknowledgeButton")
 
                     if blocking {
-                        Button("Safety unlock for 15 minutes") {
+                        Button("I’m occupied — remind me in 15 minutes") {
                             store.safetyUnlockForFifteenMinutes()
                         }
                         .buttonStyle(.bordered)
@@ -234,7 +256,7 @@ struct TruthReminderReviewView: View {
                     }
 
                     Text(blocking
-                         ? "Review every waiting reminder to resume your apps. Safety unlock pauses this gate for 15 minutes without marking anything reviewed."
+                         ? "One intentional review clears everything that has become due. If you are genuinely occupied, defer this reminder for 15 minutes without marking it reviewed."
                          : "This reminder did not pause your other apps.")
                         .font(.footnote)
                         .foregroundStyle(Palette.muted)

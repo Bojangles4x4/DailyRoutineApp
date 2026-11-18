@@ -10,8 +10,8 @@
   const DAY_BOUNDARY_DEVICE_KEY = 'dailyRoutine.dayBoundary.device.v1';
   const SHARED_STATE_REVISION_KEY = 'dailyRoutine.sharedState.revision.v1';
   const SHARED_COMMAND_RESULTS_KEY = 'dailyRoutine.sharedCommands.results.v1';
-  const APP_VERSION = '1.51.0';
-  const APP_BUILD = 53;
+  const APP_VERSION = '1.52.0';
+  const APP_BUILD = 54;
   const PRIVATE_SYNC_COMPONENT_MESSAGE = 'This build is missing a required sync component. No routine data on this device or in the cloud was changed. Update the app to continue.';
   const PRIVATE_SYNC_LEGACY_RECOVERY_MESSAGE = 'The previous build could not sync. Your local data is preserved—review and sync now.';
   const BIBLE_INTEGRATION_KEY = 'dailyRoutine.integration.bibleReading.v1';
@@ -96,7 +96,7 @@
   let lastStepRewardNativeDirective = '';
   let lastEarnedAccessNativeDirective = '';
   let lastMorningFoundationDirective = '';
-  let earnedAccessNativeState = { available: false, protectionEnabled: false, shielding: false, allowanceActive: false, allowanceMinutes: 0, allowanceRemainingMinutes: null, allowanceRedemptionID: '', lastConsumedRedemptionID: '', morningGateEnabled: false, morningFoundationCompleteToday: false, truthReminderGateEnabled: false, truthReminderGateActive: false, truthReminderSafetyUnlockUntil: null, truthReminderEnabled: false, truthReminderPauseEnabled: false, truthReminderWaitingCount: 0, truthReminderNextAt: null, truthReminderScheduleSummary: '', protectionReason: '', protectionTitle: '', protectionDetail: '', protectionAction: '', selectionCount: 0, essentialCount: 0, dailyResetScheduled: false, morningGateScheduled: false, allowanceMonitorScheduled: false, essentialSelectionNeedsRepair: false, notificationsAllowed: false };
+  let earnedAccessNativeState = { available: false, protectionEnabled: false, shielding: false, allowanceActive: false, allowanceMinutes: 0, allowanceRemainingMinutes: null, allowanceRedemptionID: '', lastConsumedRedemptionID: '', allowanceAttemptID: '', allowanceAttemptResult: '', morningGateEnabled: false, morningFoundationCompleteToday: false, truthReminderGateEnabled: false, truthReminderGateActive: false, truthReminderSafetyUnlockUntil: null, truthReminderDeferredUntil: null, truthReminderLastOpenedAt: null, truthReminderLastReviewedAt: null, truthReminderLastScheduleAt: null, truthReminderEnabled: false, truthReminderPauseEnabled: false, truthReminderWaitingCount: 0, truthReminderNextAt: null, truthReminderScheduleSummary: '', protectionReason: '', protectionTitle: '', protectionDetail: '', protectionAction: '', selectionCount: 0, essentialCount: 0, dailyResetScheduled: false, morningGateScheduled: false, allowanceMonitorScheduled: false, essentialSelectionNeedsRepair: false, notificationsAllowed: false };
   let activeSetupCategory = '';
   let accountabilityPreview = '';
   let accountabilityPreviewSignature = '';
@@ -133,7 +133,7 @@
 
   const $ = id => document.getElementById(id);
   const els = {
-    pageTitle: $('pageTitle'), pageContext: $('pageContext'), heroGreeting: $('heroGreeting'), heroDate: $('heroDate'),
+    pageTitle: $('pageTitle'), pageContext: $('pageContext'), heroGreeting: $('heroGreeting'), heroDate: $('heroDate'), truthAttentionCard: $('truthAttentionCard'), truthAttentionTitle: $('truthAttentionTitle'), truthAttentionDetail: $('truthAttentionDetail'), deferTruthAttentionButton: $('deferTruthAttentionButton'), reviewTruthAttentionButton: $('reviewTruthAttentionButton'),
     progressRing: $('progressRing'), progressPercent: $('progressPercent'),
     selectedDateButton: $('selectedDateButton'), datePickerInput: $('datePickerInput'), prevDay: $('prevDay'), nextDay: $('nextDay'), routineSections: $('routineSections'), morningRoutineSection: $('morningRoutineSection'), laterRoutineSections: $('laterRoutineSections'), dayModeInput: $('dayModeInput'), undoButton: $('undoButton'), weekFocusBanner: $('weekFocusBanner'), onThisDayMemory: $('onThisDayMemory'),
     statCompleted: $('statCompleted'), statOptional: $('statOptional'), statStreak: $('statStreak'), statMood: $('statMood'), copySummaryButton: $('copySummaryButton'),
@@ -1149,6 +1149,8 @@
     els.dayModeInput.addEventListener('change', () => { setDayMode(els.dayModeInput.value); dismissTodayDateMenu(); });
     els.undoButton.addEventListener('click', performUndo);
     els.copySummaryButton?.addEventListener('click', copyDailySummary);
+    els.reviewTruthAttentionButton?.addEventListener('click', () => sendNativeBridgeMessage('truth.reminders.review'));
+    els.deferTruthAttentionButton?.addEventListener('click', () => sendNativeBridgeMessage('truth.reminders.defer'));
     els.toggleActualTimeButton.addEventListener('click', () => { actualTimesExpanded = !actualTimesExpanded; renderToday(); });
     els.actualWakeInput.addEventListener('change', () => saveActualTime('actualWakeTime', els.actualWakeInput.value));
     els.actualBedInput.addEventListener('change', () => saveActualTime('actualBedTime', els.actualBedInput.value));
@@ -1512,14 +1514,20 @@
           allowanceRemainingMinutes: String(value.allowanceRemainingMinutes ?? '') === '' ? null : Math.max(0, Number(value.allowanceRemainingMinutes) || 0),
           allowanceRedemptionID: String(value.allowanceRedemptionID || ''),
           lastConsumedRedemptionID: String(value.lastConsumedRedemptionID || ''),
+          allowanceAttemptID: String(value.allowanceAttemptID || ''),
+          allowanceAttemptResult: String(value.allowanceAttemptResult || ''),
           morningGateEnabled: value.morningGateEnabled === true || value.morningGateEnabled === 'true',
           morningFoundationCompleteToday: value.morningFoundationCompleteToday === true || value.morningFoundationCompleteToday === 'true',
           truthReminderGateEnabled: value.truthReminderGateEnabled === true || value.truthReminderGateEnabled === 'true',
           truthReminderGateActive: value.truthReminderGateActive === true || value.truthReminderGateActive === 'true',
           truthReminderSafetyUnlockUntil: String(value.truthReminderSafetyUnlockUntil ?? '') === '' ? null : new Date(Number(value.truthReminderSafetyUnlockUntil) * 1000),
+          truthReminderDeferredUntil: String(value.truthReminderDeferredUntil ?? '') === '' ? null : new Date(Number(value.truthReminderDeferredUntil) * 1000),
+          truthReminderLastOpenedAt: String(value.truthReminderLastOpenedAt ?? '') === '' ? null : new Date(Number(value.truthReminderLastOpenedAt) * 1000),
+          truthReminderLastReviewedAt: String(value.truthReminderLastReviewedAt ?? '') === '' ? null : new Date(Number(value.truthReminderLastReviewedAt) * 1000),
+          truthReminderLastScheduleAt: String(value.truthReminderLastScheduleAt ?? '') === '' ? null : new Date(Number(value.truthReminderLastScheduleAt) * 1000),
           truthReminderEnabled: value.truthReminderEnabled === true || value.truthReminderEnabled === 'true',
           truthReminderPauseEnabled: value.truthReminderPauseEnabled === true || value.truthReminderPauseEnabled === 'true',
-          truthReminderWaitingCount: Math.max(0, Number(value.truthReminderWaitingCount) || 0),
+          truthReminderWaitingCount: Math.min(1, Math.max(0, Number(value.truthReminderWaitingCount) || 0)),
           truthReminderNextAt: String(value.truthReminderNextAt ?? '') === '' ? null : new Date(Number(value.truthReminderNextAt) * 1000),
           truthReminderScheduleSummary: String(value.truthReminderScheduleSummary || ''),
           protectionReason: String(value.protectionReason || ''),
@@ -1534,24 +1542,46 @@
           essentialSelectionNeedsRepair: value.essentialSelectionNeedsRepair === true || value.essentialSelectionNeedsRepair === 'true',
           notificationsAllowed: value.notificationsAllowed === true || value.notificationsAllowed === 'true'
         };
-        const settings = earnedAccessDeviceSettings();
-        if (settings.activeAllowance?.id && earnedAccessNativeState.lastConsumedRedemptionID === settings.activeAllowance.id) {
-          saveEarnedAccessDeviceSettings({ activeAllowance: null });
+        let settings = earnedAccessDeviceSettings();
+        settings = reconcileLegacyUncertainAllowance(settings);
+        const allowance = settings.activeAllowance;
+        const attemptMatches = allowance?.id && earnedAccessNativeState.allowanceAttemptID === allowance.id;
+        const nativeMatches = allowance?.id && earnedAccessNativeState.allowanceActive && earnedAccessNativeState.allowanceRedemptionID === allowance.id;
+        if (allowance?.id && (earnedAccessNativeState.lastConsumedRedemptionID === allowance.id || (attemptMatches && earnedAccessNativeState.allowanceAttemptResult === 'consumed'))) {
+          settings = commitPendingEarnedAllowance(settings, allowance, true);
+          saveEarnedAccessDeviceSettings({ activeAllowance: null, allowanceRetryAfter: '' });
           lastEarnedAccessNativeDirective = '';
-        } else if (settings.activeAllowance?.id && !earnedAccessNativeState.allowanceActive) {
-          const startedAt = new Date(settings.activeAllowance.startedAt || '');
-          const hasTimedOut = Number.isNaN(startedAt.getTime()) || Date.now() - startedAt.getTime() >= 60_000;
-          if (hasTimedOut) {
-            // Native Screen Time is authoritative. If its monitor disappeared,
-            // retire the stale web allowance without refunding possibly-used
-            // minutes; any still-banked minutes can then open safely.
-            saveEarnedAccessDeviceSettings({ activeAllowance: null });
+        } else if (allowance?.id && nativeMatches) {
+          settings = commitPendingEarnedAllowance(settings, allowance, false);
+          if (settings.allowanceRetryAfter) settings = saveEarnedAccessDeviceSettings({ allowanceRetryAfter: '' });
+        } else if (allowance?.id && allowance.phase === 'pending' && attemptMatches && earnedAccessNativeState.allowanceAttemptResult === 'rejected') {
+          saveEarnedAccessDeviceSettings({
+            activeAllowance: null,
+            allowanceRetryAfter: new Date(Date.now() + 60_000).toISOString(),
+            lastAllowanceTransition: { id: allowance.id, status: 'rejected', at: new Date().toISOString(), minutes: allowance.reservedMinutes || allowance.minutes || 0 }
+          });
+          lastEarnedAccessNativeDirective = '';
+        } else if (allowance?.id && allowance.phase === 'pending' && !earnedAccessNativeState.allowanceActive) {
+          const attemptedAt = new Date(allowance.lastAttemptAt || allowance.startedAt || '');
+          const shouldRetry = Number.isNaN(attemptedAt.getTime()) || Date.now() - attemptedAt.getTime() >= 60_000;
+          if (shouldRetry) {
+            saveEarnedAccessDeviceSettings({ activeAllowance: { ...allowance, lastAttemptAt: new Date().toISOString() } });
+            lastEarnedAccessNativeDirective = '';
+          }
+        } else if (allowance?.id && allowance.phase === 'active' && !earnedAccessNativeState.allowanceActive) {
+          const confirmedAt = new Date(allowance.confirmedAt || allowance.startedAt || '');
+          if (Number.isNaN(confirmedAt.getTime()) || Date.now() - confirmedAt.getTime() >= 60_000) {
+            saveEarnedAccessDeviceSettings({
+              activeAllowance: null,
+              lastAllowanceTransition: { id: allowance.id, status: 'monitorMissing', at: new Date().toISOString(), minutes: allowance.minutes || 0 }
+            });
             lastEarnedAccessNativeDirective = '';
           }
         }
         els.earnedAccessNativeStatus.textContent = value.message || 'Earned Access status updated.';
         window.DailyRoutineTruthGate?.reconcile('native status refresh');
         syncMorningFoundation(morningFoundationComplete());
+        renderTruthAttention();
         renderEarnedAccess();
       } else if (detail.name === 'routine.commands.pending') {
         const commands = Array.isArray(detail.value) ? detail.value : [];
@@ -1660,8 +1690,8 @@
     const defaults = {
       label: 'Selected apps', automaticSteps: true, automaticAccess: true, stepGoal: 8000, rewardMinutes: 60, taskRewardMinutes: 5, dailyLimitMinutes: 60, mode: 'fixed',
       morningTaskIds: defaultEarnedAccessTasks('morning'), laterTaskIds: defaultEarnedAccessTasks('later'),
-      active: null, activeAllowance: null, earnedUntil: '', lastCompleted: null, roundsByDate: {}, stageClaimsByDate: {},
-      bankByDate: {}, earnedByDate: {}, movementProgressByDate: {}, movementCreditedByDate: {}, taskCreditsByDate: {}, redemptionsByDate: {}
+      active: null, activeAllowance: null, earnedUntil: '', lastCompleted: null, lastAllowanceTransition: null, allowanceRetryAfter: '', roundsByDate: {}, stageClaimsByDate: {},
+      bankByDate: {}, earnedByDate: {}, movementProgressByDate: {}, movementCreditedByDate: {}, taskCreditsByDate: {}, redemptionsByDate: {}, uncertainByDate: {}
     };
     try {
       const parsed = JSON.parse(localStorage.getItem(EARNED_ACCESS_DEVICE_KEY) || '{}');
@@ -1678,6 +1708,7 @@
         next.automaticSteps = Boolean(next.automaticSteps);
       }
       next.automaticAccess = needsAutomaticAccessMigration ? true : Boolean(next.automaticAccess);
+      next.allowanceRetryAfter = String(next.allowanceRetryAfter || '');
       next.label = String(next.label || defaults.label).trim().slice(0, 80) || defaults.label;
       next.stepGoal = Math.min(30000, Math.max(1000, Math.round(Number(next.stepGoal) || defaults.stepGoal)));
       next.rewardMinutes = Math.min(120, Math.max(15, Math.round(Number(next.rewardMinutes) || defaults.rewardMinutes)));
@@ -1694,6 +1725,7 @@
       next.movementCreditedByDate = next.movementCreditedByDate && typeof next.movementCreditedByDate === 'object' ? next.movementCreditedByDate : {};
       next.taskCreditsByDate = next.taskCreditsByDate && typeof next.taskCreditsByDate === 'object' ? next.taskCreditsByDate : {};
       next.redemptionsByDate = next.redemptionsByDate && typeof next.redemptionsByDate === 'object' ? next.redemptionsByDate : {};
+      next.uncertainByDate = next.uncertainByDate && typeof next.uncertainByDate === 'object' ? next.uncertainByDate : {};
       next.expiredDateKeys = Array.isArray(next.expiredDateKeys) ? next.expiredDateKeys.map(String).slice(-45) : [];
       if (next.expiredDateKeys.includes(dateKey(startOfToday()))) {
         next.bankByDate[dateKey(startOfToday())] = 0;
@@ -1718,6 +1750,10 @@
           next.activeAllowance = { ...next.activeAllowance, dateKey: allowanceDay };
           needsSave = true;
         }
+        if (next.activeAllowance && !['pending', 'active'].includes(next.activeAllowance.phase)) {
+          next.activeAllowance = { ...next.activeAllowance, phase: 'active', reservedMinutes: 0 };
+          needsSave = true;
+        }
       }
       next.earnedUntil = '';
       if (!next.lastCompleted || typeof next.lastCompleted !== 'object') next.lastCompleted = null;
@@ -1730,6 +1766,45 @@
     const next = { ...earnedAccessDeviceSettings(), ...updates };
     localStorage.setItem(EARNED_ACCESS_DEVICE_KEY, JSON.stringify(next));
     return next;
+  }
+
+  function commitPendingEarnedAllowance(settings, allowance, consumed) {
+    if (!allowance || allowance.phase !== 'pending') return settings;
+    const today = dateKey(startOfToday());
+    const reserved = Math.max(0, Math.round(Number(allowance.reservedMinutes) || 0));
+    const bank = Math.max(0, Math.round(Number(settings.bankByDate[today]) || 0));
+    const redemptions = Array.isArray(settings.redemptionsByDate[today]) ? settings.redemptionsByDate[today] : [];
+    const redemption = {
+      id: allowance.id,
+      minutes: Math.max(1, Math.round(Number(allowance.minutes) || reserved || 1)),
+      startedAt: allowance.startedAt,
+      automatic: allowance.automatic !== false,
+      carriedMinutes: 0,
+      addedMinutes: Math.min(bank, reserved),
+      replacesRedemptionId: '',
+      status: consumed ? 'consumed' : 'accepted'
+    };
+    return saveEarnedAccessDeviceSettings({
+      bankByDate: { ...settings.bankByDate, [today]: Math.max(0, bank - redemption.addedMinutes) },
+      activeAllowance: consumed ? null : { ...allowance, phase: 'active', reservedMinutes: 0, confirmedAt: new Date().toISOString() },
+      allowanceRetryAfter: '',
+      redemptionsByDate: { ...settings.redemptionsByDate, [today]: redemptions.some(item => item.id === allowance.id) ? redemptions : [...redemptions, redemption] },
+      lastAllowanceTransition: { id: allowance.id, status: consumed ? 'consumed' : 'accepted', at: new Date().toISOString(), minutes: redemption.minutes }
+    });
+  }
+
+  function reconcileLegacyUncertainAllowance(settings) {
+    const today = dateKey(startOfToday());
+    if (settings.activeAllowance || settings.uncertainByDate?.[today]) return settings;
+    const redemptions = Array.isArray(settings.redemptionsByDate[today]) ? settings.redemptionsByDate[today] : [];
+    const last = redemptions.at(-1);
+    if (!last || last.status || last.id === earnedAccessNativeState.lastConsumedRedemptionID || earnedAccessNativeState.allowanceActive) return settings;
+    const minutes = Math.max(0, Math.round(Number(last.addedMinutes) || 0));
+    if (!minutes) return settings;
+    return saveEarnedAccessDeviceSettings({
+      uncertainByDate: { ...(settings.uncertainByDate || {}), [today]: { redemptionId: last.id, minutes, detectedAt: new Date().toISOString() } },
+      lastAllowanceTransition: { id: last.id, status: 'uncertain', at: new Date().toISOString(), minutes }
+    });
   }
 
   function saveEarnedAccessFormSettings() {
@@ -1868,49 +1943,24 @@
 
   function automaticallyOpenEarnedAccess(settings) {
     if (!settings.automaticAccess || settings.active || !morningFoundationComplete()) return settings;
+    const retryAfter = new Date(settings.allowanceRetryAfter || '');
+    if (!Number.isNaN(retryAfter.getTime()) && retryAfter.getTime() > Date.now()) return settings;
     const today = dateKey(startOfToday());
     const bank = Math.max(0, Math.round(Number(settings.bankByDate[today]) || 0));
     if (!bank) return settings;
 
-    const nativeAllowanceMatches = Boolean(settings.activeAllowance)
-      && earnedAccessNativeState.allowanceActive
-      && earnedAccessNativeState.allowanceRedemptionID === settings.activeAllowance.id
-      && Number.isFinite(earnedAccessNativeState.allowanceRemainingMinutes);
-    if (settings.activeAllowance && !nativeAllowanceMatches) {
-      // Wait for Apple's latest usage checkpoint before folding newly earned time
-      // into an active allowance. Reusing the original allowance total here could
-      // restore minutes that have already been spent.
-      return settings;
-    }
-
-    const activeRemaining = nativeAllowanceMatches
-      ? Math.max(0, Math.round(earnedAccessNativeState.allowanceRemainingMinutes))
-      : 0;
-    const minutes = Math.min(settings.dailyLimitMinutes, 120, Math.max(1, activeRemaining + bank));
-    const bankUsed = Math.max(0, minutes - activeRemaining);
-    if (!bankUsed) return settings;
+    // Never replace a live Screen Time allowance. New earnings stay banked until
+    // Apple reports the current allowance finished, avoiding lossy monitor churn.
+    if (settings.activeAllowance) return settings;
+    const minutes = Math.min(settings.dailyLimitMinutes, 120, Math.max(1, bank));
+    const bankUsed = minutes;
     const startedAt = new Date();
     const redemptionID = `allowance-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    const redemptions = Array.isArray(settings.redemptionsByDate[today]) ? settings.redemptionsByDate[today] : [];
     const next = saveEarnedAccessDeviceSettings({
-      activeAllowance: { id: redemptionID, minutes, startedAt: startedAt.toISOString(), dateKey: today },
-      bankByDate: { ...settings.bankByDate, [today]: Math.max(0, bank - bankUsed) },
-      redemptionsByDate: {
-        ...settings.redemptionsByDate,
-        [today]: [...redemptions, {
-          id: redemptionID,
-          minutes,
-          startedAt: startedAt.toISOString(),
-          automatic: true,
-          carriedMinutes: activeRemaining,
-          addedMinutes: bankUsed,
-          replacesRedemptionId: settings.activeAllowance?.id || ''
-        }]
-      }
+      activeAllowance: { id: redemptionID, minutes, reservedMinutes: bankUsed, phase: 'pending', automatic: true, startedAt: startedAt.toISOString(), lastAttemptAt: startedAt.toISOString(), dateKey: today },
+      allowanceRetryAfter: ''
     });
-    showToast(settings.activeAllowance
-      ? `${bankUsed} new minute${bankUsed === 1 ? '' : 's'} added · about ${minutes} available.`
-      : `${minutes} earned-app minute${minutes === 1 ? '' : 's'} opened automatically.`);
+    showToast(`${minutes} earned-app minute${minutes === 1 ? '' : 's'} reserved while Apple opens access.`);
     return next;
   }
 
@@ -1929,11 +1979,9 @@
     const rewardMinutes = 15;
     const startedAt = new Date();
     const redemptionID = `allowance-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    const redemptions = Array.isArray(settings.redemptionsByDate[today]) ? settings.redemptionsByDate[today] : [];
     const next = saveEarnedAccessDeviceSettings({
-      activeAllowance: { id: redemptionID, minutes: rewardMinutes, startedAt: startedAt.toISOString(), dateKey: today },
-      bankByDate: { ...settings.bankByDate, [today]: bank - rewardMinutes },
-      redemptionsByDate: { ...settings.redemptionsByDate, [today]: [...redemptions, { id: redemptionID, minutes: rewardMinutes, startedAt: startedAt.toISOString() }] },
+      activeAllowance: { id: redemptionID, minutes: rewardMinutes, reservedMinutes: rewardMinutes, phase: 'pending', automatic: false, startedAt: startedAt.toISOString(), lastAttemptAt: startedAt.toISOString(), dateKey: today },
+      allowanceRetryAfter: '',
       lastCompleted: { source: 'bank', label: settings.label, rewardMinutes, completedAt: startedAt.toISOString() }
     });
     syncNativeEarnedAccess(next, true);
@@ -2174,23 +2222,27 @@
     const nativeAllowanceMatches = Boolean(settings.activeAllowance)
       && earnedAccessNativeState.allowanceActive
       && earnedAccessNativeState.allowanceRedemptionID === settings.activeAllowance.id;
-    const open = settings.activeAllowance
+    const pending = settings.activeAllowance?.phase === 'pending'
+      ? Math.max(0, Math.round(Number(settings.activeAllowance.reservedMinutes) || Number(settings.activeAllowance.minutes) || 0))
+      : 0;
+    const open = settings.activeAllowance && settings.activeAllowance.phase !== 'pending'
       ? nativeAllowanceMatches && Number.isFinite(earnedAccessNativeState.allowanceRemainingMinutes)
         ? Math.max(0, Math.round(earnedAccessNativeState.allowanceRemainingMinutes))
         : Math.max(0, Math.round(Number(settings.activeAllowance.minutes) || 0))
       : 0;
-    const remaining = Math.min(settings.dailyLimitMinutes, bank + open);
+    const uncertain = Math.max(0, Math.round(Number(settings.uncertainByDate?.[today]?.minutes) || 0));
+    const remaining = Math.min(settings.dailyLimitMinutes, bank + open + uncertain);
     const redemptions = Array.isArray(settings.redemptionsByDate[today]) ? settings.redemptionsByDate[today] : [];
     const lastRedemption = redemptions.at(-1);
-    const usageKnown = !redemptions.length
+    const usageKnown = !uncertain && (!redemptions.length
       || nativeAllowanceMatches
-      || Boolean(lastRedemption?.id && lastRedemption.id === earnedAccessNativeState.lastConsumedRedemptionID);
+      || Boolean(lastRedemption?.id && lastRedemption.id === earnedAccessNativeState.lastConsumedRedemptionID));
     const used = usageKnown ? Math.max(0, earned - remaining) : null;
     const higherGate = foundationLocked
       || (earnedAccessNativeState.morningGateEnabled && !earnedAccessNativeState.morningFoundationCompleteToday)
       || earnedAccessNativeState.truthReminderGateActive;
-    const usableNow = higherGate ? 0 : open;
-    return { today, earned, bank, taskEarned, walkingEarned, open, remaining, used, usageKnown, higherGate, usableNow, nativeAllowanceMatches };
+    const usableNow = higherGate || pending || uncertain ? 0 : open;
+    return { today, earned, bank, taskEarned, walkingEarned, pending, uncertain, open, remaining, used, usageKnown, higherGate, usableNow, nativeAllowanceMatches };
   }
 
   function renderTruthReminderAccessStatus() {
@@ -2257,12 +2309,19 @@
       `Balance remaining: ${ledger.remaining}`,
       `Usage estimate: ${ledger.used === null ? 'unavailable' : ledger.used}`,
       `Allowance active: ${earnedAccessNativeState.allowanceActive}`,
+      `Allowance handoff pending: ${ledger.pending}`,
+      `Allowance awaiting confirmation: ${ledger.uncertain}`,
+      `Last allowance attempt: ${earnedAccessNativeState.allowanceAttemptID || 'none'} · ${earnedAccessNativeState.allowanceAttemptResult || 'none'}`,
       `Allowance monitor scheduled: ${earnedAccessNativeState.allowanceMonitorScheduled}`,
       '',
       'Truth Reminder schedule',
       `Enabled: ${earnedAccessNativeState.truthReminderEnabled}`,
       `Pause apps: ${earnedAccessNativeState.truthReminderPauseEnabled}`,
       `Waiting count: ${earnedAccessNativeState.truthReminderWaitingCount}`,
+      `Deferred until: ${earnedAccessNativeState.truthReminderDeferredUntil ? earnedAccessNativeState.truthReminderDeferredUntil.toISOString() : 'none'}`,
+      `Last opened: ${earnedAccessNativeState.truthReminderLastOpenedAt ? earnedAccessNativeState.truthReminderLastOpenedAt.toISOString() : 'none'}`,
+      `Last reviewed: ${earnedAccessNativeState.truthReminderLastReviewedAt ? earnedAccessNativeState.truthReminderLastReviewedAt.toISOString() : 'none'}`,
+      `Last schedule update: ${earnedAccessNativeState.truthReminderLastScheduleAt ? earnedAccessNativeState.truthReminderLastScheduleAt.toISOString() : 'none'}`,
       `Next scheduled: ${next ? next.toISOString() : 'none'}`,
       '',
       'Reliability',
@@ -2302,7 +2361,8 @@
 
     const active = settings.active;
     const foundationLocked = !morningFoundationComplete();
-    const accessIsEarned = Boolean(settings.activeAllowance) && !foundationLocked;
+    const allowancePending = settings.activeAllowance?.phase === 'pending';
+    const accessIsEarned = Boolean(settings.activeAllowance) && !allowancePending && !foundationLocked;
     const ledger = earnedAccessLedgerSnapshot(settings, foundationLocked);
     const bankMinutes = ledger.bank;
     const earnedToday = ledger.earned;
@@ -2312,7 +2372,7 @@
     const stepsToday = latestHealthStepsToday() ?? Math.max(0, Number(state.days[today]?.entries?.['apple-health-steps']) || 0);
     const stepGoal = Math.max(1000, Number(settings.stepGoal) || 8000);
     const stepPercent = Math.min(100, Math.round((stepsToday / stepGoal) * 100));
-    syncNativeEarnedAccess(settings, accessIsEarned);
+    syncNativeEarnedAccess(settings, Boolean(settings.activeAllowance) && !foundationLocked);
     syncNativeStepRewardAutomation(settings);
     renderEarnedAccessStages(settings);
     els.earnedAccessAvailableNow.textContent = `${totalAvailable} min`;
@@ -2321,22 +2381,40 @@
     els.earnedAccessLedgerSummary.textContent = `${earnedToday} earned · ${totalAvailable} remaining`;
     els.earnedAccessTaskEarned.textContent = `+${ledger.taskEarned} min`;
     els.earnedAccessWalkingEarned.textContent = `+${ledger.walkingEarned} min`;
-    els.earnedAccessUsedToday.textContent = ledger.used === null ? 'Refreshing' : ledger.used ? `−about ${ledger.used} min` : '0 min';
+    els.earnedAccessUsedToday.textContent = ledger.uncertain ? 'Reconciling' : ledger.used === null ? 'Refreshing' : ledger.used ? `−about ${ledger.used} min` : '0 min';
     els.earnedAccessBalanceRemaining.textContent = `${totalAvailable} min`;
-    els.earnedAccessLedgerNote.textContent = ledger.used === null
+    els.earnedAccessLedgerNote.textContent = ledger.uncertain
+      ? `${ledger.uncertain} minute${ledger.uncertain === 1 ? '' : 's'} from an older allowance need Apple confirmation. They are preserved in the ledger but are not spendable or counted twice.`
+      : ledger.pending
+      ? `${ledger.pending} minute${ledger.pending === 1 ? '' : 's'} remain reserved until Apple confirms the allowance opened.`
+      : ledger.used === null
       ? 'Apple’s latest usage checkpoint is still reconciling. No usage amount is guessed. Unused minutes expire at midnight.'
       : 'Selected-app use is approximate between Apple Screen Time checkpoints. Unused minutes expire at midnight.';
     els.earnedAccessBankStatus.textContent = `${totalAvailable} of ${settings.dailyLimitMinutes} minutes remain today`;
-    els.earnedAccessBankDetail.textContent = ledger.higherGate && totalAvailable
+    els.earnedAccessBankDetail.textContent = ledger.uncertain
+      ? `${ledger.uncertain} minute${ledger.uncertain === 1 ? '' : 's'} need confirmation · no credit was guessed or deleted`
+      : ledger.pending
+      ? `${ledger.pending} opening with Apple · ${bankMinutes} still represented in today’s bank`
+      : ledger.higherGate && totalAvailable
       ? `${totalAvailable} earned minute${totalAvailable === 1 ? '' : 's'} preserved · 0 usable until the active gate is cleared · resets at midnight`
       : earnedToday >= settings.dailyLimitMinutes
       ? 'Today’s limit is reached · unused minutes reset at midnight'
       : `${allowanceRemaining} currently open · ${bankMinutes} still banked · ${earnedToday} earned today · resets at midnight`;
-    els.useEarnedAccessButton.disabled = bankMinutes < 15 || Boolean(active) || accessIsEarned;
-    els.useEarnedAccessButton.textContent = accessIsEarned ? 'Access open' : bankMinutes < 15 ? `${bankMinutes}/15 banked` : 'Use 15 minutes';
+    els.useEarnedAccessButton.disabled = bankMinutes < 15 || Boolean(active) || Boolean(settings.activeAllowance) || Boolean(ledger.uncertain);
+    els.useEarnedAccessButton.textContent = allowancePending ? 'Opening…' : accessIsEarned ? 'Access open' : ledger.uncertain ? 'Reconciling' : bankMinutes < 15 ? `${bankMinutes}/15 banked` : 'Use 15 minutes';
     els.useEarnedAccessButton.hidden = settings.automaticAccess;
     let percent = 0;
-    if (settings.automaticSteps && !accessIsEarned) {
+    if (ledger.uncertain) {
+      percent = 100;
+      els.earnedAccessBadge.textContent = 'Reconciling';
+      els.earnedAccessStatus.textContent = `${ledger.uncertain} minutes need confirmation`;
+      els.earnedAccessDetail.textContent = 'An older allowance ended without a matching Apple consumption record. The minutes remain visible while the app avoids guessing.';
+    } else if (allowancePending) {
+      percent = 100;
+      els.earnedAccessBadge.textContent = 'Opening';
+      els.earnedAccessStatus.textContent = `${ledger.pending} minutes reserved`;
+      els.earnedAccessDetail.textContent = 'Apple is confirming the Screen Time allowance. These minutes remain in the ledger until that handoff succeeds.';
+    } else if (settings.automaticSteps && !accessIsEarned) {
       const steps = stepsToday;
       const goal = stepGoal;
       const maximum = Math.min(settings.dailyLimitMinutes, Math.max(15, Number(settings.rewardMinutes) || 60));
@@ -2387,8 +2465,8 @@
     }
     els.earnedAccessProgressBar.style.width = `${percent}%`;
     els.earnedAccessProgressBar.parentElement.setAttribute('aria-valuenow', String(percent));
-    els.startEarnedAccessButton.disabled = pendingEarnedAccessStart || Boolean(active) || accessIsEarned || earnedToday >= settings.dailyLimitMinutes;
-    els.startEarnedAccessButton.textContent = pendingEarnedAccessStart ? 'Starting round…' : active ? 'Round in progress' : accessIsEarned ? 'Access open' : earnedToday >= settings.dailyLimitMinutes ? 'Daily limit reached' : `Start ${earnedAccessRequirement(settings).toLocaleString()}-step round`;
+    els.startEarnedAccessButton.disabled = pendingEarnedAccessStart || Boolean(active) || Boolean(settings.activeAllowance) || Boolean(ledger.uncertain) || earnedToday >= settings.dailyLimitMinutes;
+    els.startEarnedAccessButton.textContent = pendingEarnedAccessStart ? 'Starting round…' : active ? 'Round in progress' : allowancePending ? 'Opening access…' : accessIsEarned ? 'Access open' : ledger.uncertain ? 'Reconciling' : earnedToday >= settings.dailyLimitMinutes ? 'Daily limit reached' : `Start ${earnedAccessRequirement(settings).toLocaleString()}-step round`;
     els.cancelEarnedAccessButton.hidden = !active && !pendingEarnedAccessStart;
     els.startEarnedAccessButton.hidden = settings.automaticSteps;
     els.checkEarnedAccessButton.hidden = settings.automaticSteps;
@@ -2433,6 +2511,13 @@
       els.earnedAccessGateStatus.textContent = 'Earned-app protection is off';
       els.earnedAccessGateDetail.textContent = 'The morning gate may be complete, but the selected earned apps are not being protected.';
       els.earnedAccessBadge.textContent = 'Setup needed';
+    } else if (allowancePending || ledger.uncertain) {
+      gate.classList.add('is-warning');
+      els.earnedAccessGateStatus.textContent = allowancePending ? 'Earned minutes are opening' : 'Earned minutes need confirmation';
+      els.earnedAccessGateDetail.textContent = allowancePending
+        ? 'The balance is reserved until Apple confirms access. Nothing will be silently removed.'
+        : `${ledger.uncertain} minute${ledger.uncertain === 1 ? '' : 's'} remain recorded but unavailable until reconciliation is certain.`;
+      els.earnedAccessBadge.textContent = allowancePending ? 'Opening' : 'Reconciling';
     } else if (accessIsEarned) {
       gate.classList.add('is-open');
       els.earnedAccessGateStatus.textContent = `${totalAvailable} earned minute${totalAvailable === 1 ? '' : 's'} available`;
@@ -2464,13 +2549,13 @@
     sendNativeBridgeMessage('health.step-rewards.configure', { enabled, goalSteps, maxMinutes });
   }
 
-  function syncNativeEarnedAccess(settings, accessIsEarned) {
+  function syncNativeEarnedAccess(settings, shouldOpenAllowance) {
     if (!window.DailyRoutineNative?.postMessage) return;
     const foundationLocked = !morningFoundationComplete();
-    const directive = !foundationLocked && accessIsEarned && settings.activeAllowance?.id ? `allow:${settings.activeAllowance.id}` : 'lock';
+    const directive = !foundationLocked && shouldOpenAllowance && settings.activeAllowance?.id ? `allow:${settings.activeAllowance.id}` : 'lock';
     if (directive === lastEarnedAccessNativeDirective) return;
     lastEarnedAccessNativeDirective = directive;
-    if (!foundationLocked && accessIsEarned) sendNativeBridgeMessage('earned.access.allow', { minutes: settings.activeAllowance.minutes, redemptionId: settings.activeAllowance.id, label: settings.label });
+    if (!foundationLocked && shouldOpenAllowance) sendNativeBridgeMessage('earned.access.allow', { minutes: settings.activeAllowance.minutes, redemptionId: settings.activeAllowance.id, label: settings.label });
     else sendNativeBridgeMessage('earned.access.lock');
   }
 
@@ -3440,6 +3525,30 @@
 
   function renderAll() { renderToday(); renderNotes(); renderHistory(); renderSetup(); renderAccountabilitySharing(); }
 
+  function renderTruthAttention() {
+    if (!els.truthAttentionCard) return;
+    const todayIsSelected = isSameDay(selectedDate, startOfToday());
+    const waiting = Math.max(0, Number(earnedAccessNativeState.truthReminderWaitingCount) || 0);
+    const deferredUntil = earnedAccessNativeState.truthReminderDeferredUntil || earnedAccessNativeState.truthReminderSafetyUnlockUntil;
+    const deferred = deferredUntil instanceof Date && !Number.isNaN(deferredUntil.getTime()) && deferredUntil.getTime() > Date.now();
+    const show = todayIsSelected && earnedAccessNativeState.available && earnedAccessNativeState.truthReminderEnabled && (waiting > 0 || deferred);
+    els.truthAttentionCard.hidden = !show;
+    if (!show) return;
+    els.truthAttentionCard.classList.toggle('is-deferred', deferred);
+    if (deferred) {
+      const time = deferredUntil.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+      els.truthAttentionTitle.textContent = `Truth reminder returns at ${time}`;
+      els.truthAttentionDetail.textContent = 'It remains unresolved. You can review it now or return when the 15-minute pause ends.';
+      els.deferTruthAttentionButton.hidden = true;
+      els.reviewTruthAttentionButton.textContent = 'Review now';
+    } else {
+      els.truthAttentionTitle.textContent = 'A truth reminder is waiting';
+      els.truthAttentionDetail.textContent = 'One intentional review clears every reminder that has elapsed so far.';
+      els.deferTruthAttentionButton.hidden = false;
+      els.reviewTruthAttentionButton.textContent = 'Review now';
+    }
+  }
+
   function renderToday() {
     const day = state.days[dateKey(selectedDate)] || { entries: {} };
     const today = startOfToday();
@@ -3456,6 +3565,7 @@
     els.dayModeInput.value = day.mode || 'normal';
     els.datePickerInput.value = dateKey(selectedDate);
     renderWeekFocusBanner();
+    renderTruthAttention();
     renderOnThisDay();
     renderGodMomentReminder();
     renderBackupReminder();

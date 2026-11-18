@@ -403,6 +403,18 @@ struct WebAppView: UIViewRepresentable {
                     }
                 )
                 present(controller, from: webView) { }
+            case .reviewTruthReminder:
+                model.reminders.reviewWaitingRemindersNow()
+                emit(name: "earned.access.status", value: model.earnedAccessBridgeStatus)
+            case .deferTruthReminder:
+                model.reminders.safetyUnlockForFifteenMinutes()
+                model.earnedAccess.refresh()
+                emit(name: "earned.access.status", value: model.earnedAccessBridgeStatus)
+            case .testTruthReminder:
+                Task {
+                    await model.reminders.sendDiagnosticTest()
+                    emit(name: "earned.access.status", value: model.earnedAccessBridgeStatus)
+                }
             case .requestHealthAuthorization:
                 Task {
                     do {

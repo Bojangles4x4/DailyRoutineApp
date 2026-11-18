@@ -68,10 +68,8 @@ final class AppModel: ObservableObject {
                 : "Complete Truth Before Tasks to restore access. Earned minutes remain preserved."
             value["protectionAction"] = "Begin Truth Before Tasks"
         case .truthReminderGate:
-            value["protectionDetail"] = waiting > 0
-                ? "Review all \(waiting) waiting reminder\(waiting == 1 ? "" : "s") to restore nonessential apps. Earned minutes remain preserved."
-                : "Review the waiting reminder to restore nonessential apps. Earned minutes remain preserved."
-            value["protectionAction"] = "Review reminders"
+            value["protectionDetail"] = "Review the single waiting reminder to restore nonessential apps. One review clears everything that has become due. Earned minutes remain preserved."
+            value["protectionAction"] = "Review reminder"
         case .safetyUnlock:
             let until = earnedAccess.truthReminderSafetyUnlockUntil?.formatted(date: .omitted, time: .shortened) ?? "soon"
             value["protectionDetail"] = "Truth access is temporarily open until \(until). Earned apps still follow their available balance."

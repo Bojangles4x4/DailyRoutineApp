@@ -69,6 +69,19 @@
           <div class="progress-ring" id="progressRing" aria-label="0 percent complete"><span id="progressPercent">0%</span></div>
         </section>
 
+        <section id="truthAttentionCard" class="card truth-attention-card" hidden aria-live="polite">
+          <div class="truth-attention-icon" aria-hidden="true">◐</div>
+          <div class="truth-attention-copy">
+            <p class="eyebrow">Needs your attention</p>
+            <h2 id="truthAttentionTitle">A truth reminder is waiting</h2>
+            <p id="truthAttentionDetail" class="muted">Review it once to clear every reminder that has elapsed.</p>
+          </div>
+          <div class="truth-attention-actions">
+            <button id="deferTruthAttentionButton" class="secondary-button" type="button">I’m occupied · 15 min</button>
+            <button id="reviewTruthAttentionButton" class="primary-button" type="button">Review now</button>
+          </div>
+        </section>
+
         <section class="card foundation-card" aria-label="Today's foundation">
           <div>
             <div class="foundation-heading"><p class="eyebrow">Today’s foundation</p><span class="foundation-mark" aria-label="Foundation complete">100%</span></div>
@@ -952,6 +965,6 @@
   <script src="sync-core.js" defer></script>
   <script src="sync-cloud.js" defer></script>
   <script src="data-health.js" defer></script>
-  <script src="app.js?v=1.51.0-build53-widget-actions" defer></script>
+  <script src="app.js?v=1.52.0-build54-reliable-attention" defer></script>
 </body>
 </html>

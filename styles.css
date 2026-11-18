@@ -498,6 +498,17 @@ body[data-view="today"] .main-content{padding-top:0}
 #todayView .foundation-heading .eyebrow{padding:0;color:var(--muted);font-size:9px;font-weight:500;letter-spacing:.14em}
 #todayView .foundation-heading .foundation-mark{display:block;position:static;width:auto;height:auto;border:0;border-radius:0;background:none;box-shadow:none;color:var(--brand);font-size:14px;font-weight:550}
 #todayView .foundation-copy{margin:0;font-size:13px;line-height:1.45;color:var(--ink);font-weight:400}
+.truth-attention-card{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:11px;margin:0 0 12px;padding:12px 13px;border-color:color-mix(in srgb,var(--brand) 32%,var(--line));border-left:4px solid var(--brand);background:color-mix(in srgb,var(--brand-soft) 38%,var(--surface-solid))}
+.truth-attention-card[hidden]{display:none}
+.truth-attention-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:var(--brand);color:#fff;font-size:19px;font-weight:700}
+.truth-attention-copy .eyebrow{margin:0 0 3px;font-size:8px;letter-spacing:.14em}
+.truth-attention-copy h2{margin:0;font-size:14px;line-height:1.25}
+.truth-attention-copy p:last-child{margin:3px 0 0;font-size:10px;line-height:1.35}
+.truth-attention-actions{display:flex;align-items:center;gap:7px}
+.truth-attention-actions button{min-height:36px;padding:8px 11px;font-size:10px;white-space:nowrap}
+.truth-attention-card.is-deferred{border-left-color:var(--muted);background:var(--surface-solid)}
+.truth-attention-card.is-deferred .truth-attention-icon{background:var(--muted)}
+@media(max-width:560px){.truth-attention-card{grid-template-columns:32px minmax(0,1fr)}.truth-attention-icon{width:32px;height:32px}.truth-attention-actions{grid-column:2;justify-content:flex-start}.truth-attention-actions button{flex:1;max-width:170px}}
 #todayView .routine-section{margin:12px 0}
 #todayView .routine-section>.card{padding:0;border:0;background:none;box-shadow:none;backdrop-filter:none}
 #todayView .routine-heading{margin:0 3px 6px;min-height:28px}

@@ -213,24 +213,29 @@ final class EarnedAccessControlStore: ObservableObject {
         if allowanceActive,
            allowanceRedemptionID == redemptionID,
            allowanceRemainingMinutes != nil {
+            EarnedAccessShared.recordAllowanceAttempt(redemptionID: redemptionID, result: "accepted")
             refreshStatus()
             return
         }
         if lastConsumedRedemptionID == redemptionID {
+            EarnedAccessShared.recordAllowanceAttempt(redemptionID: redemptionID, result: "consumed")
             refreshStatus(success: "That allowance has already been used. Complete another requirement to add more time.")
             return
         }
         authorizationStatus = authorizationCenter.authorizationStatus
         guard protectionEnabled, isAuthorized, hasSelection else {
+            EarnedAccessShared.recordAllowanceAttempt(redemptionID: redemptionID, result: "rejected")
             status = "Enable Earned Access and choose apps before starting an allowance."
             return
         }
         guard !morningGateEnabled || morningFoundationCompleteToday else {
+            EarnedAccessShared.recordAllowanceAttempt(redemptionID: redemptionID, result: "rejected")
             refreshMorningGateShield()
             status = "Complete Truth Before Tasks before opening earned apps today."
             return
         }
         guard !truthReminderGateActive else {
+            EarnedAccessShared.recordAllowanceAttempt(redemptionID: redemptionID, result: "rejected")
             refreshTruthReminderGateShield()
             status = "Review the waiting truth reminder before opening earned apps."
             return
@@ -291,6 +296,7 @@ final class EarnedAccessControlStore: ObservableObject {
             allowanceRemainingMinutes = safeMinutes
             allowanceRedemptionID = redemptionID
             isShielding = false
+            EarnedAccessShared.recordAllowanceAttempt(redemptionID: redemptionID, result: "accepted")
             status = "\(safeMinutes) minutes of selected-app use are available. Unused minutes remain available."
             notifyCurrentAllowance(
                 redemptionID: redemptionID,
@@ -298,6 +304,7 @@ final class EarnedAccessControlStore: ObservableObject {
                 playSound: !isReplacingActiveAllowance
             )
         } catch {
+            EarnedAccessShared.recordAllowanceAttempt(redemptionID: redemptionID, result: "rejected")
             lockIfEnabled()
             status = "The usage allowance could not start: \(error.localizedDescription)"
         }
@@ -467,6 +474,8 @@ final class EarnedAccessControlStore: ObservableObject {
             "allowanceRemainingMinutes": allowanceRemainingMinutes.map(String.init) ?? "",
             "allowanceRedemptionID": allowanceRedemptionID,
             "lastConsumedRedemptionID": lastConsumedRedemptionID,
+            "allowanceAttemptID": EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.allowanceAttemptIDKey) ?? "",
+            "allowanceAttemptResult": EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.allowanceAttemptResultKey) ?? "",
             "morningGateEnabled": morningGateEnabled ? "true" : "false",
             "morningFoundationCompleteToday": morningFoundationCompleteToday ? "true" : "false",
             "truthReminderGateActive": truthReminderGateActive ? "true" : "false",

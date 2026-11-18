@@ -17,6 +17,8 @@ enum EarnedAccessShared {
     static let allowanceRedemptionIDKey = "dailyRoutine.earnedAccess.allowanceRedemptionID.v2"
     static let allowanceLabelKey = "dailyRoutine.earnedAccess.allowanceLabel.v1"
     static let lastConsumedRedemptionIDKey = "dailyRoutine.earnedAccess.lastConsumedRedemptionID.v2"
+    static let allowanceAttemptIDKey = "dailyRoutine.earnedAccess.attemptID.v1"
+    static let allowanceAttemptResultKey = "dailyRoutine.earnedAccess.attemptResult.v1"
     static let essentialSelectionKey = "dailyRoutine.morningFoundation.essentialSelection.v1"
     static let morningGateEnabledKey = "dailyRoutine.morningFoundation.enabled.v1"
     static let morningFoundationCompleteDateKey = "dailyRoutine.morningFoundation.completeDate.v1"
@@ -153,6 +155,11 @@ enum EarnedAccessShared {
         defaults.removeObject(forKey: allowanceRedemptionIDKey)
         defaults.removeObject(forKey: allowanceLabelKey)
         defaults.removeObject(forKey: unlockedUntilKey)
+    }
+
+    static func recordAllowanceAttempt(redemptionID: String, result: String) {
+        defaults.set(redemptionID, forKey: allowanceAttemptIDKey)
+        defaults.set(result, forKey: allowanceAttemptResultKey)
     }
 
     static func eventName(for minute: Int, redemptionID: String) -> DeviceActivityEvent.Name {

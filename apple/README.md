@@ -53,6 +53,8 @@ Build 28 adds a review-before-sync plan, verified recovery snapshots that block 
 
 Build 31 makes morning and evening medication tasks match the surrounding routine rows, with the reminder dropdown immediately left of the completion circle. Build 30 added the dedicated picture-and-text truth-reminder review and optional separate Screen Time shield.
 
+Build 54 coalesces elapsed Truth Reminders into one persistent attention item, supports one-review clearing and a visible 15-minute defer, and adds on-device scheduling diagnostics plus a harmless notification test. Earned Access uses a reserve-confirm-spend handoff so Apple must acknowledge an allowance before the bank is debited; failed handoffs keep their minutes, and older ambiguous allowances remain visible for reconciliation.
+
 Build 53 keeps Water +1, Later, and eligible task completion inside the large iPhone widget while View all tasks remains the intentional app-opening control. Direct actions update the private snapshot immediately, advance revisions in sequence, reject accidental repeat taps, reconcile a validated previous-day command after midnight, and replace Water +1 with a noninteractive completion state at the daily target. Stale widget actions reload the current timeline instead of opening the app.
 
 Build 52 closes the Today/date menu after every completed date or day-mode action and restores focus to its compact summary. It also keeps the “Lord, there will be a thousand things…” passage in one opening location with Proverbs 14:12, removes an identical saved conviction or core-truth copy, and prevents Private Sync from restoring identical convictions under different internal IDs.
