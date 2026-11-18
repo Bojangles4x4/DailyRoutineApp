@@ -97,6 +97,10 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
     @Published var busy = false
     @Published var pendingPresentation: TruthReminderPresentation?
     @Published var notificationAuthorizationSummary = "Checking…"
+    @Published var timeSensitiveAuthorizationSummary = "Checking…"
+    @Published var deliveredTruthNotificationCount = 0
+    @Published var pendingTruthNotificationCount = 0
+    @Published var latestDeliveredTruthNotificationAt: Date?
     private let center = UNUserNotificationCenter.current()
     private let activityCenter = DeviceActivityCenter()
     private let truthGateStore = ManagedSettingsStore(named: EarnedAccessShared.truthReminderStoreName)
@@ -104,6 +108,7 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
     private let categoryIdentifier = "dailyRoutine.truth.category"
     private let acknowledgeActionIdentifier = "dailyRoutine.truth.acknowledge"
     private let safetyUnlockActionIdentifier = "dailyRoutine.truth.safetyUnlock"
+    private let notificationSoundName = "TruthReminder.caf"
     private var queuedNotificationEntryID: UUID?
     private var presentationHostIsReady = false
     private var presentationTask: Task<Void, Never>?
@@ -150,6 +155,22 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
 
     var waitingReminderCount: Int {
         pendingMinutes(now: Date()).isEmpty ? 0 : 1
+    }
+
+    var diagnosticEvents: [TruthReminderDiagnosticRecord] {
+        EarnedAccessShared.truthReminderDiagnostics()
+    }
+
+    var lastGateActivatedAt: Date? {
+        let defaults = EarnedAccessShared.defaults
+        guard defaults.object(forKey: EarnedAccessShared.truthReminderGateActivatedAtKey) != nil else { return nil }
+        return Date(timeIntervalSince1970: defaults.double(forKey: EarnedAccessShared.truthReminderGateActivatedAtKey))
+    }
+
+    var lastGateMinute: Int? {
+        let defaults = EarnedAccessShared.defaults
+        guard defaults.object(forKey: EarnedAccessShared.truthReminderGateMinuteKey) != nil else { return nil }
+        return defaults.integer(forKey: EarnedAccessShared.truthReminderGateMinuteKey)
     }
 
     var safetyUnlockEndsAt: Date? {
@@ -302,9 +323,10 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
                 let entry = entries[index % entries.count]
                 settings.scheduledEntryIDs[String(minute)] = entry.id.uuidString
                 let content = UNMutableNotificationContent()
-                content.title = "A moment of truth"
+                content.title = "Pause. Return to what is true."
+                content.subtitle = "A moment of truth"
                 content.body = entry.text.isEmpty ? "Pause and reflect on your chosen picture." : entry.text
-                content.sound = .default
+                configureTruthNotification(content)
                 content.threadIdentifier = "truth-reminders"
                 content.categoryIdentifier = categoryIdentifier
                 content.userInfo = [
@@ -336,6 +358,10 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
             settings.lastScheduleError = nil
             initializeReviewTrackingForCurrentSchedule(now: Date())
             try persist()
+            EarnedAccessShared.recordTruthReminderDiagnostic(
+                event: "Notifications scheduled",
+                detail: "\(requests.count) Time Sensitive reminders use the Truth chime."
+            )
             if settings.pauseAppsUntilReviewed {
                 try scheduleNextTruthGate()
             } else {
@@ -371,6 +397,11 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
 
         if identifier.hasPrefix("dailyRoutine.truth."),
            actionIdentifier == "dailyRoutine.truth.safetyUnlock" {
+            EarnedAccessShared.recordTruthReminderDiagnostic(
+                event: "Notification deferred",
+                minute: minute,
+                detail: "Fifteen-minute safety access was requested from the notification."
+            )
             let deferred = Self.performSafetyUnlock(
                 minute: minute,
                 entryID: rawID,
@@ -399,6 +430,12 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
               actionIdentifier == "dailyRoutine.truth.acknowledge"
                 || actionIdentifier == UNNotificationDefaultActionIdentifier
         else { return }
+
+        EarnedAccessShared.recordTruthReminderDiagnostic(
+            event: "Notification opened",
+            minute: minute,
+            detail: "The Truth Reminder notification opened Daily Rhythms."
+        )
 
         Task { @MainActor [weak self] in
             self?.queuePresentation(entryID: rawID.flatMap(UUID.init(uuidString:)))
@@ -461,6 +498,11 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
             ? Self.performSafetyUnlock(minute: minute, entryID: entryID, now: now)
             : true
         if scheduled {
+            EarnedAccessShared.recordTruthReminderDiagnostic(
+                event: "Reminder deferred",
+                minute: minute,
+                detail: "App access opened for fifteen minutes; the reminder remains unresolved."
+            )
             queuedNotificationEntryID = nil
             pendingPresentation = nil
             if unlockUntil < midnight {
@@ -549,7 +591,11 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         }
         queuedNotificationEntryID = nil
         pendingPresentation = nil
-        let remaining = pendingMinutes(now: now)
+        EarnedAccessShared.recordTruthReminderDiagnostic(
+            event: "Reminder reviewed",
+            minute: slotMinute,
+            detail: "All elapsed reminder slots were acknowledged together."
+        )
         do {
             // One intentional review clears every reminder that has elapsed so far.
             // A future scheduled reminder can still become the next single attention item.
@@ -730,8 +776,8 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
     }
 
     func refreshDiagnostics() async {
-        let authorization = await center.notificationSettings().authorizationStatus
-        notificationAuthorizationSummary = switch authorization {
+        let notificationSettings = await center.notificationSettings()
+        notificationAuthorizationSummary = switch notificationSettings.authorizationStatus {
         case .authorized: "Allowed"
         case .provisional: "Provisional"
         case .denied: "Not allowed"
@@ -739,13 +785,27 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         case .ephemeral: "Temporary"
         @unknown default: "Unknown"
         }
+        timeSensitiveAuthorizationSummary = switch notificationSettings.timeSensitiveSetting {
+        case .enabled: "Allowed"
+        case .disabled: "Off in iPhone Settings"
+        case .notSupported: "Not supported"
+        @unknown default: "Unknown"
+        }
+        let delivered = await center.deliveredNotifications()
+            .filter { $0.request.identifier.hasPrefix(prefix) }
+        deliveredTruthNotificationCount = delivered.count
+        latestDeliveredTruthNotificationAt = delivered.map(\.date).max()
+        pendingTruthNotificationCount = await center.pendingNotificationRequests()
+            .filter { $0.identifier.hasPrefix(prefix) }
+            .count
     }
 
     func sendDiagnosticTest() async {
         let content = UNMutableNotificationContent()
-        content.title = "Truth reminder test"
-        content.body = "If you can see this, reminder notifications are reaching this iPhone."
-        content.sound = .default
+        content.title = "Pause. Return to what is true."
+        content.subtitle = "Truth Reminder test"
+        content.body = "This should arrive immediately with the Truth chime."
+        configureTruthNotification(content)
         let request = UNNotificationRequest(
             identifier: "dailyRoutine.truthDiagnostic.\(UUID().uuidString)",
             content: content,
@@ -762,15 +822,21 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         await refreshDiagnostics()
     }
 
+    func openNotificationSettings() {
+        guard let url = URL(string: UIApplication.openNotificationSettingsURLString) else { return }
+        UIApplication.shared.open(url)
+    }
+
     private func scheduleDeferredNotification(entryID: String?, minute: Int?, at date: Date) async {
         guard date > Date() else { return }
         let entry = entryID
             .flatMap(UUID.init(uuidString:))
             .flatMap { id in settings.entries.first { $0.id == id } }
         let content = UNMutableNotificationContent()
-        content.title = "A moment of truth is still waiting"
+        content.title = "Pause. Return to what is true."
+        content.subtitle = "A moment of truth is still waiting"
         content.body = entry?.text.isEmpty == false ? entry!.text : "Pause and return to what is true."
-        content.sound = .default
+        configureTruthNotification(content)
         content.threadIdentifier = "truth-reminders"
         content.categoryIdentifier = categoryIdentifier
         if let entryID { content.userInfo["truthReminderID"] = entryID }
@@ -793,6 +859,12 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
             settings.lastScheduleError = "The 15-minute return reminder could not be scheduled: \(error.localizedDescription)"
             try? persist()
         }
+    }
+
+    private func configureTruthNotification(_ content: UNMutableNotificationContent) {
+        content.sound = UNNotificationSound(named: UNNotificationSoundName(notificationSoundName))
+        content.interruptionLevel = .timeSensitive
+        content.relevanceScore = 1
     }
 
     private func pendingMinutes(now: Date) -> [Int] {
@@ -948,6 +1020,11 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
             EarnedAccessShared.clearTruthReminderGate(from: truthGateStore)
             throw NSError(domain: "TruthReminderGate", code: 4, userInfo: [NSLocalizedDescriptionKey: "The app pause was released because essential apps could not be restored. The reminder queue was preserved."])
         }
+        EarnedAccessShared.recordTruthReminderDiagnostic(
+            event: "App pause activated",
+            minute: minute,
+            detail: "Nonessential apps were shielded from Daily Rhythms."
+        )
     }
 
     private func scheduleGateActivity(startingAt start: Date, minute: Int) throws {
@@ -974,6 +1051,11 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
                 intervalEnd: calendar.dateComponents(components, from: end),
                 repeats: false
             )
+        )
+        EarnedAccessShared.recordTruthReminderDiagnostic(
+            event: "App pause scheduled",
+            minute: minute,
+            detail: "The next Screen Time gate was registered with iOS."
         )
     }
 

@@ -3,6 +3,14 @@ import FamilyControls
 import Foundation
 import ManagedSettings
 
+struct TruthReminderDiagnosticRecord: Codable, Identifiable, Equatable {
+    let id: UUID
+    let occurredAt: Date
+    let event: String
+    let minute: Int?
+    let detail: String
+}
+
 enum EarnedAccessShared {
     static let suiteName = "group.com.bojangles4x4.DailyRoutine"
     static let selectionKey = "dailyRoutine.earnedAccess.selection.v1"
@@ -38,6 +46,7 @@ enum EarnedAccessShared {
     static let truthReminderSafetyUnlockDayKey = "dailyRoutine.truthReminderGate.safetyUnlockDay.v1"
     static let truthReminderSafetyUnlockCountKey = "dailyRoutine.truthReminderGate.safetyUnlockCount.v1"
     static let truthReminderSafetyUnlockLastAtKey = "dailyRoutine.truthReminderGate.safetyUnlockLastAt.v1"
+    static let truthReminderDiagnosticsKey = "dailyRoutine.truthReminderGate.diagnostics.v1"
     static let essentialSelectionNeedsRepairKey = "dailyRoutine.screenTime.essentialSelectionNeedsRepair.v1"
     static let dayBoundaryIDKey = "dailyRoutine.dayBoundary.id.v1"
     static let dayBoundaryCheckedAtKey = "dailyRoutine.dayBoundary.checkedAt.v1"
@@ -88,6 +97,36 @@ enum EarnedAccessShared {
 
     static func saveEssentialSelection(_ selection: FamilyActivitySelection) throws {
         defaults.set(try JSONEncoder().encode(selection), forKey: essentialSelectionKey)
+    }
+
+    static func truthReminderDiagnostics() -> [TruthReminderDiagnosticRecord] {
+        guard let data = defaults.data(forKey: truthReminderDiagnosticsKey),
+              let records = try? JSONDecoder().decode([TruthReminderDiagnosticRecord].self, from: data)
+        else { return [] }
+        return records.sorted { $0.occurredAt > $1.occurredAt }
+    }
+
+    static func recordTruthReminderDiagnostic(
+        event: String,
+        minute: Int? = nil,
+        detail: String,
+        at date: Date = Date()
+    ) {
+        var records = truthReminderDiagnostics()
+        records.insert(
+            TruthReminderDiagnosticRecord(
+                id: UUID(),
+                occurredAt: date,
+                event: event,
+                minute: minute,
+                detail: detail
+            ),
+            at: 0
+        )
+        records = Array(records.prefix(24))
+        if let data = try? JSONEncoder().encode(records) {
+            defaults.set(data, forKey: truthReminderDiagnosticsKey)
+        }
     }
 
     static func applyShield(selection: FamilyActivitySelection, to store: ManagedSettingsStore) {

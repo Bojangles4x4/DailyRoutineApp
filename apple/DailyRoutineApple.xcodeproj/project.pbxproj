@@ -54,6 +54,7 @@
 		D6C211E2362593C25DD65D90 /* DailyRoutineWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 566ED5F8606B577FFAB6A93C /* DailyRoutineWatchApp.swift */; };
 		D9583503897ABD71B21BE5D8 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 0AB50D90125AC93C7EB08335 /* PrivacyInfo.xcprivacy */; };
 		D4A7C2B13300000000000002 /* data-health.js in Resources */ = {isa = PBXBuildFile; fileRef = D4A7C2B13300000000000001 /* data-health.js */; };
+		D4B550A10000000000000002 /* TruthReminder.caf in Resources */ = {isa = PBXBuildFile; fileRef = D4B550A10000000000000001 /* TruthReminder.caf */; };
 		DDF7188BFC7F79DB0A7B68A7 /* WatchContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49322339D19B74F64851BBB8 /* WatchContentView.swift */; };
 		E275C54338CC184B37E7E4E0 /* DailyRoutineWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = B97BBECEFE2DF2727D5E833D /* DailyRoutineWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		E2A20CF11685E6E3FC7A9358 /* BridgeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23CF6F479542799A7E80F4BA /* BridgeModels.swift */; };
@@ -150,6 +151,7 @@
 		0AB50D90125AC93C7EB08335 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		10E6F55D19A361D999DC14D5 /* app.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = app.js; sourceTree = "<group>"; };
 		D4A7C2B13300000000000001 /* data-health.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "data-health.js"; sourceTree = "<group>"; };
+		D4B550A10000000000000001 /* TruthReminder.caf */ = {isa = PBXFileReference; lastKnownFileType = audio.caf; path = TruthReminder.caf; sourceTree = "<group>"; };
 		138B5200C630CA1BBDECBD89 /* HealthKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitService.swift; sourceTree = "<group>"; };
 		17CD184FE3D8B6273C7708A1 /* PhoneWatchSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneWatchSessionManager.swift; sourceTree = "<group>"; };
 		1A698DCFE06EF6EE4972D27A /* DailyRoutineWatchWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = DailyRoutineWatchWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -316,6 +318,7 @@
 				138B5200C630CA1BBDECBD89 /* HealthKitService.swift */,
 				17CD184FE3D8B6273C7708A1 /* PhoneWatchSessionManager.swift */,
 				466E9DBD54A5F0EAD61C7BD6 /* TruthReminderStore.swift */,
+				D4B550A10000000000000001 /* TruthReminder.caf */,
 				4E6A317C9BFEF78DE19E0CA3 /* TruthReminderView.swift */,
 				84999DD0051D68587AD4C817 /* WebAppView.swift */,
 			);
@@ -555,6 +558,7 @@
 				4E6EBEE2B91E9754E0961107 /* support.html in Resources */,
 				6DB5696CC84C1AAFD9DA5E93 /* sync-cloud.js in Resources */,
 				89F5D29C6CE2D8003158CD63 /* sync-core.js in Resources */,
+				D4B550A10000000000000002 /* TruthReminder.caf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -793,7 +797,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 54;
+				CURRENT_PROJECT_VERSION = 55;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -806,7 +810,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.52.0;
+				MARKETING_VERSION = 1.53.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1045,7 +1049,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 54;
+				CURRENT_PROJECT_VERSION = 55;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -1064,7 +1068,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.52.0;
+				MARKETING_VERSION = 1.53.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

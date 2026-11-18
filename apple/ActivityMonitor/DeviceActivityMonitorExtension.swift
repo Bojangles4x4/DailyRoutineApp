@@ -39,6 +39,10 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
 
     private func enforceTruthReminderGate() {
         guard EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.truthReminderGateEnabledKey) else {
+            EarnedAccessShared.recordTruthReminderDiagnostic(
+                event: "App pause skipped",
+                detail: "Truth Reminder app pausing was off."
+            )
             EarnedAccessShared.clearTruthReminderGate(from: truthReminderStore)
             return
         }
@@ -46,11 +50,19 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         let morningFoundationIsIncomplete = EarnedAccessShared.defaults.bool(forKey: EarnedAccessShared.morningGateEnabledKey)
             && EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.morningFoundationCompleteDateKey) != EarnedAccessShared.localDateKey(now)
         guard !morningFoundationIsIncomplete else {
+            EarnedAccessShared.recordTruthReminderDiagnostic(
+                event: "App pause postponed",
+                detail: "Today’s opening was still incomplete."
+            )
             EarnedAccessShared.clearTruthReminderGate(from: truthReminderStore)
             return
         }
         let safetyUnlockUntil = EarnedAccessShared.defaults.double(forKey: EarnedAccessShared.truthReminderSafetyUnlockUntilKey)
         guard safetyUnlockUntil <= now.timeIntervalSince1970 + 5 else {
+            EarnedAccessShared.recordTruthReminderDiagnostic(
+                event: "App pause postponed",
+                detail: "Fifteen-minute safety access was active."
+            )
             EarnedAccessShared.clearTruthReminderGate(from: truthReminderStore)
             return
         }
@@ -69,8 +81,18 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
             exceptions: EarnedAccessShared.loadEssentialSelection(),
             to: truthReminderStore
         ) {
+            EarnedAccessShared.recordTruthReminderDiagnostic(
+                event: "App pause activated",
+                minute: minute,
+                detail: "Nonessential apps were shielded."
+            )
             clearEarnedAccessNotifications()
         } else {
+            EarnedAccessShared.recordTruthReminderDiagnostic(
+                event: "App pause failed",
+                minute: minute,
+                detail: "No valid essential-app selection was available."
+            )
             EarnedAccessShared.clearTruthReminderGate(from: truthReminderStore)
         }
     }

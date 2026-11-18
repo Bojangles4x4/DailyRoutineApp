@@ -564,6 +564,21 @@ final class RoutineSharedStateStoreTests: XCTestCase {
         ))
     }
 
+    func testBroadEssentialSelectionWarningKeepsBypassListIntentional() {
+        XCTAssertFalse(EarnedAccessControlStore.essentialSelectionNeedsWarning(
+            applicationCount: 3,
+            websiteCount: 0
+        ))
+        XCTAssertTrue(EarnedAccessControlStore.essentialSelectionNeedsWarning(
+            applicationCount: 74,
+            websiteCount: 194
+        ))
+        XCTAssertTrue(EarnedAccessControlStore.essentialSelectionNeedsWarning(
+            applicationCount: 11,
+            websiteCount: 0
+        ))
+    }
+
     func testTruthReminderPresentationWaitsForMorningFoundation() {
         let entryID = UUID()
 

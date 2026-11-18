@@ -8,6 +8,7 @@ struct EarnedAccessControlView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showingPicker = false
     @State private var showingEssentialPicker = false
+    @State private var showingBroadEssentialConfirmation = false
 
     var body: some View {
         NavigationStack {
@@ -120,8 +121,16 @@ struct EarnedAccessControlView: View {
                     LabeledContent("Always-available websites", value: String(store.essentialWebsiteCount))
                     Button("Choose essential apps") { showingEssentialPicker = true }
                         .disabled(!store.isAuthorized)
-                    Button("Save essential selection") { store.saveEssentialSelection() }
+                    Button("Save essential selection") { saveEssentialSelectionWithConfirmation() }
                         .disabled(!store.isAuthorized || !store.hasEssentialSelection)
+                    if store.essentialSelectionIsBroad {
+                        Label(
+                            "\(store.essentialSelectionBypassSummary) would remain available during every all-app gate.",
+                            systemImage: "exclamationmark.triangle.fill"
+                        )
+                        .font(.footnote)
+                        .foregroundStyle(.orange)
+                    }
                     if store.essentialSelectionNeedsRepair {
                         Label("Choose at least one essential app before turning on an all-app gate.", systemImage: "exclamationmark.triangle.fill")
                             .font(.footnote)
@@ -139,7 +148,7 @@ struct EarnedAccessControlView: View {
                 } header: {
                     Text("Apps available before the opening")
                 } footer: {
-                    Text("The morning gate shields nearly every app until today’s opening is complete. Daily Routine stays available automatically. Choose individual essentials such as Messages and navigation before turning it on.")
+                    Text("These choices bypass both Morning Gate and Truth Reminders. Daily Routine stays available automatically. Keep this list short—typically Messages and navigation.")
                 }
             }
             .navigationTitle("Earned Access")
@@ -159,10 +168,24 @@ struct EarnedAccessControlView: View {
                 if !isShowing { store.saveSelection() }
             }
             .onChange(of: showingEssentialPicker) { _, isShowing in
-                if !isShowing { store.saveEssentialSelection() }
+                if !isShowing { saveEssentialSelectionWithConfirmation() }
             }
             .onAppear { store.refresh() }
             .interactiveDismissDisabled()
+            .alert("Many apps would bypass your gates", isPresented: $showingBroadEssentialConfirmation) {
+                Button("Review selection", role: .cancel) {}
+                Button("Save anyway", role: .destructive) { store.saveEssentialSelection() }
+            } message: {
+                Text("\(store.essentialSelectionBypassSummary) would stay available during Morning Gate and every Truth Reminder pause.")
+            }
+        }
+    }
+
+    private func saveEssentialSelectionWithConfirmation() {
+        if store.essentialSelectionIsBroad {
+            showingBroadEssentialConfirmation = true
+        } else {
+            store.saveEssentialSelection()
         }
     }
 

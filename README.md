@@ -2,7 +2,9 @@
 
 A mobile-first private routine and mood tracker designed to run as a Progressive Web App (PWA) on GitHub Pages.
 
-## Version 1.52.0 development features
+## Version 1.53.0 development features
+
+- Build 55 makes Truth Reminders Time Sensitive, adds a distinctive two-note Truth chime, exposes delivery and gate diagnostics, and warns before a broad essential-app selection lets many apps bypass Morning Gate or Truth Reminder protection.
 
 - Build 54 turns elapsed Truth Reminders into one persistent “Needs your attention” item on Today, lets one intentional review clear everything elapsed, supports a visible 15-minute “I’m occupied” defer, and adds private reminder diagnostics plus a harmless ten-second notification test. Earned Access now reserves minutes, waits for Apple to confirm the allowance, and only then spends the bank; rejected or interrupted handoffs keep the minutes instead of silently losing them, while older ambiguous allowances remain visible for reconciliation.
 

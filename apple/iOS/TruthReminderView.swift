@@ -88,7 +88,16 @@ struct TruthReminderView: View {
                 }
                 Section("Reminder diagnostics") {
                     LabeledContent("Notifications", value: store.notificationAuthorizationSummary)
+                    LabeledContent("Time Sensitive alerts", value: store.timeSensitiveAuthorizationSummary)
+                    LabeledContent("Scheduled alerts", value: String(store.pendingTruthNotificationCount))
+                    LabeledContent("Delivered alerts still visible", value: String(store.deliveredTruthNotificationCount))
                     LabeledContent("Next reminder", value: store.nextScheduledReminderAt?.formatted(date: .abbreviated, time: .shortened) ?? "None scheduled")
+                    if let date = store.latestDeliveredTruthNotificationAt {
+                        LabeledContent("Latest visible delivery", value: date.formatted(date: .abbreviated, time: .shortened))
+                    }
+                    if let date = store.lastGateActivatedAt {
+                        LabeledContent("Latest app pause", value: date.formatted(date: .abbreviated, time: .shortened))
+                    }
                     if let date = store.settings.lastScheduleUpdatedAt {
                         LabeledContent("Last schedule update", value: date.formatted(date: .abbreviated, time: .shortened))
                     }
@@ -104,7 +113,26 @@ struct TruthReminderView: View {
                     Button("Send one test in 10 seconds") {
                         Task { await store.sendDiagnosticTest() }
                     }
-                    Text("The test does not affect app gates, review status, or earned minutes. Apple controls Watch mirroring and whether an alert interrupts audio.")
+                    Button("Open iPhone notification settings") {
+                        store.openNotificationSettings()
+                    }
+                    if !store.diagnosticEvents.isEmpty {
+                        ForEach(store.diagnosticEvents.prefix(6)) { event in
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack {
+                                    Text(event.event).font(.footnote.weight(.semibold))
+                                    Spacer()
+                                    Text(event.occurredAt.formatted(date: .omitted, time: .shortened))
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Text(event.detail)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    Text("The test uses the same Time Sensitive delivery and Truth chime as scheduled reminders. It does not affect gates, review status, or earned minutes. Apple controls Watch mirroring and cannot be required to interrupt audio already playing in another app.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }

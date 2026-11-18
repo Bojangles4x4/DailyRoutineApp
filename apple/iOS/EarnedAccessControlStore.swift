@@ -76,6 +76,15 @@ final class EarnedAccessControlStore: ObservableObject {
     var hasEssentialSelection: Bool {
         essentialApplicationCount + essentialWebsiteCount > 0
     }
+    var essentialSelectionIsBroad: Bool {
+        Self.essentialSelectionNeedsWarning(
+            applicationCount: essentialApplicationCount,
+            websiteCount: essentialWebsiteCount
+        )
+    }
+    var essentialSelectionBypassSummary: String {
+        "\(essentialApplicationCount) apps and \(essentialWebsiteCount) websites"
+    }
     var morningFoundationCompleteToday: Bool {
         EarnedAccessShared.defaults.string(forKey: EarnedAccessShared.morningFoundationCompleteDateKey) == EarnedAccessShared.localDateKey()
     }
@@ -715,6 +724,13 @@ final class EarnedAccessControlStore: ObservableObject {
         previous.applicationTokens != next.applicationTokens
             || previous.categoryTokens != next.categoryTokens
             || previous.webDomainTokens != next.webDomainTokens
+    }
+
+    nonisolated static func essentialSelectionNeedsWarning(
+        applicationCount: Int,
+        websiteCount: Int
+    ) -> Bool {
+        applicationCount > 10 || websiteCount > 25 || applicationCount + websiteCount > 30
     }
 
     nonisolated static func shouldEndActiveAllowance(selectionChanged: Bool, allowanceActive: Bool) -> Bool {
