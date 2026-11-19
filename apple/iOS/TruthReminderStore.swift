@@ -98,6 +98,14 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
     @Published var pendingPresentation: TruthReminderPresentation?
     @Published var notificationAuthorizationSummary = "Checking…"
     @Published var timeSensitiveAuthorizationSummary = "Checking…"
+    @Published var alertPresentationSummary = "Checking…"
+    @Published var soundPresentationSummary = "Checking…"
+    @Published var lockScreenPresentationSummary = "Checking…"
+    @Published var notificationCenterPresentationSummary = "Checking…"
+    @Published var scheduledDeliverySummary = "Checking…"
+    @Published var previewPresentationSummary = "Checking…"
+    @Published var notificationDeliveryWarning: String?
+    @Published var diagnosticTestIsPending = false
     @Published var deliveredTruthNotificationCount = 0
     @Published var pendingTruthNotificationCount = 0
     @Published var latestDeliveredTruthNotificationAt: Date?
@@ -105,6 +113,7 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
     private let activityCenter = DeviceActivityCenter()
     private let truthGateStore = ManagedSettingsStore(named: EarnedAccessShared.truthReminderStoreName)
     private let prefix = "dailyRoutine.truth."
+    private let diagnosticPrefix = "dailyRoutine.truthDiagnostic."
     private let categoryIdentifier = "dailyRoutine.truth.category"
     private let acknowledgeActionIdentifier = "dailyRoutine.truth.acknowledge"
     private let safetyUnlockActionIdentifier = "dailyRoutine.truth.safetyUnlock"
@@ -308,6 +317,8 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
             }
             var authorization = await center.notificationSettings().authorizationStatus
             if authorization == .notDetermined && requestPermission {
+                // Apple deprecated a separate Time Sensitive authorization option;
+                // iOS 15+ recognizes it through the signed app entitlement instead.
                 _ = try await center.requestAuthorization(options: [.alert, .sound])
                 authorization = await center.notificationSettings().authorizationStatus
             }
@@ -391,6 +402,10 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
     ) {
         let identifier = response.notification.request.identifier
         let actionIdentifier = response.actionIdentifier
+        if identifier.hasPrefix(diagnosticPrefix) {
+            completionHandler()
+            return
+        }
         let rawID = response.notification.request.content.userInfo["truthReminderID"] as? String
         let minute = (response.notification.request.content.userInfo["truthReminderMinute"] as? Int)
             ?? Int(identifier.split(separator: ".").last.map(String.init) ?? "")
@@ -777,6 +792,14 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
 
     func refreshDiagnostics() async {
         let notificationSettings = await center.notificationSettings()
+        let settingSummary: (UNNotificationSetting) -> String = { setting in
+            switch setting {
+            case .enabled: "Allowed"
+            case .disabled: "Off in iPhone Settings"
+            case .notSupported: "Not supported"
+            @unknown default: "Unknown"
+            }
+        }
         notificationAuthorizationSummary = switch notificationSettings.authorizationStatus {
         case .authorized: "Allowed"
         case .provisional: "Provisional"
@@ -791,6 +814,31 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         case .notSupported: "Not supported"
         @unknown default: "Unknown"
         }
+        alertPresentationSummary = settingSummary(notificationSettings.alertSetting)
+        soundPresentationSummary = settingSummary(notificationSettings.soundSetting)
+        lockScreenPresentationSummary = settingSummary(notificationSettings.lockScreenSetting)
+        notificationCenterPresentationSummary = settingSummary(notificationSettings.notificationCenterSetting)
+        scheduledDeliverySummary = switch notificationSettings.scheduledDeliverySetting {
+        case .enabled: "Enabled by iPhone"
+        case .disabled: "Off"
+        case .notSupported: "Not supported"
+        @unknown default: "Unknown"
+        }
+        previewPresentationSummary = switch notificationSettings.showPreviewsSetting {
+        case .always: "Always"
+        case .whenAuthenticated: "When unlocked"
+        case .never: "Never"
+        @unknown default: "Unknown"
+        }
+        notificationDeliveryWarning = if notificationSettings.authorizationStatus == .denied {
+            "App pausing can still activate, but iPhone notifications are off. Open Daily Rhythms to review a waiting reminder or use its safety unlock."
+        } else if notificationSettings.alertSetting != .enabled {
+            "Notifications can arrive silently in Notification Center because banners and alerts are off."
+        } else if notificationSettings.soundSetting != .enabled {
+            "Notification sounds are off. The gate and visible alerts can still work."
+        } else {
+            nil
+        }
         let delivered = await center.deliveredNotifications()
             .filter { $0.request.identifier.hasPrefix(prefix) }
         deliveredTruthNotificationCount = delivered.count
@@ -798,24 +846,39 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         pendingTruthNotificationCount = await center.pendingNotificationRequests()
             .filter { $0.identifier.hasPrefix(prefix) }
             .count
+        diagnosticTestIsPending = await center.pendingNotificationRequests()
+            .contains { $0.identifier.hasPrefix(diagnosticPrefix) }
     }
 
-    func sendDiagnosticTest() async {
+    func sendDiagnosticTest(useAppleDefaultSound: Bool = false) async {
+        let existingPending = await center.pendingNotificationRequests()
+            .filter { $0.identifier.hasPrefix(diagnosticPrefix) }
+        center.removePendingNotificationRequests(withIdentifiers: existingPending.map(\.identifier))
+        let existingDelivered = await center.deliveredNotifications()
+            .filter { $0.request.identifier.hasPrefix(diagnosticPrefix) }
+        center.removeDeliveredNotifications(withIdentifiers: existingDelivered.map { $0.request.identifier })
         let content = UNMutableNotificationContent()
         content.title = "Pause. Return to what is true."
-        content.subtitle = "Truth Reminder test"
-        content.body = "This should arrive immediately with the Truth chime."
-        configureTruthNotification(content)
+        content.subtitle = useAppleDefaultSound ? "Apple sound test" : "Truth chime test"
+        content.body = useAppleDefaultSound
+            ? "This requests Apple’s default notification sound."
+            : "This requests the custom Truth chime."
+        configureTruthNotification(content, useAppleDefaultSound: useAppleDefaultSound)
         let request = UNNotificationRequest(
-            identifier: "dailyRoutine.truthDiagnostic.\(UUID().uuidString)",
+            identifier: diagnosticPrefix + UUID().uuidString,
             content: content,
             trigger: UNTimeIntervalNotificationTrigger(timeInterval: 10, repeats: false)
         )
         do {
             try await center.add(request)
+            diagnosticTestIsPending = true
             settings.lastDiagnosticTestAt = Date()
             try persist()
-            status = "A harmless test reminder will arrive in about 10 seconds. It will not change gates or earned minutes."
+            EarnedAccessShared.recordTruthReminderDiagnostic(
+                event: "Alert test scheduled",
+                detail: useAppleDefaultSound ? "Apple default sound in 10 seconds." : "Truth chime in 10 seconds."
+            )
+            status = "A harmless \(useAppleDefaultSound ? "Apple sound" : "Truth chime") test will arrive in about 10 seconds. It will not change gates or earned minutes."
         } catch {
             status = "The test reminder could not be scheduled: \(error.localizedDescription)"
         }
@@ -861,8 +924,13 @@ final class TruthReminderStore: NSObject, ObservableObject, UNUserNotificationCe
         }
     }
 
-    private func configureTruthNotification(_ content: UNMutableNotificationContent) {
-        content.sound = UNNotificationSound(named: UNNotificationSoundName(notificationSoundName))
+    private func configureTruthNotification(
+        _ content: UNMutableNotificationContent,
+        useAppleDefaultSound: Bool = false
+    ) {
+        content.sound = useAppleDefaultSound
+            ? .default
+            : UNNotificationSound(named: UNNotificationSoundName(notificationSoundName))
         content.interruptionLevel = .timeSensitive
         content.relevanceScore = 1
     }

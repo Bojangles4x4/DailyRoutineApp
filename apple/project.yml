@@ -8,8 +8,8 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
     CODE_SIGN_STYLE: Automatic
-    MARKETING_VERSION: "1.53.0"
-    CURRENT_PROJECT_VERSION: "55"
+    MARKETING_VERSION: "1.54.0"
+    CURRENT_PROJECT_VERSION: "56"
 schemes:
   DailyRoutine:
     build:
@@ -87,6 +87,7 @@ targets:
       properties:
         com.apple.developer.family-controls: true
         com.apple.developer.healthkit: true
+        com.apple.developer.usernotifications.time-sensitive: true
         com.apple.security.application-groups:
           - group.com.bojangles4x4.DailyRoutine
     settings:

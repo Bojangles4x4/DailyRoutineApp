@@ -12,6 +12,8 @@ This folder is the native foundation for turning Daily Routine into an iPhone ap
 
 This is intentionally more than a website wrapper. The native HealthKit and Watch experiences provide the platform-specific utility Apple expects from an App Store app.
 
+Build 56 enables Apple’s Time Sensitive Notifications capability for Truth Reminders, reports each relevant iPhone presentation setting in-app, and offers separate default-sound and custom-chime tests. Time Sensitive alerts can bypass Focus and Scheduled Summary when allowed, but Apple still controls iPhone/Watch/Mac routing and Silent Mode behavior.
+
 ## Current foundation
 
 - Native iPhone and watchOS source structure

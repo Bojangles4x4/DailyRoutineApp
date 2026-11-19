@@ -32,7 +32,7 @@ function localDateKey(date = new Date()) {
   assert.equal(await page.locator('#medicationProgressCard').evaluate(element => element.open), false);
   assert.equal(await page.locator('#accountabilitySharingCard').evaluate(element => element.open), false);
   assert.equal(await page.locator('#accountabilityReportCard').evaluate(element => element.open), false);
-  assert.equal(await page.locator('#appVersion').textContent(), 'v1.53.0 · Build 55');
+  assert.equal(await page.locator('#appVersion').textContent(), 'v1.54.0 · Build 56');
   assert.equal(await page.locator('#progressStoryCard').count(), 1);
   assert.match(await page.locator('#progressStoryTitle').textContent(), /rhythm/i);
   assert.equal(await page.locator('#clearNotesFiltersButton').count(), 1);

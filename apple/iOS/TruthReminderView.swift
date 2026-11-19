@@ -87,8 +87,19 @@ struct TruthReminderView: View {
                     Text("Reminder text and pictures may appear on your lock screen. Tap the notification or “Review now” to open the full reminder, then acknowledge it inside the app. Your library stays on this iPhone and is separate from routine backups and Private sync.")
                 }
                 Section("Reminder diagnostics") {
+                    if let warning = store.notificationDeliveryWarning {
+                        Label(warning, systemImage: "exclamationmark.triangle.fill")
+                            .font(.footnote)
+                            .foregroundStyle(.orange)
+                    }
                     LabeledContent("Notifications", value: store.notificationAuthorizationSummary)
                     LabeledContent("Time Sensitive alerts", value: store.timeSensitiveAuthorizationSummary)
+                    LabeledContent("Banners and alerts", value: store.alertPresentationSummary)
+                    LabeledContent("Sounds", value: store.soundPresentationSummary)
+                    LabeledContent("Lock Screen", value: store.lockScreenPresentationSummary)
+                    LabeledContent("Notification Center", value: store.notificationCenterPresentationSummary)
+                    LabeledContent("Scheduled Summary", value: store.scheduledDeliverySummary)
+                    LabeledContent("Show previews", value: store.previewPresentationSummary)
                     LabeledContent("Scheduled alerts", value: String(store.pendingTruthNotificationCount))
                     LabeledContent("Delivered alerts still visible", value: String(store.deliveredTruthNotificationCount))
                     LabeledContent("Next reminder", value: store.nextScheduledReminderAt?.formatted(date: .abbreviated, time: .shortened) ?? "None scheduled")
@@ -110,9 +121,14 @@ struct TruthReminderView: View {
                     if let error = store.settings.lastScheduleError, !error.isEmpty {
                         Text(error).font(.footnote).foregroundStyle(.red)
                     }
-                    Button("Send one test in 10 seconds") {
+                    Button("Test Truth chime in 10 seconds") {
                         Task { await store.sendDiagnosticTest() }
                     }
+                    .disabled(store.diagnosticTestIsPending)
+                    Button("Test Apple sound in 10 seconds") {
+                        Task { await store.sendDiagnosticTest(useAppleDefaultSound: true) }
+                    }
+                    .disabled(store.diagnosticTestIsPending)
                     Button("Open iPhone notification settings") {
                         store.openNotificationSettings()
                     }
@@ -132,7 +148,7 @@ struct TruthReminderView: View {
                             }
                         }
                     }
-                    Text("The test uses the same Time Sensitive delivery and Truth chime as scheduled reminders. It does not affect gates, review status, or earned minutes. Apple controls Watch mirroring and cannot be required to interrupt audio already playing in another app.")
+                    Text("Run one sound test at a time. Each requests the same Time Sensitive delivery as scheduled reminders but never changes gates, review status, or earned minutes. Focus, Silent Mode, or Sounds being off can still suppress audio. Apple normally presents an alert on one device: an unlocked iPhone receives it; a locked iPhone can route it to a worn, unlocked Watch configured to mirror Daily Rhythms. Show on Mac can mirror the same iPhone alert. Reminder text or pictures may be visible on those screens depending on Show Previews.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
